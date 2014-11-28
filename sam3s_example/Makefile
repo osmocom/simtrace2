@@ -116,7 +116,7 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 
 # Directories where source files can be found
 
-VPATH += src cmsis
+VPATH += src cmsis lib
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o

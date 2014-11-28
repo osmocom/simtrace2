@@ -81,7 +81,7 @@ GDB = $(CROSS_COMPILE)gdb
 NM = $(CROSS_COMPILE)nm
 
 # Flags
-INCLUDES  = -Iinclude
+INCLUDES  = -Iinclude -Isam3s_examples_include
 INCLUDES += -Icmsis
 #INCLUDES += -I$(LIBRARIES)
 

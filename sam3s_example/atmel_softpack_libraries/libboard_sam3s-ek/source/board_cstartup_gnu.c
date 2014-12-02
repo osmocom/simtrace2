@@ -56,9 +56,12 @@ extern uint32_t _ezero;
 /*----------------------------------------------------------------------------
  *        ProtoTypes
  *----------------------------------------------------------------------------*/
+
+/** \cond DOXYGEN_SHOULD_SKIP_THIS */
 extern int main( void ) ;
-extern void __libc_init_array( void ) ;
+/** \endcond */
 void ResetException( void ) ;
+extern void __libc_init_array( void ) ;
 
 /*------------------------------------------------------------------------------
  *         Exception Table

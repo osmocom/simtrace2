@@ -38,13 +38,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "board.h"
-#include "board_lowlevel.h"
 
 /*----------------------------------------------------------------------------
  *        Local definitions
  *----------------------------------------------------------------------------*/
 
-/* Clock settings at 48MHz */
+/* Clock settings at 48MHz  for 12 MHz crystal */
 #if (BOARD_MCK == 48000000)
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
@@ -53,7 +52,7 @@
                        | CKGR_PLLAR_DIVA(0x1))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK_2 | PMC_MCKR_CSS_PLLA_CLK)
 
-/* Clock settings at 64MHz */
+/* Clock settings at 64MHz  for 12 MHz crystal */
 #elif (BOARD_MCK == 64000000)
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
@@ -78,7 +77,7 @@
  * This includes EFC and master clock configuration.
  * It also enable a low level on the pin NRST triggers a user reset.
  */
-WEAK void LowLevelInit( void )
+extern WEAK void LowLevelInit( void )
 {
     uint32_t timeout = 0;
 
@@ -86,22 +85,21 @@ WEAK void LowLevelInit( void )
     EFC->EEFC_FMR = EEFC_FMR_FWS(3);
 
     /* Select external slow clock */
-#if 0
-    if ((SUPC->SUPC_SR & SUPC_SR_OSCSEL) != SUPC_SR_OSCSEL_CRYST)
+/*    if ((SUPC->SUPC_SR & SUPC_SR_OSCSEL) != SUPC_SR_OSCSEL_CRYST)
     {
         SUPC->SUPC_CR = (uint32_t)(SUPC_CR_XTALSEL_CRYSTAL_SEL | SUPC_CR_KEY(0xA5));
         timeout = 0;
         while (!(SUPC->SUPC_SR & SUPC_SR_OSCSEL_CRYST) );
     }
-#endif
+*/
 
     /* Initialize main oscillator */
-    if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
+/*    if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
     {
         PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN;
         timeout = 0;
         while (!(PMC->PMC_SR & PMC_SR_MOSCXTS) && (timeout++ < CLOCK_TIMEOUT));
-    }
+    }*/
 
     /* Switch to 3-20MHz Xtal oscillator */
     PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN | CKGR_MOR_MOSCSEL;

@@ -111,18 +111,18 @@ extern int _read(int file, char *ptr, int len)
 
 extern int _write( int file, char *ptr, int len )
 {
-    //int iIndex ;
+/*
+      int iIndex ;
     
     
 //    for ( ; *ptr != 0 ; ptr++ )
-/*    for ( iIndex=0 ; iIndex < len ; iIndex++, ptr++ )
+    for ( iIndex=0 ; iIndex < len ; iIndex++, ptr++ )
     {
         UART_PutChar( *ptr ) ;
     }
-
     return iIndex ;
-    */
-    return 0;
+*/
+    return -1;
 }
 
 extern void _exit( int status )

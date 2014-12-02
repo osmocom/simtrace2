@@ -116,12 +116,12 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 
 # Directories where source files can be found
 
-VPATH += src cmsis lib
+VPATH += src_board src_sam3s cmsis 
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o
+C_LIBLEVEL = spi.o pio.o pmc.o usart.o
 C_APPLEVEL = main.o
 C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL)
 
@@ -162,7 +162,7 @@ endef
 $(foreach MEMORY, $(MEMORIES), $(eval $(call RULES,$(MEMORY))))
 
 program:
-	openocd -f /home/chrysh/ba_thesis/thesis/openocd/openocd.cfg -c "init" -c "halt" -c "flash write_bank 0 /home/chrysh/ba_thesis/thesis/src/sam3s_example/bin/project-flash.bin 0" -c "reset" -c "shutdown"
+	openocd -f /home/chrysh/ba_thesis/thesis/openocd/openocd.cfg -c "init" -c "halt" -c "flash write_bank 0 ./bin/project-flash.bin 0" -c "reset" -c "shutdown"
 
 clean:
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst

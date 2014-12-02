@@ -2,7 +2,9 @@
 #define _BOARD_
 
 #include "chip.h"
+#include "pio.h"
 #include "syscalls.h" /** RedHat Newlib minimal stub */
+#include "SAM3S.h"
 
 /** Name of the board */
 #define BOARD_NAME "SAM3S-SIMTRACE"
@@ -12,7 +14,6 @@
 #define sam3s
 /** Core definition */
 #define cortexm3
-
 
 #define BOARD_MAINOSC 12000000
 #define BOARD_MCK     48000000
@@ -30,5 +31,7 @@
 
 #define BOARD_ID_USART          ID_USART0
 #define BOARD_USART_BASE        USART0
+
+#define PINS_UART  { PIO_PA9A_URXD0|PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 
 #endif

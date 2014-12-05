@@ -43,22 +43,22 @@
  *        Local definitions
  *----------------------------------------------------------------------------*/
 
-/* Clock settings at 48MHz  for 12 MHz crystal */
+/* Clock settings at 48MHz  for 18 MHz crystal */
 #if (BOARD_MCK == 48000000)
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
-                       | CKGR_PLLAR_MULA(0x7) \
+                       | CKGR_PLLAR_MULA(0xc) \
                        | CKGR_PLLAR_PLLACOUNT(0x1) \
-                       | CKGR_PLLAR_DIVA(0x1))
-#define BOARD_MCKR      (PMC_MCKR_PRES_CLK_2 | PMC_MCKR_CSS_PLLA_CLK)
+                       | CKGR_PLLAR_DIVA(0x5))
+#define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
 
-/* Clock settings at 64MHz  for 12 MHz crystal */
+/* Clock settings at 64MHz  for 18 MHz crystal */
 #elif (BOARD_MCK == 64000000)
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
-                       | CKGR_PLLAR_MULA(0x0f) \
+                       | CKGR_PLLAR_MULA(0x06) \
                        | CKGR_PLLAR_PLLACOUNT(0x1) \
-                       | CKGR_PLLAR_DIVA(0x3))
+                       | CKGR_PLLAR_DIVA(0x2))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
 
 #else

@@ -67,9 +67,12 @@ OBJ = obj
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
 
+LIBC_PATH=../Baselibc
+
 LIBS = -Wl,--start-group -lgcc -lc -Wl,--end-group
 #LIB_PATH+=-L=/lib/thumb2
 #LIB_PATH+=-L=/../lib/gcc/arm-none-eabi/4.4.1/thumb2
+LIB+=-L=$(LIBC_PATH) -lc
 
 # Compilation tools
 CC = $(CROSS_COMPILE)gcc
@@ -83,6 +86,7 @@ NM = $(CROSS_COMPILE)nm
 # Flags
 INCLUDES  = -Iinclude -Isam3s_examples_include
 INCLUDES += -Icmsis
+INCLUDES += -I$(LIBC_PATH)/include
 #INCLUDES += -I$(LIBRARIES)
 
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int
@@ -107,7 +111,7 @@ CFLAGS += -Dprintf=iprintf
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols
+LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
 
 #-------------------------------------------------------------------------------

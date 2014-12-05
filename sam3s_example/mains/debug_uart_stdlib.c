@@ -140,7 +140,7 @@ int main() {
 
     Configure_LED();
 
-    int ret = asprintf(&cmdp, "Clockval: %d\r\n", BOARD_MCK);
+    size_t ret = asprintf(&cmdp, "Clockval: %d\r\n", BOARD_MCK);
 
     if (ret != strlen(cmdp)){
          PIO_Clear(&redled);

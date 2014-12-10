@@ -1,10 +1,22 @@
 #ifndef _BOARD_
 #define _BOARD_
 
+/**     Headers     */
 #include "chip.h"
-#include "pio.h"
-#include "syscalls.h" /** RedHat Newlib minimal stub */
-#include "SAM3S.h"
+
+/**     Board       */
+#include "board_lowlevel.h"
+#include "uart_console.h"
+#include "iso7816_4.h"
+
+/**     Highlevel   */
+#include "trace.h"
+#include "stdio.h"
+#include "string.h"
+
+#ifdef __GNUC__ 
+#undef __GNUC__ 
+#endif
 
 /** Name of the board */
 #define BOARD_NAME "SAM3S-SIMTRACE"
@@ -33,5 +45,29 @@
 #define BOARD_USART_BASE        USART0
 
 #define PINS_UART  { PIO_PA9A_URXD0|PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+
+/** UART0 */
+/** Console baudrate always using 115200. */
+#define CONSOLE_BAUDRATE    115200
+/** Usart Hw interface used by the console (UART0). */
+#define CONSOLE_USART       UART0
+/** Usart Hw ID used by the console (UART0). */
+#define CONSOLE_ID          ID_UART0
+/** Pins description corresponding to Rxd,Txd, (UART pins) */
+#define CONSOLE_PINS        {PINS_UART}
+
+
+/// Smartcard detection pin
+// FIXME: add connect pin as iso pin
+#define SMARTCARD_CONNECT_PIN {1 << 8, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+
+/// PIN used for reset the smartcard
+#define PIN_SIM_IO      {PIO_PA1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+#define PIN_SIM_CLK     {PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+
+#define PIN_ISO7816_RSTMC       {1 << 7, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+/// Pins used for connect the smartcard
+//#define PINS_ISO7816            PIN_USART1_TXD, PIN_USART1_SCK, PIN_ISO7816_RSTMC
+#define PINS_ISO7816            PIN_SIM_IO, PIN_SIM_CLK, PIN_ISO7816_RSTMC
 
 #endif

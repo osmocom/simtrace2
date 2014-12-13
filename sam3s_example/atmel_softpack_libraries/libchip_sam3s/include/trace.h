@@ -67,7 +67,7 @@
 /*
  *         Headers
  */
-
+#include "board.h"
 #include "pio.h"
 
 #include <stdio.h>

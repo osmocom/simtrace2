@@ -72,7 +72,7 @@ LIBC_PATH=../Baselibc
 LIBS = -Wl,--start-group -lgcc -lc -Wl,--end-group
 #LIB_PATH+=-L=/lib/thumb2
 #LIB_PATH+=-L=/../lib/gcc/arm-none-eabi/4.4.1/thumb2
-LIB+=-L=$(LIBC_PATH) -lc
+LIB += -L=$(LIBC_PATH)/include -lc
 
 # Compilation tools
 CC = $(CROSS_COMPILE)gcc
@@ -84,7 +84,7 @@ GDB = $(CROSS_COMPILE)gdb
 NM = $(CROSS_COMPILE)nm
 
 # Flags
-INCLUDES  = -Iinclude -Isam3s_examples_include
+INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -IBaselibcc/include
 INCLUDES += -Icmsis
 INCLUDES += -I$(LIBC_PATH)/include
 #INCLUDES += -I$(LIBRARIES)
@@ -96,9 +96,10 @@ CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Wsign-compare -Waggregate-return
 CFLAGS += -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations
-CFLAGS += -Wpacked -Wredundant-decls -Wnested-externs -Winline -Wlong-long
+CFLAGS += -Wpacked -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
+CFLAGS += -std=c11
 #CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion
 
@@ -125,7 +126,7 @@ VPATH += src_board src_sam3s cmsis
 # Objects built from C source files
 C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o usart.o
+C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o
 C_APPLEVEL = main.o
 C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL)
 

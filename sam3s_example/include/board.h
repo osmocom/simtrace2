@@ -12,6 +12,7 @@
 /**     Highlevel   */
 #include "trace.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include "string.h"
 
 #ifdef __GNUC__ 

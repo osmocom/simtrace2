@@ -63,6 +63,32 @@
 /** Is Console Initialized. */
 static uint8_t _ucIsConsoleInitialized=0 ;
 
+extern void UART_PutString(const char *str, int len) {
+    int i;
+    for (i=0; i<len; i++) {
+        UART_PutChar(*str++);
+    }
+}
+
+extern int printf(const char *fmt, ...) 
+{
+    char *cmdp;
+    size_t ret = 0;
+
+    va_list va;
+    va_start(va, fmt);
+    ret = vasprintf(&cmdp, fmt, va);
+    va_end(va);
+
+    if (ret == strlen(cmdp)) {
+        UART_PutString(cmdp, strlen(cmdp));
+        free(cmdp);
+    } else {
+        return -1;
+    }
+    return ret;
+}
+
 /**
  * \brief Configures an USART peripheral with the specified parameters.
  *

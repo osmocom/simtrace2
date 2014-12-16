@@ -5,33 +5,25 @@
 
 extern void UART_PutString(const char *str, int len);
 
-/*----------------------------------------------------------------------------
- *  *        Variables
- *   *----------------------------------------------------------------------------*/
-
-const Pin redled = {LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
-const Pin greenled = {LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
-
-static const Pin *led;
-
-void Configure_LED() {
-    PIO_Configure(&greenled, PIO_LISTSIZE(greenled));
-    PIO_Configure(&redled, PIO_LISTSIZE(redled));
-    PIO_Set(&redled);
-    PIO_Set(&greenled);
-    led = &redled;
+void Configure_LEDs() {
+    LED_Configure(LED_NUM_RED);
+    LED_Configure(LED_NUM_GREEN);
 }
 
 int main() {
     size_t ret = 0;
-    Configure_LED();
+    
+    Configure_LEDs();
 
     ret = printf("Clockval: %d\r\n", BOARD_MCK);
 
     if (ret < 0){
-        PIO_Clear(&redled);
+        LED_Clear(LED_NUM_GREEN);
+        LED_Set(LED_NUM_RED);
     } else {
-        PIO_Clear(&greenled);
+        LED_Clear(LED_NUM_RED);
+        LED_Set(LED_NUM_GREEN);
+
         while (1) {
             printf("Clockval**++????: %d\r\n", BOARD_MCK);
         }

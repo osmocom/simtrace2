@@ -8,6 +8,7 @@
 #include "board_lowlevel.h"
 #include "uart_console.h"
 #include "iso7816_4.h"
+#include "led.h"
 
 /**     Highlevel   */
 #include "trace.h"
@@ -33,6 +34,13 @@
 
 #define LED_RED PIO_PA17
 #define LED_GREEN PIO_PA18
+
+#define PIN_LED_RED     {LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_LED_GREEN   {LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
+
+#define LED_NUM_RED     0
+#define LED_NUM_GREEN   1
 
 /** USART0 pin RX */
 #define PIN_USART0_RXD    {PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}

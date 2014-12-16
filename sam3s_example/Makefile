@@ -48,7 +48,7 @@ MEMORIES = flash
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 4
+TRACE_LEVEL = 5
 
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -O0
@@ -126,7 +126,7 @@ VPATH += src_board src_sam3s cmsis
 # Objects built from C source files
 C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o
+C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o
 C_APPLEVEL = main.o
 C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL)
 

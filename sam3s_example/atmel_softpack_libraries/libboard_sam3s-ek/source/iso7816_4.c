@@ -111,7 +111,7 @@ static uint32_t ISO7816_GetChar( uint8_t *pCharToReceive )
                                       (1<<10)));
 
     if (status != 0 ) {
-       /* TRACE_DEBUG("R:0x%X\n\r", status); */
+        TRACE_DEBUG("R:0x%X\n\r", status); 
         TRACE_DEBUG("R:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
         TRACE_DEBUG("Nb:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_NER );
         BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA;
@@ -131,6 +131,8 @@ static uint32_t ISO7816_SendChar( uint8_t CharToSend )
 {
     uint32_t status;
 
+    TRACE_DEBUG("********** Send char: %c (0x%X)\n\r", CharToSend, CharToSend);
+
     if( StateUsartGlobal == USART_RCV ) {
         BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
         StateUsartGlobal = USART_SEND;
@@ -148,8 +150,12 @@ static uint32_t ISO7816_SendChar( uint8_t CharToSend )
                                       (1<<10)));
 
     if (status != 0 ) {
-        TRACE_DEBUG("E:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
-        TRACE_DEBUG("Nb:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_NER );
+        TRACE_DEBUG("******* status: 0x%X (Overrun: %d, NACK: %d, Timeout: %d, underrun: %d)\n\r", 
+                    status, ((status & US_CSR_OVRE)>> 5), ((status & US_CSR_NACK) >> 13), 
+                    ((status & US_CSR_TIMEOUT) >> 8), ((status & (1 << 10)) >> 10));
+        
+        TRACE_DEBUG("E (USART CSR reg):0x%X\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
+        TRACE_DEBUG("Nb (Number of errors):0x%X\n\r", BOARD_ISO7816_BASE_USART->US_NER );
         BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA;
     }
 
@@ -455,6 +461,7 @@ void ISO7816_warm_reset( void )
 {
     volatile uint32_t i;
 
+// Clears Reset
     ISO7816_IccPowerOff();
 
     /* tb: wait 400 cycles */
@@ -464,6 +471,7 @@ void ISO7816_warm_reset( void )
     BOARD_ISO7816_BASE_USART->US_RHR;
     BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 
+// Sets Reset
     ISO7816_IccPowerOn();
 }
 
@@ -577,6 +585,54 @@ void ISO7816_Init( const Pin pPinIso7816RstMC )
     /* Pin ISO7816 initialize */
     st_pinIso7816RstMC  = pPinIso7816RstMC;
 
+#if 0
+//FIXME: Why don't I nedd to pass baudrate and masterclock to USART_Configure? Because Masterclock is configured as ref clk signal anyways?
+/**
+ * \brief Configures an USART peripheral with the specified parameters.
+ *
+ *
+ *  \param usart  Pointer to the USART peripheral to configure.
+ *  \param mode  Desired value for the USART mode register (see the datasheet).
+ *  \param baudrate  Baudrate at which the USART should operate (in Hz).
+ *  \param masterClock  Frequency of the system master clock (in Hz).
+ */
+void USART_Configure(Usart *usart,
+                            uint32_t mode,
+                            uint32_t baudrate,
+                            uint32_t masterClock)
+{
+    /* Reset and disable receiver & transmitter*/
+    usart->US_CR = US_CR_RSTRX | US_CR_RSTTX
+                   | US_CR_RXDIS | US_CR_TXDIS;
+
+    /* Configure mode*/
+    usart->US_MR = mode;
+
+    /* Configure baudrate*/
+    /* Asynchronous, no oversampling*/
+    if ( ((mode & US_MR_SYNC) == 0) && ((mode & US_MR_OVER) == 0) )
+    {
+        usart->US_BRGR = (masterClock / baudrate) / 16;
+    }
+
+    if( ((mode & US_MR_USART_MODE_SPI_MASTER) == US_MR_USART_MODE_SPI_MASTER)
+     || ((mode & US_MR_SYNC) == US_MR_SYNC))
+    {
+        if( (mode & US_MR_USCLKS_Msk) == US_MR_USCLKS_MCK)
+        {
+            usart->US_BRGR = masterClock / baudrate;
+        }
+        else
+        {
+            if ( (mode & US_MR_USCLKS_DIV) == US_MR_USCLKS_DIV)
+            {
+                usart->US_BRGR = masterClock / baudrate / 8;
+            }
+        }
+    }
+    /* TODO other modes*/
+}
+#endif
     USART_Configure( BOARD_ISO7816_BASE_USART,
                      US_MR_USART_MODE_IS07816_T_0
                      | US_MR_USCLKS_MCK

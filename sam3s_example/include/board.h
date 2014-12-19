@@ -67,16 +67,28 @@
 
 
 /// Smartcard detection pin
-// FIXME: add connect pin as iso pin
-#define SMARTCARD_CONNECT_PIN {1 << 8, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+// FIXME: add connect pin as iso pin...should it be periph b or interrupt oder input?
+#define BOARD_ISO7816_BASE_USART    USART0
+#define BOARD_ISO7816_ID_USART      ID_USART0
+
+#define SIM_PWEN_PIN            {PIO_PA5, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+
+#define SW_SIM      PIO_PA8
+#define SMARTCARD_CONNECT_PIN {SW_SIM, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_EDGE }
+//#define SMARTCARD_CONNECT_PIN {SW_SIM, PIOB, ID_PIOB, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_EDGE}
 
 /// PIN used for reset the smartcard
-#define PIN_SIM_IO      {PIO_PA1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
-#define PIN_SIM_CLK     {PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+//#define RST_SIM     (1 << 7)
+#define RST_SIM     (1 << 7)
+// FIXME: Card is resetted with pin set to 0 --> PIO_OUTPUT_1 as default is right?
+#define PIN_ISO7816_RSTMC       {RST_SIM, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_PULLUP}
 
-#define PIN_ISO7816_RSTMC       {1 << 7, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /// Pins used for connect the smartcard
+#define PIN_SIM_IO      {PIO_PA1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+#define PIN_SIM_IO2      {PIO_PA6, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+#define PIN_SIM_CLK     {PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+#define PIN_SIM_CLK2     {PIO_PA4, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 //#define PINS_ISO7816            PIN_USART1_TXD, PIN_USART1_SCK, PIN_ISO7816_RSTMC
-#define PINS_ISO7816            PIN_SIM_IO, PIN_SIM_CLK, PIN_ISO7816_RSTMC
+#define PINS_ISO7816            PIN_SIM_IO, PIN_SIM_IO2, PIN_SIM_CLK, PIN_SIM_CLK2, PIN_ISO7816_RSTMC, SIM_PWEN_PIN
 
 #endif

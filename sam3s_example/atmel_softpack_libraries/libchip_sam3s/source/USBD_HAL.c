@@ -910,6 +910,16 @@ static inline uint8_t UDP_Write(uint8_t    bEndpoint,
     }
     TRACE_DEBUG_WP("Write%d(%d) ", bEndpoint, dLength);
 
+/*    int i;
+    for (i = 0; i < dLength; i++) {
+       if (!(i%16)) {
+            printf("\n\r");
+        }
+        printf("0x%x ", ((uint8_t*)pData)[i]);
+    }
+    printf("\n\r");
+*/
+
     /* Setup the transfer descriptor */
     pTransfer->pData = (void *) pData;
     pTransfer->remaining = dLength;
@@ -1039,6 +1049,16 @@ static inline uint8_t UDP_Read(uint8_t  bEndpoint,
     pEndpoint->state = UDP_ENDPOINT_RECEIVING;
     TRACE_DEBUG_WP("Read%d(%d) ", bEndpoint, dLength);
 
+/*    int i;
+    for (i = 0; i < dLength; i++) {
+        if (!(i%16)) {
+            printf("\n\r");
+        }
+        printf("0x%x ", ((uint8_t*)pData)[i]);
+    }
+    printf("\n\r");
+*/
+
     /* Set the transfer descriptor */
     pTransfer->pData = pData;
     pTransfer->remaining = dLength;
@@ -1073,6 +1093,8 @@ void USBD_IrqHandler(void)
        Some interrupts may get masked depending on the device state */
     status = UDP->UDP_ISR;
     status &= UDP->UDP_IMR;
+    
+    TRACE_DEBUG("status; 0x%x", status);
 
     if (USBD_GetState() < USBD_STATE_POWERED) {
 
@@ -1527,6 +1549,8 @@ void USBD_HAL_SetConfiguration(uint8_t cfgnum)
  */
 void USBD_HAL_Init(void)
 {
+    TRACE_DEBUG("%s\n\r", "USBD_HAL_Init");
+
     /* Must before USB & TXVC access! */
     UDP_EnablePeripheralClock();
 

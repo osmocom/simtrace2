@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support
+ *         ATMEL Microcontroller Software Support 
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
  *
@@ -27,56 +27,47 @@
  * ----------------------------------------------------------------------------
  */
 
-/** \file
- *  Title: cciddriverdescriptors.h
- *
- *  \section Purpose
- *      Definitions of the descriptors required by the ccid device driver.
- *      DWG_Smart-Card_CCID_Rev110.pdf
- *
- */
+//------------------------------------------------------------------------------
+//  Title: cciddriverdescriptors.h
+//
+//  About: Purpose
+//      Definitions of the descriptors required by the ccid device driver.
+//      DWG_Smart-Card_CCID_Rev110.pdf
+//------------------------------------------------------------------------------
 
 #ifndef CCID_DRIVER_DESCRIPTORS_H
 #define CCID_DRIVER_DESCRIPTORS_H
 
-/** \addtogroup usbd_ccid
- *@{
- */
+//------------------------------------------------------------------------------
+//         Definitions
+//------------------------------------------------------------------------------
 
-/*------------------------------------------------------------------------------
- *         Definitions
- *------------------------------------------------------------------------------*/
-
-/*------------------------------------------------------------------------------
- * Constants: Endpoints
- *   CCID_EPT_DATA_OUT endpoint data out bulk     1
- *   CCID_EPT_DATA_IN endpoint data in bulk       2
- *   CCID_EPT_NOTIFICATION endpoint data interupt 3
- *------------------------------------------------------------------------------*/
-#define CCID_EPT_DATA_OUT       1
+//------------------------------------------------------------------------------
+// Constants: Endpoints
+//   CCID_EPT_DATA_OUT endpoint data out bulk     1
+//   CCID_EPT_DATA_IN endpoint data in bulk       2
+//   CCID_EPT_NOTIFICATION endpoint data interupt 3
+//------------------------------------------------------------------------------
+#define CCID_EPT_DATA_OUT       1  
 #define CCID_EPT_DATA_IN        2
 #define CCID_EPT_NOTIFICATION   3
 
-/*------------------------------------------------------------------------------
- * USB-ICC protocol
- *------------------------------------------------------------------------------*/
-/* CCID specification version 1.10 */
-
+//------------------------------------------------------------------------------
+// USB-ICC protocol
+//------------------------------------------------------------------------------
+// CCID specification version 1.10
 #define CCID1_10                               0x0110
 
 #define SMART_CARD_DEVICE_CLASS                0x0B
-/* Smart Card Device Class Descriptor Type */
-
+// Smart Card Device Class Descriptor Type
 #define CCID_DECRIPTOR_TYPE                    0x21
 
-/* Table 5.3-1 Summary of CCID Class Specific Request */
-
+// Table 5.3-1 Summary of CCID Class Specific Request
 #define CCIDGenericRequest_ABORT                 0x01
 #define CCIDGenericRequest_GET_CLOCK_FREQUENCIES 0x02
 #define CCIDGenericRequest_GET_DATA_RATES        0x03
 
-/* 6.1 Command Pipe, Bulk-OUT Messages */
-
+// 6.1 Command Pipe, Bulk-OUT Messages
 #define PC_TO_RDR_ICCPOWERON                   0x62
 #define PC_TO_RDR_ICCPOWEROFF                  0x63
 #define PC_TO_RDR_GETSLOTSTATUS                0x65
@@ -92,21 +83,18 @@
 #define PC_TO_RDR_ABORT                        0x72
 #define PC_TO_RDR_SETDATARATEANDCLOCKFREQUENCY 0x73
 
-/* 6.2 Response Pipe, Bulk-IN Messages */
-
+// 6.2 Response Pipe, Bulk-IN Messages
 #define RDR_TO_PC_DATABLOCK                    0x80
 #define RDR_TO_PC_SLOTSTATUS                   0x81
 #define RDR_TO_PC_PARAMETERS                   0x82
 #define RDR_TO_PC_ESCAPE                       0x83
 #define RDR_TO_PC_DATARATEANDCLOCKFREQUENCY    0x84
 
-/* 6.3 Interrupt-IN Messages */
-
+// 6.3 Interrupt-IN Messages
 #define RDR_TO_PC_NOTIFYSLOTCHANGE             0x50
 #define RDR_TO_PC_HARDWAREERROR                0x51
 
-/* Table 6.2-2 Slot error register when bmCommandStatus = 1 */
-
+// Table 6.2-2 Slot error register when bmCommandStatus = 1
 #define CMD_ABORTED                                   0xFF
 #define ICC_MUTE                                      0xFE
 #define XFR_PARITY_ERROR                              0xFD
@@ -122,61 +110,43 @@
 #define PIN_TIMEOUT                                   0xF0
 #define PIN_CANCELLED                                 0xEF
 #define CMD_SLOT_BUSY                                 0xE0
-/*      User defined                              0xC0 to 0x81 */
+//      User defined                              0xC0 to 0x81
+//      Reserved for futur use                        0x80
+//      not supported incorrect message parameter 0x7F to 0x01
+//      Command not supported                         0x00
 
-/*      Reserved for futur use                        0x80 */
-
-/*      not supported incorrect message parameter 0x7F to 0x01 */
-
-/*      Command not supported                         0x00 */
-
-
-/* CCID rev 1.1, p.27 */
-
+// CCID rev 1.1, p.27
 #define VOLTS_AUTO                            0x00
 #define VOLTS_5_0                             0x01
 #define VOLTS_3_0                             0x02
 #define VOLTS_1_8                             0x03
 
-/* 6.3.1 RDR_to_PC_NotifySlotChange */
-
+// 6.3.1 RDR_to_PC_NotifySlotChange
 #define ICC_NOT_PRESENT                       0x00
 #define ICC_PRESENT                           0x01
 #define ICC_CHANGE                            0x02
 #define ICC_INSERTED_EVENT                    ICC_PRESENT+ICC_CHANGE
 
-/* ICCD: Table 6.1-8 Bitmap for bStatus field */
-
-#define ICC_BS_PRESENT_ACTIVATED     0x00 /* USB-ICC is present and activated */
-
-#define ICC_BS_PRESENT_NOTACTIVATED  0x01 /* USB-ICC is present but not activated */
-
-#define ICC_BS_NOTPRESENT            0x02 /* USB-ICC is virtually not present */
-
-#define ICC_BS_RFU                   0x03 /* RFU */
-
-#define ICC_CS_NO_ERROR           (0x00<<6) /* Processed without error */
-
-#define ICC_CS_FAILED             (0x01<<6) /* Failed, error condition given by bError */
-
-#define ICC_CS_TIME_EXT           (0x02<<6) /* Time extension is requested */
-
-#define ICC_CS_RFU                (0x03<<6) /* RFU */
-
+// ICCD: Table 6.1-8 Bitmap for bStatus field
+#define ICC_BS_PRESENT_ACTIVATED     0x00 // USB-ICC is present and activated
+#define ICC_BS_PRESENT_NOTACTIVATED  0x01 // USB-ICC is present but not activated
+#define ICC_BS_NOTPRESENT            0x02 // USB-ICC is virtually not present
+#define ICC_BS_RFU                   0x03 // RFU
+#define ICC_CS_NO_ERROR           (0x00<<6) // Processed without error
+#define ICC_CS_FAILED             (0x01<<6) // Failed, error condition given by bError
+#define ICC_CS_TIME_EXT           (0x02<<6) // Time extension is requested
+#define ICC_CS_RFU                (0x03<<6) // RFU
 
 /*
- * #define NO_ERROR                               0x00
- * #define NO_EXTRA_BYTES                         0x00
- * #define CCID_FLAG_INITIAL_VALUE                0x05
- * #define CCID_EVENT_SIZE                        0x02
- * #define STATUS_MASK                            0x41
- */
-/*------------------------------------------------------------------------------
- *      Structures
- *------------------------------------------------------------------------------*/
+#define NO_ERROR                               0x00
+#define NO_EXTRA_BYTES                         0x00
+#define CCID_FLAG_INITIAL_VALUE                0x05
+#define CCID_EVENT_SIZE                        0x02
+#define STATUS_MASK                            0x41
+*/
+//------------------------------------------------------------------------------
+//      Structures
+//------------------------------------------------------------------------------
 
-/**@}*/
-
-#endif /*#ifndef CCID_DRIVER_DESCRIPTORS_H */
-
+#endif //#ifndef CCID_DRIVER_DESCRIPTORS_H
 

@@ -1,5 +1,5 @@
 bin/
-*.swp
+*.sw[op]
 *~
 obj/
 build/

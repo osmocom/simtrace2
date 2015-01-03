@@ -48,7 +48,7 @@ MEMORIES = flash
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 5
+TRACE_LEVEL = 1
 
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -O0
@@ -63,6 +63,10 @@ OBJ = obj
 #-------------------------------------------------------------------------------
 #		Tools
 #-------------------------------------------------------------------------------
+
+AT91LIB_USB_COMMON_CORE_PATH = atmel_softpack_libraries/usb/common/core
+AT91LIB_USB_CORE_PATH = atmel_softpack_libraries/usb/device/core
+AT91LIB_CCIDDEV_PATH = atmel_softpack_libraries/usb/device/ccid
 
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
@@ -84,19 +88,25 @@ GDB = $(CROSS_COMPILE)gdb
 NM = $(CROSS_COMPILE)nm
 
 # Flags
-INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -IBaselibcc/include
+INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
+INCLUDES_USB += -I$(AT91LIB_CCIDDEV_PATH)
+
+INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude
 INCLUDES += -Icmsis
 INCLUDES += -I$(LIBC_PATH)/include
+INCLUDES += $(INCLUDES_USB)
 #INCLUDES += -I$(LIBRARIES)
 
-CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int
+CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2 
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
-CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused
+CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Wsign-compare -Waggregate-return
-CFLAGS += -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations
-CFLAGS += -Wpacked -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
+#CFLAGS += -Wformat 
+CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
+#CFLAGS += -Wpacked 
+CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
 CFLAGS += -std=c11
@@ -104,7 +114,7 @@ CFLAGS += -std=c11
 #CFLAGS += -Wconversion
 
 # To reduce application size use only integer printf function.
-CFLAGS += -Dprintf=iprintf
+#CFLAGS += -Dprintf=iprintf
 
 # -mlong-calls  -Wall
 #CFLAGS += -save-temps -fverbose-asm
@@ -121,14 +131,16 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 
 # Directories where source files can be found
 
-VPATH += src_board src_sam3s cmsis 
+USB_PATHS = $(AT91LIB_CCIDDEV_PATH) $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
+VPATH += src_board src_sam3s cmsis $(USB_PATHS)
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o
+C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o 
+C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
 C_APPLEVEL = main.o
-C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL)
+C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID)
 
 # Append OBJ and BIN directories to output filename
 OUTPUT := $(BIN)/$(OUTPUT)

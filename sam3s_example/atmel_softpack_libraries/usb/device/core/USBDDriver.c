@@ -36,6 +36,8 @@
  *      Headers
  *------------------------------------------------------------------------------*/
 
+#include <board.h>
+
 #include <USBLib_Trace.h>
 
 #include "USBDDriver.h"
@@ -82,6 +84,7 @@ static void SetConfiguration(USBDDriver *pDriver, uint8_t cfgnum)
     const USBConfigurationDescriptor *pConfiguration;
 
     /* Use different descriptor depending on device speed */
+    TRACE_DEBUG("%s\n\r", "SetConfiguration");
 
     if (USBD_IsHighSpeed()) {
 
@@ -229,7 +232,7 @@ static void GetDescriptor(
 
     if (USBD_IsHighSpeed()) {
 
-        TRACE_DEBUG("HS ");
+        TRACE_DEBUG("%s", "HS ");
         pDevice = pDriver->pDescriptors->pHsDevice;
         pConfiguration = pDriver->pDescriptors->pHsConfiguration;
         pQualifier = pDriver->pDescriptors->pHsQualifier;
@@ -237,7 +240,7 @@ static void GetDescriptor(
     }
     else {
 
-        TRACE_DEBUG("FS ");
+        TRACE_DEBUG("%s", "FS ");
         pDevice = pDriver->pDescriptors->pFsDevice;
         pConfiguration = pDriver->pDescriptors->pFsConfiguration;
         pQualifier = pDriver->pDescriptors->pFsQualifier;

@@ -143,6 +143,7 @@ void USBD_ResetHandler()
 void USBD_RequestHandler(uint8_t bEndpoint,
                          const USBGenericRequest* pRequest)
 {
+    TRACE_DEBUG("%s\n\r", "USBD_RequestHandler");
     if (bEndpoint != 0) {
         TRACE_WARNING("EP%d request not supported, default EP only",
                       bEndpoint);
@@ -366,6 +367,7 @@ void USBD_Init(void)
     /* Upper Layer Initialize */
     if (USBDCallbacks_Initialized)
         USBDCallbacks_Initialized();
+    TRACE_DEBUG("%s\n\r", "..");
 }
 
 /**

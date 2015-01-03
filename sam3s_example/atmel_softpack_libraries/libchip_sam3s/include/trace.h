@@ -176,7 +176,7 @@ extern void TRACE_CONFIGURE( uint32_t dwBaudRate, uint32_t dwMCk ) ;
 
 /* Trace compilation depends on TRACE_LEVEL value */
 #if (TRACE_LEVEL >= TRACE_LEVEL_DEBUG)
-#define TRACE_DEBUG(...)      { printf("-D- " __VA_ARGS__); }
+#define TRACE_DEBUG(...)      { printf("-D- " __VA_ARGS__); printf("(%s func. %s)\n\r", __FILE__, __FUNCTION__); }
 #define TRACE_DEBUG_WP(...)   { printf(__VA_ARGS__); }
 #else
 #define TRACE_DEBUG(...)      { }

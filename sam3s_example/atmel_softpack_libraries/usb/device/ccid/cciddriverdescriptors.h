@@ -125,7 +125,8 @@
 #define ICC_NOT_PRESENT                       0x00
 #define ICC_PRESENT                           0x01
 #define ICC_CHANGE                            0x02
-#define ICC_INSERTED_EVENT                    ICC_PRESENT+ICC_CHANGE
+#define ICC_INSERTED_EVENT                    0x01
+//FIXME: #define ICC_INSERTED_EVENT                    ICC_PRESENT+ICC_CHANGE
 
 // ICCD: Table 6.1-8 Bitmap for bStatus field
 #define ICC_BS_PRESENT_ACTIVATED     0x00 // USB-ICC is present and activated

@@ -173,7 +173,11 @@ Output:
     +++++ Trying to check for pending interrupts (PIO ISR: 0x400)) = 1<<10
     +++++ Mask: 0x100 = 1<<8
 */
+    // PA10 is DTXD, which is the debug uart transmit pin
+
+    printf("Interrupt!!\n\r");
     /*  Check all pending interrupts */
+    // FIXME: this if condition is not always true...
     if ( (pinSmartCard.pio->PIO_ISR & pinSmartCard.mask) != 0 )
     {
         /*  Check current level on pin */
@@ -181,11 +185,13 @@ Output:
         {
             sim_inserted = 1;
             printf( "-I- Smartcard inserted\n\r" ) ;
+            CCID_Insertion();
         }
         else
         {
             sim_inserted = 0;
             printf( "-I- Smartcard removed\n\r" ) ;
+            CCID_Removal();
         }
     }
 }
@@ -317,7 +323,10 @@ extern int main( void )
     }
 
 // FIXME. what if smcard is not inserted?
-     CCID_Insertion();
+    if(PIO_Get(&pinSmartCard) == 0) {
+        printf("SIM card inserted\n\r");
+        CCID_Insertion();
+    }
 
     // Infinite loop
     while (1) {

@@ -215,128 +215,6 @@ static void ConfigureCardDetection( void )
 
 #endif
 
-/**
- * Displays a menu which enables the user to send several commands to the
- * smartcard and check its answers.
- */
-static void SendReceiveCommands( void )
-{
-    uint8_t pMessage[MAX_ANSWER_SIZE];
-    uint8_t ucSize ;
-    uint8_t ucKey ;
-    uint8_t command;
-    uint8_t i;
-
-    /*  Clear message buffer */
-    memset( pMessage, 0, sizeof( pMessage ) ) ;
-
-    /*  Display menu */
-    printf( "-I- The following three commands can be sent:\n\r" ) ;
-    printf( "  1. " ) ;
-    for ( i=0 ; i < sizeof( testCommand1 ) ; i++ )
-    {
-        printf( "0x%X ", testCommand1[i] ) ;
-    }
-    printf( "\n\r  2. " ) ;
-
-    for ( i=0 ; i < sizeof( testCommand2 ) ; i++ )
-    {
-        printf( "0x%X ", testCommand2[i] ) ;
-    }
-    printf( "\n\r  3. " ) ;
-
-    for ( i=0 ; i < sizeof( testCommand3 ) ; i++ )
-    {
-        printf( "0x%X ", testCommand3[i] ) ;
-    }
-    printf( "\n\r  4. " ) ;
-
-    for ( i=0 ; i < sizeof( testCommand4 ) ; i++ )
-    {
-        printf( "0x%X ", testCommand4[i] ) ;
-    }
-    printf( "\n\r" ) ;
-
-    /*  Get user input */
-    ucKey = 0 ;
-    while ( ucKey != 'q' )
-    {
-        printf( "\r                        " ) ;
-        printf( "\rChoice ? (q to quit): " ) ;
-#if defined (  __GNUC__  )
-        fflush(stdout);
-#endif
-        ucKey = UART_GetChar() ;
-        printf( "%c", ucKey ) ;
-        command = ucKey - '0';
-
-        /*  Check user input */
-        ucSize = 0 ;
-        if ( command == 1 )
-        {
-            printf( "\n\r-I- Sending command " ) ;
-            for ( i=0 ; i < sizeof( testCommand1 ) ; i++ )
-            {
-                printf( "0x%02X ", testCommand1[i] ) ;
-            }
-            printf( "...\n\r" ) ;
-            ucSize = ISO7816_XfrBlockTPDU_T0( testCommand1, pMessage, sizeof( testCommand1 ) ) ;
-        }
-        else
-        {
-            if ( command == 2 )
-            {
-                printf( "\n\r-I- Sending command " ) ;
-                for ( i=0 ; i < sizeof( testCommand2 ) ; i++ )
-                {
-                    printf("0x%02X ", testCommand2[i] ) ;
-                }
-                printf( "...\n\r" ) ;
-                ucSize = ISO7816_XfrBlockTPDU_T0( testCommand2, pMessage, sizeof( testCommand2 ) ) ;
-            }
-            else
-            {
-                if ( command == 3 )
-                {
-                    printf( "\n\r-I- Sending command " ) ;
-                    for ( i=0 ; i < sizeof( testCommand3 ) ; i++ )
-                    {
-                        printf( "0x%02X ", testCommand3[i] ) ;
-                    }
-                    printf( "...\n\r" ) ;
-                    ucSize = ISO7816_XfrBlockTPDU_T0( testCommand3, pMessage, sizeof( testCommand3 ) ) ;
-                }   
-                else
-                {
-                    if ( command == 4 )
-                    {
-                        printf( "\n\r-I- Sending command " ) ;
-                        for ( i=0 ; i < sizeof( testCommand4 ) ; i++ )
-                        {
-                            printf( "0x%02X ", testCommand4[i] ) ;
-                        }
-                        printf( "...\n\r" ) ;
-                        ucSize = ISO7816_XfrBlockTPDU_T0( testCommand4, pMessage, sizeof( testCommand4 ) ) ;
-                    }
-                }
-            }
-       }
-
-        /*  Output smartcard answer */
-        if ( ucSize > 0 )
-        {
-            printf( "\n\rAnswer: " ) ;
-            for ( i=0 ; i < ucSize ; i++ )
-            {
-                printf( "0x%02X ", pMessage[i] ) ;
-            }
-            printf( "\n\r" ) ;
-        }
-    }
-
-    printf( "Quitting ...\n\r" ) ;
-}
-
 
 /*------------------------------------------------------------------------------
  *        USB 
@@ -457,9 +335,6 @@ extern int main( void )
         }
         CCID_SmartCardRequest();
     }
-
-    /*  Allow user to send some commands */
-//    SendReceiveCommands() ;
 
     return 0 ;
 }

@@ -564,11 +564,7 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
     printf("Historical bytes:\n\r");
     y = pAtr[1] & 0x0F;
     for( j=0; j < y; j++ ) {
-
         printf(" 0x%X", pAtr[i]);
-        if( (pAtr[i] > 0x21) && (pAtr[i] < 0x7D) ) {  /* ASCII */
-            printf("(%c) ", pAtr[i]);
-        }
         i++;
     }
     printf("\n\r\n\r");

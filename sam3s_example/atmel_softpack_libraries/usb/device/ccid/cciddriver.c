@@ -665,10 +665,16 @@ static void RDRtoPCDatablock_ATR( void )
     unsigned char i;
     unsigned char Atr[ATR_SIZE_MAX];
     unsigned char length;
+    uint32_t status; 
 
-    //TRACE_DEBUG(".");
+    TRACE_DEBUG(".");
 
-    ISO7816_Datablock_ATR( Atr, &length );
+    status = ISO7816_Datablock_ATR( Atr, &length );
+    if (status == 0) {
+        TRACE_DEBUG("Timeout occured while reading ATR");
+// FIXME: react properly to timeout..
+//        return;
+    }
 
     if( length > 5 ) {
         ccidDriver.ProtocolDataStructure[1] = Atr[5]&0x0F; // TD(1)

@@ -93,13 +93,10 @@ static uint32_t ISO7816_GetChar( uint8_t *pCharToReceive )
     /* Wait USART ready for reception */
     while( ((BOARD_ISO7816_BASE_USART->US_CSR & US_CSR_RXRDY) == 0) ) {
         if(timeout++ > 12000 * (BOARD_MCK/1000000)) {
-            TRACE_DEBUG("TimeOut\n\r");
+            TRACE_WARN("TimeOut\n\r");
             return( 0 );
         }
     }
-
-    TRACE_DEBUG("T: %u\n\r", timeout);
-
 
     /* At least one complete character has been received and US_RHR has not yet been read. */
 
@@ -359,17 +356,24 @@ void ISO7816_toAPDU( void )
  * Answer To Reset (ATR)
  * \param pAtr    ATR buffer
  * \param pLength Pointer for store the ATR length
+ * \return 0: if timeout else status of US_CSR
  */
-void ISO7816_Datablock_ATR( uint8_t* pAtr, uint8_t* pLength )
+uint32_t ISO7816_Datablock_ATR( uint8_t* pAtr, uint8_t* pLength )
 {
     uint32_t i;
     uint32_t j;
     uint32_t y;
+    uint32_t status = 0; 
 
     *pLength = 0;
 
     /* Read ATR TS */
-    ISO7816_GetChar(&pAtr[0]);
+    // FIXME: There should always be a check for the GetChar return value..0 means timeout
+    status = ISO7816_GetChar(&pAtr[0]);
+  /*  if (status == 0) {
+        return status;
+    }*/
+
     /* Read ATR T0 */
     ISO7816_GetChar(&pAtr[1]);
     y = pAtr[1] & 0xF0;

@@ -849,7 +849,8 @@ static void PCtoRDRIccPowerOn( void )
         ccidDriver.sCcidCommand.bSpecific_0 = VOLTS_AUTO;
     }
 
-    ISO7816_cold_reset();
+    ISO7816_warm_reset();
+//    ISO7816_cold_reset();
 
     // for emulation only //JCB 
     if ( ccidDriver.sCcidCommand.bSpecific_0 != VOLTS_5_0 ) {

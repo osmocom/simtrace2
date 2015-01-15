@@ -120,7 +120,7 @@ int main() {
 
         i = i+1;
         if ((i%500000) == 0) {
-                        switch(state) {
+            switch(state) {
                 case 0:
                     PIO_Set(&statusled);
                     state=1;

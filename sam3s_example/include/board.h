@@ -46,8 +46,15 @@
 #define LED_NUM_RED     0
 #define LED_NUM_GREEN   1
 
-#define IO_SW               PIO_PA19
-#define PIN_PUSHBUTTON      {IO_SW, PIOA, ID_PIOA, PIO_INPUT, PIO_DEGLITCH | PIO_PULLUP}
+/** Phone */
+// Connect VPP, CLK and RST lines from smartcard to the phone
+//#define PIN_SC_SW               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+// Temporary fix: do not connect
+#define PIN_SC_SW               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+// Connect SIM card I/O lines to the phone
+//#define PIN_IO_SW               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+// FIXME: Temporary fix: do not connect
+#define PIN_IO_SW               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 
 /** USART0 pin RX */
 #define PIN_USART0_RXD    {PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
@@ -72,11 +79,12 @@
 /** Pins description corresponding to Rxd,Txd, (UART pins) */
 #define CONSOLE_PINS        {PINS_UART}
 
-
 /// Smartcard detection pin
 // FIXME: add connect pin as iso pin...should it be periph b or interrupt oder input?
-#define BOARD_ISO7816_BASE_USART    USART0
-#define BOARD_ISO7816_ID_USART      ID_USART0
+#define USART_SIM       USART0
+#define ID_USART_SIM    ID_USART0
+#define USART_PHONE       USART1
+#define ID_USART_PHONE    ID_USART1
 
 #define SIM_PWEN        PIO_PA5
 #define VCC_FWD         PIO_PA26
@@ -87,8 +95,7 @@
 #define SMARTCARD_CONNECT_PIN {SW_SIM, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_DEGLITCH | PIO_IT_EDGE }
 //#define SMARTCARD_CONNECT_PIN {SW_SIM, PIOB, ID_PIOB, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_EDGE}
 
-/// PIN used for reset the smartcard
-//#define RST_SIM     (1 << 7)
+/// PIN used for resetting the smartcard
 #define RST_SIM     (1 << 7)
 // FIXME: Card is resetted with pin set to 0 --> PIO_OUTPUT_1 as default is right?
 #define PIN_ISO7816_RSTMC       {RST_SIM, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
@@ -100,6 +107,17 @@
 //#define PIN_SIM_CLK2     {PIO_PA4, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 //#define PINS_ISO7816            PIN_USART1_TXD, PIN_USART1_SCK, PIN_ISO7816_RSTMC
 #define PINS_ISO7816            PIN_SIM_IO,  PIN_SIM_CLK,  PIN_ISO7816_RSTMC // SIM_PWEN_PIN, PIN_SIM_IO2, PIN_SIM_CLK2
+
+
+#define VCC_PHONE                   {PIO_PA25, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+#define PIN_ISO7816_RST_PHONE       {PIO_PA24, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_PHONE_IO2               {PIO_PA21, PIOA, ID_PIOA, PIO_INPUT, PIO_OPENDRAIN}
+#define PIN_PHONE_IO                {PIO_PA22, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+#define PIN_PHONE_CLK               {PIO_PA23A_SCK1, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}     // External Clock Input on PA28
+#define PIN_PHONE_CLK2               {PIO_PA29, ID_PIOA, PIO_INPUT, PIO_OPENDRAIN}
+#define PINS_ISO7816_PHONE          PIN_PHONE_IO, PIN_PHONE_CLK,  PIN_ISO7816_RST_PHONE
+//, VCC_PHONE
+
 
 //**     SPI interface   **/
 /// SPI MISO pin definition (PA12).

@@ -97,23 +97,24 @@ INCLUDES += -I$(LIBC_PATH)/include
 INCLUDES += $(INCLUDES_USB)
 #INCLUDES += -I$(LIBRARIES)
 
-CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2 
+CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int -Wformat=2 
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Wsign-compare -Waggregate-return
-#CFLAGS += -Wformat 
+CFLAGS += -Wformat 
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
-#CFLAGS += -Wpacked 
+CFLAGS += #-Wpacked 
 CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
 CFLAGS += -std=c11
+CFLAGS += -Wmissing-noreturn
+#CFLAGS += -Wconversion
 # Disable unused variable warnings
 CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
-#CFLAGS += -Wmissing-noreturn
-#CFLAGS += -Wconversion
+CFLAGS += -Wno-suggest-attribute=noreturn
 
 # To reduce application size use only integer printf function.
 #CFLAGS += -Dprintf=iprintf

@@ -93,7 +93,7 @@ static uint32_t ISO7816_GetChar( uint8_t *pCharToReceive )
     /* Wait USART ready for reception */
     while( ((BOARD_ISO7816_BASE_USART->US_CSR & US_CSR_RXRDY) == 0) ) {
         if(timeout++ > 12000 * (BOARD_MCK/1000000)) {
-            TRACE_WARN("TimeOut\n\r");
+            TRACE_WARNING("TimeOut\n\r");
             return( 0 );
         }
     }

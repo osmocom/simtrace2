@@ -108,9 +108,9 @@ static uint32_t ISO7816_GetChar( uint8_t *pCharToReceive )
                                       (1<<10)));
 
     if (status != 0 ) {
-        TRACE_DEBUG("R:0x%X\n\r", status); 
-        TRACE_DEBUG("R:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
-        TRACE_DEBUG("Nb:0x%X\n\r", BOARD_ISO7816_BASE_USART->US_NER );
+        TRACE_DEBUG("R:0x%" PRIX32 "\n\r", status); 
+        TRACE_DEBUG("R:0x%" PRIX32 "\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
+        TRACE_DEBUG("Nb:0x%" PRIX32 "\n\r", BOARD_ISO7816_BASE_USART->US_NER );
         BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA;
     }
 
@@ -147,12 +147,12 @@ static uint32_t ISO7816_SendChar( uint8_t CharToSend )
                                       (1<<10)));
 
     if (status != 0 ) {
-        TRACE_DEBUG("******* status: 0x%X (Overrun: %d, NACK: %d, Timeout: %d, underrun: %d)\n\r", 
+        TRACE_DEBUG("******* status: 0x%" PRIX32 " (Overrun: %" PRIX32 ", NACK: %" PRIX32 ", Timeout: %" PRIX32 ", underrun: %" PRIX32 ")\n\r", 
                     status, ((status & US_CSR_OVRE)>> 5), ((status & US_CSR_NACK) >> 13), 
                     ((status & US_CSR_TIMEOUT) >> 8), ((status & (1 << 10)) >> 10));
         
-        TRACE_DEBUG("E (USART CSR reg):0x%X\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
-        TRACE_DEBUG("Nb (Number of errors):0x%X\n\r", BOARD_ISO7816_BASE_USART->US_NER );
+        TRACE_DEBUG("E (USART CSR reg):0x%" PRIX32 "\n\r", BOARD_ISO7816_BASE_USART->US_CSR);
+        TRACE_DEBUG("Nb (Number of errors):0x%" PRIX32 "\n\r", BOARD_ISO7816_BASE_USART->US_NER );
         BOARD_ISO7816_BASE_USART->US_CR = US_CR_RSTSTA;
     }
 

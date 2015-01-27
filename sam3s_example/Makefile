@@ -110,6 +110,8 @@ CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
 CFLAGS += -std=c11
+# Disable unused variable warnings
+CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
 #CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion
 
@@ -166,7 +168,7 @@ $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$@]
-	@$(CC) $(CFLAGS) -D$(1) -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<  
+	$(CC) $(CFLAGS) -D$(1) -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<  
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]

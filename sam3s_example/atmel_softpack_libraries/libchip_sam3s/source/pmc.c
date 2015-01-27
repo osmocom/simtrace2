@@ -63,7 +63,7 @@ extern void PMC_EnablePeripheral( uint32_t dwId )
     {
         if ( (PMC->PMC_PCSR0 & ((uint32_t)1 << dwId)) == ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %u is already enabled\n\r", dwId ) ;
+            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\n\r", dwId ) ;
         }
         else
         {
@@ -75,7 +75,7 @@ extern void PMC_EnablePeripheral( uint32_t dwId )
         dwId -= 32;
         if ((PMC->PMC_PCSR1 & ((uint32_t)1 << dwId)) == ((uint32_t)1 << dwId))
         {
-            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %u is already enabled\n\r", dwId + 32 ) ;
+            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\n\r", dwId + 32 ) ;
         }
         else
         {
@@ -100,7 +100,7 @@ extern void PMC_DisablePeripheral( uint32_t dwId )
     {
         if ( (PMC->PMC_PCSR0 & ((uint32_t)1 << dwId)) != ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG("PMC_DisablePeripheral: clock of peripheral" " %u is not enabled\n\r", dwId ) ;
+            TRACE_DEBUG("PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\n\r", dwId ) ;
         }
         else
         {
@@ -112,7 +112,7 @@ extern void PMC_DisablePeripheral( uint32_t dwId )
         dwId -= 32 ;
         if ( (PMC->PMC_PCSR1 & ((uint32_t)1 << dwId)) != ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG( "PMC_DisablePeripheral: clock of peripheral" " %u is not enabled\n\r", dwId + 32 ) ;
+            TRACE_DEBUG( "PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\n\r", dwId + 32 ) ;
         }
         else
         {

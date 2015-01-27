@@ -104,7 +104,7 @@ extern void PioInterruptHandler( uint32_t id, Pio *pPio )
     /* Check pending events */
     if ( status != 0 )
     {
-        TRACE_DEBUG( "PIO interrupt on PIO controller #%d\n\r", id ) ;
+        TRACE_DEBUG( "PIO interrupt on PIO controller #%" PRIu32 "\n\r", id ) ;
 
         /* Find triggering source */
         i = 0;
@@ -119,7 +119,7 @@ extern void PioInterruptHandler( uint32_t id, Pio *pPio )
                 /* Source has PIOs whose statuses have changed */
                 if ( (status & _aIntSources[i].pPin->mask) != 0 )
                 {
-                    TRACE_DEBUG( "Interrupt source #%d triggered\n\r", i ) ;
+                    TRACE_DEBUG( "Interrupt source #%" PRIu32 " triggered\n\r", i ) ;
 
                     _aIntSources[i].handler(_aIntSources[i].pPin);
                     status &= ~(_aIntSources[i].pPin->mask);
@@ -231,7 +231,7 @@ extern void PIO_ConfigureIt( const Pin *pPin, void (*handler)( const Pin* ) )
     assert( _dwNumSources < MAX_INTERRUPT_SOURCES ) ;
 
     /* Define new source */
-    TRACE_DEBUG( "PIO_ConfigureIt: Defining new source #%d.\n\r",  _dwNumSources ) ;
+    TRACE_DEBUG( "PIO_ConfigureIt: Defining new source #%" PRIu32 ".\n\r",  _dwNumSources ) ;
 
     pSource = &(_aIntSources[_dwNumSources]) ;
     pSource->pPin = pPin ;

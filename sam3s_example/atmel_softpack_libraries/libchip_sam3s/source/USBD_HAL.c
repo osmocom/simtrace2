@@ -508,7 +508,7 @@ static uint8_t UDP_MblWriteFifo(uint8_t bEndpoint)
     size = pEndpoint->size;
     if (size > pBi->remaining) size = pBi->remaining;
 
-    TRACE_DEBUG_WP("w%d.%d ", pTransfer->outCurr, size);
+    TRACE_DEBUG_WP("w%d.%" PRId32 " ", pTransfer->outCurr, size);
 
     /* Record last accessed buffer */
     pTransfer->outLast = pTransfer->outCurr;
@@ -659,7 +659,7 @@ static void UDP_EndpointHandler(uint8_t bEndpoint)
     USBGenericRequest request;
 
     TRACE_DEBUG_WP("E%d ", bEndpoint);
-    TRACE_DEBUG_WP("st:0x%X ", status);
+    TRACE_DEBUG_WP("st:0x%" PRIX32 " ", status);
 
     // Handle interrupts
     // IN packet sent
@@ -908,7 +908,7 @@ static inline uint8_t UDP_Write(uint8_t    bEndpoint,
 
         return USBD_STATUS_LOCKED;
     }
-    TRACE_DEBUG_WP("Write%d(%d) ", bEndpoint, dLength);
+    TRACE_DEBUG_WP("Write%d(%" PRIu32 ") ", bEndpoint, dLength);
 
 /*    int i;
     for (i = 0; i < dLength; i++) {
@@ -983,7 +983,7 @@ static inline uint8_t UDP_AddWr(uint8_t    bEndpoint,
         }
     }
 
-    TRACE_DEBUG_WP("AddW%d(%d) ", bEndpoint, dLength);
+    TRACE_DEBUG_WP("AddW%d(%" PRIu32 ") ", bEndpoint, dLength);
 
     /* Add buffer to buffer list and update index */
     pTx = &(pMbl->pMbl[pMbl->inCurr]);
@@ -1047,7 +1047,7 @@ static inline uint8_t UDP_Read(uint8_t  bEndpoint,
 
     /* Endpoint enters Receiving state */
     pEndpoint->state = UDP_ENDPOINT_RECEIVING;
-    TRACE_DEBUG_WP("Read%d(%d) ", bEndpoint, dLength);
+    TRACE_DEBUG_WP("Read%d(%" PRIu32 ") ", bEndpoint, dLength);
 
 /*    int i;
     for (i = 0; i < dLength; i++) {
@@ -1094,7 +1094,7 @@ void USBD_IrqHandler(void)
     status = UDP->UDP_ISR;
     status &= UDP->UDP_IMR;
     
-    TRACE_DEBUG("status; 0x%x", status);
+    TRACE_DEBUG("status; 0x%" PRIx32 , status);
 
     if (USBD_GetState() < USBD_STATE_POWERED) {
 

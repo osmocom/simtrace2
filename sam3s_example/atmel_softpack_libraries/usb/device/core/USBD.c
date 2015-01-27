@@ -91,8 +91,7 @@ void USBD_SuspendHandler(void)
         USBD_HAL_Suspend();
 
         /* Invoke the User Suspended callback (Suspend System?) */
-        if (USBDCallbacks_Suspended)
-            USBDCallbacks_Suspended();
+        USBDCallbacks_Suspended();
     }
 }
 
@@ -130,8 +129,7 @@ void USBD_ResetHandler()
     USBD_HAL_ResetEPs(0xFFFFFFFF, USBD_STATUS_RESET, 0);
     USBD_ConfigureEndpoint(0);
     /* Invoke the Reset callback */
-    if (USBDCallbacks_Reset)
-        USBDCallbacks_Reset();
+    USBDCallbacks_Reset();
 }
 
 /**
@@ -148,7 +146,7 @@ void USBD_RequestHandler(uint8_t bEndpoint,
         TRACE_WARNING("EP%d request not supported, default EP only",
                       bEndpoint);
     }
-    else if (USBDCallbacks_RequestReceived) {
+    else {
         USBDCallbacks_RequestReceived(pRequest);
     }
 }
@@ -365,8 +363,7 @@ void USBD_Init(void)
     previousDeviceState = USBD_STATE_POWERED;
 
     /* Upper Layer Initialize */
-    if (USBDCallbacks_Initialized)
-        USBDCallbacks_Initialized();
+    USBDCallbacks_Initialized();
     TRACE_DEBUG("%s\n\r", "..");
 }
 

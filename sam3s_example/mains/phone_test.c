@@ -74,7 +74,7 @@ static const Pin pPwr[] = {
 };
 
 // SuperSIM ATR: 3B 9A 94 00 92 02 75 93 11 00 01 02 02 19
-static const ATR[] = {0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19};
+static const uint8_t ATR[] = {0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19};
 #define NONE        0
 #define SEND_ATR    1
 #define AFTER_ATR   2
@@ -365,7 +365,7 @@ extern int main( void )
         }
         CCID_SmartCardRequest();
 */
-       int j;
+       uint8_t j;
         for( j=0; j < 1000; j++ ) {
         //    ISO7816_GetChar(&buff[j++]);
         }

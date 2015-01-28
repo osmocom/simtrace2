@@ -19,6 +19,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "inttypes.h"
 
 #ifdef __GNUC__ 
 #undef __GNUC__ 

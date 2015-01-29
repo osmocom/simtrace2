@@ -113,9 +113,7 @@ static char rcvdChar = 0;
 void USART1_IrqHandler( void )
 {
     uint32_t stat;
-//    printf(":>");
     char_stat = 0;
-    return;
     // Rcv buf full
 /*    if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {
         TRACE_DEBUG("Rcv buf full");
@@ -124,19 +122,22 @@ void USART1_IrqHandler( void )
 */
     uint32_t csr = USART_PHONE->US_CSR;
 
+//    printf(".\n\r");
+
     if (csr & US_CSR_TXRDY) {
         /* transmit buffer empty, nothing to transmit */
     } 
+    if (csr & US_CSR_RXRDY) {
+        stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
+                        US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
+                        (1<<10)));
 
-    stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
-                    US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
-                    (1<<10)));
-
-    if (stat == 0 ) {
-        /* Get a char */
-        rcvdChar = ((USART_PHONE->US_RHR) & 0xFF);
-    } /* else: error occured */
-    char_stat = stat;
+        if (stat == 0 ) {
+            /* Get a char */
+            rcvdChar = ((USART_PHONE->US_RHR) & 0xFF);
+        } /* else: error occured */
+        char_stat = stat;
+    }
 }
 
 static void ISR_PhoneRST( const Pin *pPin)
@@ -283,14 +284,15 @@ void _ISO7816_Init( const Pin pPinIso7816RstMC )
     /* Configure USART */
     PMC_EnablePeripheral(ID_USART_PHONE);
 
- //   USART_EnableIt( USART1, US_IER_RXRDY|US_IER_TXRDY) ;
+    USART1->US_IDR = 0xffffffff;
+    USART_EnableIt( USART1, US_IER_RXRDY) ;
     /* enable USART1 interrupt */
-    //NVIC_EnableIRQ( USART1_IRQn ) ;
+    NVIC_EnableIRQ( USART1_IRQn ) ;
     
 //    USART_PHONE->US_IER = US_IER_RXRDY | US_IER_OVRE | US_IER_FRAME | US_IER_PARE | US_IER_NACK | US_IER_ITER;
 
     USART_SetTransmitterEnabled(USART_PHONE, 1);
-    //USART_SetReceiverEnabled(USART_PHONE, 1);
+    USART_SetReceiverEnabled(USART_PHONE, 1);
 
 }
 
@@ -377,7 +379,8 @@ extern int main( void )
 //            printf("Nothing to do\n\r");
         }
         if (rcvdChar != 0) {
-            printf("Received _%x_ ", rcvdChar);
+            printf("Received _%x_ \n\r", rcvdChar);
+            rcvdChar = 0;
         }
     }
     return 0 ;

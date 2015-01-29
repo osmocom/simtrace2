@@ -100,43 +100,61 @@ static uint8_t StateUsartGlobal = USART_RCV;
 /** Pin reset master card */
 static Pin st_pinIso7816RstMC;
 
-static uint8_t char_avail = 0;
- 
+static uint32_t char_stat = 0;
+static char rcvdChar = 0;
 
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
+/* 
+ *  char_stat is zero if no error occured. 
+ *  Otherwise it is filled with the content of the status register.
+ */
 void USART1_IrqHandler( void )
 {
     uint32_t stat;
-    
-    stat = USART1->US_CSR;    
-    TRACE_DEBUG("stat: 0x%x, imask: 0x%x", stat, USART1->US_IMR);
-
+//    printf(":>");
+    char_stat = 0;
+    return;
     // Rcv buf full
 /*    if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {
         TRACE_DEBUG("Rcv buf full");
         USART_DisableIt(USART1, US_IDR_RXBUFF);
     }
 */
-    char_avail = 1; 
+    uint32_t csr = USART_PHONE->US_CSR;
+
+    if (csr & US_CSR_TXRDY) {
+        /* transmit buffer empty, nothing to transmit */
+    } 
+
+    stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
+                    US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
+                    (1<<10)));
+
+    if (stat == 0 ) {
+        /* Get a char */
+        rcvdChar = ((USART_PHONE->US_RHR) & 0xFF);
+    } /* else: error occured */
+    char_stat = stat;
 }
 
 static void ISR_PhoneRST( const Pin *pPin)
 {
     TRACE_DEBUG("+++++++++ Interrupt!! ISR:0x%x, CSR:0x%x\n\r", pinPhoneRST.pio->PIO_ISR, USART1->US_CSR);
     phone_state = SEND_ATR;
+    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 static void Config_PhoneRST_IrqHandler()
 {
     PIO_Configure( &pinPhoneRST, 1);
 //    PIO_Configure( &pinPhoneClk, 1);
-    NVIC_EnableIRQ( PIOA_IRQn );
     PIO_ConfigureIt( &pinPhoneRST, ISR_PhoneRST ) ;
 //    PIO_ConfigureIt( &pinPhoneClk, ISR_PhoneRST ) ;
     PIO_EnableIt( &pinPhoneRST ) ;
 //    PIO_EnableIt( &pinPhoneClk ) ;
+    NVIC_EnableIRQ( PIOA_IRQn );
 }
 
 /**
@@ -148,6 +166,8 @@ static uint32_t ISO7816_GetChar( uint8_t *pCharToReceive )
 {
     uint32_t status;
     uint32_t timeout=0;
+
+    TRACE_DEBUG("--");
 
     if( StateUsartGlobal == USART_SEND ) {
         while((USART_PHONE->US_CSR & US_CSR_TXEMPTY) == 0) {}
@@ -263,39 +283,16 @@ void _ISO7816_Init( const Pin pPinIso7816RstMC )
     /* Configure USART */
     PMC_EnablePeripheral(ID_USART_PHONE);
 
+ //   USART_EnableIt( USART1, US_IER_RXRDY|US_IER_TXRDY) ;
     /* enable USART1 interrupt */
-    NVIC_EnableIRQ( USART1_IRQn ) ;
+    //NVIC_EnableIRQ( USART1_IRQn ) ;
     
 //    USART_PHONE->US_IER = US_IER_RXRDY | US_IER_OVRE | US_IER_FRAME | US_IER_PARE | US_IER_NACK | US_IER_ITER;
 
-
     USART_SetTransmitterEnabled(USART_PHONE, 1);
-//    USART_SetReceiverEnabled(USART_PHONE, 1);
+    //USART_SetReceiverEnabled(USART_PHONE, 1);
 
 }
-
-/*------------------------------------------------------------------------------
- *        USB 
- *------------------------------------------------------------------------------*/
-
-// FIXME: Implement those two functions
-//------------------------------------------------------------------------------
-/// Put the CPU in 32kHz, disable PLL, main oscillator
-/// Put voltage regulator in standby mode
-//------------------------------------------------------------------------------
-void LowPowerMode(void)
-{
-// FIXME: Implement low power consumption mode?
-//    PMC_CPUInIdleMode();
-}
-//------------------------------------------------------------------------------
-/// Put voltage regulator in normal mode
-/// Return the CPU to normal speed 48MHz, enable PLL, main oscillator
-//------------------------------------------------------------------------------
-void NormalPowerMode(void)
-{
-}
-
 
 /*------------------------------------------------------------------------------
  *        Main 
@@ -321,24 +318,21 @@ extern int main( void )
 
     /*  Configure ISO7816 driver */
     PIO_Configure( pinsISO7816_PHONE, PIO_LISTSIZE( pinsISO7816_PHONE ) ) ;
-    PIO_Configure(pPwr, PIO_LISTSIZE(pPwr));
+    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
-// FIXME: RST seems to be allways high
-    TRACE_DEBUG("******* Reset State4 (1 if the Pin RstMC is high): 0x%X", ISO7816_StatusReset());
-    //SendReceiveCommands() ;
+    Config_PhoneRST_IrqHandler();
+    
     _ISO7816_Init(pinIso7816RstMC);
 
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
 //    USBD_Connect();
 // FIXME: USB clock? USB PMC?
-    NVIC_EnableIRQ( UDP_IRQn );
-
-    Config_PhoneRST_IrqHandler();
+//    NVIC_EnableIRQ( UDP_IRQn );
 
 
-//    USART_EnableIt( USART_PHONE, US_IER_TXRDY) ;
 
-    //USART_EnableIt( USART1, 0xffff) ;
+ //   USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
+
    // FIXME: At some point USBD_IrqHandler() should get called and set USBD_STATE_CONFIGURED
   /*  while (USBD_GetState() < USBD_STATE_CONFIGURED) {
         int i = 1; 
@@ -351,31 +345,20 @@ extern int main( void )
     printf("***** START \n\r");
     TRACE_DEBUG("%s", "Start while loop\n\r");
     while (1) {
+//        printf(".\n\r");
 
-/*        if( USBState == STATE_SUSPEND ) {
-            TRACE_DEBUG("suspend  !\n\r");
-            LowPowerMode();
-            USBState = STATE_IDLE;
-        }
-        if( USBState == STATE_RESUME ) {
-            // Return in normal MODE
-            TRACE_DEBUG("resume !\n\r");
-            NormalPowerMode();
-            USBState = STATE_IDLE;
-        }
-        CCID_SmartCardRequest();
-*/
-       uint8_t j;
-        for( j=0; j < 1000; j++ ) {
+        uint8_t j;
+/*        for( j=0; j < 100; j++ ) {
         //    ISO7816_GetChar(&buff[j++]);
         }
-        for( j=0; j < 1000; j++ ) {
+*/
+ //       for( j=0; j < 1000; j++ ) {
         /*    printf("0x%x ", buff[j++]);
             if ((j % 40)==0) {
                 printf("\n\r");    
             }
         */
-        }
+//        }
         //ISO7816_GetChar(&buff[0]);
         //printf("buf: 0x%x\n\r", buff[0]);
 
@@ -389,6 +372,12 @@ extern int main( void )
                 TRACE_DEBUG("ret: 0x%x\n\r", ret);
             }
             phone_state = AFTER_ATR;
+            PIO_EnableIt( &pinPhoneRST ) ;
+        } else {
+//            printf("Nothing to do\n\r");
+        }
+        if (rcvdChar != 0) {
+            printf("Received _%x_ ", rcvdChar);
         }
     }
     return 0 ;

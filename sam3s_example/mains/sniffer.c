@@ -54,7 +54,7 @@
 #define STATE_RESUME  5
 
 /* Sniffer configuration */
-
+    
 #ifdef PIN_SC_SW
 #undef PIN_SC_SW
 #endif
@@ -108,8 +108,6 @@ void USART1_IrqHandler( void )
 */
     uint32_t csr = USART_PHONE->US_CSR;
 
-    printf(".\n\r");
-
     if (csr & US_CSR_TXRDY) {
         /* transmit buffer empty, nothing to transmit */
     } 
@@ -129,7 +127,7 @@ void USART1_IrqHandler( void )
 /** Initializes a ISO driver
  *  \param pPinIso7816RstMC Pin ISO 7816 Rst MC
  */
-void _ISO7816_Init( const Pin pPinIso7816RstMC )
+void _ISO7816_Init( )
 {
     TRACE_DEBUG("ISO_Init\n\r");
 
@@ -192,6 +190,8 @@ extern int main( void )
     PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
     PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
     PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
+
+    _ISO7816_Init( );
 
     printf("***** START \n\r");
     while (1) {

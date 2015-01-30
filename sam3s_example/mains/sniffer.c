@@ -45,16 +45,7 @@
 /** Maximum ATR ucSize in bytes.*/
 #define MAX_ATR_SIZE            55
 
-/** USB states */
-/// Use for power management
-#define STATE_IDLE    0
-/// The USB device is in suspend state
-#define STATE_SUSPEND 4
-/// The USB device is in resume state
-#define STATE_RESUME  5
-
 /* Sniffer configuration */
-    
 #ifdef PIN_SC_SW
 #undef PIN_SC_SW
 #endif
@@ -72,9 +63,6 @@
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-/** USB state: suspend, resume, idle */
-unsigned char USBState = STATE_IDLE;
-
 /** ISO7816 pins */
 static const Pin pinsISO7816_sniff[]    = {PINS_SIM_SNIFF_SIM};
 static const Pin pins_bus[]    = {PINS_BUS};

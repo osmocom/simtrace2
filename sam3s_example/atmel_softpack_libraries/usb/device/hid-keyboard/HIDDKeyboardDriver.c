@@ -93,7 +93,7 @@ void HIDDKeyboardDriver_ConfigurationChangedHandler(uint8_t cfgnum)
         if (USBD_HAL_IsHighSpeed() && pDescriptors->pHsConfiguration)
             pDesc = (USBConfigurationDescriptor*)pDescriptors->pHsConfiguration;
         else
-            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration;
+            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration[0];
         HIDDKeyboard_ConfigureFunction((USBGenericDescriptor*)pDesc,
                                        pDesc->wTotalLength);
     }

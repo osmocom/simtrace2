@@ -80,8 +80,8 @@ typedef struct _USBDDriverDescriptors {
 
     /** Pointer to the full-speed device descriptor */
     const USBDeviceDescriptor *pFsDevice;
-    /** Pointer to the full-speed configuration descriptor */
-    const USBConfigurationDescriptor *pFsConfiguration;
+    /** Pointer to the full-speed configuration descriptor array */
+    const USBConfigurationDescriptor **pFsConfiguration;
     /** Pointer to the full-speed qualifier descriptor */
     const USBDeviceQualifierDescriptor *pFsQualifier;
     /** Pointer to the full-speed other speed configuration descriptor */

@@ -301,7 +301,7 @@ void AUDDSpeakerPhoneDriver_ConfigurationChangeHandler(uint8_t cfgnum)
         if (USBD_HAL_IsHighSpeed() && pDescriptors->pHsConfiguration)
             pDesc = (USBConfigurationDescriptor*)pDescriptors->pHsConfiguration;
         else
-            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration;
+            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration[0];
 
         USBGenericDescriptor_Parse((USBGenericDescriptor*)pDesc, pDesc->wTotalLength,
                     (USBDescriptorParseFunction)AUDDSpeakerPhone_Parse, pAudd);

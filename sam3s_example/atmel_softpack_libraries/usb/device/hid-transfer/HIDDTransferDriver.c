@@ -183,7 +183,7 @@ static uint8_t HIDDTransferDriver_GetDescriptor(uint8_t type,
             else {
 
                 pConfiguration =
-                   pHidd->pUsbd->pDescriptors->pFsConfiguration;
+                   pHidd->pUsbd->pDescriptors->pFsConfiguration[0];
             }
 
             /* Parse the device configuration to get the HID descriptor */
@@ -280,7 +280,7 @@ void HIDDTransferDriver_ConfigurationChangedHandler(uint8_t cfgnum)
         if (USBD_HAL_IsHighSpeed() && pDescriptors->pHsConfiguration)
             pDesc = (USBConfigurationDescriptor*)pDescriptors->pHsConfiguration;
         else
-            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration;
+            pDesc = (USBConfigurationDescriptor*)pDescriptors->pFsConfiguration[0];
         HIDDFunction_ParseInterface(pHidd,
                                     (USBGenericDescriptor*)pDesc,
                                     pDesc->wTotalLength);

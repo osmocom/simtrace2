@@ -32,7 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "board.h"
-#include "CDCDSerialDriver.h"
 
 /*----------------------------------------------------------------------------
  *      Internal variables
@@ -57,7 +56,7 @@ const USBDeviceDescriptor deviceDescriptor = {
     0, /* No string descriptor for manufacturer */
     1, /* Index of product string descriptor is #1 */
     0, /* No string descriptor for serial number */
-    1 /* Device has 1 possible configuration */
+    2 /* Device has 2 possible configurations */
 };
 
 typedef struct _SIMTraceDriverConfigurationDescriptors {
@@ -73,16 +72,14 @@ typedef struct _SIMTraceDriverConfigurationDescriptors {
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptor;
 
-/** Standard USB configuration descriptor for the CDC serial driver */
-const SIMTraceDriverConfigurationDescriptor configurationDescriptorsFS = {
-
+const SIMTraceDriverConfigurationDescriptor configurationDescriptorsFS1 = {
     /* Standard configuration descriptor */
     {
         sizeof(USBConfigurationDescriptor),
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptor),
         2, /* There are two interfaces in this configuration */
-        2, /* This is configuration #1 */
+        1, /* This is configuration #1 */
         2, /* Second string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -93,7 +90,7 @@ const SIMTraceDriverConfigurationDescriptor configurationDescriptorsFS = {
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        2, /* This interface uses 1 endpoint */
+        2, /* This interface uses 2 endpoints */
         //CDCCommunicationInterfaceDescriptor_CLASS,
         0xff,
 //        CDCCommunicationInterfaceDescriptor_ABSTRACTCONTROLMODEL,
@@ -128,6 +125,62 @@ const SIMTraceDriverConfigurationDescriptor configurationDescriptorsFS = {
     }
 };
 
+const SIMTraceDriverConfigurationDescriptor configurationDescriptorsFS2 = {
+    /** Second configuration **/
+    {
+        sizeof(USBConfigurationDescriptor),
+        USBGenericDescriptor_CONFIGURATION,
+        sizeof(SIMTraceDriverConfigurationDescriptor),
+        2, /* There are two interfaces in this configuration */
+        2, /* This is configuration #2 */
+        3, /* Third string descriptor for this configuration */
+        USBD_BMATTRIBUTES,
+        USBConfigurationDescriptor_POWER(100)
+    },
+    /* Communication class interface standard descriptor */
+    {
+        sizeof(USBInterfaceDescriptor),
+        USBGenericDescriptor_INTERFACE,
+        0, /* This is interface #0 */
+        0, /* This is alternate setting #0 for this interface */
+        2, /* This interface uses 2 endpoints */
+        //CDCCommunicationInterfaceDescriptor_CLASS,
+        0xff,
+//        CDCCommunicationInterfaceDescriptor_ABSTRACTCONTROLMODEL,
+        0,
+//        CDCCommunicationInterfaceDescriptor_NOPROTOCOL,
+        0,
+        3  /* Third in string descriptor for this interface */
+    },
+    /* Bulk-OUT endpoint standard descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
+                                      DATAOUT),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Bulk-IN endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
+                                      DATAIN),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    }
+};
+
+const SIMTraceDriverConfigurationDescriptor *configurationDescriptorsFSarr[] = {
+    &configurationDescriptorsFS1,
+    &configurationDescriptorsFS2
+};
+
 const unsigned char someString[] = {
     USBStringDescriptor_LENGTH(4),
     USBGenericDescriptor_STRING,
@@ -156,19 +209,41 @@ const unsigned char productStringDescriptor[] = {
     USBStringDescriptor_UNICODE('~')
 };
 
+const unsigned char productStringDescriptor2[] = {
+
+    USBStringDescriptor_LENGTH(13),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_UNICODE('S'),
+    USBStringDescriptor_UNICODE('I'),
+    USBStringDescriptor_UNICODE('M'),
+    USBStringDescriptor_UNICODE('T'),
+    USBStringDescriptor_UNICODE('R'),
+    USBStringDescriptor_UNICODE('A'),
+    USBStringDescriptor_UNICODE('C'),
+    USBStringDescriptor_UNICODE('E'),
+    USBStringDescriptor_UNICODE('~'),
+    USBStringDescriptor_UNICODE('2'),
+    USBStringDescriptor_UNICODE('~'),
+    USBStringDescriptor_UNICODE('~'),
+    USBStringDescriptor_UNICODE('~')
+};
+
 /** List of string descriptors used by the device */
 const unsigned char *stringDescriptors[] = {
 /* FIXME: Is it true that I can't use the string desc #0, 
- * because 0 also stands for "no string desc"? */
+ * because 0 also stands for "no string desc"? 
+ * on the other hand, dmesg output: 
+ * "string descriptor 0 malformed (err = -61), defaulting to 0x0409" */
     0,
     productStringDescriptor,
     someString,
+    productStringDescriptor2,
 };
 
 const USBDDriverDescriptors driverDescriptors = {
 
     &deviceDescriptor,
-    (USBConfigurationDescriptor *) &(configurationDescriptorsFS),   /* full-speed configuration descriptor */
+    (USBConfigurationDescriptor **) &(configurationDescriptorsFSarr),   /* full-speed configuration descriptor */
     0, /* No full-speed device qualifier descriptor */
     0, /* No full-speed other speed configuration */
     0, /* No high-speed device descriptor */
@@ -176,7 +251,7 @@ const USBDDriverDescriptors driverDescriptors = {
     0, /* No high-speed device qualifier descriptor */
     0, /* No high-speed other speed configuration descriptor */
     stringDescriptors,
-    3 /* 3 string descriptors in list */
+    4 /* 4 string descriptors in list */
 };
 
 

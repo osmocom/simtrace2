@@ -92,7 +92,7 @@ static void SetConfiguration(USBDDriver *pDriver, uint8_t cfgnum)
     }
     else {
 
-        pConfiguration = pDriver->pDescriptors->pFsConfiguration;
+        pConfiguration = pDriver->pDescriptors->pFsConfiguration[0];
     }
 
     /* Set & save the desired configuration */
@@ -154,7 +154,7 @@ static void GetDeviceStatus(const USBDDriver *pDriver)
     }
     else {
 
-        pConfiguration = pDriver->pDescriptors->pFsConfiguration;
+        pConfiguration = pDriver->pDescriptors->pFsConfiguration[0];
     }
 
     /* Check current configuration for power mode (if device is configured) */
@@ -242,7 +242,7 @@ static void GetDescriptor(
 
         TRACE_DEBUG("%s", "FS ");
         pDevice = pDriver->pDescriptors->pFsDevice;
-        pConfiguration = pDriver->pDescriptors->pFsConfiguration;
+        pConfiguration = pDriver->pDescriptors->pFsConfiguration[indexRDesc];
         pQualifier = pDriver->pDescriptors->pFsQualifier;
         pOtherSpeed = pDriver->pDescriptors->pFsOtherSpeed;
     }
@@ -477,7 +477,7 @@ USBConfigurationDescriptor *USBDDriver_GetCfgDescriptors(
     if (USBD_HAL_IsHighSpeed() && pDescList->pHsConfiguration)
         pCfg = (USBConfigurationDescriptor *)pDescList->pHsConfiguration;
     else
-        pCfg = (USBConfigurationDescriptor *)pDescList->pFsConfiguration;
+        pCfg = (USBConfigurationDescriptor *)pDescList->pFsConfiguration[0];
 
     return pCfg;
 }

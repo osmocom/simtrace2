@@ -44,33 +44,17 @@
 
 /** Maximum ATR ucSize in bytes.*/
 #define MAX_ATR_SIZE            55
-
-/* Sniffer configuration */
-#ifdef PIN_SC_SW
-#undef PIN_SC_SW
-#endif
-#define PIN_SC_SW               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-
-#ifdef PIN_IO_SW
-#undef PIN_IO_SW
-#endif
-#define PIN_IO_SW               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-
-#define PINS_BUS                PIN_SC_SW, PIN_IO_SW
-
-#define PINS_SIM_SNIFF_SIM      PIN_PHONE_IO,  PIN_PHONE_CLK
-
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
 /** ISO7816 pins */
 static const Pin pinsISO7816_sniff[]    = {PINS_SIM_SNIFF_SIM};
-static const Pin pins_bus[]    = {PINS_BUS};
+static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
 static const Pin pPwr[] = {
     /* Enable power converter 4.5-6V to 3.3V; low: off */
     {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT},
     
-    /* Enable second power converter: VCC_PHONE to VCC_SIM; high: off */
+    /* Enable second power converter: VCC_PHONE to VCC_SIM; high: on */
     {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 

@@ -14,12 +14,17 @@
 #include "cciddriver.h"
 #include "USBD.h"
 
+#include "USBD_Config.h"
+#include "USBDDriver.h"
+
 /**     Highlevel   */
 #include "trace.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
 #include "inttypes.h"
+
+#define MIN(a, b)       ((a < b) ? a : b)
 
 #ifdef __GNUC__ 
 #undef __GNUC__ 
@@ -47,15 +52,24 @@
 #define LED_NUM_RED     0
 #define LED_NUM_GREEN   1
 
-/** Phone */
+/** Phone (SIM card emulator)/CCID Reader/MITM configuration    **/
+/*  Normally the communication lines between phone and SIM card are disconnected    */
+// Disconnect SIM card I/O, VPP line from the phone lines
+// FIXME: Per default pins are input, therefore high-impedance, therefore they don not activate the bus switch, right?
+#define PIN_SC_SW_DEFAULT               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+// Disconnect SIM card RST, CLK line from the phone lines
+#define PIN_IO_SW_DEFAULT               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PINS_BUS
+
+/** Sniffer configuration **/
 // Connect VPP, CLK and RST lines from smartcard to the phone
-//#define PIN_SC_SW               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-// Temporary fix: do not connect
-#define PIN_SC_SW               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
-// Connect SIM card I/O lines to the phone
-//#define PIN_IO_SW               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-// FIXME: Temporary fix: do not connect
-#define PIN_IO_SW               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_SC_SW_SNIFF        {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+#define PIN_IO_SW_SNIFF        {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+#define PINS_BUS_SNIFF          PIN_SC_SW_SNIFF, PIN_IO_SW_SNIFF
+
+#define PINS_SIM_SNIFF_SIM      PIN_PHONE_IO,  PIN_PHONE_CLK
+
+
 
 /** USART0 pin RX */
 #define PIN_USART0_RXD    {PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
@@ -134,7 +148,8 @@
 #define PIN_SPI_NPCS0  {1 << 11, PIOA, PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 
 //**     USB **/
-/// USB pull-up control pin definition (PA16).
+// USB pull-up control pin definition (PA16).
+// Default: 1 (USB Pullup deactivated) 
 #define PIN_USB_PULLUP  {1 << 16, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 
 // Board has UDP controller

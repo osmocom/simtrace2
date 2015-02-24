@@ -94,7 +94,7 @@ const unsigned char MITMConfigStringDescriptor[] = {
 };
 
 enum strDescNum {
-    NONE = 1, PRODUCT_STRING, SNIFFER_CONF_STR, CCIDRDR_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
+    NONE = 1, PRODUCT_STRING, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
 };
 
 /** List of string descriptors used by the device */
@@ -111,6 +111,9 @@ const unsigned char *stringDescriptors[] = {
     MITMConfigStringDescriptor
 };
 
+/* Endpoint numbers */
+#define DATAOUT     1
+#define DATAIN      2
 
 /*------------------------------------------------------------------------------
  *       USB Device descriptors 
@@ -124,7 +127,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
     USBEndpointDescriptor sniffer_dataOut;
     USBEndpointDescriptor sniffer_dataIn;
 
-} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptor;
+} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorSniffer;
 
 const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffer = {
     /* Standard configuration descriptor */
@@ -151,7 +154,6 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         SNIFFER_CONF_STR  /* Third in string descriptor for this interface */
     },
     /* Bulk-OUT endpoint standard descriptor */
-#define DATAOUT     1
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
@@ -163,7 +165,6 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         0 /* Must be 0 for full-speed bulk endpoints */
     },
     /* Bulk-IN endpoint descriptor */
-#define DATAIN      2
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
@@ -177,6 +178,77 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
 };
 
 /* FIXME: CCID descriptor: External C file */
+typedef struct {
+
+    USBConfigurationDescriptor configuration;
+    USBInterfaceDescriptor     interface;
+    CCIDDescriptor             ccid;
+    USBEndpointDescriptor      bulkOut;
+    USBEndpointDescriptor      bulkIn;
+    USBEndpointDescriptor      interruptIn;
+} __attribute__ ((packed)) CCIDDriverConfigurationDescriptorsCCID;
+
+const CCIDDriverConfigurationDescriptorsCCID configurationDescriptorCCID = { 0 };
+
+/* SIM card emulator */
+typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
+
+    /** Standard configuration descriptor. */
+    USBConfigurationDescriptor configuration;
+    USBInterfaceDescriptor sniffer;
+    USBEndpointDescriptor sniffer_dataOut;
+    USBEndpointDescriptor sniffer_dataIn;
+
+} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorPhone;
+
+const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = {
+    /* Standard configuration descriptor */
+    {
+        sizeof(USBConfigurationDescriptor),
+        USBGenericDescriptor_CONFIGURATION,
+        sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
+        1, /* There is one interface in this configuration */
+        1, /* This is configuration #1 */
+        PHONE_CONF_STR, /* string descriptor for this configuration */
+        USBD_BMATTRIBUTES,
+        USBConfigurationDescriptor_POWER(100)
+    },
+    /* Communication class interface standard descriptor */
+    {
+        sizeof(USBInterfaceDescriptor),
+        USBGenericDescriptor_INTERFACE,
+        0, /* This is interface #0 */
+        0, /* This is alternate setting #0 for this interface */
+        2, /* This interface uses 2 endpoints */
+        0xff, /* Descriptor Class: Vendor specific */
+        0, /* No subclass */
+        0, /* No l */
+        PHONE_CONF_STR  /* Third in string descriptor for this interface */
+    },
+    /* Bulk-OUT endpoint standard descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
+                                      DATAOUT),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Bulk-IN endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
+                                      DATAIN),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    }
+};
+
 
 typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 
@@ -189,7 +261,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
     USBEndpointDescriptor phone_dataOut;
     USBEndpointDescriptor phone_dataIn;
 
-} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptor;
+} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorMITM;
 
 const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorsMITM = {
     /* Standard configuration descriptor */
@@ -219,7 +291,6 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorsMITM = {
         MITM_CONF_STR  /* string descriptor for this interface */
     },
     /* Bulk-OUT endpoint standard descriptor */
-#define DATAOUT     1
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
@@ -231,7 +302,40 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorsMITM = {
         0 /* Must be 0 for full-speed bulk endpoints */
     },
     /* Bulk-IN endpoint descriptor */
-#define DATAIN      2
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
+                                      DATAIN),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    }
+    /* Communication class interface standard descriptor */
+    {
+        sizeof(USBInterfaceDescriptor),
+        USBGenericDescriptor_INTERFACE,
+        1, /* This is interface #1 */
+        0, /* This is alternate setting #0 for this interface */
+        2, /* This interface uses 2 endpoints */
+        0xff,
+        0,
+        0, 
+        0, /* FIXME: string descriptor for this interface */
+    },
+    /* Bulk-OUT endpoint standard descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
+                                      DATAOUT),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Bulk-IN endpoint descriptor */
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
@@ -267,10 +371,18 @@ const USBDeviceDescriptor deviceDescriptor = {
     4 /* Device has 4 possible configurations */
 };
 
+const SIMTraceDriverConfigurationDescriptor *configurationDescriptorsArr[] = {
+    &configurationDescriptorSniffer,
+    &configurationDescriptorCCID,
+    &configurationDescriptorPhone,
+    &configurationDescriptorMITM,
+};
+
+
 /* AT91SAM3S does only support full speed, but not high speed USB */
 const USBDDriverDescriptors driverDescriptors = {
     &deviceDescriptor,
-    (USBConfigurationDescriptor **) &(configurationDescriptorSniffer),   /* first full-speed configuration descriptor */
+    (USBConfigurationDescriptor **) &(configurationDescriptorsArr),   /* first full-speed configuration descriptor */
     0, /* No full-speed device qualifier descriptor */
     0, /* No full-speed other speed configuration */
     0, /* No high-speed device descriptor */

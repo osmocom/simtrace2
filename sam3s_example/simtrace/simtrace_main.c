@@ -19,7 +19,9 @@
  *         Internal variables
  *------------------------------------------------------------------------------*/
 uint8_t simtrace_config = CONF_SNIFFER;
-uint8_t conf_changed = 0;
+uint8_t conf_changed = 1;
+
+uint8_t rcvdChar = 0;
 
 /*------------------------------------------------------------------------------
  *        Main 
@@ -42,12 +44,28 @@ extern int main( void )
     in case the config changes? */
         switch(simtrace_config) {
             case CONF_SNIFFER:
+                if (conf_changed) {
+                    Sniffer_Init();
+                    conf_changed = 0;
+                } else {
+                    if (rcvdChar != 0) {
+                        TRACE_DEBUG("Rcvd char _%x_ \n\r", rcvdChar);
+                        rcvdChar = 0;
+                    }
+                }
                 break;
             case CONF_CCID_READER:
+                if (conf_changed) {
+                    // Init
+                    conf_changed = 0;
+                } else {
+                    // Receive char
+                }
                 break;
             case CONF_SIMCARD_EMUL:
                 if (conf_changed) {
                     Phone_Master_Init();
+                    conf_changed = 0;
                     /*  Configure ISO7816 driver */
                     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
                 } else {
@@ -57,6 +75,12 @@ extern int main( void )
                 }
                 break;
             case CONF_MITM:
+                if (conf_changed) {
+                    // Init
+                    conf_changed = 0;
+                } else {
+                    // Receive char
+                }
                 break;
             default:
                 break;

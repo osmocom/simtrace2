@@ -48,7 +48,9 @@ MEMORIES = flash
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 1
+TRACE_LEVEL = 5
+#FIXME: Remove this variable
+NOAUTOCALLBACK=no
 
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -O0
@@ -91,13 +93,13 @@ NM = $(CROSS_COMPILE)nm
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 INCLUDES_USB += -I$(AT91LIB_CCIDDEV_PATH)
 
-INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude
+INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace
 INCLUDES += -Icmsis
 INCLUDES += -I$(LIBC_PATH)/include
 INCLUDES += $(INCLUDES_USB)
 #INCLUDES += -I$(LIBRARIES)
 
-CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int -Wformat=2 
+CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2 
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
@@ -135,7 +137,7 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 # Directories where source files can be found
 
 USB_PATHS = $(AT91LIB_CCIDDEV_PATH) $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
-VPATH += src_board src_sam3s cmsis $(USB_PATHS)
+VPATH += src_board src_sam3s cmsis $(USB_PATHS) simtrace
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o

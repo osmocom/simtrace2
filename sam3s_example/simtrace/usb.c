@@ -129,7 +129,7 @@ const unsigned char MITMConfigStringDescriptor[] = {
 };
 
 enum strDescNum {
-    NONE = 1, PRODUCT_STRING, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
+    PRODUCT_STRING = 1, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
 };
 
 /** List of string descriptors used by the device */
@@ -171,7 +171,7 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
         1, /* There is one interface in this configuration */
-        0, /* This is configuration #0 */
+        1, /* This is configuration #1 */
         SNIFFER_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -305,7 +305,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorMITM),
         2, /* There are two interfaces in this configuration */
-        4, /* This is configuration #4 */
+        3, /* This is configuration #3 */
         MITM_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -403,12 +403,12 @@ const USBDeviceDescriptor deviceDescriptor = {
     0, /* No string descriptor for manufacturer */
     PRODUCT_STRING, /* Index of product string descriptor */
     0, /* No string descriptor for serial number */
-    4 /* Device has 4 possible configurations */
+    3 /* Device has 4 possible configurations */
 };
 
 const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
     &configurationDescriptorSniffer,
-    &configurationDescriptorCCID,
+    //&configurationDescriptorCCID,
     &configurationDescriptorPhone,
     &configurationDescriptorMITM,
 };
@@ -425,7 +425,7 @@ const USBDDriverDescriptors driverDescriptors = {
     0, /* No high-speed device qualifier descriptor */
     0, /* No high-speed other speed configuration descriptor */
     stringDescriptors,
-    STRING_DESC_CNT-1 /* cnt string descriptors in list */
+    STRING_DESC_CNT /* cnt string descriptors in list */
 };
 
 /*----------------------------------------------------------------------------

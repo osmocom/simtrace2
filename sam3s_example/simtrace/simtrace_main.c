@@ -4,11 +4,11 @@
  *------------------------------------------------------------------------------*/
 
 #include "board.h"
-#include "simtrace.h"
 
 /*------------------------------------------------------------------------------
  *         Internal definitions
  *------------------------------------------------------------------------------*/
+#define CONF_NONE           0
 #define CONF_SNIFFER        1
 #define CONF_CCID_READER    2
 #define CONF_SIMCARD_EMUL   3
@@ -18,10 +18,11 @@
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-uint8_t simtrace_config = CONF_SNIFFER;
+uint8_t simtrace_config = CONF_NONE;
 uint8_t conf_changed = 1;
 
 uint8_t rcvdChar = 0;
+uint32_t char_stat = 0;
 
 /*------------------------------------------------------------------------------
  *        Main 
@@ -29,6 +30,8 @@ uint8_t rcvdChar = 0;
 
 extern int main( void )
 {
+    uint8_t isUsbConnected = 0;
+
     LED_Configure(LED_NUM_GREEN);
     LED_Set(LED_NUM_GREEN);
 
@@ -37,9 +40,32 @@ extern int main( void )
 
     PIO_InitializeInterrupts(0);
 
+    SIMtrace_USB_Initialize();
+
+    printf("%s", "USB init\n\r");
+
+    while(USBD_GetState() < USBD_STATE_CONFIGURED);
 
     TRACE_DEBUG("%s", "Start\n\r");
+    printf("%s", "Start\n\r");
     while(1) {
+
+            /* Device is not configured */
+        if (USBD_GetState() < USBD_STATE_CONFIGURED) {
+
+            if (isUsbConnected) {
+                isUsbConnected = 0;
+//                TC_Stop(TC0, 0);
+            }
+        }
+        else if (isUsbConnected == 0) {
+            printf("USB is now configured\n\r");
+
+            isUsbConnected = 1;
+//            TC_Start(TC0, 0);
+        }    
+    
+
 /*  FIXME: Or should we move the while loop into every case, and break out
     in case the config changes? */
         switch(simtrace_config) {

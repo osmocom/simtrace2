@@ -1,3 +1,38 @@
+/* ----------------------------------------------------------------------------
+ *         ATMEL Microcontroller Software Support
+ * ----------------------------------------------------------------------------
+ * Copyright (c) 2009, Atmel Corporation
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the disclaimer below.
+ *
+ * Atmel's name may not be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * DISCLAIMER: THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
+ * DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ----------------------------------------------------------------------------
+ */
+
+/*----------------------------------------------------------------------------
+ *         Headers
+ *----------------------------------------------------------------------------*/
+
+#include "board.h"
+
 /*------------------------------------------------------------------------------
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
@@ -106,7 +141,7 @@ const unsigned char *stringDescriptors[] = {
     0,
     productStringDescriptor,
     snifferConfigStringDescriptor,
-    CCIDreaderConfigStringDescriptor,
+    CCIDConfigStringDescriptor,
     phoneConfigStringDescriptor,
     MITMConfigStringDescriptor
 };
@@ -136,7 +171,7 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
         1, /* There is one interface in this configuration */
-        1, /* This is configuration #1 */
+        0, /* This is configuration #0 */
         SNIFFER_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -208,7 +243,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
         1, /* There is one interface in this configuration */
-        1, /* This is configuration #1 */
+        2, /* This is configuration #2 */
         PHONE_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -263,12 +298,12 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorMITM;
 
-const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorsMITM = {
+const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
     /* Standard configuration descriptor */
     {
         sizeof(USBConfigurationDescriptor),
         USBGenericDescriptor_CONFIGURATION,
-        sizeof(SIMTraceDriverConfigurationDescriptor),
+        sizeof(SIMTraceDriverConfigurationDescriptorMITM),
         2, /* There are two interfaces in this configuration */
         4, /* This is configuration #4 */
         MITM_CONF_STR, /* string descriptor for this configuration */
@@ -311,7 +346,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorsMITM = {
         MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
-    }
+    },
     /* Communication class interface standard descriptor */
     {
         sizeof(USBInterfaceDescriptor),
@@ -371,7 +406,7 @@ const USBDeviceDescriptor deviceDescriptor = {
     4 /* Device has 4 possible configurations */
 };
 
-const SIMTraceDriverConfigurationDescriptor *configurationDescriptorsArr[] = {
+const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
     &configurationDescriptorSniffer,
     &configurationDescriptorCCID,
     &configurationDescriptorPhone,
@@ -393,3 +428,45 @@ const USBDDriverDescriptors driverDescriptors = {
     STRING_DESC_CNT-1 /* cnt string descriptors in list */
 };
 
+/*----------------------------------------------------------------------------
+ *        Functions 
+ *----------------------------------------------------------------------------*/
+
+/**
+ * \brief Configure 48MHz Clock for USB
+ */
+static void _ConfigureUsbClock(void)
+{
+    /* Enable PLLB for USB */
+// FIXME: are these the dividers I actually need?
+// FIXME: I could just use PLLA, since it has a frequ of 48Mhz anyways?
+    PMC->CKGR_PLLBR = CKGR_PLLBR_DIVB(5)
+                    | CKGR_PLLBR_MULB(0xc)  /* MULT+1=0xd*/
+                    | CKGR_PLLBR_PLLBCOUNT_Msk;
+    while((PMC->PMC_SR & PMC_SR_LOCKB) == 0);
+    /* USB Clock uses PLLB */
+    PMC->PMC_USB = PMC_USB_USBDIV(0)       /* /1 (no divider)  */
+                 | PMC_USB_USBS;           /* PLLB */
+}
+
+
+void SIMtrace_USB_Initialize( void )
+{
+    _ConfigureUsbClock();
+    // Get std USB driver
+    USBDDriver *pUsbd = USBD_GetDriver();
+
+    TRACE_DEBUG(".");
+
+    // Initialize standard USB driver
+    USBDDriver_Initialize(pUsbd,
+                          &driverDescriptors,
+// FIXME: 2 interface settings supported in MITM mode
+                          0); // Multiple interface settings not supported
+    
+    USBD_Init();
+    
+    USBD_Connect();
+
+    NVIC_EnableIRQ( UDP_IRQn );
+}

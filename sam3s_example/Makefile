@@ -144,8 +144,9 @@ C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
 C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o 
 C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
+C_SIMTRACE = simtrace_iso7816.o phone.o sniffer.o usb.o
 C_APPLEVEL = main.o
-C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID)
+C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID) $(C_SIMTRACE)
 
 # Append OBJ and BIN directories to output filename
 OUTPUT := $(BIN)/$(OUTPUT)

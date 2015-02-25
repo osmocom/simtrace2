@@ -1,6 +1,10 @@
 #ifndef SIMTRACE_H
 #define SIMTRACE_H
 
+enum confNum {
+    CFG_NUM_SNIFF = 1, CFG_NUM_PHONE, CFG_NUM_MITM, NUM_CONF
+};
+
 // FIXME: static function definitions
 extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );
 extern uint32_t _ISO7816_SendChar( uint8_t CharToSend );

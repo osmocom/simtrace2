@@ -6,19 +6,9 @@
 #include "board.h"
 
 /*------------------------------------------------------------------------------
- *         Internal definitions
- *------------------------------------------------------------------------------*/
-#define CONF_NONE           0
-#define CONF_SNIFFER        1
-#define CONF_CCID_READER    2
-#define CONF_SIMCARD_EMUL   3
-#define CONF_MITM           4
-
-
-/*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-uint8_t simtrace_config = CONF_NONE;
+uint8_t simtrace_config = 0;
 uint8_t conf_changed = 1;
 
 uint8_t rcvdChar = 0;
@@ -69,9 +59,10 @@ extern int main( void )
 /*  FIXME: Or should we move the while loop into every case, and break out
     in case the config changes? */
         switch(simtrace_config) {
-            case CONF_SNIFFER:
+            case CFG_NUM_SNIFF:
                 if (conf_changed) {
                     Sniffer_Init();
+                    printf("****+ Changed to CFG_NUM_SNIFF\n\r");
                     conf_changed = 0;
                 } else {
                     if (rcvdChar != 0) {
@@ -80,17 +71,18 @@ extern int main( void )
                     }
                 }
                 break;
-            case CONF_CCID_READER:
+/*            case CONF_CCID_READER:
                 if (conf_changed) {
                     // Init
                     conf_changed = 0;
                 } else {
                     // Receive char
                 }
-                break;
-            case CONF_SIMCARD_EMUL:
+                break;  */
+            case CFG_NUM_PHONE:
                 if (conf_changed) {
                     Phone_Master_Init();
+                    printf("****+ Changed to CFG_NUM_PHONE\n\r");
                     conf_changed = 0;
                     /*  Configure ISO7816 driver */
                     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
@@ -100,8 +92,9 @@ extern int main( void )
                     // ISO7816_SendChar(char_to_send);
                 }
                 break;
-            case CONF_MITM:
+            case CFG_NUM_MITM:
                 if (conf_changed) {
+                    printf("****+ Changed to CFG_NUM_MITM\n\r");
                     // Init
                     conf_changed = 0;
                 } else {

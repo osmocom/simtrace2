@@ -171,7 +171,7 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
         1, /* There is one interface in this configuration */
-        1, /* This is configuration #1 */
+        CFG_NUM_SNIFF, /* configuration number */
         SNIFFER_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -243,7 +243,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
         1, /* There is one interface in this configuration */
-        2, /* This is configuration #2 */
+        CFG_NUM_PHONE, /* configuration number */
         PHONE_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
@@ -305,7 +305,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorMITM),
         2, /* There are two interfaces in this configuration */
-        3, /* This is configuration #3 */
+        CFG_NUM_MITM, /* configuration number */
         MITM_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)

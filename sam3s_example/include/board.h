@@ -24,6 +24,8 @@
 #include "string.h"
 #include "inttypes.h"
 
+#include "simtrace.h"
+
 #define MIN(a, b)       ((a < b) ? a : b)
 
 #ifdef __GNUC__ 

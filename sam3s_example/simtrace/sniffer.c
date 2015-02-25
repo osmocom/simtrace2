@@ -62,7 +62,7 @@ extern uint32_t char_stat;
 extern uint8_t rcvdChar;
 
 /*-----------------------------------------------------------------------------
- *          Interrupt routines
+ *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
 void Sniffer_Init( void ) 

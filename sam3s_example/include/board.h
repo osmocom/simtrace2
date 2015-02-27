@@ -61,7 +61,7 @@
 #define PIN_SC_SW_DEFAULT               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 // Disconnect SIM card RST, CLK line from the phone lines
 #define PIN_IO_SW_DEFAULT               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
-#define PINS_BUS
+#define PINS_BUS_DEFAULT                PIN_SC_SW_DEFAULT, PIN_IO_SW_DEFAULT
 
 /** Sniffer configuration **/
 // Connect VPP, CLK and RST lines from smartcard to the phone

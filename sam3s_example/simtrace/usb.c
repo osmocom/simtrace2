@@ -37,6 +37,14 @@
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
 
+
+static const unsigned char langDesc[] = {
+
+    USBStringDescriptor_LENGTH(1),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_ENGLISH_US
+};
+
 const unsigned char productStringDescriptor[] = {
 
     USBStringDescriptor_LENGTH(8),
@@ -138,7 +146,7 @@ const unsigned char *stringDescriptors[] = {
  * because 0 also stands for "no string desc"? 
  * on the other hand, dmesg output: 
  * "string descriptor 0 malformed (err = -61), defaulting to 0x0409" */
-    0,
+    langDesc,
     productStringDescriptor,
     snifferConfigStringDescriptor,
     CCIDConfigStringDescriptor,

@@ -8,6 +8,21 @@
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
+typedef struct {
+    void (* init) ( void );
+    void (* run) ( void );
+} conf_func;
+
+conf_func config_func_ptrs[] = {
+    {Sniffer_Init, Sniffer_run},  /*  CFG_NUM_SNIFF */
+    {Phone_Master_Init, Phone_run},  /* CFG_NUM_PHONE */
+    {MITM_init, MITM_run},  /* CFG_NUM_MITM */
+};
+
+
+/*------------------------------------------------------------------------------
+ *         Internal variables
+ *------------------------------------------------------------------------------*/
 uint8_t simtrace_config = 0;
 uint8_t conf_changed = 1;
 
@@ -55,54 +70,13 @@ extern int main( void )
 //            TC_Start(TC0, 0);
         }    
     
-
 /*  FIXME: Or should we move the while loop into every case, and break out
     in case the config changes? */
-        switch(simtrace_config) {
-            case CFG_NUM_SNIFF:
-                if (conf_changed) {
-                    Sniffer_Init();
-                    printf("****+ Changed to CFG_NUM_SNIFF\n\r");
-                    conf_changed = 0;
-                } else {
-                    if (rcvdChar != 0) {
-                        TRACE_DEBUG("Rcvd char _%x_ \n\r", rcvdChar);
-                        rcvdChar = 0;
-                    }
-                }
-                break;
-/*            case CONF_CCID_READER:
-                if (conf_changed) {
-                    // Init
-                    conf_changed = 0;
-                } else {
-                    // Receive char
-                }
-                break;  */
-            case CFG_NUM_PHONE:
-                if (conf_changed) {
-                    Phone_Master_Init();
-                    printf("****+ Changed to CFG_NUM_PHONE\n\r");
-                    conf_changed = 0;
-                    /*  Configure ISO7816 driver */
-                    // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
-                } else {
-                    /* Send and receive chars */
-                    // ISO7816_GetChar(&rcv_char);
-                    // ISO7816_SendChar(char_to_send);
-                }
-                break;
-            case CFG_NUM_MITM:
-                if (conf_changed) {
-                    printf("****+ Changed to CFG_NUM_MITM\n\r");
-                    // Init
-                    conf_changed = 0;
-                } else {
-                    // Receive char
-                }
-                break;
-            default:
-                break;
+        if (conf_changed) {
+            config_func_ptrs[simtrace_config-1].init();
+            conf_changed = 0;
+        } else {
+            config_func_ptrs[simtrace_config-1].run();
         }
     }
 }

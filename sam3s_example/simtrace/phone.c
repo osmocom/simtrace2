@@ -214,6 +214,13 @@ void Phone_Master_Init( void ) {
 
     USART_SetTransmitterEnabled(USART_PHONE, 1);
     USART_SetReceiverEnabled(USART_PHONE, 1);
+
+    /*  Configure ISO7816 driver */
+    // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
+
+
+
+
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
 //    USBD_Connect();
 // FIXME: USB clock? USB PMC?
@@ -231,4 +238,13 @@ void Phone_Master_Init( void ) {
     }
 */
 
+}
+
+void Phone_run( void )
+{
+    // FIXME: Function Phone_run not implemented yet
+
+    /* Send and receive chars */
+    // ISO7816_GetChar(&rcv_char);
+    // ISO7816_SendChar(char_to_send);
 }

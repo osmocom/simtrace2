@@ -77,3 +77,11 @@ void Sniffer_Init( void )
 
     USART_SetReceiverEnabled(USART_PHONE, 1);
 }
+
+void Sniffer_run( void )
+{
+    if (rcvdChar != 0) {
+        TRACE_DEBUG("Rcvd char _%x_ \n\r", rcvdChar);
+        rcvdChar = 0;
+    }
+}

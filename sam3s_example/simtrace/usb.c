@@ -157,6 +157,7 @@ const unsigned char *stringDescriptors[] = {
 /* Endpoint numbers */
 #define DATAOUT     1
 #define DATAIN      2
+#define INT         3
 
 /*------------------------------------------------------------------------------
  *       USB Device descriptors 
@@ -165,10 +166,11 @@ const unsigned char *stringDescriptors[] = {
 typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
 
     /** Standard configuration descriptor. */
-    USBConfigurationDescriptor configuration;
-    USBInterfaceDescriptor sniffer;
-    USBEndpointDescriptor sniffer_dataOut;
-    USBEndpointDescriptor sniffer_dataIn;
+    USBConfigurationDescriptor  configuration;
+    USBInterfaceDescriptor      sniffer;
+    USBEndpointDescriptor       sniffer_dataOut;
+    USBEndpointDescriptor       sniffer_dataIn;
+    USBEndpointDescriptor       sniffer_interruptIn;
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorSniffer;
 
@@ -190,7 +192,7 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        2, /* This interface uses 2 endpoints */
+        3, /* This interface uses 3 endpoints */
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */
@@ -217,6 +219,16 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    // Notification endpoint descriptor
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10
     }
 };
 
@@ -237,11 +249,11 @@ const CCIDDriverConfigurationDescriptorsCCID configurationDescriptorCCID = { 0 }
 typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
 
     /** Standard configuration descriptor. */
-    USBConfigurationDescriptor configuration;
-    USBInterfaceDescriptor sniffer;
-    USBEndpointDescriptor sniffer_dataOut;
-    USBEndpointDescriptor sniffer_dataIn;
-
+    USBConfigurationDescriptor  configuration;
+    USBInterfaceDescriptor      phone;
+    USBEndpointDescriptor       phone_dataOut;
+    USBEndpointDescriptor       phone_dataIn;
+    USBEndpointDescriptor       phone_interruptIn;
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorPhone;
 
 const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = {
@@ -262,7 +274,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        2, /* This interface uses 2 endpoints */
+        3, /* This interface uses 3 endpoints */
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */
@@ -289,6 +301,16 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Notification endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10
     }
 };
 
@@ -296,13 +318,15 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
 typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 
     /** Standard configuration descriptor. */
-    USBConfigurationDescriptor configuration;
-    USBInterfaceDescriptor simcard;
-    USBEndpointDescriptor simcard_dataOut;
-    USBEndpointDescriptor simcard_dataIn;
-    USBInterfaceDescriptor phone;
-    USBEndpointDescriptor phone_dataOut;
-    USBEndpointDescriptor phone_dataIn;
+    USBConfigurationDescriptor  configuration;
+    USBInterfaceDescriptor      simcard;
+    USBEndpointDescriptor       simcard_dataOut;
+    USBEndpointDescriptor       simcard_dataIn;
+    USBEndpointDescriptor       simcard_interruptIn;
+    USBInterfaceDescriptor      phone;
+    USBEndpointDescriptor       phone_dataOut;
+    USBEndpointDescriptor       phone_dataIn;
+    USBEndpointDescriptor       phone_interruptIn;
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorMITM;
 
@@ -324,7 +348,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        2, /* This interface uses 2 endpoints */
+        3, /* This interface uses 3 endpoints */
         //CDCCommunicationInterfaceDescriptor_CLASS,
         0xff,
 //        CDCCommunicationInterfaceDescriptor_ABSTRACTCONTROLMODEL,
@@ -355,13 +379,23 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
+    /* Notification endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10
+    },
     /* Communication class interface standard descriptor */
     {
         sizeof(USBInterfaceDescriptor),
         USBGenericDescriptor_INTERFACE,
         1, /* This is interface #1 */
         0, /* This is alternate setting #0 for this interface */
-        2, /* This interface uses 2 endpoints */
+        3, /* This interface uses 3 endpoints */
         0xff,
         0,
         0, 
@@ -388,6 +422,16 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Notification endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10
     }
 };
 

@@ -38,6 +38,8 @@
 /*------------------------------------------------------------------------------
  *         Internal definitions
  *------------------------------------------------------------------------------*/
+// FIXME: Remove:
+#define PR TRACE_DEBUG
 
 /** Maximum ucSize in bytes of the smartcard answer to a command.*/
 #define MAX_ANSWER_SIZE         10
@@ -60,6 +62,7 @@ static const Pin pPwr[] = {
 
 extern uint32_t char_stat;
 extern uint8_t rcvdChar;
+extern ring_buffer buf;
 
 /*-----------------------------------------------------------------------------
  *          Initialization routine
@@ -80,8 +83,16 @@ void Sniffer_Init( void )
 
 void Sniffer_run( void )
 {
+    uint8_t c = 0;
+    c++;
+
     if (rcvdChar != 0) {
-        TRACE_DEBUG("Rcvd char _%x_ \n\r", rcvdChar);
+        /*  DATA_IN for host side is data_out for simtrace side   */
+        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
+        PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
+        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
+//        USBD_Write( DATAIN, &c, 1, 0, 0 );
+        PR("----- Rcvd char\n\r");
         rcvdChar = 0;
     }
 }

@@ -1,6 +1,19 @@
 #ifndef SIMTRACE_H
 #define SIMTRACE_H
 
+/* Endpoint numbers */
+#define DATAOUT     1
+#define DATAIN      2
+#define INT         3
+
+#define BUFLEN  64
+typedef struct ring_buffer
+{
+    uint8_t     buf[BUFLEN*2];   // data buffer
+    uint8_t     idx;                // number of items in the buffer
+} ring_buffer;
+
+
 enum confNum {
     CFG_NUM_SNIFF = 1, CFG_NUM_PHONE, CFG_NUM_MITM, NUM_CONF
 };

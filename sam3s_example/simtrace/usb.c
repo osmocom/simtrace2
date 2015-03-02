@@ -154,11 +154,6 @@ const unsigned char *stringDescriptors[] = {
     MITMConfigStringDescriptor
 };
 
-/* Endpoint numbers */
-#define DATAOUT     1
-#define DATAIN      2
-#define INT         3
-
 /*------------------------------------------------------------------------------
  *       USB Device descriptors 
  *------------------------------------------------------------------------------*/

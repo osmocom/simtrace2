@@ -38,11 +38,38 @@
 extern uint8_t rcvdChar;
 extern uint32_t char_stat;
 
+//#define BUFLEN  14
+// FIXME: Remove:
+#define PR TRACE_DEBUG
+//#define PR printf 
+
+/*typedef struct ring_buffer
+{
+    uint8_t     buf[BUFLEN*2];   // data buffer
+    uint8_t     idx;                // number of items in the buffer
+} ring_buffer;
+*/
+ring_buffer buf = { {0}, 0 };
+
+void buf_push(uint8_t item)
+{
+    buf.buf[buf.idx % (BUFLEN*2)] = item;
+    PR("----- Push: %x %x\n\r", buf.idx, buf.buf[buf.idx]);
+    buf.idx = (buf.idx+1) % (BUFLEN*2);
+}
+
+uint8_t get_buf_start(uint8_t *buf_start)
+{
+    *buf_start = &(buf.buf[buf.idx]);
+    return 2*BUFLEN-buf.idx;
+}
+
 /** Initializes a ISO driver
  */ 
 // FIXME: This function is implemented in iso7816_4.c !! Only MCK instead of SCK is always taken. Change that!                                                                               
 void _ISO7816_Init( void )
 {   
+    printf("ISO_Init\n\r");
     TRACE_DEBUG("ISO_Init\n\r");
                         
     USART_Configure( USART_PHONE,                                                          
@@ -98,20 +125,29 @@ void USART1_IrqHandler( void )
 */  
     uint32_t csr = USART_PHONE->US_CSR;                                                       
     
+    PR("---- stat: %x\n\r", csr);
+
     if (csr & US_CSR_TXRDY) {
         /* transmit buffer empty, nothing to transmit */                                      
     }  
     if (csr & US_CSR_RXRDY) {
         stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
-                        US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|                               
-                        (1<<10)));                                                            
-        
+                        US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
+                        (1<<10)));
+
         if (stat == 0 ) {
-            /* Get a char */
-            rcvdChar = ((USART_PHONE->US_RHR) & 0xFF);                                        
-        } /* else: error occured */                                                           
-        char_stat = stat;                                                                     
-    }                                                                                         
-}                                                                                             
+            /* Fill char into buffer */
+            PR("---- BUFLEN %x\n\r", buf.idx);
+            buf_push((USART_PHONE->US_RHR) & 0xFF);
+        } else {
+       //     buf_push((USART_PHONE->US_RHR) & 0xFF);
+            PR("%x\n\r", (USART_PHONE->US_RHR) & 0xFF);
+        } /* else: error occured */
 
+        if ((buf.idx % BUFLEN) == 0) {
+            rcvdChar = 1;
+        }
 
+        char_stat = stat;
+    }
+}

@@ -23,7 +23,7 @@ conf_func config_func_ptrs[] = {
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-uint8_t simtrace_config = 0;
+uint8_t simtrace_config = CFG_NUM_SNIFF;
 uint8_t conf_changed = 1;
 
 uint8_t rcvdChar = 0;
@@ -49,9 +49,11 @@ extern int main( void )
 
     printf("%s", "USB init\n\r");
 
-    while(USBD_GetState() < USBD_STATE_CONFIGURED);
+// FIXME: why don't we get any interrupts with this line?:
+//    while(USBD_GetState() < USBD_STATE_CONFIGURED);
 
     TRACE_DEBUG("%s", "Start\n\r");
+
     printf("%s", "Start\n\r");
     while(1) {
 
@@ -69,7 +71,9 @@ extern int main( void )
             isUsbConnected = 1;
 //            TC_Start(TC0, 0);
         }    
-    
+
+//        for (int i=0; i <10000; i++);
+
 /*  FIXME: Or should we move the while loop into every case, and break out
     in case the config changes? */
         if (conf_changed) {

@@ -33,6 +33,8 @@
 
 #include "board.h"
 
+#include <cciddriverdescriptors.h>
+
 /*------------------------------------------------------------------------------
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
@@ -227,18 +229,112 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
     }
 };
 
-/* FIXME: CCID descriptor: External C file */
+/*
+/// CCIDDriverConfiguration Descriptors
+/// List of descriptors that make up the configuration descriptors of a
+/// device using the CCID driver.
 typedef struct {
 
+    /// Configuration descriptor
     USBConfigurationDescriptor configuration;
+    /// Interface descriptor
     USBInterfaceDescriptor     interface;
+    /// CCID descriptor
     CCIDDescriptor             ccid;
+    /// Bulk OUT endpoint descriptor
     USBEndpointDescriptor      bulkOut;
+    /// Bulk IN endpoint descriptor
     USBEndpointDescriptor      bulkIn;
+    /// Interrupt OUT endpoint descriptor
     USBEndpointDescriptor      interruptIn;
-} __attribute__ ((packed)) CCIDDriverConfigurationDescriptorsCCID;
+} __attribute__ ((packed)) CCIDDriverConfigurationDescriptors;
+*/
 
-const CCIDDriverConfigurationDescriptorsCCID configurationDescriptorCCID = { 0 };
+const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
+
+    // Standard USB configuration descriptor
+    {
+        sizeof(USBConfigurationDescriptor),
+        USBGenericDescriptor_CONFIGURATION,
+        sizeof(CCIDDriverConfigurationDescriptors),
+        1, // One interface in this configuration
+        CFG_NUM_CCID, // This is configuration #1
+        CCID_CONF_STR, // associated string descriptor
+        BOARD_USB_BMATTRIBUTES,
+        USBConfigurationDescriptor_POWER(100)
+    },
+    // CCID interface descriptor
+    // Table 4.3-1 Interface Descriptor
+    // Interface descriptor
+    {
+        sizeof(USBInterfaceDescriptor),
+        USBGenericDescriptor_INTERFACE,
+        0,                       // Interface 0
+        0,                       // No alternate settings
+        3,                       // uses bulk-IN, bulk-OUT and interrupt IN
+        SMART_CARD_DEVICE_CLASS,
+        0,                       // Subclass code
+        0,                       // bulk transfers optional interrupt-IN
+        CCID_CONF_STR            // associated string descriptor
+    },
+    {
+        sizeof(CCIDDescriptor), // bLength: Size of this descriptor in bytes
+        CCID_DECRIPTOR_TYPE,    // bDescriptorType:Functional descriptor type
+        CCID1_10,               // bcdCCID: CCID version
+        0,               // bMaxSlotIndex: Value 0 indicates that one slot is supported
+        VOLTS_5_0,       // bVoltageSupport
+        (1 << PROTOCOL_TO),     // dwProtocols
+        3580,            // dwDefaultClock
+        3580,            // dwMaxClock
+        0,               // bNumClockSupported
+        9600,            // dwDataRate : 9600 bauds
+        9600,            // dwMaxDataRate : 9600 bauds
+        0,               // bNumDataRatesSupported
+        0xfe,            // dwMaxIFSD
+        0,               // dwSynchProtocols
+        0,               // dwMechanical
+        //0x00010042,      // dwFeatures: Short APDU level exchanges
+        CCID_FEATURES_AUTO_CLOCK | CCID_FEATURES_AUTO_BAUD |
+        CCID_FEATURES_AUTO_PCONF | CCID_FEATURES_AUTO_PNEGO | CCID_FEATURES_EXC_TPDU,
+        0x0000010F,      // dwMaxCCIDMessageLength: For extended APDU level the value shall be between 261 + 10
+        0xFF,            // bClassGetResponse: Echoes the class of the APDU
+        0xFF,            // bClassEnvelope: Echoes the class of the APDU
+        0,               // wLcdLayout: no LCD
+        0,               // bPINSupport: No PIN
+        1                // bMaxCCIDBusySlot
+    },
+    // Bulk-OUT endpoint descriptor
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_OUT, CCID_EPT_DATA_OUT ),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_DATA_OUT),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0x00                               // Does not apply to Bulk endpoints
+    },
+    // Bulk-IN endpoint descriptor
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, CCID_EPT_DATA_IN ),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_DATA_IN),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0x00                               // Does not apply to Bulk endpoints
+    },
+    // Notification endpoint descriptor
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, CCID_EPT_NOTIFICATION ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_NOTIFICATION),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10                              
+    },
+};
+
 
 /* SIM card emulator */
 typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
@@ -450,16 +546,19 @@ const USBDeviceDescriptor deviceDescriptor = {
     0, /* No string descriptor for manufacturer */
     PRODUCT_STRING, /* Index of product string descriptor */
     0, /* No string descriptor for serial number */
-    3 /* Device has 4 possible configurations */
+    4 /* Device has 4 possible configurations */
 };
 
 const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
     &configurationDescriptorSniffer,
-    //&configurationDescriptorCCID,
+    &configurationDescriptorCCID,
     &configurationDescriptorPhone,
     &configurationDescriptorMITM,
 };
 
+USBConfigurationDescriptor *getConfigDesc(uint8_t idx) {
+    return configurationDescriptorsArr[idx];
+}
 
 /* AT91SAM3S does only support full speed, but not high speed USB */
 const USBDDriverDescriptors driverDescriptors = {

@@ -61,6 +61,8 @@ unsigned char USBState = STATE_IDLE;
 
 /** ISO7816 pins */
 static const Pin pinsISO7816_PHONE[]    = {PINS_ISO7816_PHONE};
+/** Bus switch pins */
+static const Pin pinsBus[]    = {PINS_BUS_DEFAULT};
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;
 static uint8_t sim_inserted = 0;
@@ -208,6 +210,8 @@ uint32_t _ISO7816_SendChar( uint8_t CharToSend )
 void Phone_Master_Init( void ) {
     
     PIO_Configure( pinsISO7816_PHONE, PIO_LISTSIZE( pinsISO7816_PHONE ) ) ;
+    PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
+
     Config_PhoneRST_IrqHandler();
 
     _ISO7816_Init();

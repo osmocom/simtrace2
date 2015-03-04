@@ -98,6 +98,9 @@
 
 /// Smartcard detection pin
 // FIXME: add connect pin as iso pin...should it be periph b or interrupt oder input?
+#define BOARD_ISO7816_BASE_USART    USART0
+#define BOARD_ISO7816_ID_USART      ID_USART0
+
 #define USART_SIM       USART0
 #define ID_USART_SIM    ID_USART0
 #define USART_PHONE       USART1
@@ -125,8 +128,8 @@
 #define PIN_ISO7816_RSTMC       {RST_SIM, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 
 /// Pins used for connect the smartcard
-#define PIN_SIM_IO          {PIO_PA1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
-#define PIN_SIM_IO_INPUT    {PIO_PA6, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+#define PIN_SIM_IO_INPUT    {PIO_PA1, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+#define PIN_SIM_IO          {PIO_PA6, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 #define PIN_SIM_CLK         {PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_SIM_CLK_INPUT   {PIO_PA4, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
 //#define PINS_ISO7816            PIN_USART1_TXD, PIN_USART1_SCK, PIN_ISO7816_RSTMC

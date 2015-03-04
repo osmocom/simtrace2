@@ -51,6 +51,10 @@
 
 /** ISO7816 pins */
 static const Pin pinsISO7816[]    = {PINS_ISO7816};
+/** Bus switch pins */
+static const Pin pinsBus[]    = {PINS_BUS_DEFAULT};
+/*  SIMcard power pin   */
+static const Pin pinsPower[] = {PWR_PINS};
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RSTMC;
 static uint8_t sim_inserted = 0;
@@ -129,18 +133,32 @@ static void ConfigureCardDetection( void )
 /*-----------------------------------------------------------------------------
  *          Initialization and run
  *-----------------------------------------------------------------------------*/
-extern const CCIDDriverConfigurationDescriptors *configDescCCID = &configurationDescriptorCCID;
+static const CCIDDriverConfigurationDescriptors *configDescCCID;
+extern CCIDDriverConfigurationDescriptors configurationDescriptorCCID;
 
 void CCID_init( void )
 {
-// FIXME: do we want to print ATR?
+    uint8_t pAtr[MAX_ATR_SIZE];
+    uint8_t ucSize ;
+
+    configDescCCID = &configurationDescriptorCCID;
+
+    // FIXME: do we want to print ATR?
     /*  Initialize Atr buffer */
     memset( pAtr, 0, sizeof( pAtr ) ) ;
 
     /*  Configure IT on Smart Card */
     ConfigureCardDetection() ;
 
-    ISO7816_Init( pinIso7816RstMC ) ;
+    // Configure ISO7816 driver
+    PIO_Configure(pinsISO7816, PIO_LISTSIZE(pinsISO7816));
+    PIO_Configure(pinsBus, PIO_LISTSIZE(pinsBus));
+    PIO_Configure(pinsPower, PIO_LISTSIZE(pinsPower));
+
+    /* power up the card */
+//    PIO_Set(&pinsPower[0]);
+
+    ISO7816_Init( &pinIso7816RstMC ) ;
 
     CCIDDriver_Initialize();
 
@@ -166,6 +184,9 @@ void CCID_run( void )
 {
     uint8_t pAtr[MAX_ATR_SIZE] ;
     uint8_t ucSize ;
+
+
+    //if (USBD_Read(INT, pBuffer, dLength, fCallback, pArgument);
 
     CCID_SmartCardRequest();
 }

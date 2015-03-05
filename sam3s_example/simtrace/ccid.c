@@ -182,9 +182,6 @@ void CCID_init( void )
 
 void CCID_run( void )
 {
-    uint8_t pAtr[MAX_ATR_SIZE] ;
-    uint8_t ucSize ;
-
 
     //if (USBD_Read(INT, pBuffer, dLength, fCallback, pArgument);
 

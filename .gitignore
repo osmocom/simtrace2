@@ -11,3 +11,6 @@ atmel_softpack_libraries/rtos
 atmel_softpack_libraries/sam-gui
 atmel_softpack_libraries/fat
 atmel_softpack_libraries/memories
+*/__pycache__
+*.E
+atmel_softpack_libraries/

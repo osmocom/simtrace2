@@ -15,6 +15,7 @@ typedef struct {
 
 conf_func config_func_ptrs[] = {
     {Sniffer_Init, Sniffer_run},  /*  CFG_NUM_SNIFF */
+    {CCID_init, CCID_run},  /*  CFG_NUM_CCID */
     {Phone_Master_Init, Phone_run},  /* CFG_NUM_PHONE */
     {MITM_init, MITM_run},  /* CFG_NUM_MITM */
 };

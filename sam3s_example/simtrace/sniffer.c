@@ -83,15 +83,11 @@ void Sniffer_Init( void )
 
 void Sniffer_run( void )
 {
-    uint8_t c = 0;
-    c++;
-
     if (rcvdChar != 0) {
         /*  DATA_IN for host side is data_out for simtrace side   */
         /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
         PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
         USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
-//        USBD_Write( DATAIN, &c, 1, 0, 0 );
         PR("----- Rcvd char\n\r");
         rcvdChar = 0;
     }

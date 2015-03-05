@@ -38,6 +38,7 @@ extern int main( void )
 {
     uint8_t isUsbConnected = 0;
 
+    LED_Configure(LED_NUM_RED);
     LED_Configure(LED_NUM_GREEN);
     LED_Set(LED_NUM_GREEN);
 

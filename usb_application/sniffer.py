@@ -44,9 +44,8 @@ def find_eps(dev):
     return (ep_in, ep_out)
 
 # main code
-def main():
+def sniff():
     dev = find_dev()
-#    (epi, epo) = find_eps(dev)
 
     while True:
         #ep_out.write("Hello")
@@ -58,6 +57,3 @@ def main():
             sys.exit()
         except: 
             print("Timeout")
-    #    print(ep_in.read(1, 5000));
-
-main()

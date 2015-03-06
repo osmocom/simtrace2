@@ -1,18 +1,8 @@
-#!/usr/bin/env python 
-
-import usb.core
-import usb.util
 import sys
 
 from pySim.commands import SimCardCommands
 from pySim.utils import h2b, swap_nibbles, rpad, dec_imsi, dec_iccid
 from pySim.transport.pcsc import PcscSimLink
-
-
-import hashlib
-import os
-import random
-import re
 
 
 class find_class(object):
@@ -34,6 +24,11 @@ class find_class(object):
                 return True
 
         return False
+
+def set_conf(conf):
+    devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
+    for dev in devs:
+        dev.set_configuration(conf)
 
 
 def pySim_read():
@@ -101,42 +96,3 @@ def pySim_read():
 
     # Done for this card and maybe for everything ?
     print("Done !\n")
-
-cmd1 = {0x00, 0x10, 0x00, 0x00}
-cmd2 =  {0x00, 0x20, 0x00, 0x00, 0x02}
-cmd_poweron = {0x62, 0x62, 0x00, 0x00}
-cmd_poweroff = {0x63, 0x63, 0x00, 0x00}
-cmd_get_slot_stat = {0x65, 0x65, 0x00, 0x00}
-cmd_get_param = {0x00, 0x6C, 0x00, 0x00}
-
-# main code
-def main():
-    devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
-    for dev in devs:
-        dev.set_configuration(2)
-       
-        pySim_read() 
-
-#        dev.write(0x1, cmd_poweroff)
-#        dev.write(0x1, cmd_poweron)
-#        dev.write(0x1, cmd2)
-#        dev.write(0x1, cmd_get_slot_stat)
-#        ret = dev.read(0x82, 64)
-        print(ret)
-        #dev.write(0x1, {0x62, 0x62})    # PC_TO_RDR_ICCPOWERON
-    return
-
-#    (epi, epo) = find_eps(dev)
-    while True:
-        #ep_out.write("Hello")
-        try:
-            ans = dev.read(0x82, 64, 1000)
-            print("".join("%02x " % b for b in ans))
-        except KeyboardInterrupt:
-            print("Bye")
-            sys.exit()
-        except: 
-            print("Timeout")
-    #    print(ep_in.read(1, 5000));
-
-main()

@@ -1,0 +1,24 @@
+chrysh@gearbox ..a_thesis/sysmocom_repo/usb_application (git)-[master] % ./simtrace.py -b                                                                :(
+('args: ', Namespace(cmd=None, conf=None, read_bin=True, select_file=False, sniff=False))
+pcsc: wait_for_card
+Reading ...
+pdu: a0b000000a
+ICCID: 8949901701053518711
+pdu: a0b0000009
+IMSI: 901702391248819
+SMSP: ffffffffffffffffffffffffe1ffffffffffffffffffffffff058100945555ffffffffffff000000
+pdu: a0b0000002
+ACC: ffff
+MSISDN: Not available
+Done !
+
+chrysh@gearbox ..a_thesis/sysmocom_repo/usb_application (git)-[master] % ./simtrace.py -S
+('args: ', Namespace(cmd=None, conf=None, read_bin=False, select_file=True, sniff=False))
+Context established!
+PCSC Readers: ['Gemalto USB Shell Token V2 00 00']
+Using reader: Gemalto USB Shell Token V2 00 00
+Connected with active protocol 1
+Select: 0x6E 0x00
+Command: 0x6E 0x00
+Disconnected
+Released context.

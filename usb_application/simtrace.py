@@ -3,6 +3,7 @@
 import argparse
 import sniffer
 import ccid
+import ccid_select
 
 import usb.core
 import usb.util
@@ -48,6 +49,7 @@ def main():
     parser.add_argument("-c", "--cmd", help="cmds to send to sim card (Not supported yet)", 
         choices=["cmd1", "cmd2", "cmd_poweron", "cmd_poweroff", "cmd_get_slot_stat", "cmd_get_param"])
     parser.add_argument("-s", "--sniff", help="Sniff communication!", action='store_true') 
+    parser.add_argument("-S", "--select_file", help="Transmit SELECT cmd!", action='store_true')
     
     args = parser.parse_args()
     print("args: ", args)
@@ -57,6 +59,7 @@ def main():
         devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
         for dev in devs:
             dev.set_configuration(args.conf)
+#            ret = dev.read(0x83, 64, 100)
 
     if args.read_bin is True: 
         ccid.pySim_read() 
@@ -66,9 +69,13 @@ def main():
         for dev in devs:
             dev.write(0x1, args.cmd)
             ret = dev.read(0x82, 64)
+#            ret = dev.read(0x83, 64, 100)
             print(ret)
     if args.sniff is True:
         sniffer.sniff()
+    if args.select_file is True:
+        ccid_select.select()
+
     return
 
 #    (epi, epo) = find_eps(dev)

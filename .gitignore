@@ -14,3 +14,4 @@ atmel_softpack_libraries/memories
 */__pycache__
 *.E
 atmel_softpack_libraries/
+*.pyc

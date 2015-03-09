@@ -167,16 +167,21 @@ static void RDRtoPCDatablock_ATR( void )
 
     TRACE_DEBUG(".");
 
-    status = ISO7816_Datablock_ATR( Atr, &length );
+//    status = ISO7816_Datablock_ATR( Atr, &length );
+//    ISO7816_Decode_ATR( Atr );
+
     if (status == 0) {
         TRACE_DEBUG("Timeout occured while reading ATR");
 // FIXME: react properly to timeout..
 //        return;
     }
 
+// FIXME: More tests? Is bProtocol = Atr[3] ?
     if( length > 5 ) {
-        ccidDriver.ProtocolDataStructure[1] = Atr[5]&0x0F; // TD(1)
-        ccidDriver.bProtocol = Atr[5]&0x0F;           // TD(1)
+        ccidDriver.ProtocolDataStructure[1] = Atr[3]&0x0F; // TD(1)
+        ccidDriver.bProtocol = Atr[3]&0x0F;           // TD(1)
+        TRACE_INFO("Protocol data structure: 0x%x, bProtocol: 0x%x\n\r",
+                        ccidDriver.ProtocolDataStructure[1], ccidDriver.bProtocol);
     }
 
     // S_ccid_protocol_t0
@@ -439,6 +444,7 @@ static void PCtoRDRXfrBlock( void )
 
             case CCID_FEATURES_EXC_TPDU:
                 if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO) {
+                    TRACE_INFO("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
 
                     // Send commande APDU
                     indexMessage = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU , 
@@ -450,13 +456,13 @@ static void PCtoRDRXfrBlock( void )
                         TRACE_INFO("Not supported T=1\n\r");
                     }
                     else {
-                        TRACE_INFO("Not supported\n\r");
+                        TRACE_INFO("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
                     }
                 }
                 break;
 
             case CCID_FEATURES_EXC_APDU:
-                TRACE_INFO("Not supported\n\r");
+                TRACE_INFO("Not supported CCID_FEATURES_EXC_APDU\n\r");
                 break;
 
             default:
@@ -719,8 +725,7 @@ static void CCIDCommandDispatcher( void )
         TRACE_ERROR("BAD_SLOT_NUMBER\n\r");
     }
 
-    printf("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
-    TRACE_DEBUG("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+    TRACE_INFO("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
 
     ccidDriver.sCcidMessage.bStatus = 0;
 
@@ -789,7 +794,7 @@ static void CCIDCommandDispatcher( void )
             }
             else {
                 // command not supported
-                TRACE_DEBUG("PC_TO_RDR_T0APDU\n\r");
+                TRACE_INFO("Not supported: PC_TO_RDR_T0APDU\n\r");
                 vCCIDCommandNotSupported();
             }
             MessageToSend = 1;
@@ -816,7 +821,7 @@ static void CCIDCommandDispatcher( void )
             break;
 
         default:
-            TRACE_DEBUG("default: 0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+            TRACE_DEBUG("default: Not supported: 0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
             vCCIDCommandNotSupported();
             MessageToSend = 1;
             break;
@@ -848,13 +853,13 @@ static void CCID_RequestHandler(const USBGenericRequest *pRequest)
                 break;
 
             case CCIDGenericRequest_GET_CLOCK_FREQUENCIES:
-                TRACE_DEBUG("Not supported\n\r");
+                TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_CLOCK_FREQUENCIES\n\r");
                 // A CCID with bNumClockSupported equal to 00h does not have 
                 // to support this request
                 break;
 
             case CCIDGenericRequest_GET_DATA_RATES:
-                TRACE_DEBUG("Not supported\n\r");
+                TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_DATA_RATES\n\r");
                 // A CCID with bNumDataRatesSupported equal to 00h does not have 
                 // to support this request.
                 break;
@@ -913,10 +918,10 @@ void CCID_SmartCardRequest( void )
                              sizeof(S_ccid_bulk_out_header),
                              (TransferCallback)&CCIDCommandDispatcher,
                              (void*)0 );
+
 //        TRACE_DEBUG("bStat: %x\n\r", bStatus);
     } 
     while (bStatus != USBD_STATUS_SUCCESS);
-
 }
 
 

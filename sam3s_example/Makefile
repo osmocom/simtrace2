@@ -68,7 +68,6 @@ OBJ = obj
 
 AT91LIB_USB_COMMON_CORE_PATH = atmel_softpack_libraries/usb/common/core
 AT91LIB_USB_CORE_PATH = atmel_softpack_libraries/usb/device/core
-AT91LIB_CCIDDEV_PATH = atmel_softpack_libraries/usb/device/ccid
 
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
@@ -91,7 +90,6 @@ NM = $(CROSS_COMPILE)nm
 
 # Flags
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
-INCLUDES_USB += -I$(AT91LIB_CCIDDEV_PATH)
 
 INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace
 INCLUDES += -Icmsis
@@ -136,7 +134,7 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 
 # Directories where source files can be found
 
-USB_PATHS = $(AT91LIB_CCIDDEV_PATH) $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
+USB_PATHS = $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
 VPATH += src_board src_sam3s cmsis $(USB_PATHS) simtrace
 
 # Objects built from C source files
@@ -144,7 +142,7 @@ C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
 C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o 
 C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
-C_SIMTRACE = simtrace_iso7816.o phone.o sniffer.o usb.o
+C_SIMTRACE = simtrace_iso7816.o usb.o ccid.o sniffer.o phone.o
 C_APPLEVEL = main.o
 C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID) $(C_SIMTRACE)
 

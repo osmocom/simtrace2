@@ -201,13 +201,13 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
     uint8_t procByte;
     uint8_t cmdCase;
 
-    TRACE_DEBUG("pAPDU[0]=0x%X\n\r",pAPDU[0]);
-    TRACE_DEBUG("pAPDU[1]=0x%X\n\r",pAPDU[1]);
-    TRACE_DEBUG("pAPDU[2]=0x%X\n\r",pAPDU[2]);
-    TRACE_DEBUG("pAPDU[3]=0x%X\n\r",pAPDU[3]);
-    TRACE_DEBUG("pAPDU[4]=0x%X\n\r",pAPDU[4]);
-    TRACE_DEBUG("pAPDU[5]=0x%X\n\r",pAPDU[5]);
-    TRACE_DEBUG("wlength=%d\n\r",wLength);
+    TRACE_INFO("pAPDU[0]=0x%X\n\r",pAPDU[0]);
+    TRACE_INFO("pAPDU[1]=0x%X\n\r",pAPDU[1]);
+    TRACE_INFO("pAPDU[2]=0x%X\n\r",pAPDU[2]);
+    TRACE_INFO("pAPDU[3]=0x%X\n\r",pAPDU[3]);
+    TRACE_INFO("pAPDU[4]=0x%X\n\r",pAPDU[4]);
+    TRACE_INFO("pAPDU[5]=0x%X\n\r",pAPDU[5]);
+    TRACE_INFO("wlength=%d\n\r",wLength);
 
     ISO7816_SendChar( pAPDU[0] ); /* CLA */
     ISO7816_SendChar( pAPDU[1] ); /* INS */
@@ -216,7 +216,7 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
     ISO7816_SendChar( pAPDU[4] ); /* P3 */
 
     /* Handle the four structures of command APDU */
-    indexApdu = 4;
+    indexApdu = 5;
 
     if( wLength == 4 ) {
         cmdCase = CASE1;
@@ -282,6 +282,7 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
             else {
                  /* Send data */
                 do {
+                    TRACE_INFO("Send %X", pAPDU[indexApdu]);
                     ISO7816_SendChar(pAPDU[indexApdu++]);
                 } while( 0 != --NeNc );
             }

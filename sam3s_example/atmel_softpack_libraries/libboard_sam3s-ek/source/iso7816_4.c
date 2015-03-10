@@ -68,7 +68,7 @@
 /** Variable for state of send and receive froom USART */
 static uint8_t StateUsartGlobal = USART_RCV;
 /** Pin reset master card */
-static Pin st_pinIso7816RstMC;
+static Pin *st_pinIso7816RstMC;
 
 /*----------------------------------------------------------------------------
  *          Internal functions
@@ -167,7 +167,7 @@ static uint32_t ISO7816_SendChar( uint8_t CharToSend )
 static void ISO7816_IccPowerOn( void )
 {
     /* Set RESET Master Card */
-    PIO_Set(&st_pinIso7816RstMC);
+    PIO_Set(st_pinIso7816RstMC);
 }
 
 /*----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ static void ISO7816_IccPowerOn( void )
 void ISO7816_IccPowerOff( void )
 {
     /* Clear RESET Master Card */
-    PIO_Clear(&st_pinIso7816RstMC);
+    PIO_Clear(st_pinIso7816RstMC);
 }
 
 /**
@@ -259,19 +259,20 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
     /* Handle Procedure Bytes */
     do {
         ISO7816_GetChar(&procByte);
+        TRACE_INFO("procByte: 0x%X\n\r", procByte);
         /* Handle NULL */
         if ( procByte == ISO_NULL_VAL ) {
-            TRACE_DEBUG("INS\n\r");
+            TRACE_INFO("INS\n\r");
             continue;
         }
         /* Handle SW1 */
         else if ( ((procByte & 0xF0) ==0x60) || ((procByte & 0xF0) ==0x90) ) {
-            TRACE_DEBUG("SW1\n\r");
+            TRACE_INFO("SW1\n\r");
             SW1 = 1;
         }
         /* Handle INS */
         else if ( pAPDU[1] == procByte) {
-            TRACE_DEBUG("HdlINS\n\r");
+            TRACE_INFO("HdlINS\n\r");
             if (cmdCase == CASE2) {
                 /* receive data from card */
                 do {
@@ -287,10 +288,11 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
         }
         /* Handle INS ^ 0xff */
         else if ( pAPDU[1] == (procByte ^ 0xff)) {
-            TRACE_DEBUG("HdlINS+\n\r");
+            TRACE_INFO("HdlINS+\n\r");
             if (cmdCase == CASE2) {
                 /* receive data from card */
                 ISO7816_GetChar(&pMessage[indexMessage++]);
+                TRACE_INFO("Rcv: 0x%X\n\r", pMessage[indexMessage-1]);
             }
             else {
                 ISO7816_SendChar(pAPDU[indexApdu++]);
@@ -299,7 +301,7 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
         }
         else {
             /* ?? */
-            TRACE_DEBUG("procByte=0x%X\n\r", procByte);
+            TRACE_INFO("procByte=0x%X\n\r", procByte);
             break;
         }
     } while (NeNc != 0);
@@ -312,6 +314,8 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
         pMessage[indexMessage++] = procByte;
     }
     ISO7816_GetChar(&pMessage[indexMessage++]); /* SW2 */
+
+    TRACE_WARNING("SW1=0x%X, SW2=0x%X\n\r", pMessage[indexMessage-2], pMessage[indexMessage-1]);
 
     return( indexMessage );
 
@@ -438,7 +442,7 @@ void ISO7816_SetDataRateandClockFrequency( uint32_t dwClockFrequency, uint32_t d
  */
 uint8_t ISO7816_StatusReset( void )
 {
-    return PIO_Get(&st_pinIso7816RstMC);
+    return PIO_Get(st_pinIso7816RstMC);
 }
 
 /**
@@ -578,7 +582,7 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 /** Initializes a ISO driver
  *  \param pPinIso7816RstMC Pin ISO 7816 Rst MC
  */
-void ISO7816_Init( const Pin pPinIso7816RstMC )
+void ISO7816_Init( const Pin *pPinIso7816RstMC )
 {
     TRACE_DEBUG("ISO_Init\n\r");
 

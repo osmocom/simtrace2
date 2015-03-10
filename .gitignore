@@ -15,3 +15,5 @@ atmel_softpack_libraries/memories
 *.E
 atmel_softpack_libraries/
 *.pyc
+sam3s_example/mains/zwizwa_ccid.c
+Baselibc

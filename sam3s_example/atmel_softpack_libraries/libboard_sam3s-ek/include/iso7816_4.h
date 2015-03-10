@@ -67,7 +67,7 @@
 /*------------------------------------------------------------------------------
  *         Exported functions
  *----------------------------------------------------------------------------*/
-extern void ISO7816_Init( const Pin pPinIso7816RstMC );
+extern void ISO7816_Init( const Pin *pPinIso7816RstMC );
 extern void ISO7816_IccPowerOff(void);
 extern uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
                                         uint8_t *pMessage,

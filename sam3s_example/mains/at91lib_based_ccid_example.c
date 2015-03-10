@@ -178,7 +178,7 @@ Output:
     printf("Interrupt!!\n\r");
     /*  Check all pending interrupts */
     // FIXME: this if condition is not always true...
-    if ( (pinSmartCard.pio->PIO_ISR & pinSmartCard.mask) != 0 )
+//    if ( (pinSmartCard.pio->PIO_ISR & pinSmartCard.mask) != 0 )
     {
         /*  Check current level on pin */
         if ( PIO_Get( &pinSmartCard ) == 0 )
@@ -278,6 +278,11 @@ extern int main( void )
 
     /*  Configure IT on Smart Card */
     ConfigureCardDetection() ;
+
+    /* Configure Phone SIM connection*/
+/*    Pin phone_sim_connect[] = {PIN_SC_SW, PIN_IO_SW};
+    PIO_Configure( phone_sim_connect, PIO_LISTSIZE(phone_sim_connect) );
+*/
 
     /*  Configure ISO7816 driver */
     PIO_Configure( pinsISO7816, PIO_LISTSIZE( pinsISO7816 ) ) ;

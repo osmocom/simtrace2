@@ -52,7 +52,7 @@ extern int main( void )
     printf("%s", "USB init\n\r");
 
 // FIXME: why don't we get any interrupts with this line?:
-//    while(USBD_GetState() < USBD_STATE_CONFIGURED);
+    while(USBD_GetState() < USBD_STATE_CONFIGURED);
 
     TRACE_DEBUG("%s", "Start\n\r");
 

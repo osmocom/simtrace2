@@ -589,54 +589,6 @@ void ISO7816_Init( const Pin *pPinIso7816RstMC )
     /* Pin ISO7816 initialize */
     st_pinIso7816RstMC  = pPinIso7816RstMC;
 
-#if 0
-//FIXME: Why don't I nedd to pass baudrate and masterclock to USART_Configure? Because Masterclock is configured as ref clk signal anyways?
-/**
- * \brief Configures an USART peripheral with the specified parameters.
- *
- *
- *  \param usart  Pointer to the USART peripheral to configure.
- *  \param mode  Desired value for the USART mode register (see the datasheet).
- *  \param baudrate  Baudrate at which the USART should operate (in Hz).
- *  \param masterClock  Frequency of the system master clock (in Hz).
- */
-void USART_Configure(Usart *usart,
-                            uint32_t mode,
-                            uint32_t baudrate,
-                            uint32_t masterClock)
-{
-    /* Reset and disable receiver & transmitter*/
-    usart->US_CR = US_CR_RSTRX | US_CR_RSTTX
-                   | US_CR_RXDIS | US_CR_TXDIS;
-
-    /* Configure mode*/
-    usart->US_MR = mode;
-
-    /* Configure baudrate*/
-    /* Asynchronous, no oversampling*/
-    if ( ((mode & US_MR_SYNC) == 0) && ((mode & US_MR_OVER) == 0) )
-    {
-        usart->US_BRGR = (masterClock / baudrate) / 16;
-    }
-
-    if( ((mode & US_MR_USART_MODE_SPI_MASTER) == US_MR_USART_MODE_SPI_MASTER)
-     || ((mode & US_MR_SYNC) == US_MR_SYNC))
-    {
-        if( (mode & US_MR_USCLKS_Msk) == US_MR_USCLKS_MCK)
-        {
-            usart->US_BRGR = masterClock / baudrate;
-        }
-        else
-        {
-            if ( (mode & US_MR_USCLKS_DIV) == US_MR_USCLKS_DIV)
-            {
-                usart->US_BRGR = masterClock / baudrate / 8;
-            }
-        }
-    }
-    /* TODO other modes*/
-}
-#endif
     USART_Configure( BOARD_ISO7816_BASE_USART,
                      US_MR_USART_MODE_IS07816_T_0
                      | US_MR_USCLKS_MCK

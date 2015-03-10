@@ -167,7 +167,7 @@ static void RDRtoPCDatablock_ATR( void )
 
     TRACE_DEBUG(".");
 
-//    status = ISO7816_Datablock_ATR( Atr, &length );
+    status = ISO7816_Datablock_ATR( Atr, &length );
 //    ISO7816_Decode_ATR( Atr );
 
     if (status == 0) {
@@ -696,10 +696,9 @@ static void vCCIDSendResponse( void )
     do {
         bStatus = USBD_Write( CCID_EPT_DATA_IN, (void*)&ccidDriver.sCcidMessage, 
                               ccidDriver.sCcidMessage.bSizeToSend, 0, 0 );
-
-        TRACE_DEBUG("bStatus: 0x%x\n\r", bStatus);
-
     } while (bStatus != USBD_STATUS_SUCCESS);
+
+    TRACE_DEBUG("bStatus: 0x%x\n\r", bStatus);
 }
 
 
@@ -918,10 +917,9 @@ void CCID_SmartCardRequest( void )
                              sizeof(S_ccid_bulk_out_header),
                              (TransferCallback)&CCIDCommandDispatcher,
                              (void*)0 );
-
-//        TRACE_DEBUG("bStat: %x\n\r", bStatus);
     } 
     while (bStatus != USBD_STATUS_SUCCESS);
+    TRACE_DEBUG("bStat: %x\n\r", bStatus);
 }
 
 

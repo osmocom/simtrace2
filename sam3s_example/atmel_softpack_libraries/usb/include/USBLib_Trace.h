@@ -196,6 +196,10 @@
 
 #endif
 
+#if defined(USB_NO_DEBUG)
+    #undef TRACE_DEBUG_WP
+    #undef TRACE_INFO_WP
+#endif
 
 /**
  *        Exported variables

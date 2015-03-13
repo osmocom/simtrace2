@@ -1,0 +1,460 @@
+
+USBD_HAL.o:
+00000000 b endpoints
+         U PMC_DisablePeripheral
+         U PMC_EnablePeripheral
+         U PMC_IsPeriphEnabled
+00000000 t UDP_ClearRxFlag
+00000000 t UDP_EnablePeripheralClock
+00000000 t UDP_EndOfTransfer
+00000000 t UDP_MblWriteFifo
+00000000 t UDP_WritePayload
+         U USBD_GetState
+00000000 T USBD_HAL_Activate
+00000000 T USBD_HAL_CancelIo
+00000000 T USBD_HAL_ConfigureEP
+00000000 T USBD_HAL_Connect
+00000000 T USBD_HAL_Disconnect
+00000000 T USBD_HAL_Halt
+00000000 T USBD_HAL_Init
+00000000 T USBD_HAL_IsHighSpeed
+00000000 T USBD_HAL_Read
+00000000 T USBD_HAL_RemoteWakeUp
+00000000 T USBD_HAL_ResetEPs
+00000000 T USBD_HAL_SetAddress
+00000000 T USBD_HAL_SetConfiguration
+00000000 T USBD_HAL_SetTransferCallback
+00000000 T USBD_HAL_SetupMblTransfer
+00000000 T USBD_HAL_Stall
+00000000 T USBD_HAL_Suspend
+00000000 T USBD_HAL_Write
+00000000 T USBD_IrqHandler
+         U USBD_RequestHandler
+         U USBD_ResetHandler
+         U USBD_ResumeHandler
+         U USBD_SuspendHandler
+         U USBEndpointDescriptor_GetDirection
+         U USBEndpointDescriptor_GetMaxPacketSize
+         U USBEndpointDescriptor_GetNumber
+         U USBEndpointDescriptor_GetType
+         U USBGenericRequest_GetDirection
+
+acc.o:
+00000000 T ACC_Configure
+00000000 T ACC_GetComparisionResult
+00000000 T ACC_SetComparisionPair
+         U __assert_func
+00000000 r __FUNCTION__.6748
+
+crccu.o:
+00000000 T CRCCU_ComputeCrc
+00000000 T CRCCU_Configure
+00000000 T CRCCU_ResetCrcValue
+
+pio_it.o:
+00000004 b _aIntSources
+         U __assert_func
+00000000 b _dwNumSources
+00000000 r __FUNCTION__.6752
+00000014 r __FUNCTION__.6775
+00000024 r __FUNCTION__.6779
+00000031 r __FUNCTION__.6788
+00000000 T PIOA_IrqHandler
+00000000 T PIOB_IrqHandler
+         U PIO_CaptureHandler
+00000000 T PIOC_IrqHandler
+00000000 T PIO_ConfigureIt
+00000000 T PIO_DisableIt
+00000000 T PIO_EnableIt
+00000000 T PIO_InitializeInterrupts
+00000000 T PioInterruptHandler
+         U PMC_EnablePeripheral
+
+twi.o:
+         U __assert_func
+00000000 r __FUNCTION__.6747
+00000014 r __FUNCTION__.6762
+00000027 r __FUNCTION__.6766
+00000030 r __FUNCTION__.6773
+0000003e r __FUNCTION__.6777
+0000004b r __FUNCTION__.6782
+00000059 r __FUNCTION__.6790
+00000068 r __FUNCTION__.6804
+00000075 r __FUNCTION__.6809
+00000083 r __FUNCTION__.6813
+00000091 r __FUNCTION__.6818
+000000a5 r __FUNCTION__.6822
+00000000 T TWI_ByteReceived
+00000000 T TWI_ByteSent
+00000000 T TWI_ConfigureMaster
+00000000 T TWI_ConfigureSlave
+00000000 T TWI_DisableIt
+00000000 T TWI_EnableIt
+00000000 T TWI_GetMaskedStatus
+00000000 T TWI_GetStatus
+00000000 T TWI_ReadByte
+00000000 T TWI_SendSTOPCondition
+00000000 T TWI_StartRead
+00000000 T TWI_StartWrite
+00000000 T TWI_Stop
+00000000 T TWI_TransferComplete
+00000000 T TWI_WriteByte
+
+pio.o:
+00000000 T PIO_Clear
+00000000 T PIO_Configure
+00000000 T PIO_Get
+00000000 T PIO_GetOutputDataStatus
+00000000 T PIO_Set
+00000000 T PIO_SetDebounceFilter
+         U PMC_EnablePeripheral
+
+async.o:
+00000000 T ASYNC_IsFinished
+
+exceptions.o:
+00000000 W ACC_IrqHandler
+00000000 W ADC_IrqHandler
+00000000 W BusFault_Handler
+00000000 W CRCCU_IrqHandler
+00000000 W DAC_IrqHandler
+00000000 W DebugMon_Handler
+00000000 W EEFC_IrqHandler
+00000000 W HardFault_Handler
+00000000 T IrqHandlerNotUsed
+00000000 W MCI_IrqHandler
+00000000 W MemManage_Handler
+00000000 W NMI_Handler
+00000000 W PendSV_Handler
+00000000 W PIOA_IrqHandler
+00000000 W PIOB_IrqHandler
+00000000 W PIOC_IrqHandler
+00000000 W PMC_IrqHandler
+00000000 W PWM_IrqHandler
+00000000 W RSTC_IrqHandler
+00000000 W RTC_IrqHandler
+00000000 W RTT_IrqHandler
+00000000 W SMC_IrqHandler
+00000000 W SPI_IrqHandler
+00000000 W SSC_IrqHandler
+00000000 W SUPC_IrqHandler
+00000000 W SVC_Handler
+00000000 W SysTick_Handler
+00000000 W TC0_IrqHandler
+00000000 W TC1_IrqHandler
+00000000 W TC2_IrqHandler
+00000000 W TC3_IrqHandler
+00000000 W TC4_IrqHandler
+00000000 W TC5_IrqHandler
+00000000 W TWI0_IrqHandler
+00000000 W TWI1_IrqHandler
+00000000 W UART0_IrqHandler
+00000000 W UART1_IrqHandler
+00000000 W UsageFault_Handler
+00000000 W USART0_IrqHandler
+00000000 W USART1_IrqHandler
+00000000 W USBD_IrqHandler
+00000000 W WDT_IrqHandler
+
+adc.o:
+00000000 T ADC_CfgChannelMode
+00000000 T ADC_cfgFrequency
+00000000 T ADC_CfgLowRes
+00000000 T ADC_CfgPowerSave
+00000000 T ADC_CfgTiming
+00000000 T ADC_CfgTrigering
+00000000 T ADC_check
+00000000 T ADC_GetConvertedData
+00000000 T ADC_Initialize
+00000000 T ADC_IsChannelInterruptStatusSet
+00000000 T ADC_IsInterruptMasked
+00000000 T ADC_IsStatusSet
+00000000 T ADC_ReadBuffer
+00000000 T ADC_SetCompareChannel
+00000000 T ADC_SetCompareMode
+00000000 T ADC_SetComparisonWindow
+         U __assert_func
+00000000 t calcul_startup
+00000000 r __FUNCTION__.6781
+00000015 r __FUNCTION__.6786
+         U iprintf
+
+spi_pdc.o:
+         U PMC_DisablePeripheral
+         U PMC_EnablePeripheral
+         U SPI_Configure
+         U SPI_ConfigureNPCS
+00000000 T SPID_Configure
+00000000 T SPID_ConfigureCS
+00000000 T SPID_Handler
+         U SPI_DisableIt
+00000000 T SPID_IsBusy
+00000000 T SPID_SendCommand
+         U SPI_Enable
+         U SPI_EnableIt
+         U SPI_PdcDisableRx
+         U SPI_PdcDisableTx
+         U SPI_PdcEnableRx
+         U SPI_PdcEnableTx
+         U SPI_PdcSetRx
+         U SPI_PdcSetTx
+
+efc.o:
+         U __assert_func
+00000000 T EFC_ComputeAddress
+00000000 T EFC_DisableFrdyIt
+00000000 T EFC_EnableFrdyIt
+00000000 T EFC_GetResult
+00000000 T EFC_GetStatus
+00000000 T EFC_PerformCommand
+00000000 T EFC_SetWaitState
+00000000 T EFC_StartCommand
+00000000 T EFC_TranslateAddress
+00000000 r __FUNCTION__.6765
+00000015 r __FUNCTION__.6773
+00000028 r __FUNCTION__.6785
+00000000 b IAP_PerformCommand.6803
+
+dacc.o:
+         U __assert_func
+00000000 T DACC_Initialize
+00000000 T DACC_SetConversionData
+00000000 T DACC_WriteBuffer
+00000000 r __FUNCTION__.6752
+
+flashd.o:
+00000004 b _adwPageBuffer
+         U __assert_func
+00000000 t ComputeLockRange
+00000000 b _dwUseIAP
+         U EFC_ComputeAddress
+         U EFC_DisableFrdyIt
+         U EFC_GetResult
+         U EFC_PerformCommand
+         U EFC_SetWaitState
+         U EFC_StartCommand
+         U EFC_TranslateAddress
+00000000 T FLASHD_ClearGPNVM
+00000000 T FLASHD_Erase
+00000000 T FLASHD_Initialize
+00000000 T FLASHD_IsGPNVMSet
+00000000 T FLASHD_IsLocked
+00000000 T FLASHD_Lock
+00000000 T FLASHD_ReadUniqueID
+00000000 T FLASHD_SetGPNVM
+00000000 T FLASHD_Unlock
+00000000 T FLASHD_Write
+00000000 r __FUNCTION__.6960
+0000000d r __FUNCTION__.7012
+0000001d r __FUNCTION__.7021
+0000002f r __FUNCTION__.7025
+0000003f r __FUNCTION__.7029
+00000051 r __FUNCTION__.7034
+         U memcpy
+
+pmc.o:
+         U __assert_func
+00000000 r __FUNCTION__.6742
+00000015 r __FUNCTION__.6746
+0000002b r __FUNCTION__.6768
+00000000 T PMC_DisableAllPeripherals
+00000000 T PMC_DisablePeripheral
+00000000 T PMC_EnableAllPeripherals
+00000000 T PMC_EnablePeripheral
+00000000 T PMC_IsPeriphEnabled
+
+twid.o:
+         U __assert_func
+00000000 r __FUNCTION__.6752
+00000010 r __FUNCTION__.6759
+0000001d r __FUNCTION__.6772
+00000027 r __FUNCTION__.6794
+         U TWI_ByteReceived
+         U TWI_ByteSent
+00000000 T TWID_Handler
+00000000 T TWID_Initialize
+         U TWI_DisableIt
+00000000 T TWID_Read
+00000000 T TWID_Write
+         U TWI_EnableIt
+         U TWI_GetMaskedStatus
+         U TWI_ReadByte
+         U TWI_SendSTOPCondition
+         U TWI_StartRead
+         U TWI_StartWrite
+         U TWI_Stop
+         U TWI_TransferComplete
+         U TWI_WriteByte
+
+rtt.o:
+         U __assert_func
+00000000 r __FUNCTION__.6750
+0000000d r __FUNCTION__.6758
+00000000 T RTT_EnableIT
+00000000 T RTT_GetStatus
+00000000 T RTT_GetTime
+00000000 T RTT_SetAlarm
+00000000 T RTT_SetPrescaler
+
+spi.o:
+         U PMC_EnablePeripheral
+00000000 T SPI_Configure
+00000000 T SPI_ConfigureNPCS
+00000000 T SPI_Disable
+00000000 T SPI_DisableIt
+00000000 T SPI_Enable
+00000000 T SPI_EnableIt
+00000000 T SPI_GetStatus
+00000000 T SPI_IsFinished
+00000000 T SPI_PdcDisableRx
+00000000 T SPI_PdcDisableTx
+00000000 T SPI_PdcEnableRx
+00000000 T SPI_PdcEnableTx
+00000000 T SPI_PdcSetRx
+00000000 T SPI_PdcSetTx
+00000000 T SPI_Read
+00000000 T SPI_ReadBuffer
+00000000 T SPI_Write
+00000000 T SPI_WriteBuffer
+
+tc.o:
+         U __assert_func
+00000000 r __FUNCTION__.6745
+0000000d r __FUNCTION__.6751
+00000016 r __FUNCTION__.6757
+00000000 T TC_Configure
+00000000 T TC_FindMckDivisor
+00000000 T TC_Start
+00000000 T TC_Stop
+
+pwmc.o:
+         U __assert_func
+00000000 t FindClockConfiguration
+0000002c r __FUNCTION__.6746
+00000043 r __FUNCTION__.6757
+00000059 r __FUNCTION__.6772
+00000072 r __FUNCTION__.6783
+00000087 r __FUNCTION__.6794
+00000099 r __FUNCTION__.6801
+000000aa r __FUNCTION__.6883
+000000c7 r __FUNCTION__.6889
+00000000 T PWMC_ConfigureChannel
+00000000 T PWMC_ConfigureChannelExt
+00000000 T PWMC_ConfigureClocks
+00000000 T PWMC_ConfigureComparisonUnit
+00000000 T PWMC_ConfigureEventLineMode
+00000000 T PWMC_ConfigureSyncChannel
+00000000 T PWMC_DisableChannel
+00000000 T PWMC_DisableChannelIt
+00000000 T PWMC_DisableIt
+00000000 T PWMC_DisableOverrideOutput
+00000000 T PWMC_EnableChannel
+00000000 T PWMC_EnableChannelIt
+00000000 T PWMC_EnableFaultProtection
+00000000 T PWMC_EnableIt
+00000000 T PWMC_EnableOverrideOutput
+00000000 T PWMC_FaultClear
+00000000 T PWMC_SetDeadTime
+00000000 T PWMC_SetDutyCycle
+00000000 T PWMC_SetFaultMode
+00000000 T PWMC_SetFaultProtectionValue
+00000000 T PWMC_SetOverrideValue
+00000000 T PWMC_SetPeriod
+00000000 T PWMC_SetSyncChannelUpdatePeriod
+00000000 T PWMC_SetSyncChannelUpdateUnlock
+00000000 T PWMC_WriteBuffer
+
+rtc.o:
+         U __assert_func
+00000000 r __FUNCTION__.6743
+00000010 r __FUNCTION__.6752
+0000001d r __FUNCTION__.6757
+00000000 T RTC_ClearSCCR
+00000000 T RTC_DisableIt
+00000000 T RTC_EnableIt
+00000000 T RTC_GetDate
+00000000 T RTC_GetHourMode
+00000000 T RTC_GetSR
+00000000 T RTC_GetTime
+00000000 T RTC_SetDate
+00000000 T RTC_SetDateAlarm
+00000000 T RTC_SetHourMode
+00000000 T RTC_SetTime
+00000000 T RTC_SetTimeAlarm
+
+ssc.o:
+00000000 T SSC_Configure
+00000000 T SSC_ConfigureReceiver
+00000000 T SSC_ConfigureTransmitter
+00000000 T SSC_DisableInterrupts
+00000000 T SSC_DisableReceiver
+00000000 T SSC_DisableTransmitter
+00000000 T SSC_EnableInterrupts
+00000000 T SSC_EnableReceiver
+00000000 T SSC_EnableTransmitter
+00000000 T SSC_Read
+00000000 T SSC_ReadBuffer
+00000000 T SSC_Write
+00000000 T SSC_WriteBuffer
+
+pio_capture.o:
+         U __assert_func
+00000000 r __FUNCTION__.6759
+00000000 b _PioCaptureCopy
+00000000 T PIO_CaptureDisable
+00000000 T PIO_CaptureDisableIt
+00000000 T PIO_CaptureEnable
+00000000 T PIO_CaptureEnableIt
+00000000 T PIO_CaptureHandler
+00000000 T PIO_CaptureInit
+         U PMC_EnablePeripheral
+
+usart.o:
+         U __assert_func
+00000000 r __FUNCTION__.6969
+00000000 T USART_Configure
+00000000 T USART_DisableIt
+00000000 T USART_EnableIt
+00000000 T USART_GetChar
+00000000 T USART_GetStatus
+00000000 T USART_IsDataAvailable
+00000000 T USART_IsRxReady
+00000000 T USART_PutChar
+00000000 T USART_Read
+00000000 T USART_ReadBuffer
+00000000 T USART_SetIrdaFilter
+00000000 T USART_SetReceiverEnabled
+00000000 T USART_SetTransmitterEnabled
+00000000 T USART_Write
+00000000 T USART_WriteBuffer
+
+wdt.o:
+00000000 T WDT_Disable
+00000000 T WDT_Enable
+00000000 T WDT_GetPeriod
+00000000 T WDT_GetStatus
+00000000 T WDT_Restart
+
+core_cm3.o:
+00000000 T __get_BASEPRI
+00000000 T __get_CONTROL
+00000000 T __get_FAULTMASK
+00000000 T __get_MSP
+00000000 T __get_PRIMASK
+00000000 T __get_PSP
+00000000 T __LDREXB
+00000000 T __LDREXH
+00000000 T __LDREXW
+00000000 T __RBIT
+00000000 T __REV
+00000000 T __REV16
+00000000 T __REVSH
+00000000 T __set_BASEPRI
+00000000 T __set_CONTROL
+00000000 T __set_FAULTMASK
+00000000 T __set_MSP
+00000000 T __set_PRIMASK
+00000000 T __set_PSP
+00000000 T __STREXB
+00000000 T __STREXH
+00000000 T __STREXW

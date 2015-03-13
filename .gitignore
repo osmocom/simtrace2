@@ -5,15 +5,8 @@ obj/
 build/
 cscope.out
 main.c
-atmel_softpack_libraries/libjpeg
-atmel_softpack_libraries/libqtouch
-atmel_softpack_libraries/rtos
-atmel_softpack_libraries/sam-gui
-atmel_softpack_libraries/fat
-atmel_softpack_libraries/memories
 */__pycache__
 *.E
-atmel_softpack_libraries/
 *.pyc
 sam3s_example/mains/zwizwa_ccid.c
 Baselibc

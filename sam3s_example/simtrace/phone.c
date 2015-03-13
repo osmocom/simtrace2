@@ -53,6 +53,26 @@
 /// The USB device is in resume state
 #define STATE_RESUME  5
 
+/* WTX (Wait time extension):
+*   R-block PCB begins with (msb) 10 , ends with 000011 for WTX req, 100011 for WTX resp
+*
+* The standard says:
+*   Rule 3 — If the card requires more than BWT to process the previously received I-block, it transmits S(WTX
+*   request) where INF conveys one byte encoding an integer multiplier of the BWT value. The interface device
+*   shall acknowledge by S(WTX response) with the same INF.
+*   The time allocated starts at the leading edge of the last character of S(WTX response).
+*/
+#define     WTX_req     0b10000011
+#define     WTX_req     0b10100011
+// Alternatively:
+/* For T = 0 Protocol: The firmware on receiving the NULL (0x60) Procedure byte from the card, notifies
+it to the driver using the RDR_to_PC_DataBlock response. During this period, the reception of bytes
+from the smart card is still in progress and hence the device cannot indefinitely wait for IN tokens on
+the USB bulk-in endpoint. Hence, it is required of the driver to readily supply ‘IN’ tokens on the USB
+bulk-in endpoint. On failure to do so, some of the wait time extension responses, will not be queued to
+the driver. 
+*/
+
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
@@ -62,7 +82,7 @@ unsigned char USBState = STATE_IDLE;
 /** ISO7816 pins */
 static const Pin pinsISO7816_PHONE[]    = {PINS_ISO7816_PHONE};
 /** Bus switch pins */
-static const Pin pinsBus[]    = {PINS_BUS_DEFAULT};
+static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;
 static uint8_t sim_inserted = 0;
@@ -99,12 +119,15 @@ extern uint8_t rcvdChar;
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
-
+#define     RESET   'R'
 static void ISR_PhoneRST( const Pin *pPin)
 {
-    TRACE_DEBUG("+++++++++ Interrupt!! ISR:0x%x, CSR:0x%x\n\r", pinPhoneRST.pio->PIO_ISR, USART1->US_CSR);
+    int msg = RESET;
+    printf("+++ Int!!\n\r");
+    USBD_Write( INT, &msg, 1, 0, 0 );
+
     // FIXME: What to do on reset?
-    // PIO_DisableIt( &pinPhoneRST ) ;
+//    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 static void Config_PhoneRST_IrqHandler()
@@ -230,7 +253,7 @@ void Phone_Master_Init( void ) {
 // FIXME: USB clock? USB PMC?
 //    NVIC_EnableIRQ( UDP_IRQn );
 
- //   USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
+   USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
 
    // FIXME: At some point USBD_IrqHandler() should get called and set USBD_STATE_CONFIGURED
   /*  while (USBD_GetState() < USBD_STATE_CONFIGURED) {
@@ -244,8 +267,55 @@ void Phone_Master_Init( void ) {
 
 }
 
+void send_ATR(uint8_t *ATR, uint8_t len)
+{
+    int i;
+    TRACE_INFO("Send %x %x %x", ATR[0], ATR[1], ATR[2]);
+    for ( i = 0; i < len; i++ ) {
+        _ISO7816_SendChar(*(ATR++));
+    }
+}
+
+void HandleIncommingData( void *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+{
+    TRACE_INFO("HandleIncommingData ,stat: %X, transf: %x, remain: %x", status, transferred, remaining);
+
+    uint8_t ans[MAX_ANSWER_SIZE];
+    if (status == USBD_STATUS_SUCCESS) {
+        if (((uint8_t *)pArg)[0] == 0x3B) {
+            send_ATR(pArg, transferred);
+            return; 
+        } else {
+            ISO7816_XfrBlockTPDU_T0(pArg, ans, transferred);
+        }
+    }
+    TRACE_INFO("Ans: %x %x %x", ans[0], ans[1], ans[2]);
+}
+
+#define     PR  TRACE_INFO
+extern ring_buffer buf;
+#define     MAX_MSG_LEN     64
+
 void Phone_run( void )
 {
+    int ret;
+    uint8_t pBuffer[MAX_MSG_LEN];
+
+    if (rcvdChar != 0) {
+        /*  DATA_IN for host side is data_out for simtrace side   */
+        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
+        PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
+        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
+        rcvdChar = 0;
+    }
+
+    if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&HandleIncommingData, pBuffer)) == USBD_STATUS_SUCCESS) {
+        TRACE_INFO("Reading started sucessfully");
+        TRACE_INFO("Recvd: %X %X %X %X %X", pBuffer[0], pBuffer[1], pBuffer[2], pBuffer[3], pBuffer[4]);
+    } else {
+//        TRACE_INFO("USB Error: %X", ret);
+    }
+
     // FIXME: Function Phone_run not implemented yet
 
     /* Send and receive chars */

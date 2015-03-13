@@ -52,6 +52,8 @@ TRACE_LEVEL = 1
 #FIXME: Remove this variable
 NOAUTOCALLBACK=no
 
+#CFLAGS+=-DUSB_NO_DEBUG=1
+
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -O0
 

@@ -217,6 +217,13 @@ extern void TRACE_CONFIGURE( uint32_t dwBaudRate, uint32_t dwMCk ) ;
 
 #endif
 
+#if defined(USB_NO_DEBUG)
+    #undef TRACE_DEBUG_WP
+    #define TRACE_DEBUG(...)      { }
+
+    #undef TRACE_INFO_WP
+    #define TRACE_INFO_WP(...)    { }
+#endif
 
 /**
  *        Exported variables

@@ -45,8 +45,7 @@ def find_eps(dev):
     print(ep_out)
     return (ep_in, ep_out)
 
-# main code
-def main():
+def emulate_sim():
     dev = find_dev()
 #    (epi, epo) = find_eps(dev)
 
@@ -71,5 +70,3 @@ def main():
         except: 
             print("Timeout")
     #    print(ep_in.read(1, 5000));
-
-main()

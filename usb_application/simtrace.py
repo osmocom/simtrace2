@@ -4,6 +4,7 @@ import argparse
 import sniffer
 import ccid
 import ccid_select
+import phone
 
 import usb.core
 import usb.util
@@ -50,9 +51,11 @@ def main():
         choices=["cmd1", "cmd2", "cmd_poweron", "cmd_poweroff", "cmd_get_slot_stat", "cmd_get_param"])
     parser.add_argument("-s", "--sniff", help="Sniff communication!", action='store_true') 
     parser.add_argument("-S", "--select_file", help="Transmit SELECT cmd!", action='store_true')
+    parser.add_argument("-p", "--phone", help="Emulates simcard", action='store_true')
     
     args = parser.parse_args()
     print("args: ", args)
+
 
 # FIXME: why is it a ccid function?
     if args.conf is not None:
@@ -75,6 +78,8 @@ def main():
         sniffer.sniff()
     if args.select_file is True:
         ccid_select.select()
+    if args.phone is True:
+        phone.emulate_sim()
 
     return
 

@@ -61,54 +61,75 @@ def find_eps(dev):
     print(ep_out)
     return (ep_in, ep_out)
 
-def handle_phone_request():
+WAIT_RST = 0
+WAIT_CMD = 1
+
+def handle_wait_rst(dev):
     # ATR handling
-    try:
-        arr = dev.read(0x83, 64, 100)    # Notification endpoint
-        print("arr: ", arr)
-        c=arr.pop()
-        print(c)
+    arr = dev.read(0x83, 64, 1000)    # Notification endpoint
+    print("arr: ", arr)
+    c=arr.pop()
+    print(c)
 
-        if c == ord('R'):
-            try:
-                written = dev.write(0x1, atr, 1000)     # Probably we received a Reset, so we send ATR
-                print("Written data: " + written)
-            except:
-                print("Timeout sending ATR!")
-                return
+    if c == ord('R'):
+        # We received a Reset, so we send ATR
+        written = dev.write(0x1, atr, 1000)
+        print("Written data: ")
+        print(written)
+        state = WAIT_CMD;
+    return state
 
-    except:
-        #print("Timeout receiving atr!")
-        pass
-    
+def handle_wait_cmd(dev):
     # Read phone request
-    try:
-        cmd = dev.read(0x82, 64, 10000000)
-        print("Received request!: ")
-        print("".join("%02x " % b for b in ans))
+    print("Wait cmd")
+    cmd = dev.read(0x82, 64, 1000)
+    print("Received request!: ")
+    print("".join("%02x " % b for b in cmd))
 
-        print("Write response");
-        try:
-            written = dev.write(0x01, RESP_OK, 10000000);
-            print("Bytes written:")
-            print(written)
-        except:
-            print("Timeout in send response")
-    
-    except:
-        #print("Timeout in receive cmd")
-        pass
+    send_response(dev, cmd);
+    return WAIT_CMD
 
+handle_msg_funcs = { WAIT_RST: handle_wait_rst,
+                        WAIT_CMD: handle_wait_cmd }
+
+def handle_phone_request(dev, state):
+    state = handle_msg_funcs[state](dev)
+    return state
+
+INS = 1
+
+def send_response(dev, cmd):
+    print("Write response");
+
+# FIXME: We could get data of length 5 as well! Implement another distinct criteria!
+    if len(cmd) == 5:         # Received cmd from phone
+        if cmd[INS] == 0xA4:
+            resp = [cmd[INS]]       # Respond with INS byte
+            print("Cmd: ")
+            print(cmd)
+        elif cmd[INS] == 0xC0:
+            SW = [0x90, 0x00]
+            resp = [cmd[INS], 0xA, 0xA, SW]       # Respond with INS byte
+            print("Cmd, resp: ")
+            print(cmd)
+            print(resp)
+
+    else:
+        # FIXME:
+        resp = [0x9F, 0x02]
+
+    print(resp)
+    written = dev.write(0x01, resp, 10000);
+    print("Bytes written:")
+    print(written)
 
 def emulate_sim():
     dev = find_dev()
+    state = WAIT_RST;
 
     while True:
         try:
-            handle_phone_request()
+            state = handle_phone_request(dev, state)
 
-        except KeyboardInterrupt:
-            print("Bye")
-            sys.exit()
-        except: 
-            print("Timeout")
+        except usb.USBError as e:
+            print e

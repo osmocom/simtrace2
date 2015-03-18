@@ -4,6 +4,21 @@ import usb.core
 import usb.util
 import sys
 
+import time         # needed for sleep()
+import traceback    # Exception timeout
+
+# Sniffed Phone to SIM card communication:
+# phone < sim : ATR
+# phone > sim : A0 A4 00 00 02 (Select File)
+# phone < sim : A4 (INS repeated)
+# phone > sim : 7F 02 (= ??)
+# phone < sim : 9F 16 (9F: success, can deliver 0x16 (=22) byte)
+# phone > sim : ?? (A0 C0 00 00 16)
+# phone < sim : C0 (INS repeated)
+# phone < sim : 00 00 00 00   7F 20 02 00   00 00 00 00   09 91 00 17   04 00 83 8A (data of length 22)
+# phone < sim : 90 00 (OK, everything went fine)
+# phone ? sim : 00 (??)
+
 # SuperSIM ATR
 atr= [0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19]
 RESP_OK = [0x60, 0x00]

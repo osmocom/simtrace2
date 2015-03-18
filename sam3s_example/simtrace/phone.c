@@ -107,13 +107,19 @@ static const Pin pinPhoneRST = ISO7816_PHONE_RST;
 /** Flip flop for send and receive char */
 #define USART_SEND 0
 #define USART_RCV  1
+
+#define NONE            9
+#define RST_RCVD        10
+#define WAIT_CMD_PHONE  11
+#define WAIT_CMD_PC     12
+#define WAIT_ATR        13
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
 /** Variable for state of send and receive froom USART */
 static uint8_t StateUsartGlobal = USART_RCV;
 
-extern uint32_t char_stat;
+static uint32_t state;
 extern uint8_t rcvdChar;
 
 /*-----------------------------------------------------------------------------
@@ -122,11 +128,12 @@ extern uint8_t rcvdChar;
 #define     RESET   'R'
 static void ISR_PhoneRST( const Pin *pPin)
 {
-    int msg = RESET;
     printf("+++ Int!!\n\r");
-    USBD_Write( INT, &msg, 1, 0, 0 );
-
+    if (state == NONE) {
+        state = RST_RCVD;
+    }
     // FIXME: What to do on reset?
+    // FIXME: It seems like the phone is constantly sending a lot of these RSTs
 //    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
@@ -245,7 +252,7 @@ void Phone_Master_Init( void ) {
     /*  Configure ISO7816 driver */
     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
-
+    state = NONE;
 
 
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
@@ -267,53 +274,93 @@ void Phone_Master_Init( void ) {
 
 }
 
-void send_ATR(uint8_t *ATR, uint8_t len)
+void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     int i;
-    TRACE_INFO("Send %x %x %x", ATR[0], ATR[1], ATR[2]);
-    for ( i = 0; i < len; i++ ) {
+    TRACE_INFO("Send %x %x %x.. %x", ATR[0], ATR[1], ATR[2], ATR[transferred-1]);
+    for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(ATR++));
     }
+    state = WAIT_CMD_PHONE;
 }
 
-void HandleIncommingData( void *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
-    TRACE_INFO("HandleIncommingData ,stat: %X, transf: %x, remain: %x", status, transferred, remaining);
+    int i;
+    TRACE_INFO("sendResponse, stat: %X, transf: %x, remain: %x", status, transferred, remaining);
+    TRACE_INFO("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
 
-    uint8_t ans[MAX_ANSWER_SIZE];
-    if (status == USBD_STATUS_SUCCESS) {
-        if (((uint8_t *)pArg)[0] == 0x3B) {
-            send_ATR(pArg, transferred);
-            return; 
-        } else {
-            ISO7816_XfrBlockTPDU_T0(pArg, ans, transferred);
-        }
+    for ( i = 0; i < transferred; i++ ) {
+        _ISO7816_SendChar(*(pArg++));
     }
-    TRACE_INFO("Ans: %x %x %x", ans[0], ans[1], ans[2]);
+    state = WAIT_CMD_PHONE;
 }
 
-#define     PR  TRACE_INFO
 extern ring_buffer buf;
 #define     MAX_MSG_LEN     64
+#define     PR              printf
+
+void wait_for_response(uint8_t pBuffer[]) {
+    int ret = 0;
+//    uint8_t msg[] = {0xa0, 0xa4, 0x0, 0x0, 0x2};
+    if (rcvdChar != 0) {
+        printf(" rr ");
+        /*  DATA_IN for host side is data_out for simtrace side   */
+        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
+        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
+        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
+        //USBD_Write( DATAIN, msg, BUFLEN, 0, 0 );
+
+        rcvdChar = 0;
+
+        if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
+            TRACE_INFO("Reading started sucessfully (wait_resp)");
+            state = WAIT_CMD_PC;
+        } else {
+            TRACE_INFO("USB Error: %X", ret);
+        }
+    }
+}
+
+// Sniffed Phone to SIM card communication:
+// phone > sim : RST
+// phone < sim : ATR
+// phone > sim : A0 A4 00 00 02 (Select File)
+// phone < sim : A4 (INS repeated)
+// phone > sim : 7F 02 (= ??)
+// phone < sim : 9F 16 (9F: success, can deliver 0x16 (=22) byte)
+// phone > sim : ?? (A0 C0 00 00 16)
+// phone < sim : C0 (INS repeated)
+// phone < sim : 00 00 00 00   7F 20 02 00   00 00 00 00   09 91 00 17   04 00 83 8A (data of length 22 -2)
+// phone <? sim : 90 00 (OK, everything went fine)
+// phone ? sim : 00 (??)
 
 void Phone_run( void )
 {
     int ret;
     uint8_t pBuffer[MAX_MSG_LEN];
+    int msg = RESET;
+// FIXME: remove:
+//    uint8_t ATR[] = {0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19}; 
+//    send_ATR(ATR, (sizeof(ATR)/sizeof(ATR[0])));
 
-    if (rcvdChar != 0) {
-        /*  DATA_IN for host side is data_out for simtrace side   */
-        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
-        PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
-        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
-        rcvdChar = 0;
-    }
-
-    if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&HandleIncommingData, pBuffer)) == USBD_STATUS_SUCCESS) {
-        TRACE_INFO("Reading started sucessfully");
-        TRACE_INFO("Recvd: %X %X %X %X %X", pBuffer[0], pBuffer[1], pBuffer[2], pBuffer[3], pBuffer[4]);
-    } else {
-//        TRACE_INFO("USB Error: %X", ret);
+    switch (state) {
+        case RST_RCVD:
+            USBD_Write( INT, &msg, 1, 0, 0 );
+            // send_ATR sets state to WAIT_CMD
+            if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&send_ATR, pBuffer)) == USBD_STATUS_SUCCESS) {
+                TRACE_INFO("Reading started sucessfully (ATR)");
+                state = WAIT_ATR;
+            } else {
+                TRACE_INFO("USB Error: %X", ret);
+//FIXME:                 state = ERR;
+            }
+            break;
+        case WAIT_CMD_PHONE:
+            wait_for_response(pBuffer);
+            break;
+        default:
+            break;
     }
 
     // FIXME: Function Phone_run not implemented yet

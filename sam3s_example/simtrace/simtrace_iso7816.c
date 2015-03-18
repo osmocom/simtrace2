@@ -53,9 +53,9 @@ ring_buffer buf = { {0}, 0 };
 
 void buf_push(uint8_t item)
 {
-    buf.buf[buf.idx % (BUFLEN*2)] = item;
+    buf.buf[buf.idx % (BUFLEN)] = item;
     PR("----- Push: %x %x\n\r", buf.idx, buf.buf[buf.idx]);
-    buf.idx = (buf.idx+1) % (BUFLEN*2);
+    buf.idx = (buf.idx+1) % (BUFLEN);
 }
 
 uint8_t get_buf_start(uint8_t *buf_start)
@@ -144,7 +144,7 @@ void USART1_IrqHandler( void )
             PR("%x\n\r", (USART_PHONE->US_RHR) & 0xFF);
         } /* else: error occured */
 
-        if ((buf.idx % BUFLEN) == 0) {
+        if ((buf.idx % BUFLEN) == BUFLEN-1) {
             rcvdChar = 1;
         }
 

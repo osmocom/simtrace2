@@ -6,7 +6,7 @@
 #define DATAIN      2
 #define INT         3
 
-#define BUFLEN  64
+#define BUFLEN  5
 typedef struct ring_buffer
 {
     uint8_t     buf[BUFLEN*2];   // data buffer

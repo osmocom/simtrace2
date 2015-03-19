@@ -59,4 +59,8 @@ extern void CCID_run( void );
 extern void Phone_run( void );
 extern void MITM_run( void );
 
+/*  Timer helper function */
+void Timer_Init( void );
+void TC0_Counter_Reset( void );
+
 #endif  /*  SIMTRACE_H  */

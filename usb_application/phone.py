@@ -99,29 +99,37 @@ def handle_phone_request(dev, state):
 INS = 1
 
 def send_response(dev, cmd):
-    print("Write response");
-
+    print("Write response to ")
+    print("".join("%02x " % b for b in cmd))
 # FIXME: We could get data of length 5 as well! Implement another distinct criteria!
     if len(cmd) == 5:         # Received cmd from phone
         if cmd[INS] == 0xA4:
             resp = [cmd[INS]]       # Respond with INS byte
-            print("Cmd: ")
-            print(cmd)
         elif cmd[INS] == 0xC0:
+            data = [0x00, 0x00, 0x00, 0x00,
+                    0x7F, 0x20, 0x02, 0x00,
+                    0x00, 0x00, 0x00, 0x00,
+                    0x09, 0x91, 0x00, 0x17,
+                    0x04, 0x00, 0x83, 0x8A,
+                    0x83, 0x8A]
             SW = [0x90, 0x00]
-            resp = [cmd[INS], 0xA, 0xA, SW]       # Respond with INS byte
-            print("Cmd, resp: ")
-            print(cmd)
-            print(resp)
-
+            resp = [cmd[INS], data, SW]       # Respond with INS byte
+        else:
+            print("Unknown cmd")
+            resp = [0x60, 0x00]
+    elif len(cmd) == 2:
+        resp = [0x9F, 0x16]
     else:
-        # FIXME:
-        resp = [0x9F, 0x02]
+        resp = [0x60, 0x00]
 
-    print(resp)
+    print("Cmd, resp: ")
+    print("".join("%02x " % b for b in cmd))
+    print("".join("%02x " % b for b in resp))
+
     written = dev.write(0x01, resp, 10000);
-    print("Bytes written:")
-    print(written)
+    if written > 0:
+        print("Bytes written:")
+        print(written)
 
 def emulate_sim():
     dev = find_dev()

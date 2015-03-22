@@ -67,15 +67,15 @@ WAIT_CMD = 1
 def handle_wait_rst(dev):
     # ATR handling
     arr = dev.read(0x83, 64, 1000)    # Notification endpoint
-    print("arr: ", arr)
+#    print("arr: ", arr)
     c=arr.pop()
-    print(c)
+#    print(c)
 
     if c == ord('R'):
         # We received a Reset, so we send ATR
         written = dev.write(0x1, atr, 1000)
-        print("Written data: ")
-        print(written)
+#        print("Written data: ")
+#        print(written)
         state = WAIT_CMD;
     return state
 
@@ -99,8 +99,6 @@ def handle_phone_request(dev, state):
 INS = 1
 
 def send_response(dev, cmd):
-    print("Write response to ")
-    print("".join("%02x " % b for b in cmd))
 # FIXME: We could get data of length 5 as well! Implement another distinct criteria!
     if len(cmd) == 5:         # Received cmd from phone
         if cmd[INS] == 0xA4:
@@ -113,7 +111,7 @@ def send_response(dev, cmd):
                     0x04, 0x00, 0x83, 0x8A,
                     0x83, 0x8A]
             SW = [0x90, 0x00]
-            resp = [cmd[INS], data, SW]       # Respond with INS byte
+            resp = [cmd[INS]] + data + SW       # Respond with INS byte
         else:
             print("Unknown cmd")
             resp = [0x60, 0x00]
@@ -122,14 +120,15 @@ def send_response(dev, cmd):
     else:
         resp = [0x60, 0x00]
 
-    print("Cmd, resp: ")
-    print("".join("%02x " % b for b in cmd))
-    print("".join("%02x " % b for b in resp))
-
     written = dev.write(0x01, resp, 10000);
     if written > 0:
         print("Bytes written:")
         print(written)
+
+    print("Cmd, resp: ")
+    print("".join("%02x " % b for b in cmd))
+    print("".join("%02x " % b for b in resp))
+
 
 def emulate_sim():
     dev = find_dev()
@@ -140,4 +139,5 @@ def emulate_sim():
             state = handle_phone_request(dev, state)
 
         except usb.USBError as e:
-            print e
+          #  print e
+            pass

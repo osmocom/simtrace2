@@ -25,11 +25,11 @@
 #include <string.h>
 
 //FIXME:
-static const Pin pTC[] = {PIO_PA4B_TCLK0, PIO_PA0B_TIOA0, PIO_PA1B_TIOB0};
+static const Pin pTC[] = {{PIO_PA4B_TCLK0, PIO_PA0B_TIOA0, PIO_PA1B_TIOB0}};
 
 /** Global timestamp in milliseconds since start of application */
 volatile uint32_t dwTimeStamp = 0;
-uint8_t timeout_occured = 0;
+volatile uint8_t timeout_occured = 0;
 
 // FIXME: Do I need the function?:
 /**
@@ -52,14 +52,15 @@ void TC0_IrqHandler( void )
     /* Clear status bit to acknowledge interrupt */
     dummy = TC0->TC_CHANNEL[ 0 ].TC_SR;
 
-    TRACE_DEBUG("++++ TC0_IrqHandler");
     timeout_occured++;
+//    printf("++++ TC0_Irq %d\n\r", timeout_occured);
 }
 
 
 void TC0_Counter_Reset( void )
 {
     TC0->TC_CHANNEL[ 0 ].TC_CCR = TC_CCR_SWTRG ;
+    timeout_occured = 0;
 }
 
 /*  == Timeouts ==
@@ -74,8 +75,8 @@ void Timer_Init()
     /** Enable peripheral clock. */
     PMC_EnablePeripheral(ID_TC0);
 
-    /** Configure TC for a 8Hz frequency and trigger on RC compare. */
-    TC_FindMckDivisor( 1, BOARD_MCK, &div, &tcclks, BOARD_MCK );
+    /** Configure TC for a $ARG1 Hz frequency and trigger on RC compare. */
+    TC_FindMckDivisor( 20, BOARD_MCK, &div, &tcclks, BOARD_MCK );
     TRACE_INFO("Chosen div, tcclk: %d, %d", div, tcclks);
     /* TC_CMR: TC Channel Mode Register: Capture Mode */
     /* CPCTRG: RC Compare resets the counter and starts the counter clock. */

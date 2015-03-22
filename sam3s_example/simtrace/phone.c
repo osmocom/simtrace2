@@ -122,6 +122,8 @@ static uint8_t StateUsartGlobal = USART_RCV;
 static uint32_t state;
 extern uint8_t rcvdChar;
 
+extern volatile uint8_t timeout_occured;
+
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
@@ -272,6 +274,7 @@ void Phone_Master_Init( void ) {
     }
 */
 
+    Timer_Init();
 }
 
 void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
@@ -287,7 +290,7 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
 void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     int i;
-    TRACE_INFO("sendResponse, stat: %X, transf: %x, remain: %x", status, transferred, remaining);
+    TRACE_INFO("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
     TRACE_INFO("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
 
     for ( i = 0; i < transferred; i++ ) {
@@ -307,18 +310,31 @@ void wait_for_response(uint8_t pBuffer[]) {
         printf(" rr ");
         /*  DATA_IN for host side is data_out for simtrace side   */
         /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
-        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
-        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
+        ret = USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
         //USBD_Write( DATAIN, msg, BUFLEN, 0, 0 );
+        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
 
         rcvdChar = 0;
-
-        if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
-            TRACE_INFO("Reading started sucessfully (wait_resp)");
-            state = WAIT_CMD_PC;
-        } else {
-            TRACE_INFO("USB Error: %X", ret);
-        }
+    } else if (timeout_occured  && buf.idx != 0) {
+        printf(" to ");
+        ret = USBD_Write( DATAIN, buf.buf, buf.idx, 0, 0 );
+        timeout_occured = 0;
+        buf.idx = 0;
+        rcvdChar = 0;
+        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
+    } else {
+        printf(".");
+        return;
+    }
+    if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, 
+                (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
+        TRACE_INFO("wait_rsp\n\r");
+//        state = WAIT_CMD_PC;
+        buf.idx = 0;
+        TC0_Counter_Reset();
+    } else {
+        TRACE_INFO("USB Err: %X", ret);
+        return;
     }
 }
 
@@ -343,7 +359,6 @@ void Phone_run( void )
 // FIXME: remove:
 //    uint8_t ATR[] = {0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19}; 
 //    send_ATR(ATR, (sizeof(ATR)/sizeof(ATR[0])));
-
     switch (state) {
         case RST_RCVD:
             USBD_Write( INT, &msg, 1, 0, 0 );
@@ -357,9 +372,13 @@ void Phone_run( void )
             }
             break;
         case WAIT_CMD_PHONE:
+// FIXME:            TC0_Counter_Reset();
             wait_for_response(pBuffer);
             break;
+        case NONE:
+            break;
         default:
+//            TRACE_INFO(":(");
             break;
     }
 

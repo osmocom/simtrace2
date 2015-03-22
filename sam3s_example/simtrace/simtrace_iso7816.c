@@ -40,7 +40,7 @@ extern uint32_t char_stat;
 
 //#define BUFLEN  14
 // FIXME: Remove:
-#define PR TRACE_DEBUG
+#define PR TRACE_INFO
 //#define PR printf 
 
 /*typedef struct ring_buffer
@@ -53,9 +53,9 @@ ring_buffer buf = { {0}, 0 };
 
 void buf_push(uint8_t item)
 {
-    buf.buf[buf.idx % (BUFLEN)] = item;
-    PR("----- Push: %x %x\n\r", buf.idx, buf.buf[buf.idx]);
-    buf.idx = (buf.idx+1) % (BUFLEN);
+    buf.buf[buf.idx % (BUFLEN*2)] = item;
+    PR("Psh: %x %x\n\r", buf.idx, buf.buf[buf.idx]);
+    buf.idx = (buf.idx+1) % (BUFLEN*2);
 }
 
 uint8_t get_buf_start(uint8_t *buf_start)
@@ -125,7 +125,7 @@ void USART1_IrqHandler( void )
 */  
     uint32_t csr = USART_PHONE->US_CSR;                                                       
     
-    PR("---- stat: %x\n\r", csr);
+//    PR("---- stat: %x\n\r", csr);
 
     if (csr & US_CSR_TXRDY) {
         /* transmit buffer empty, nothing to transmit */                                      
@@ -134,18 +134,22 @@ void USART1_IrqHandler( void )
         stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
                         US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
                         (1<<10)));
+        int c = (USART_PHONE->US_RHR) & 0xFF;
+//        printf(" %x", c);
 
         if (stat == 0 ) {
             /* Fill char into buffer */
-            PR("---- BUFLEN %x\n\r", buf.idx);
             buf_push((USART_PHONE->US_RHR) & 0xFF);
         } else {
-       //     buf_push((USART_PHONE->US_RHR) & 0xFF);
+//            buf_push((USART_PHONE->US_RHR) & 0xFF);
+            PR("e");
             PR("%x\n\r", (USART_PHONE->US_RHR) & 0xFF);
+            PR("st:", stat);
         } /* else: error occured */
 
         if ((buf.idx % BUFLEN) == BUFLEN-1) {
             rcvdChar = 1;
+            printf("r. ");
         }
 
         char_stat = stat;

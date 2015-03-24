@@ -20,7 +20,12 @@ import traceback    # Exception timeout
 # phone ? sim : 00 (??)
 
 # SuperSIM ATR
-atr= [0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19]
+# atr= [0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19]
+
+# Faster sysmocom SIM
+#atr = [0x3B, 0x99, 0x18, 0x00, 0x11, 0x88, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x60]
+atr = [0x3B, 0x99, 0x11, 0x00, 0x11, 0x88, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x60]
+
 RESP_OK = [0x60, 0x00]
 
 def find_dev():
@@ -66,7 +71,8 @@ WAIT_CMD = 1
 
 def handle_wait_rst(dev):
     # ATR handling
-    arr = dev.read(0x83, 64, 1000)    # Notification endpoint
+    print("Handle ATR")
+    arr = dev.read(0x83, 64, 300)    # Notification endpoint
 #    print("arr: ", arr)
     c=arr.pop()
 #    print(c)
@@ -74,8 +80,8 @@ def handle_wait_rst(dev):
     if c == ord('R'):
         # We received a Reset, so we send ATR
         written = dev.write(0x1, atr, 1000)
-#        print("Written data: ")
-#        print(written)
+        print("Written ATR of size: ")
+        print(written)
         state = WAIT_CMD;
     return state
 
@@ -86,13 +92,17 @@ def handle_wait_cmd(dev):
     print("Received request!: ")
     print("".join("%02x " % b for b in cmd))
 
-    send_response(dev, cmd);
-    return WAIT_CMD
+    return send_response(dev, cmd);
 
 handle_msg_funcs = { WAIT_RST: handle_wait_rst,
                         WAIT_CMD: handle_wait_cmd }
 
 def handle_phone_request(dev, state):
+    if state == WAIT_CMD:
+        try:
+            state = handle_msg_funcs[WAIT_RST](dev)
+        except usb.USBError as e:
+            print e
     state = handle_msg_funcs[state](dev)
     return state
 
@@ -100,6 +110,7 @@ INS = 1
 
 def send_response(dev, cmd):
 # FIXME: We could get data of length 5 as well! Implement another distinct criteria!
+    state = WAIT_CMD
     if len(cmd) == 5:         # Received cmd from phone
         if cmd[INS] == 0xA4:
             resp = [cmd[INS]]       # Respond with INS byte
@@ -112,6 +123,8 @@ def send_response(dev, cmd):
                     0x83, 0x8A]
             SW = [0x90, 0x00]
             resp = [cmd[INS]] + data + SW       # Respond with INS byte
+            #resp = SW       # Respond with INS byte
+            state = WAIT_RST
         else:
             print("Unknown cmd")
             resp = [0x60, 0x00]
@@ -128,7 +141,8 @@ def send_response(dev, cmd):
     print("Cmd, resp: ")
     print("".join("%02x " % b for b in cmd))
     print("".join("%02x " % b for b in resp))
-
+        
+    return state
 
 def emulate_sim():
     dev = find_dev()

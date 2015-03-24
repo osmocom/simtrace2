@@ -76,7 +76,7 @@ void Timer_Init()
     PMC_EnablePeripheral(ID_TC0);
 
     /** Configure TC for a $ARG1 Hz frequency and trigger on RC compare. */
-    TC_FindMckDivisor( 20, BOARD_MCK, &div, &tcclks, BOARD_MCK );
+    TC_FindMckDivisor( 8, BOARD_MCK, &div, &tcclks, BOARD_MCK );
     TRACE_INFO("Chosen div, tcclk: %d, %d", div, tcclks);
     /* TC_CMR: TC Channel Mode Register: Capture Mode */
     /* CPCTRG: RC Compare resets the counter and starts the counter clock. */

@@ -82,7 +82,10 @@ unsigned char USBState = STATE_IDLE;
 /** ISO7816 pins */
 static const Pin pinsISO7816_PHONE[]    = {PINS_ISO7816_PHONE};
 /** Bus switch pins */
-static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
+//static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
+// FIXME: temporary enable bus switch 
+static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
+
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;
 static uint8_t sim_inserted = 0;
@@ -124,6 +127,8 @@ extern uint8_t rcvdChar;
 
 extern volatile uint8_t timeout_occured;
 
+static rst_cnt = 0;
+
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
@@ -131,9 +136,13 @@ extern volatile uint8_t timeout_occured;
 static void ISR_PhoneRST( const Pin *pPin)
 {
     printf("+++ Int!!\n\r");
-    if (state == NONE) {
+    state = RST_RCVD;
+   
+/*    if (state == NONE || rst_cnt > 2) {
         state = RST_RCVD;
     }
+    rst_cnt++;
+*/
     // FIXME: What to do on reset?
     // FIXME: It seems like the phone is constantly sending a lot of these RSTs
 //    PIO_DisableIt( &pinPhoneRST ) ;
@@ -296,6 +305,13 @@ void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t
     for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(pArg++));
     }
+/*
+    if (*(pArg-1) == 0x8A) {
+        for (i=0; i<20000; i++) ;
+        _ISO7816_SendChar(0x90);
+        _ISO7816_SendChar(0x00);
+    }
+*/
     state = WAIT_CMD_PHONE;
 }
 
@@ -315,7 +331,7 @@ void wait_for_response(uint8_t pBuffer[]) {
         PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
 
         rcvdChar = 0;
-    } else if (timeout_occured  && buf.idx != 0) {
+    } else if (timeout_occured && buf.idx != 0) {
         printf(" to ");
         ret = USBD_Write( DATAIN, buf.buf, buf.idx, 0, 0 );
         timeout_occured = 0;
@@ -362,6 +378,7 @@ void Phone_run( void )
     switch (state) {
         case RST_RCVD:
             USBD_Write( INT, &msg, 1, 0, 0 );
+            TC0_Counter_Reset();
             // send_ATR sets state to WAIT_CMD
             if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&send_ATR, pBuffer)) == USBD_STATUS_SUCCESS) {
                 TRACE_INFO("Reading started sucessfully (ATR)");

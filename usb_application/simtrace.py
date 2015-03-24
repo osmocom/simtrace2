@@ -41,6 +41,13 @@ class find_class(object):
 
         return False
 
+def find_dev():
+    dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
+    if dev is None:
+        raise ValueError("Device not found")
+    else:
+        print("Found device")
+    return dev
 
 # main code
 def main():
@@ -59,15 +66,15 @@ def main():
 
 # FIXME: why is it a ccid function?
     if args.conf is not None:
-        devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
-        for dev in devs:
-            dev.set_configuration(args.conf)
-#            ret = dev.read(0x83, 64, 100)
+#FIXME: Change means to find devices
+        dev = find_dev()
+        dev.set_configuration(args.conf)
 
     if args.read_bin is True: 
         ccid.pySim_read() 
 
     if args.cmd is not None:
+#FIXME: Change means to find devices
         devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
         for dev in devs:
             dev.write(0x1, args.cmd)

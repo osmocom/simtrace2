@@ -144,7 +144,7 @@ void USART1_IrqHandler( void )
 //            buf_push((USART_PHONE->US_RHR) & 0xFF);
             PR("e");
             PR("%x\n\r", (USART_PHONE->US_RHR) & 0xFF);
-            PR("st:", stat);
+            PR("st: %x ", stat);
         } /* else: error occured */
 
         if ((buf.idx % BUFLEN) == BUFLEN-1) {

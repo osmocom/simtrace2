@@ -133,8 +133,7 @@ def send_response(dev, cmd):
                     0x83, 0x8A]
             SW = [0x90, 0x00]
             resp = [cmd[INS]] + data + SW       # Respond with INS byte
-            #resp = SW       # Respond with INS byte
-            state = WAIT_RST
+            #state = WAIT_RST
         else:
             print("Unknown cmd")
             resp = [0x60, 0x00]

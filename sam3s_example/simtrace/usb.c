@@ -376,9 +376,9 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-                                      DATAOUT),
+                                      PHONE_DATAOUT),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -387,9 +387,9 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-                                      DATAIN),
+                                      PHONE_DATAIN),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -397,9 +397,9 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, PHONE_INT ),
         USBEndpointDescriptor_INTERRUPT,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
             USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
         0x10
     }
@@ -492,17 +492,14 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         0, 
         0, /* FIXME: string descriptor for this interface */
     },
-#define DATAOUT_2   DATAOUT+3
-#define DATAIN_2    DATAIN+3
-#define INT_2       INT+3
     /* Bulk-OUT endpoint standard descriptor */
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-                                      DATAOUT_2),
+                                      PHONE_DATAOUT),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT_2),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -511,9 +508,9 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-                                      DATAIN_2),
+                                      PHONE_DATAIN),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN_2),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -521,9 +518,9 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT_2 ),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, PHONE_INT ),
         USBEndpointDescriptor_INTERRUPT,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT_2),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
             USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
         0x10
     }

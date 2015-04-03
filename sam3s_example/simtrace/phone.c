@@ -99,10 +99,9 @@ static const Pin pPwr[] = {
 };
 
 
-#define ISO7816_PHONE_RST   {PIO_PA24, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_DEGLITCH | PIO_IT_EDGE }
-static const Pin pinPhoneRST = ISO7816_PHONE_RST;
-//#define ISO7816_PHONE_CLK   {PIO_PA23A_SCK1, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_DEGLITCH | PIO_IT_EDGE }
-//static const Pin pinPhoneClk = ISO7816_PHONE_CLK;
+static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
+
+#define PR  TRACE_INFO
 
 /* ===================================================*/
 /*                      Taken from iso7816_4.c        */

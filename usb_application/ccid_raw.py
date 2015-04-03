@@ -83,7 +83,7 @@ def disconnect_card(hcard):
 
 
 def do_intercept(cmd, dwActiveProtocol):
-    send_receive_cmd(cmd, hcard, dwActiveProtocol)
+    return send_receive_cmd(cmd, hcard, dwActiveProtocol)
 
 def init():
     (hcontext, reader) = establish_context()

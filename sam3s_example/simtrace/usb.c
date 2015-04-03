@@ -189,7 +189,7 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        3, /* This interface uses 3 endpoints */
+        3, /* Number of endpoints */
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */
@@ -365,7 +365,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        3, /* This interface uses 3 endpoints */
+        4, /* Number of endpoints */
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */
@@ -439,7 +439,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        3, /* This interface uses 3 endpoints */
+        3, /* Number of endpoints */
         //CDCCommunicationInterfaceDescriptor_CLASS,
         0xff,
 //        CDCCommunicationInterfaceDescriptor_ABSTRACTCONTROLMODEL,
@@ -486,7 +486,7 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBGenericDescriptor_INTERFACE,
         1, /* This is interface #1 */
         0, /* This is alternate setting #0 for this interface */
-        3, /* This interface uses 3 endpoints */
+        3, /* Number of endpoints */
         0xff,
         0,
         0, 

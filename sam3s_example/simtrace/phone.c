@@ -296,7 +296,7 @@ void Phone_Master_Init( void ) {
 void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     int i;
-    TRACE_INFO("Send %x %x %x.. %x", ATR[0], ATR[1], ATR[2], ATR[transferred-1]);
+    PR("Send %x %x %x.. %x", ATR[0], ATR[1], ATR[2], ATR[transferred-1]);
     for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(ATR++));
     }
@@ -306,8 +306,8 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
 void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     int i;
-    TRACE_INFO("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
-    TRACE_INFO("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
+    PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
+    PR("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
 
     for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(pArg++));
@@ -351,12 +351,12 @@ void wait_for_response(uint8_t pBuffer[]) {
     }
     if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, 
                 (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
-        TRACE_INFO("wait_rsp\n\r");
+        PR("wait_rsp\n\r");
 //        state = WAIT_CMD_PC;
         buf.idx = 0;
         TC0_Counter_Reset();
     } else {
-        TRACE_INFO("USB Err: %X", ret);
+        PR("USB Err: %X", ret);
         return;
     }
 }
@@ -391,7 +391,7 @@ void Phone_run( void )
                 TRACE_INFO("Reading started sucessfully (ATR)");
                 state = WAIT_ATR;
             } else {
-                TRACE_INFO("USB Error: %X", ret);
+ //               PR("USB Error: %X", ret);
 //FIXME:                 state = ERR;
             }
             break;
@@ -402,7 +402,7 @@ void Phone_run( void )
         case NONE:
             break;
         default:
-//            TRACE_INFO(":(");
+//            PR(":(");
             break;
     }
 

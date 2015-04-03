@@ -134,7 +134,15 @@ static rst_cnt = 0;
 #define     RESET   'R'
 static void ISR_PhoneRST( const Pin *pPin)
 {
-    printf("+++ Int!!\n\r");
+    printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
+    if ( ((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)  )
+    {
+        if(PIO_Get( &pinPhoneRST ) == 0) {
+            printf(" 0 ");
+        } else {
+            printf(" 1 ");
+        }
+    }
     state = RST_RCVD;
    
 /*    if (state == NONE || rst_cnt > 2) {

@@ -352,7 +352,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
     {
         sizeof(USBConfigurationDescriptor),
         USBGenericDescriptor_CONFIGURATION,
-        sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
+        sizeof(SIMTraceDriverConfigurationDescriptorPhone),
         1, /* There is one interface in this configuration */
         CFG_NUM_PHONE, /* configuration number */
         PHONE_CONF_STR, /* string descriptor for this configuration */

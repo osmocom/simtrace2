@@ -72,14 +72,14 @@ WAIT_CMD = 1
 def handle_wait_rst(dev):
     # ATR handling
     print("Handle ATR")
-    arr = dev.read(0x83, 64, 300)    # Notification endpoint
+    arr = dev.read(PHONE_INT, 64, 300)    # Notification endpoint
 #    print("arr: ", arr)
     c=arr.pop()
 #    print(c)
 
     if c == ord('R'):
         # We received a Reset, so we send ATR
-        written = dev.write(0x1, atr, 1000)
+        written = dev.write(PHONE_DATAOUT, atr, 1000)
         print("Written ATR of size: ")
         print(written)
         state = WAIT_CMD;
@@ -88,7 +88,7 @@ def handle_wait_rst(dev):
 def handle_wait_cmd(dev):
     # Read phone request
     print("Wait cmd")
-    cmd = dev.read(0x82, 64, 1000)
+    cmd = dev.read(PHONE_DATAIN, 64, 1000)
     print("Received request!: ")
     print("".join("%02x " % b for b in cmd))
 
@@ -107,6 +107,16 @@ def handle_phone_request(dev, state):
     return state
 
 INS = 1
+CNT = 4
+
+#PHONE_DATAOUT = 0x04
+#PHONE_DATAIN = 0x85
+#PHONE_INT = 0x86
+
+
+PHONE_DATAOUT = 0x01
+PHONE_DATAIN = 0x82
+PHONE_INT = 0x83
 
 def send_response(dev, cmd):
 # FIXME: We could get data of length 5 as well! Implement another distinct criteria!
@@ -133,7 +143,7 @@ def send_response(dev, cmd):
     else:
         resp = [0x60, 0x00]
 
-    written = dev.write(0x01, resp, 10000);
+    written = dev.write(PHONE_DATAOUT, resp, 10000);
     if written > 0:
         print("Bytes written:")
         print(written)

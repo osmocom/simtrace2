@@ -333,14 +333,14 @@ void wait_for_response(uint8_t pBuffer[]) {
         printf(" rr ");
         /*  DATA_IN for host side is data_out for simtrace side   */
         /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
-        ret = USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
-        //USBD_Write( DATAIN, msg, BUFLEN, 0, 0 );
+        ret = USBD_Write( PHONE_DATAIN, buf.buf, BUFLEN, 0, 0 );
+        //USBD_Write( PHONE_DATAIN, msg, BUFLEN, 0, 0 );
         PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
 
         rcvdChar = 0;
     } else if (timeout_occured && buf.idx != 0) {
         printf(" to ");
-        ret = USBD_Write( DATAIN, buf.buf, buf.idx, 0, 0 );
+        ret = USBD_Write( PHONE_DATAIN, buf.buf, buf.idx, 0, 0 );
         timeout_occured = 0;
         buf.idx = 0;
         rcvdChar = 0;
@@ -349,7 +349,7 @@ void wait_for_response(uint8_t pBuffer[]) {
         printf(".");
         return;
     }
-    if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, 
+    if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN, 
                 (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
         PR("wait_rsp\n\r");
 //        state = WAIT_CMD_PC;
@@ -384,11 +384,13 @@ void Phone_run( void )
 //    send_ATR(ATR, (sizeof(ATR)/sizeof(ATR[0])));
     switch (state) {
         case RST_RCVD:
-            USBD_Write( INT, &msg, 1, 0, 0 );
-            TC0_Counter_Reset();
+            USBD_Write( PHONE_INT, &msg, 1, 0, 0 );
+            //buf.idx = 0;
+            //rcvdChar = 0;
+//            TC0_Counter_Reset();
             // send_ATR sets state to WAIT_CMD
-            if ((ret = USBD_Read(DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&send_ATR, pBuffer)) == USBD_STATUS_SUCCESS) {
-                TRACE_INFO("Reading started sucessfully (ATR)");
+            if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&send_ATR, pBuffer)) == USBD_STATUS_SUCCESS) {
+                PR("Reading started sucessfully (ATR)");
                 state = WAIT_ATR;
             } else {
  //               PR("USB Error: %X", ret);

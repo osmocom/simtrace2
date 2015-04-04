@@ -384,7 +384,9 @@ void Phone_run( void )
 //    send_ATR(ATR, (sizeof(ATR)/sizeof(ATR[0])));
     switch (state) {
         case RST_RCVD:
-            USBD_Write( PHONE_INT, &msg, 1, 0, 0 );
+            if ((ret = USBD_Write( PHONE_INT, &msg, 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
+                PR("USB Error: %X", ret);
+            }
             //buf.idx = 0;
             //rcvdChar = 0;
 //            TC0_Counter_Reset();

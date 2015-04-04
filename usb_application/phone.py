@@ -102,21 +102,16 @@ def handle_phone_request(dev, state):
         try:
             state = handle_msg_funcs[WAIT_RST](dev)
         except usb.USBError as e:
-            print e
+            print(e)
     state = handle_msg_funcs[state](dev)
     return state
 
 INS = 1
 CNT = 4
 
-#PHONE_DATAOUT = 0x04
-#PHONE_DATAIN = 0x85
-#PHONE_INT = 0x86
-
-
-PHONE_DATAOUT = 0x01
-PHONE_DATAIN = 0x82
-PHONE_INT = 0x83
+PHONE_DATAOUT = 0x04
+PHONE_DATAIN = 0x85
+PHONE_INT = 0x86
 
 def send_response(dev, cmd):
 # FIXME: We could get data of length 5 as well! Implement another distinct criteria!

@@ -8,13 +8,9 @@
 
 #define BUFLEN  5
 
-//#define PHONE_DATAOUT     4
-//#define PHONE_DATAIN      5
-//#define PHONE_INT         6
-
-#define PHONE_DATAOUT     1
-#define PHONE_DATAIN      2
-#define PHONE_INT         3
+#define PHONE_DATAOUT     4
+#define PHONE_DATAIN      5
+#define PHONE_INT         6
 
 typedef struct ring_buffer
 {

@@ -365,7 +365,7 @@ const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = 
         USBGenericDescriptor_INTERFACE,
         0, /* This is interface #0 */
         0, /* This is alternate setting #0 for this interface */
-        4, /* Number of endpoints */
+        3, /* Number of endpoints */
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */

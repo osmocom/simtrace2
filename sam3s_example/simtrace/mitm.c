@@ -41,10 +41,14 @@ static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
 
 void MITM_init( void )
 {
+    CCID_init();
+    Phone_Master_Init();
+
+    return;
     /*  Configure ISO7816 driver */
 // FIXME: Phone and SIM card side:
 //    PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
-
+/*
     PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
     PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
@@ -55,10 +59,12 @@ void MITM_init( void )
     USART_SetTransmitterEnabled(USART_SIM, 1);
     USART_SetReceiverEnabled(USART_PHONE, 1);
     USART_SetTransmitterEnabled(USART_PHONE, 1);
+*/
 }
 
 
 void MITM_run( void )
 {
-    printf("---- Function MITM_run not implemented yet.\n\r");
+    Phone_run();
+    CCID_SmartCardRequest();
 }

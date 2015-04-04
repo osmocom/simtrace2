@@ -92,7 +92,7 @@ static void SetConfiguration(USBDDriver *pDriver, uint8_t cfgnum)
     }
     else {
 
-        pConfiguration = pDriver->pDescriptors->pFsConfiguration[0];
+        pConfiguration = pDriver->pDescriptors->pFsConfiguration[cfgnum];
     }
 
     /* Set & save the desired configuration */

@@ -550,10 +550,10 @@ const USBDeviceDescriptor deviceDescriptor = {
 };
 
 const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
-    &configurationDescriptorSniffer,
-    &configurationDescriptorCCID,
-    &configurationDescriptorPhone,
-    &configurationDescriptorMITM,
+    &configurationDescriptorSniffer.configuration,
+    &configurationDescriptorCCID.configuration,
+    &configurationDescriptorPhone.configuration,
+    &configurationDescriptorMITM.configuration,
 };
 
 USBConfigurationDescriptor *getConfigDesc(uint8_t idx) {

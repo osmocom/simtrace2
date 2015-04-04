@@ -5,6 +5,7 @@ import sniffer
 import ccid
 import ccid_select
 import phone
+import mitm
 
 import usb.core
 import usb.util
@@ -59,6 +60,7 @@ def main():
     parser.add_argument("-s", "--sniff", help="Sniff communication!", action='store_true') 
     parser.add_argument("-S", "--select_file", help="Transmit SELECT cmd!", action='store_true')
     parser.add_argument("-p", "--phone", help="Emulates simcard", action='store_true')
+    parser.add_argument("-m", "--mitm", help="Intercept communication (MITM)", action='store_true')
     
     args = parser.parse_args()
     print("args: ", args)
@@ -87,6 +89,8 @@ def main():
         ccid_select.select()
     if args.phone is True:
         phone.emulate_sim()
+    if args.mitm is True:
+        mitm.do_mitm()
 
     return
 

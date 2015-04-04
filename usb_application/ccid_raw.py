@@ -85,19 +85,11 @@ def disconnect_card(hcard):
 def do_intercept(cmd, dwActiveProtocol):
     return send_receive_cmd(cmd, hcard, dwActiveProtocol)
 
-def init():
+def ccid_raw_init():
     (hcontext, reader) = establish_context()
     hresult, hcard, dwActiveProtocol = connect_to_card(hcontext, reader)
     return hcard, hcontext, dwActiveProtocol
     
-def exit(hcard, hcontext):
+def ccid_raw_exit(hcard, hcontext):
     disconnect_card(hcard)
     release_context(hcontext)
-
-hcard, hcontext, dwActiveProtocol = init()
-
-do_intercept(CMD_SEL_ROOT, dwActiveProtocol)
-do_intercept(CMD_SEL_FILE, dwActiveProtocol)
-do_intercept(CMD_GET_DATA, dwActiveProtocol)
-
-exit(hcard, hcontext)

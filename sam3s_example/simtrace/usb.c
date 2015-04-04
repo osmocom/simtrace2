@@ -411,9 +411,15 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
     /** Standard configuration descriptor. */
     USBConfigurationDescriptor  configuration;
     USBInterfaceDescriptor      simcard;
+    /// CCID descriptor
+    CCIDDescriptor              ccid;
+    /// Bulk OUT endpoint descriptor
     USBEndpointDescriptor       simcard_dataOut;
+    /// Bulk IN endpoint descriptor
     USBEndpointDescriptor       simcard_dataIn;
+    /// Interrupt OUT endpoint descriptor
     USBEndpointDescriptor       simcard_interruptIn;
+
     USBInterfaceDescriptor      phone;
     USBEndpointDescriptor       phone_dataOut;
     USBEndpointDescriptor       phone_dataIn;
@@ -433,50 +439,73 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         USBD_BMATTRIBUTES,
         USBConfigurationDescriptor_POWER(100)
     },
-    /* Communication class interface standard descriptor */
+    // CCID interface descriptor
+    // Table 4.3-1 Interface Descriptor
+    // Interface descriptor
     {
         sizeof(USBInterfaceDescriptor),
         USBGenericDescriptor_INTERFACE,
-        0, /* This is interface #0 */
-        0, /* This is alternate setting #0 for this interface */
-        3, /* Number of endpoints */
-        //CDCCommunicationInterfaceDescriptor_CLASS,
-        0xff,
-//        CDCCommunicationInterfaceDescriptor_ABSTRACTCONTROLMODEL,
-        0,
-//        CDCCommunicationInterfaceDescriptor_NOPROTOCOL,
-        0, 
-        MITM_CONF_STR  /* string descriptor for this interface */
+        0,                       // Interface 0
+        0,                       // No alternate settings
+        3,                       // uses bulk-IN, bulk-OUT and interrupt IN
+        SMART_CARD_DEVICE_CLASS,
+        0,                       // Subclass code
+        0,                       // bulk transfers optional interrupt-IN
+        CCID_CONF_STR            // associated string descriptor
     },
-    /* Bulk-OUT endpoint standard descriptor */
+    {
+        sizeof(CCIDDescriptor), // bLength: Size of this descriptor in bytes
+        CCID_DECRIPTOR_TYPE,    // bDescriptorType:Functional descriptor type
+        CCID1_10,               // bcdCCID: CCID version
+        0,               // bMaxSlotIndex: Value 0 indicates that one slot is supported
+        VOLTS_5_0,       // bVoltageSupport
+        (1 << PROTOCOL_TO),     // dwProtocols
+        3580,            // dwDefaultClock
+        3580,            // dwMaxClock
+        0,               // bNumClockSupported
+        9600,            // dwDataRate : 9600 bauds
+        9600,            // dwMaxDataRate : 9600 bauds
+        0,               // bNumDataRatesSupported
+        0xfe,            // dwMaxIFSD
+        0,               // dwSynchProtocols
+        0,               // dwMechanical
+        //0x00010042,      // dwFeatures: Short APDU level exchanges
+        CCID_FEATURES_AUTO_CLOCK | CCID_FEATURES_AUTO_BAUD |
+        CCID_FEATURES_AUTO_PCONF | CCID_FEATURES_AUTO_PNEGO | CCID_FEATURES_EXC_TPDU,
+        0x0000010F,      // dwMaxCCIDMessageLength: For extended APDU level the value shall be between 261 + 10
+        0xFF,            // bClassGetResponse: Echoes the class of the APDU
+        0xFF,            // bClassEnvelope: Echoes the class of the APDU
+        0,               // wLcdLayout: no LCD
+        0,               // bPINSupport: No PIN
+        1                // bMaxCCIDBusySlot
+    },
+    // Bulk-OUT endpoint descriptor
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-                                      DATAOUT),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_OUT, CCID_EPT_DATA_OUT ),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_DATA_OUT),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
-        0 /* Must be 0 for full-speed bulk endpoints */
+        0x00                               // Does not apply to Bulk endpoints
     },
-    /* Bulk-IN endpoint descriptor */
+    // Bulk-IN endpoint descriptor
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-                                      DATAIN),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, CCID_EPT_DATA_IN ),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_DATA_IN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
-        0 /* Must be 0 for full-speed bulk endpoints */
+        0x00                               // Does not apply to Bulk endpoints
     },
-    /* Notification endpoint descriptor */
+    // Notification endpoint descriptor
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, CCID_EPT_NOTIFICATION ),
         USBEndpointDescriptor_INTERRUPT,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CCID_EPT_NOTIFICATION),
             USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
         0x10
     },
@@ -525,7 +554,6 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         0x10
     }
 };
-
 
 /** Standard USB device descriptor for the CDC serial driver */
 const USBDeviceDescriptor deviceDescriptor = {

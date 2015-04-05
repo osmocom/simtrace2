@@ -152,7 +152,7 @@ static void ISR_PhoneRST( const Pin *pPin)
 */
     // FIXME: What to do on reset?
     // FIXME: It seems like the phone is constantly sending a lot of these RSTs
-//    PIO_DisableIt( &pinPhoneRST ) ;
+    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 static void Config_PhoneRST_IrqHandler()
@@ -301,6 +301,7 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
         _ISO7816_SendChar(*(ATR++));
     }
     state = WAIT_CMD_PHONE;
+    PIO_EnableIt( &pinPhoneRST ) ;
 }
 
 void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)

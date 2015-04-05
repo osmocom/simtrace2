@@ -82,9 +82,9 @@ unsigned char USBState = STATE_IDLE;
 /** ISO7816 pins */
 static const Pin pinsISO7816_PHONE[]    = {PINS_ISO7816_PHONE};
 /** Bus switch pins */
-//static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
+static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
 // FIXME: temporary enable bus switch 
-static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
+//static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
 
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;

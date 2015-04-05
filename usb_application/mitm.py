@@ -1,8 +1,11 @@
 import usb.core
 import usb.util
 
-import ccid_raw
+from ccid_raw import SmartcardConnection
 import phone
+
+from contextlib import closing
+
 
 def find_dev():
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
@@ -12,6 +15,14 @@ def find_dev():
         print("Found device")
     return dev
 
+def pattern_match(inpt):
+    print("Matching inpt", inpt)
+    if (inpt == ATR_SYSMOCOM1):
+        return NEW_ATR
+    elif (inpt == CMD_SEL_FILE):
+        return CMD_SEL_ROOT
+    else:
+        return inpt
 
 SIM_WR = 0x1
 SIM_RD = 0x82
@@ -21,39 +32,38 @@ PHONE_WR = 0x4
 PHONE_RD = 0x85
 PHONE_INT = 0x86
 
-def check_msg_phone():
-    cmd = dev.read(PHONE_RD, 64, 100)
-    if cmd is not None:
-        print("Phone sent: " + cmd)
-        return cmd
-    cmd = dev.read(PHONE_INT, 64, 100)
-    if cmd is not None:
-        print("Phone sent int")
-        return cmd
+ERR_TIMEOUT = 110
 
-def write_phone(resp):
-    dev.write(PHONE_WR, resp, 100)
+def poll_ep(dev, ep):
+    try:
+        return dev.read(ep, 64, 1000)
+    except usb.core.USBError as e:
+        if e.errno != ERR_TIMEOUT:
+            raise
+        return None
 
-def write_sim(data):
-    return do_intercept(data, dwActiveProtocol)
+def write_phone(dev, resp):
+    dev.write(PHONE_WR, resp, 1000)
+
+def reset_sim(sm_con):
+    sm_con.disconnect_card()
+    sm_con.connect_card()
 
 def do_mitm():
     dev = find_dev()
-    hcard, hcontext, dwActiveProtocol = ccid_raw.ccid_raw_init()
+    with closing(SmartcardConnection()) as sm_con:
 
-    try:
-        try:
-            while True:
-                cmd = check_msg_phone()
-                if (cmd is not None):
-                    resp = write_sim(cmd, dwActiveProtocol)
-                if (resp is not None):
-                    write_phone(resp)
-                else:
-                    print("No responses.")
-        finally:
-            ccid_raw.ccid_raw_exit(hcard, hcontext)
+        while True:
+            cmd = poll_ep(dev, PHONE_INT)
+            if cmd is not None:
+                print(cmd)
+                assert cmd[0] == ord('R')
+                reset_sim(sm_con)
 
-    except usb.USBError as e:
-        print(e)
-        pass
+            cmd = poll_ep(dev, PHONE_RD)
+            if cmd is not None:
+                print(cmd)
+                sim_data = sm_con.send_receive_cmd(cmd)
+                if sim_data is None:
+                    continue
+                write_phone(dev, sim_data)

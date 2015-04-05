@@ -296,7 +296,7 @@ void Phone_Master_Init( void ) {
 void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     int i;
-    PR("Send %x %x %x.. %x", ATR[0], ATR[1], ATR[2], ATR[transferred-1]);
+    PR("Send %x %x .. %x (tr: %d, st: %x)", ATR[0], ATR[1], ATR[transferred-1], transferred, status);
     for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(ATR++));
     }

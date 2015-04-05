@@ -93,3 +93,11 @@ def ccid_raw_init():
 def ccid_raw_exit(hcard, hcontext):
     disconnect_card(hcard)
     release_context(hcontext)
+
+
+if __name__ == '__main__':
+    hcard, hcontext, dwActiveProtocol = ccid_raw_init()
+    do_intercept(CMD_SEL_ROOT, dwActiveProtocol)
+    do_intercept(CMD_SEL_FILE, dwActiveProtocol)
+    do_intercept(CMD_GET_DATA, dwActiveProtocol)
+    ccid_raw_exit()

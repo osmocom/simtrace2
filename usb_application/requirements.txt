@@ -1,0 +1,4 @@
+argparse==1.2.1
+pyscard==1.6.12
+pyusb==1.0.0b2
+wsgiref==0.1.2

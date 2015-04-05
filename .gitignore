@@ -10,3 +10,4 @@ main.c
 *.pyc
 sam3s_example/mains/zwizwa_ccid.c
 Baselibc
+venv

@@ -15,6 +15,15 @@ class SmartcardConnection:
         self.establish_context()
         self.connect_card()
 
+    def getATR(self):
+        hresult, reader, state, protocol, atr = SCardStatus(self.hcard)
+        if hresult != SCARD_S_SUCCESS:
+            print 'failed to get status: ' + SCardGetErrorMessage(hresult)
+        print 'Reader:', reader
+        print 'State:', state
+        print 'Protocol:', protocol
+        print 'ATR:', smartcard.util.toHexString(atr, smartcard.util.HEX)
+
     def connect_card(self):
         hresult, self.hcard, self.dwActiveProtocol = SCardConnect(self.hcontext, self.reader,
             SCARD_SHARE_SHARED, SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1)
@@ -77,6 +86,7 @@ if __name__ == '__main__':
     import constants
 
     sm_con = SmartcardConnection()
+    sm_con.getATR()
     print(sm_con.send_receive_cmd(constants.CMD_SEL_ROOT))
     print(sm_con.send_receive_cmd(constants.CMD_SEL_FILE))
     print(sm_con.send_receive_cmd(constants.CMD_GET_DATA))

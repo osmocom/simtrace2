@@ -42,8 +42,9 @@ typedef struct {
     USBEndpointDescriptor      interruptIn;
 } __attribute__ ((packed)) CCIDDriverConfigurationDescriptors;
 
+extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
+
 /*  Helper functions    */
-USBConfigurationDescriptor *getConfigDesc(uint8_t idx);
 
 // FIXME: static function definitions
 extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );

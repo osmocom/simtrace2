@@ -584,10 +584,6 @@ const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
     &configurationDescriptorMITM.configuration,
 };
 
-USBConfigurationDescriptor *getConfigDesc(uint8_t idx) {
-    return configurationDescriptorsArr[idx];
-}
-
 /* AT91SAM3S does only support full speed, but not high speed USB */
 const USBDDriverDescriptors driverDescriptors = {
     &deviceDescriptor,

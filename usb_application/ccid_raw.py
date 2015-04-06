@@ -23,6 +23,14 @@ class SmartcardConnection:
         print 'State:', state
         print 'Protocol:', protocol
         print 'ATR:', smartcard.util.toHexString(atr, smartcard.util.HEX)
+        return array.array('B', atr)
+
+    def reset_card(self):
+        hresult, self.dwActiveProtocol = SCardReconnect(self.hcard, SCARD_SHARE_SHARED,
+            SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1, SCARD_RESET_CARD)
+        if hresult != SCARD_S_SUCCESS:
+            raise SmartcardException('Unable to retrieve Atr: ' +
+                SCardGetErrorMessage(hresult))
 
     def connect_card(self):
         hresult, self.hcard, self.dwActiveProtocol = SCardConnect(self.hcontext, self.reader,

@@ -36,36 +36,6 @@ def find_dev():
         print("Found device")
     return dev
 
-def find_eps(dev):
-    dev.set_configuration(3)
-
-    cfg = dev.get_active_configuration()
-    print("Active config: ")
-    print(cfg)
-    intf = cfg[(0,0)]
-
-    ep_in = usb.util.find_descriptor(
-        intf, 
-        custom_match = \
-        lambda e: \
-            usb.util.endpoint_direction(e.bEndpointAddress) == \
-            usb.util.ENDPOINT_IN)
-
-    assert ep_in is not None
-
-    ep_out = usb.util.find_descriptor(
-        intf, 
-        custom_match = \
-        lambda e: \
-            usb.util.endpoint_direction(e.bEndpointAddress) == \
-            usb.util.ENDPOINT_OUT)
-
-    assert ep_out is not None
-    print("****")
-    print(ep_in)
-    print(ep_out)
-    return (ep_in, ep_out)
-
 WAIT_RST = 0
 WAIT_CMD = 1
 

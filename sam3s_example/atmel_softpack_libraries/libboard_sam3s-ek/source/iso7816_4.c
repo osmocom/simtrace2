@@ -588,7 +588,7 @@ void ISO7816_Init( const Pin *pPinIso7816RstMC )
     TRACE_DEBUG("ISO_Init\n\r");
 
     /* Pin ISO7816 initialize */
-    st_pinIso7816RstMC  = pPinIso7816RstMC;
+    st_pinIso7816RstMC  = (Pin *)pPinIso7816RstMC;
 
     USART_Configure( BOARD_ISO7816_BASE_USART,
                      US_MR_USART_MODE_IS07816_T_0

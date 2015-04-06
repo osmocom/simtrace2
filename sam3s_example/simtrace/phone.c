@@ -347,7 +347,6 @@ void wait_for_response(uint8_t pBuffer[]) {
         rcvdChar = 0;
         PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
     } else {
-        printf(".");
         return;
     }
     if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN, 

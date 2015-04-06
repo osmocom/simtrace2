@@ -45,25 +45,21 @@ def poll_ep(dev, ep):
 def write_phone(dev, resp):
     dev.write(PHONE_WR, resp, 1000)
 
-def reset_sim(sm_con):
-    sm_con.disconnect_card()
-    sm_con.connect_card()
-
 def do_mitm():
     dev = find_dev()
     with closing(SmartcardConnection()) as sm_con:
-
+        atr = sm_con.getATR()
         while True:
             cmd = poll_ep(dev, PHONE_INT)
             if cmd is not None:
                 print(cmd)
                 assert cmd[0] == ord('R')
-                reset_sim(sm_con)
+# FIXME: restart card anyways?
+#               sm_con.reset_card()
+                write_phone(dev, atr)
 
             cmd = poll_ep(dev, PHONE_RD)
             if cmd is not None:
                 print(cmd)
                 sim_data = sm_con.send_receive_cmd(cmd)
-                if sim_data is None:
-                    continue
                 write_phone(dev, sim_data)

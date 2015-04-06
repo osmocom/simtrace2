@@ -587,7 +587,7 @@ const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
 /* AT91SAM3S does only support full speed, but not high speed USB */
 const USBDDriverDescriptors driverDescriptors = {
     &deviceDescriptor,
-    (USBConfigurationDescriptor **) &(configurationDescriptorsArr),   /* first full-speed configuration descriptor */
+    (const USBConfigurationDescriptor **) &(configurationDescriptorsArr),   /* first full-speed configuration descriptor */
     0, /* No full-speed device qualifier descriptor */
     0, /* No full-speed other speed configuration */
     0, /* No high-speed device descriptor */

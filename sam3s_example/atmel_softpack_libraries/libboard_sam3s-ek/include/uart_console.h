@@ -33,8 +33,6 @@
 
 #include <stdint.h>
 
-extern int printf(const char *, ...);
-
 extern void UART_Configure( uint32_t dwBaudrate, uint32_t dwMasterClock ) ;
 extern void UART_PutChar( uint8_t uc ) ;
 extern uint32_t UART_GetChar( void ) ;

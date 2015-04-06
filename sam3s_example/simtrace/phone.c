@@ -127,8 +127,6 @@ extern uint8_t rcvdChar;
 
 extern volatile uint8_t timeout_occured;
 
-static rst_cnt = 0;
-
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
@@ -146,11 +144,6 @@ static void ISR_PhoneRST( const Pin *pPin)
     }
     state = RST_RCVD;
    
-/*    if (state == NONE || rst_cnt > 2) {
-        state = RST_RCVD;
-    }
-    rst_cnt++;
-*/
     // FIXME: What to do on reset?
     // FIXME: It seems like the phone is constantly sending a lot of these RSTs
     PIO_DisableIt( &pinPhoneRST ) ;

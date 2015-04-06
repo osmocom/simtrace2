@@ -319,7 +319,6 @@ void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t
 
 extern ring_buffer buf;
 #define     MAX_MSG_LEN     64
-#define     PR              printf
 
 void wait_for_response(uint8_t pBuffer[]) {
     int ret = 0;

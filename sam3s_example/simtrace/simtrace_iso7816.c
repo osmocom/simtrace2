@@ -58,12 +58,6 @@ void buf_push(uint8_t item)
     buf.idx = (buf.idx+1) % (BUFLEN*2);
 }
 
-uint8_t get_buf_start(uint8_t *buf_start)
-{
-    *buf_start = &(buf.buf[buf.idx]);
-    return 2*BUFLEN-buf.idx;
-}
-
 /** Initializes a ISO driver
  */ 
 // FIXME: This function is implemented in iso7816_4.c !! Only MCK instead of SCK is always taken. Change that!                                                                               

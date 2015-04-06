@@ -98,7 +98,7 @@ CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Wsign-compare -Waggregate-return
-CFLAGS += -Wformat 
+CFLAGS += -Wformat=0
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked 
 CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long

@@ -74,12 +74,7 @@ AT91LIB_USB_CORE_PATH = atmel_softpack_libraries/usb/device/core
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
 
-LIBC_PATH=../Baselibc
-
 LIBS = -Wl,--start-group -lgcc -lc -Wl,--end-group
-#LIB_PATH+=-L=/lib/thumb2
-#LIB_PATH+=-L=/../lib/gcc/arm-none-eabi/4.4.1/thumb2
-LIB += -L=$(LIBC_PATH)/include -lc
 
 # Compilation tools
 CC = $(CROSS_COMPILE)gcc
@@ -95,9 +90,7 @@ INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 
 INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace
 INCLUDES += -Icmsis
-INCLUDES += -I$(LIBC_PATH)/include
 INCLUDES += $(INCLUDES_USB)
-#INCLUDES += -I$(LIBRARIES)
 
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2 
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses

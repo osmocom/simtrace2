@@ -62,8 +62,9 @@
 *   shall acknowledge by S(WTX response) with the same INF.
 *   The time allocated starts at the leading edge of the last character of S(WTX response).
 */
-#define     WTX_req     0b10000011
-#define     WTX_req     0b10100011
+// FIXME: Two times the same name for the define, which one is right?
+//#define     WTX_req     0b10000011
+//#define     WTX_req     0b10100011
 // Alternatively:
 /* For T = 0 Protocol: The firmware on receiving the NULL (0x60) Procedure byte from the card, notifies
 it to the driver using the RDR_to_PC_DataBlock response. During this period, the reception of bytes

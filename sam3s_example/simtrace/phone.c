@@ -289,7 +289,7 @@ void Phone_Master_Init( void ) {
 
 void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
-    int i;
+    uint32_t i;
     PR("Send %x %x .. %x (tr: %d, st: %x)", ATR[0], ATR[1], ATR[transferred-1], transferred, status);
     for ( i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(*(ATR++));
@@ -300,7 +300,7 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
 
 void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
-    int i;
+    uint32_t i;
     PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
     PR("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
 

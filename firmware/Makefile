@@ -88,7 +88,7 @@ NM = $(CROSS_COMPILE)nm
 # Flags
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 
-INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace
+INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace_src
 INCLUDES += -Icmsis
 INCLUDES += $(INCLUDES_USB)
 
@@ -129,7 +129,7 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 # Directories where source files can be found
 
 USB_PATHS = $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
-VPATH += src_board src_sam3s cmsis $(USB_PATHS) simtrace
+VPATH += src_board src_sam3s cmsis $(USB_PATHS) simtrace_src
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o

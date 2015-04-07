@@ -38,8 +38,6 @@
 
 #include <board.h>
 
-#include <USBLib_Trace.h>
-
 #include "USBDDriver.h"
 #include "USBD.h"
 #include "USBD_HAL.h"

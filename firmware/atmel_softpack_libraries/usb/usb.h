@@ -92,7 +92,6 @@
 #include "include/SBC.h"
 #include "include/SBCMethods.h"
 
-#include "include/USBLib_Trace.h"
 #include "include/USBLib_Types.h"
 #include "include/USBRequests.h"
 

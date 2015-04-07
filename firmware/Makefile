@@ -179,6 +179,11 @@ $(foreach MEMORY, $(MEMORIES), $(eval $(call RULES,$(MEMORY))))
 program:
 	openocd -f openocd/openocd.cfg -c "init" -c "halt" -c "flash write_bank 0 ./bin/project-flash.bin 0" -c "reset" -c "shutdown"
 
+SERIAL ?= /dev/ttyUSB0
+log:
+	stty -F $(SERIAL) 115200
+	sed -u "s/\r//" $(SERIAL) | ts
+
 clean:
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst
 

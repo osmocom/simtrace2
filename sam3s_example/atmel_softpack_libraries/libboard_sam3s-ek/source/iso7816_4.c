@@ -297,7 +297,11 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
             }
         }
         /* Handle INS ^ 0xff */
-        else if ( pAPDU[1] == (procByte ^ 0xff)) {
+        else
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wsign-compare"
+        if ( pAPDU[1] == (procByte ^ 0xff)) {
+        #pragma GCC diagnostic pop
             TRACE_INFO("HdlINS+\n\r");
             if (cmdCase == CASE2) {
                 /* receive data from card */

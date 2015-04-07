@@ -158,13 +158,13 @@ ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
 
 $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
 	@$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
-	$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
-	$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
-	$(SIZE) $$^ $(OUTPUT)-$$@.elf
+	@$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
+	@$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
+	@$(SIZE) $$^ $(OUTPUT)-$$@.elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
-	@echo [COMPILING $$@]
-	$(CC) $(CFLAGS) -D$(1) -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<  
+	@echo [COMPILING $$<]
+	@$(CC) $(CFLAGS) -D$(1) -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$< 
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]

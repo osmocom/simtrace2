@@ -42,27 +42,11 @@
 /*
  * Peripherals
  */
-#include "acc.h"
-#include "adc.h"
-#include "async.h"
-#include "crccu.h"
-#include "dacc.h"
-#include "efc.h"
-#include "flashd.h"
-#include "hsmci.h"
 #include "pio.h"
 #include "pio_it.h"
 #include "pio_capture.h"
 #include "pmc.h"
-#include "pwmc.h"
-#include "rtc.h"
-#include "rtt.h"
-#include "spi.h"
-#include "spi_pdc.h"
-#include "ssc.h"
 #include "tc.h"
-#include "twi.h"
-#include "twid.h"
 #include "usart.h"
 //#include "USBD_Config.h"
 

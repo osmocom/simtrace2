@@ -92,7 +92,7 @@ INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isimtrace
 INCLUDES += -Icmsis
 INCLUDES += $(INCLUDES_USB)
 
-CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2 
+CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
@@ -100,19 +100,18 @@ CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Wsign-compare -Waggregate-return
 CFLAGS += -Wformat=0
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
-CFLAGS += #-Wpacked 
+CFLAGS += #-Wpacked
 CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
 CFLAGS += -std=c11
 CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion
-# Disable unused variable warnings
 CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
 CFLAGS += -Wno-suggest-attribute=noreturn
 
 # To reduce application size use only integer printf function.
-#CFLAGS += -Dprintf=iprintf
+CFLAGS += -Dprintf=iprintf
 
 # -mlong-calls  -Wall
 #CFLAGS += -save-temps -fverbose-asm

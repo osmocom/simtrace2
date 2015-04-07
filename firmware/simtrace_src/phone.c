@@ -112,7 +112,7 @@ static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 #define USART_RCV  1
 
 enum states{
-    NONE            = 9,
+    WAIT_FOR_RST            = 9,
     RST_RCVD        = 10,
     WAIT_CMD_PHONE  = 11,
     WAIT_CMD_PC     = 12,
@@ -267,7 +267,7 @@ void Phone_Master_Init( void ) {
     /*  Configure ISO7816 driver */
     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
-    state = NONE;
+    state = WAIT_FOR_RST;
 
 
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
@@ -399,7 +399,7 @@ void Phone_run( void )
 // FIXME:            TC0_Counter_Reset();
             wait_for_response(pBuffer);
             break;
-        case NONE:
+        case WAIT_FOR_RST:
             break;
         default:
 //            PR(":(");

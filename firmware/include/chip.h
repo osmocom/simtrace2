@@ -1,1 +1,0 @@
-../atmel_softpack_libraries/libchip_sam3s/chip.h

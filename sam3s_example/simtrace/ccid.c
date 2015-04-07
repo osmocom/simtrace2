@@ -177,28 +177,6 @@ void CCID_init( void )
     }
 }
 
-/* FIXME: Remove this testcode */
-void send_select_file() {
-    #define MAX_ANSWER_SIZE         10
-    static const uint8_t testCommand4[] = {0x00, 0xa4, 0x00, 0x00, 0x02, 0x3f, 0x00};
-    uint8_t pMessage[MAX_ANSWER_SIZE];
-    uint8_t ucSize ;
-    int i;
-
-    printf("Write msg\n\r");
-    ucSize = ISO7816_XfrBlockTPDU_T0( testCommand4, pMessage, sizeof( testCommand4 ) ) ;
-        //  Output smartcard answer
-    if ( ucSize > 0 )
-    {
-        printf( "\n\rAnswer: " ) ;
-        for ( i=0 ; i < ucSize ; i++ )
-        {
-            printf( "0x%02X ", pMessage[i] ) ;
-        }
-        printf( "\n\r" ) ;
-    }
-}
-
 void CCID_run( void )
 {
 

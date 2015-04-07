@@ -184,22 +184,25 @@ void ISO7816_IccPowerOff( void )
 }
 
 /**
- * Transfert Block TPDU T=0
- * \param pAPDU    APDU buffer
- * \param pMessage Message buffer
- * \param wLength  Block length
- * \return         Message index
+ * Transfert Block      TPDU T=0
+ * \param pAPDU         APDU buffer
+ * \param pMessage      Message buffer
+ * \param wLength       Block length
+ * \param indexMsg      Message index
+ * \return              0 on success, content of US_CSR otherwise
  */
-uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
+uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
                                         uint8_t *pMessage,
-                                        uint16_t wLength )
+                                        uint16_t wLength,
+                                        uint16_t *retlen )
 {
     uint16_t NeNc;
     uint16_t indexApdu = 4;
-    uint16_t indexMessage = 0;
+    uint16_t indexMsg = 0;
     uint8_t SW1 = 0;
     uint8_t procByte;
     uint8_t cmdCase;
+    uint32_t status = 0;
 
     TRACE_INFO("pAPDU[0]=0x%X\n\r",pAPDU[0]);
     TRACE_INFO("pAPDU[1]=0x%X\n\r",pAPDU[1]);
@@ -258,7 +261,10 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 
     /* Handle Procedure Bytes */
     do {
-        ISO7816_GetChar(&procByte);
+        status = ISO7816_GetChar(&procByte);
+        if (status != 0) {
+            return status;
+        }
         TRACE_INFO("procByte: 0x%X\n\r", procByte);
         /* Handle NULL */
         if ( procByte == ISO_NULL_VAL ) {
@@ -276,8 +282,11 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
             if (cmdCase == CASE2) {
                 /* receive data from card */
                 do {
-                    ISO7816_GetChar(&pMessage[indexMessage++]);
-                } while( 0 != --NeNc );
+                    status = ISO7816_GetChar(&pMessage[indexMsg++]);
+                } while(( 0 != --NeNc) && (status == 0) );
+                if (status != 0) {
+                    return status;
+                }
             }
             else {
                  /* Send data */
@@ -292,11 +301,17 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
             TRACE_INFO("HdlINS+\n\r");
             if (cmdCase == CASE2) {
                 /* receive data from card */
-                ISO7816_GetChar(&pMessage[indexMessage++]);
-                TRACE_INFO("Rcv: 0x%X\n\r", pMessage[indexMessage-1]);
+                status = ISO7816_GetChar(&pMessage[indexMsg++]);
+                if (status != 0) {
+                    return status;
+                }
+                TRACE_INFO("Rcv: 0x%X\n\r", pMessage[indexMsg-1]);
             }
             else {
-                ISO7816_SendChar(pAPDU[indexApdu++]);
+                status = ISO7816_SendChar(pAPDU[indexApdu++]);
+                if (status != 0) {
+                    return status;
+                }
             }
             NeNc--;
         }
@@ -309,16 +324,23 @@ uint16_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 
     /* Status Bytes */
     if (SW1 == 0) {
-        ISO7816_GetChar(&pMessage[indexMessage++]); /* SW1 */
+        status = ISO7816_GetChar(&pMessage[indexMsg++]); /* SW1 */
+        if (status != 0) {
+            return status;
+        }
     }
     else {
-        pMessage[indexMessage++] = procByte;
+        pMessage[indexMsg++] = procByte;
     }
-    ISO7816_GetChar(&pMessage[indexMessage++]); /* SW2 */
+    status = ISO7816_GetChar(&pMessage[indexMsg++]); /* SW2 */
+    if (status != 0) {
+        return status;
+    }
 
-    TRACE_WARNING("SW1=0x%X, SW2=0x%X\n\r", pMessage[indexMessage-2], pMessage[indexMessage-1]);
+    TRACE_WARNING("SW1=0x%X, SW2=0x%X\n\r", pMessage[indexMsg-2], pMessage[indexMsg-1]);
 
-    return( indexMessage );
+    *retlen = indexMsg;
+    return status;
 
 }
 
@@ -375,44 +397,54 @@ uint32_t ISO7816_Datablock_ATR( uint8_t* pAtr, uint8_t* pLength )
     /* Read ATR TS */
     // FIXME: There should always be a check for the GetChar return value..0 means timeout
     status = ISO7816_GetChar(&pAtr[0]);
-  /*  if (status == 0) {
+    if (status != 0) {
         return status;
-    }*/
+    }
 
     /* Read ATR T0 */
-    ISO7816_GetChar(&pAtr[1]);
+    status = ISO7816_GetChar(&pAtr[1]);
+    if (status != 0) {
+        return status;
+    }
     y = pAtr[1] & 0xF0;
     i = 2;
 
     /* Read ATR Ti */
-    while (y) {
+    while (y && (status == 0)) {
 
         if (y & 0x10) {  /* TA[i] */
-            ISO7816_GetChar(&pAtr[i++]);
+            status = ISO7816_GetChar(&pAtr[i++]);
         }
         if (y & 0x20) {  /* TB[i] */
-            ISO7816_GetChar(&pAtr[i++]);
+            status = ISO7816_GetChar(&pAtr[i++]);
         }
         if (y & 0x40) {  /* TC[i] */
-            ISO7816_GetChar(&pAtr[i++]);
+            status = ISO7816_GetChar(&pAtr[i++]);
         }
         if (y & 0x80) {  /* TD[i] */
-            ISO7816_GetChar(&pAtr[i]);
+            status = ISO7816_GetChar(&pAtr[i]);
             y =  pAtr[i++] & 0xF0;
         }
         else {
             y = 0;
         }
     }
+    if (status != 0) {
+        return status;
+    }
 
     /* Historical Bytes */
     y = pAtr[1] & 0x0F;
-    for( j=0; j < y; j++ ) {
-        ISO7816_GetChar(&pAtr[i++]);
+    for( j=0; (j < y) && (status == 0); j++ ) {
+        status = ISO7816_GetChar(&pAtr[i++]);
+    }
+
+    if (status != 0) {
+        return status;
     }
 
     *pLength = i;
-
+    return status;
 }
 
 /**

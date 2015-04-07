@@ -421,7 +421,8 @@ static void PCtoRDRGetSlotStatus( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRXfrBlock( void )
 {
-    unsigned char indexMessage = 0;
+    uint16_t msglen = 0;
+    uint32_t ret;
 
     //TRACE_DEBUG(".");
 
@@ -447,9 +448,14 @@ static void PCtoRDRXfrBlock( void )
                     TRACE_INFO("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
 
                     // Send commande APDU
-                    indexMessage = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU , 
-                                            ccidDriver.sCcidMessage.abData, 
-                                            ccidDriver.sCcidCommand.wLength );
+                    ret = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU ,
+                                            ccidDriver.sCcidMessage.abData,
+                                            ccidDriver.sCcidCommand.wLength,
+                                            &msglen );
+                    if (ret != 0) {
+                        TRACE_ERROR("APDU could not be sent: (US_CSR = 0x%x)", ret);
+                        return;
+                    }
                 }
                 else {
                     if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
@@ -471,7 +477,7 @@ static void PCtoRDRXfrBlock( void )
 
     }
 
-    ccidDriver.sCcidMessage.wLength = indexMessage;
+    ccidDriver.sCcidMessage.wLength = msglen;
     TRACE_DEBUG("USB: 0x%X, 0x%X, 0x%X, 0x%X, 0x%X\n\r", ccidDriver.sCcidMessage.abData[0], 
                                                                     ccidDriver.sCcidMessage.abData[1], 
                                                                     ccidDriver.sCcidMessage.abData[2], 

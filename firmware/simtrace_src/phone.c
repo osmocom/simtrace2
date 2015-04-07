@@ -111,18 +111,21 @@ static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 #define USART_SEND 0
 #define USART_RCV  1
 
-#define NONE            9
-#define RST_RCVD        10
-#define WAIT_CMD_PHONE  11
-#define WAIT_CMD_PC     12
-#define WAIT_ATR        13
+enum states{
+    NONE            = 9,
+    RST_RCVD        = 10,
+    WAIT_CMD_PHONE  = 11,
+    WAIT_CMD_PC     = 12,
+    WAIT_ATR        = 13,
+};
+
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
 /** Variable for state of send and receive froom USART */
 static uint8_t StateUsartGlobal = USART_RCV;
 
-static uint32_t state;
+static enum states state;
 extern uint8_t rcvdChar;
 
 extern volatile uint8_t timeout_occured;

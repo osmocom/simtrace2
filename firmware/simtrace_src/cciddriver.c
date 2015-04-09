@@ -120,7 +120,7 @@ static CCIDDriverConfigurationDescriptors *configurationDescriptorsFS;
 //------------------------------------------------------------------------------
 void CCIDDriver_Initialize( void )
 {
-    configurationDescriptorsFS = (CCIDDriverConfigurationDescriptors *) configurationDescriptorsArr[CFG_NUM_CCID];
+    configurationDescriptorsFS = (CCIDDriverConfigurationDescriptors *) configurationDescriptorsArr[CFG_NUM_CCID-1];
 }
 
 //------------------------------------------------------------------------------

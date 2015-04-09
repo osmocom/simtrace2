@@ -73,9 +73,6 @@
 /// Constants: IDs: Device release number.
 #define CCIDDriverDescriptors_RELEASE         0x0100
 
-/// Returns the minimum between two values.
-#define MIN(a, b)       ((a < b) ? a : b)
-
 //------------------------------------------------------------------------------
 //         Types
 //------------------------------------------------------------------------------

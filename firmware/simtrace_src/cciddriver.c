@@ -136,12 +136,18 @@ void CCIDDriver_Initialize( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCSlotStatus( void )
 {
-    TRACE_DEBUG(".");
-
     // Header fields settings
     ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
     ccidDriver.sCcidMessage.wLength   = 0;
-    ccidDriver.sCcidMessage.bStatus   = ccidDriver.SlotStatus;
+
+    if (ccidDriver.SlotStatus == ICC_INSERTED_EVENT) {
+        ccidDriver.sCcidMessage.bStatus = 0;    /* ICC present and active card */
+    } else if (ccidDriver.SlotStatus == ICC_NOT_PRESENT) {
+        ccidDriver.sCcidMessage.bStatus = 2;    /* No ICC present*/
+    } else{
+        TRACE_ERROR("Strange bStatus");
+        ccidDriver.sCcidMessage.bStatus = 0;
+    }
     ccidDriver.sCcidMessage.bError    = 0;
     // 00h Clock running
     // 01h Clock stopped in state L

@@ -233,7 +233,7 @@ uint32_t _ISO7816_SendChar( uint8_t CharToSend )
 
     /* Transmit a char */
     USART_PHONE->US_THR = CharToSend;
-    
+
     status = (USART_PHONE->US_CSR&(US_CSR_OVRE|US_CSR_FRAME|
                                       US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
                                       (1<<10)));
@@ -295,7 +295,7 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
     uint32_t i;
 
     if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status (%s): %d", __FUNCTION__, status);
+        TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, status);
         return;
     }
     PR("Send %x %x .. %x (tr: %d, st: %x)", ATR[0], ATR[1], ATR[transferred-1], transferred, status);
@@ -311,7 +311,7 @@ void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t
     uint32_t i;
 
     if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status (%s): %d", __FUNCTION__, status);
+        TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, status);
         return;
     }
     PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
@@ -335,19 +335,27 @@ extern ring_buffer buf;
 
 void wait_for_response(uint8_t pBuffer[]) {
     int ret = 0;
-//    uint8_t msg[] = {0xa0, 0xa4, 0x0, 0x0, 0x2};
     if (rcvdChar != 0) {
         printf(" rr ");
+
         /*  DATA_IN for host side is data_out for simtrace side   */
-        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
         ret = USBD_Write( PHONE_DATAIN, buf.buf, BUFLEN, 0, 0 );
-        //USBD_Write( PHONE_DATAIN, msg, BUFLEN, 0, 0 );
+        if (ret != USBD_STATUS_SUCCESS) {
+            TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+            return;
+        }
         PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
 
         rcvdChar = 0;
     } else if (timeout_occured && buf.idx != 0) {
         printf(" to ");
+
         ret = USBD_Write( PHONE_DATAIN, buf.buf, buf.idx, 0, 0 );
+        if (ret != USBD_STATUS_SUCCESS) {
+            TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+            return;
+        }
+
         timeout_occured = 0;
         buf.idx = 0;
         rcvdChar = 0;
@@ -355,7 +363,7 @@ void wait_for_response(uint8_t pBuffer[]) {
     } else {
         return;
     }
-    if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN, 
+    if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN,
                 (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
         PR("wait_rsp\n\r");
 //        state = WAIT_CMD_PC;
@@ -391,7 +399,8 @@ void Phone_run( void )
     switch (state) {
         case RST_RCVD:
             if ((ret = USBD_Write( PHONE_INT, &msg, 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
-                PR("USB Error: %X", ret);
+                TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+                return;
             }
             //buf.idx = 0;
             //rcvdChar = 0;
@@ -401,8 +410,8 @@ void Phone_run( void )
                 PR("Reading started sucessfully (ATR)");
                 state = WAIT_ATR;
             } else {
- //               PR("USB Error: %X", ret);
-//FIXME:                 state = ERR;
+                TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+                return;
             }
             break;
         case WAIT_CMD_PHONE:
@@ -415,10 +424,4 @@ void Phone_run( void )
 //            PR(":(");
             break;
     }
-
-    // FIXME: Function Phone_run not implemented yet
-
-    /* Send and receive chars */
-    // ISO7816_GetChar(&rcv_char);
-    // ISO7816_SendChar(char_to_send);
 }

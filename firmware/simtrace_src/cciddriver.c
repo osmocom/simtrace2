@@ -714,10 +714,14 @@ static void vCCIDSendResponse( void )
 //------------------------------------------------------------------------------
 ///  Description: CCID Command dispatcher
 //------------------------------------------------------------------------------
-static void CCIDCommandDispatcher( void )
+static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transferred, uint32_t remaining )
 {
     unsigned char MessageToSend = 0;
 
+    if (status != USBD_STATUS_SUCCESS) {
+        TRACE_ERROR("USB error: %d", status);
+        return;
+    }
     TRACE_DEBUG("Command: 0x%X 0x%x 0x%X 0x%X 0x%X 0x%X 0x%X\n\r\n\r",
                    (unsigned int)ccidDriver.sCcidCommand.bMessageType,
                    (unsigned int)ccidDriver.sCcidCommand.wLength,

@@ -59,6 +59,7 @@
 #define DFU_NUM_STRINGS 0
 #define DFU_STRING_DESCRIPTORS
 
+#define PR  TRACE_INFO
 
 //------------------------------------------------------------------------------
 //         Local definition
@@ -171,7 +172,7 @@ static void RDRtoPCDatablock_ATR( void )
     TRACE_DEBUG(".");
 
     status = ISO7816_Datablock_ATR( Atr, &length );
-//    ISO7816_Decode_ATR( Atr );
+    ISO7816_Decode_ATR( Atr );
 
     if (status == 0) {
         TRACE_DEBUG("Timeout occured while reading ATR");
@@ -183,8 +184,8 @@ static void RDRtoPCDatablock_ATR( void )
     if( length > 5 ) {
         ccidDriver.ProtocolDataStructure[1] = Atr[3]&0x0F; // TD(1)
         ccidDriver.bProtocol = Atr[3]&0x0F;           // TD(1)
-        TRACE_INFO("Protocol data structure: 0x%x, bProtocol: 0x%x\n\r",
-                        ccidDriver.ProtocolDataStructure[1], ccidDriver.bProtocol);
+        TRACE_INFO("Protocol data structure: 0x%x\n\r",
+                        ccidDriver.ProtocolDataStructure[1]);
     }
 
     // S_ccid_protocol_t0
@@ -427,11 +428,11 @@ static void PCtoRDRXfrBlock( void )
     uint16_t msglen = 0;
     uint32_t ret;
 
-    //TRACE_DEBUG(".");
+    PR("PCtoRDRXfrBlock\n");
 
     // Check the block length
     if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
-
+        PR("Err block/msg len");
         ccidDriver.sCcidMessage.bStatus = 1;
         ccidDriver.sCcidMessage.bError  = 0;
     }
@@ -448,7 +449,7 @@ static void PCtoRDRXfrBlock( void )
 
             case CCID_FEATURES_EXC_TPDU:
                 if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO) {
-                    TRACE_INFO("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
+                    PR("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
 
                     // Send commande APDU
                     ret = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU ,
@@ -462,16 +463,16 @@ static void PCtoRDRXfrBlock( void )
                 }
                 else {
                     if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
-                        TRACE_INFO("Not supported T=1\n\r");
+                        PR("Not supported T=1\n\r");
                     }
                     else {
-                        TRACE_INFO("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
+                        PR("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
                     }
                 }
                 break;
 
             case CCID_FEATURES_EXC_APDU:
-                TRACE_INFO("Not supported CCID_FEATURES_EXC_APDU\n\r");
+                PR("Not supported CCID_FEATURES_EXC_APDU\n\r");
                 break;
 
             default:
@@ -590,7 +591,7 @@ static void PCtoRDRtoAPDU( void )
     unsigned char bClassGetResponse;
     unsigned char bClassEnvelope;
 
-    TRACE_DEBUG(".");
+    TRACE_INFO(".");
 
     if( configurationDescriptorsFS->ccid.dwFeatures == (CCID_FEATURES_EXC_SAPDU|CCID_FEATURES_EXC_APDU) ) {
 
@@ -922,7 +923,7 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 void CCID_SmartCardRequest( void )
 {
     unsigned char bStatus;
-    TRACE_DEBUG(".");
+    TRACE_INFO("CCID_req\n");
 
     do {
 
@@ -932,7 +933,6 @@ void CCID_SmartCardRequest( void )
                              (void*)0 );
     } 
     while (bStatus != USBD_STATUS_SUCCESS);
-    TRACE_DEBUG("bStat: %x\n\r", bStatus);
 }
 
 
@@ -965,6 +965,7 @@ unsigned char CCID_Write(void *pBuffer,
                          TransferCallback fCallback,
                          void *pArgument)
 {
+    PR("ccid wr\n");
     return USBD_Write(CCID_EPT_DATA_IN, pBuffer, dLength, fCallback, pArgument);
 }
 

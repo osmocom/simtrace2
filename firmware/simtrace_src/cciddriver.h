@@ -48,13 +48,7 @@
 #ifndef CCID_DRIVER_H
 #define CCID_DRIVER_H
 
-// FIXME: This is dirty! Typedef copied from USBD.h
-typedef void (*TransferCallback)(void *pArg,
-                                 uint8_t status,
-                                 uint32_t transferred,
-                                 uint32_t remaining);
-
-
+#include "USBD.h"
 
 /// For reference, the absolute maximum block size 
 /// for a TPDU T=0 block is 260 bytes (5 bytes command; 255 bytes data), or 

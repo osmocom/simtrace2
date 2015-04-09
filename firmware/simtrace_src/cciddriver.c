@@ -703,7 +703,7 @@ static void vCCIDSendResponse( void )
     TRACE_DEBUG(".");
 
     do {
-        bStatus = USBD_Write( CCID_EPT_DATA_IN, (void*)&ccidDriver.sCcidMessage, 
+        bStatus = CCID_Write((void*)&ccidDriver.sCcidMessage,
                               ccidDriver.sCcidMessage.bSizeToSend, 0, 0 );
     } while (bStatus != USBD_STATUS_SUCCESS);
 

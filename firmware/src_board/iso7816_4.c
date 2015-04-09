@@ -489,8 +489,8 @@ void ISO7816_cold_reset( void )
 {
     volatile uint32_t i;
 
-    /* tb: wait 400 cycles*/
-    for( i=0; i<(120*(BOARD_MCK/1000000)); i++ ) {
+    /* tb: wait ??? cycles*/
+    for( i=0; i<(400*(BOARD_MCK/1000000)); i++ ) {
     }
 
     BOARD_ISO7816_BASE_USART->US_RHR;
@@ -509,8 +509,8 @@ void ISO7816_warm_reset( void )
 // Clears Reset
     ISO7816_IccPowerOff();
 
-    /* tb: wait 400 cycles */
-    for( i=0; i<(120*(BOARD_MCK/1000000)); i++ ) {
+    /* tb: wait ??? cycles */
+    for( i=0; i<(400*(BOARD_MCK/1000000)); i++ ) {
     }
 
     BOARD_ISO7816_BASE_USART->US_RHR;

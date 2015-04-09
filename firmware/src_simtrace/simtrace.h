@@ -18,6 +18,11 @@ typedef struct ring_buffer
     uint8_t     idx;                // number of items in the buffer
 } ring_buffer;
 
+extern volatile ring_buffer buf;
+
+extern volatile bool rcvdChar;
+extern volatile uint32_t char_stat;
+extern volatile enum confNum simtrace_config;
 
 enum confNum {
     CFG_NUM_SNIFF = 1, CFG_NUM_CCID, CFG_NUM_PHONE, CFG_NUM_MITM, NUM_CONF
@@ -50,14 +55,26 @@ extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );
 extern uint32_t _ISO7816_SendChar( uint8_t CharToSend );
 
+/*  Configure functions   */
+extern void Sniffer_configure( void );
+extern void CCID_configure( void );
+extern void Phone_configure( void );
+extern void MITM_configure( void );
+
 /*  Init functions   */
-extern void Phone_Master_Init( void );
+extern void Sniffer_init( void );
 extern void CCID_init( void );
-extern void Sniffer_Init( void );
+extern void Phone_init( void );
 extern void MITM_init( void );
 
 extern void SIMtrace_USB_Initialize( void );
 extern void _ISO7816_Init( void );
+
+/*  Exit functions   */
+extern void Sniffer_exit( void );
+extern void CCID_exit( void );
+extern void Phone_exit( void );
+extern void MITM_exit( void );
 
 /*  Run functions   */
 extern void Sniffer_run( void );

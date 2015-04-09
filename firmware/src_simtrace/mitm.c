@@ -38,11 +38,16 @@
 
 static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
 
+void MITM_configure( void )
+{
+    Phone_configure();
+    CCID_configure();
+}
 
 void MITM_init( void )
 {
     CCID_init();
-    Phone_Master_Init();
+    Phone_init();
 
     return;
     /*  Configure ISO7816 driver */
@@ -62,9 +67,14 @@ void MITM_init( void )
 */
 }
 
+void MITM_exit( void )
+{
+    Phone_exit();
+    CCID_exit();
+}
 
 void MITM_run( void )
 {
     Phone_run();
-    CCID_SmartCardRequest();
+    CCID_run();
 }

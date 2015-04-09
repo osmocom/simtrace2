@@ -9,34 +9,33 @@
  *         Internal variables
  *------------------------------------------------------------------------------*/
 typedef struct {
+    void (* configure) ( void );
     void (* init) ( void );
+    void (* exit) ( void );
     void (* run) ( void );
 } conf_func;
 
 conf_func config_func_ptrs[] = {
-    {Sniffer_Init, Sniffer_run},  /*  CFG_NUM_SNIFF */
-    {CCID_init, CCID_run},  /*  CFG_NUM_CCID */
-    {Phone_Master_Init, Phone_run},  /* CFG_NUM_PHONE */
-    {MITM_init, MITM_run},  /* CFG_NUM_MITM */
+    {Sniffer_configure, Sniffer_init, Sniffer_exit, Sniffer_run},  /*  CFG_NUM_SNIFF */
+    {CCID_configure, CCID_init, CCID_exit, CCID_run},  /*  CFG_NUM_CCID */
+    {Phone_configure, Phone_init, Phone_exit, Phone_run},  /* CFG_NUM_PHONE */
+    {MITM_configure, MITM_init, MITM_exit, MITM_run},  /* CFG_NUM_MITM */
 };
 
 
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-uint8_t simtrace_config = CFG_NUM_SNIFF;
-uint8_t conf_changed = 1;
-
-uint8_t rcvdChar = 0;
-uint32_t char_stat = 0;
+volatile enum confNum simtrace_config = CFG_NUM_SNIFF;
 
 /*------------------------------------------------------------------------------
- *        Main 
+ *        Main
  *------------------------------------------------------------------------------*/
 
 extern int main( void )
 {
     uint8_t isUsbConnected = 0;
+    enum confNum last_simtrace_config = simtrace_config;
 
     LED_Configure(LED_NUM_RED);
     LED_Configure(LED_NUM_GREEN);
@@ -50,6 +49,14 @@ extern int main( void )
     SIMtrace_USB_Initialize();
 
     printf("%s", "USB init\n\r");
+
+    for (unsigned int i = 0; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
+    {
+        config_func_ptrs[i].configure();
+    }
+
+    config_func_ptrs[simtrace_config-1].init();
+    last_simtrace_config = simtrace_config;
 
 // FIXME: why don't we get any interrupts with this line?:
     while(USBD_GetState() < USBD_STATE_CONFIGURED);
@@ -72,15 +79,16 @@ extern int main( void )
 
             isUsbConnected = 1;
 //            TC_Start(TC0, 0);
-        }    
+        }
 
 //        for (int i=0; i <10000; i++);
 
 /*  FIXME: Or should we move the while loop into every case, and break out
     in case the config changes? */
-        if (conf_changed) {
+        if (last_simtrace_config != simtrace_config) {
+            config_func_ptrs[last_simtrace_config-1].exit();
             config_func_ptrs[simtrace_config-1].init();
-            conf_changed = 0;
+            last_simtrace_config = simtrace_config;
         } else {
             config_func_ptrs[simtrace_config-1].run();
         }

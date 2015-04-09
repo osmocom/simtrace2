@@ -35,8 +35,8 @@
 
 #include <string.h>
 
-extern uint8_t rcvdChar;
-extern uint32_t char_stat;
+volatile uint32_t char_stat;
+volatile bool rcvdChar = 0;
 
 //#define BUFLEN  14
 // FIXME: Remove:
@@ -49,7 +49,7 @@ extern uint32_t char_stat;
     uint8_t     idx;                // number of items in the buffer
 } ring_buffer;
 */
-ring_buffer buf = { {0}, 0 };
+volatile ring_buffer buf = { {0}, 0 };
 
 void buf_push(uint8_t item)
 {

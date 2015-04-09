@@ -112,8 +112,6 @@ static void ConfigureCardDetection( void )
     printf("+++++ Configure PIOs\n\r");
     PIO_Configure( &pinSmartCard, 1 ) ;
     NVIC_EnableIRQ( PIOA_IRQn );
-// FIXME: Do we need to set priority?: NVIC_SetPriority( PIOA_IRQn, 10);
-    PIO_ConfigureIt( &pinSmartCard, ISR_PioSmartCard ) ;
     PIO_EnableIt( &pinSmartCard ) ;
 }
 
@@ -133,21 +131,27 @@ static void ConfigureCardDetection( void )
 /*-----------------------------------------------------------------------------
  *          Initialization and run
  *-----------------------------------------------------------------------------*/
-static const CCIDDriverConfigurationDescriptors *configDescCCID;
 extern CCIDDriverConfigurationDescriptors configurationDescriptorCCID;
+
+void CCID_configure ( void ) {
+    CCIDDriver_Initialize();
+// FIXME: Do we need to set priority?: NVIC_SetPriority( PIOA_IRQn, 10);
+    PIO_ConfigureIt( &pinSmartCard, ISR_PioSmartCard ) ;
+}
+
+void CCID_exit ( void ) {
+    PIO_DisableIt( &pinSmartCard ) ;
+}
 
 void CCID_init( void )
 {
     uint8_t pAtr[MAX_ATR_SIZE];
     uint8_t ucSize ;
 
-    configDescCCID = &configurationDescriptorCCID;
-
     // FIXME: do we want to print ATR?
     /*  Initialize Atr buffer */
     memset( pAtr, 0, sizeof( pAtr ) ) ;
 
-    /*  Configure IT on Smart Card */
     ConfigureCardDetection() ;
 
     // Configure ISO7816 driver
@@ -159,8 +163,6 @@ void CCID_init( void )
 //    PIO_Set(&pinsPower[0]);
 
     ISO7816_Init( &pinIso7816RstMC ) ;
-
-    CCIDDriver_Initialize();
 
     /*  Read ATR */
     ISO7816_warm_reset() ;

@@ -126,7 +126,6 @@ enum states{
 static uint8_t StateUsartGlobal = USART_RCV;
 
 static enum states state;
-extern uint8_t rcvdChar;
 
 extern volatile uint8_t timeout_occured;
 
@@ -146,21 +145,9 @@ static void ISR_PhoneRST( const Pin *pPin)
         }
     }
     state = RST_RCVD;
-   
-    // FIXME: What to do on reset?
-    // FIXME: It seems like the phone is constantly sending a lot of these RSTs
-    PIO_DisableIt( &pinPhoneRST ) ;
-}
 
-static void Config_PhoneRST_IrqHandler()
-{
-    PIO_Configure( &pinPhoneRST, 1);
-//    PIO_Configure( &pinPhoneClk, 1);
-    PIO_ConfigureIt( &pinPhoneRST, ISR_PhoneRST ) ;
-//    PIO_ConfigureIt( &pinPhoneClk, ISR_PhoneRST ) ;
-    PIO_EnableIt( &pinPhoneRST ) ;
-//    PIO_EnableIt( &pinPhoneClk ) ;
-    NVIC_EnableIRQ( PIOA_IRQn );
+    /* Interrupt enabled after ATR is sent to phone */
+    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 /**
@@ -252,13 +239,25 @@ uint32_t _ISO7816_SendChar( uint8_t CharToSend )
     return( status );
 }
 
-void Phone_Master_Init( void ) {
-    
+void Phone_configure( void ) {
+    PIO_ConfigureIt( &pinPhoneRST, ISR_PhoneRST ) ;
+    NVIC_EnableIRQ( PIOA_IRQn );
+}
+
+void Phone_exit( void ) {
+    PIO_DisableIt( &pinPhoneRST ) ;
+    USART_DisableIt( USART_PHONE, US_IER_RXRDY) ;
+    USART_SetTransmitterEnabled(USART_PHONE, 0);
+    USART_SetReceiverEnabled(USART_PHONE, 0);
+}
+
+void Phone_init( void ) {
     PIO_Configure( pinsISO7816_PHONE, PIO_LISTSIZE( pinsISO7816_PHONE ) ) ;
     PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
 
-    Config_PhoneRST_IrqHandler();
+    PIO_Configure( &pinPhoneRST, 1);
 
+    PIO_EnableIt( &pinPhoneRST ) ;
     _ISO7816_Init();
 
     USART_SetTransmitterEnabled(USART_PHONE, 1);
@@ -272,20 +271,8 @@ void Phone_Master_Init( void ) {
 
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
 //    USBD_Connect();
-// FIXME: USB clock? USB PMC?
-//    NVIC_EnableIRQ( UDP_IRQn );
 
-   USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
-
-   // FIXME: At some point USBD_IrqHandler() should get called and set USBD_STATE_CONFIGURED
-  /*  while (USBD_GetState() < USBD_STATE_CONFIGURED) {
-        int i = 1; 
-        if ((i%10000) == 0) {
-            TRACE_DEBUG("%d: USB State: %x\n\r", i, USBD_GetState());
-        }
-        i++;
-    }
-*/
+    USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
 
     Timer_Init();
 }
@@ -330,7 +317,6 @@ void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t
     state = WAIT_CMD_PHONE;
 }
 
-extern ring_buffer buf;
 #define     MAX_MSG_LEN     64
 
 void wait_for_response(uint8_t pBuffer[]) {
@@ -339,7 +325,7 @@ void wait_for_response(uint8_t pBuffer[]) {
         printf(" rr ");
 
         /*  DATA_IN for host side is data_out for simtrace side   */
-        ret = USBD_Write( PHONE_DATAIN, buf.buf, BUFLEN, 0, 0 );
+        ret = USBD_Write( PHONE_DATAIN, (void *)buf.buf, BUFLEN, 0, 0 );
         if (ret != USBD_STATUS_SUCCESS) {
             TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
             return;
@@ -350,7 +336,7 @@ void wait_for_response(uint8_t pBuffer[]) {
     } else if (timeout_occured && buf.idx != 0) {
         printf(" to ");
 
-        ret = USBD_Write( PHONE_DATAIN, buf.buf, buf.idx, 0, 0 );
+        ret = USBD_Write( PHONE_DATAIN, (void *) buf.buf, buf.idx, 0, 0 );
         if (ret != USBD_STATUS_SUCCESS) {
             TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
             return;

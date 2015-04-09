@@ -60,20 +60,23 @@ static const Pin pPwr[] = {
     {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
-extern uint32_t char_stat;
-extern uint8_t rcvdChar;
-extern ring_buffer buf;
-
 /*-----------------------------------------------------------------------------
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
-void Sniffer_Init( void ) 
+void Sniffer_configure( void ){
+}
+
+void Sniffer_exit( void ){
+    USART_SetReceiverEnabled(USART_PHONE, 0);
+}
+
+void Sniffer_init( void )
 {
     /*  Configure ISO7816 driver */
     PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
     PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
-    
+
     PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
     _ISO7816_Init();
@@ -87,7 +90,7 @@ void Sniffer_run( void )
         /*  DATA_IN for host side is data_out for simtrace side   */
         /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
         PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
-        USBD_Write( DATAIN, buf.buf, BUFLEN, 0, 0 );
+        USBD_Write( DATAIN, (void *) buf.buf, BUFLEN, 0, 0 );
         PR("----- Rcvd char\n\r");
         rcvdChar = 0;
     }

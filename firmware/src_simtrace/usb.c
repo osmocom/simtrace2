@@ -602,13 +602,10 @@ const USBDDriverDescriptors driverDescriptors = {
 /*----------------------------------------------------------------------------
  *       Callbacks
  *----------------------------------------------------------------------------*/
-extern uint8_t conf_changed;
-extern uint8_t simtrace_config;
 
 void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 {
     TRACE_INFO_WP("cfgChanged%d ", cfgnum);
-    conf_changed =1;
     simtrace_config = cfgnum;
 }
 

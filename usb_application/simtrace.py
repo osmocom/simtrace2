@@ -14,6 +14,7 @@ import hashlib
 import os
 import random
 import re
+import time
 
 cmd1 = {0x00, 0x10, 0x00, 0x00}
 cmd2 =  {0x00, 0x20, 0x00, 0x00, 0x02}
@@ -71,6 +72,8 @@ def main():
 #FIXME: Change means to find devices
         dev = find_dev()
         dev.set_configuration(args.conf)
+        # Give pcsclite time to find the device
+        time.sleep(1)
 
     if args.read_bin is True: 
         ccid.pySim_read() 

@@ -59,6 +59,8 @@ static const Pin pinsPower[] = {PWR_PINS};
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RSTMC;
 static uint8_t sim_inserted = 0;
 
+static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM};
+
 /*------------------------------------------------------------------------------
  *         Optional smartcard detection
  *------------------------------------------------------------------------------*/
@@ -162,8 +164,8 @@ void CCID_init( void )
     /* power up the card */
 //    PIO_Set(&pinsPower[0]);
 
-    ISO7816_Init( &pinIso7816RstMC, USART_SIM, CLK_MASTER ) ;
-
+    ISO7816_Init(&usart_info, CLK_MASTER);
+    ISO7816_Set_Reset_Pin(&pinIso7816RstMC);
     /*  Read ATR */
     ISO7816_warm_reset() ;
 

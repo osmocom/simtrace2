@@ -60,6 +60,8 @@ static const Pin pPwr[] = {
     {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
+static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM};
+
 /*-----------------------------------------------------------------------------
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
@@ -79,7 +81,7 @@ void Sniffer_init( void )
 
     PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
-    _ISO7816_Init();
+    ISO7816_Init(&usart_info, CLK_MASTER);
 
     USART_SetReceiverEnabled(USART_PHONE, 1);
 }

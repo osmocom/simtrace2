@@ -52,12 +52,7 @@ typedef struct {
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
-/*  Helper functions    */
-
-// FIXME: static function definitions
-extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );
-extern uint32_t _ISO7816_SendChar( uint8_t CharToSend );
-
+/**  Helper functions    **/
 /*  Configure functions   */
 extern void Sniffer_configure( void );
 extern void CCID_configure( void );
@@ -71,7 +66,6 @@ extern void Phone_init( void );
 extern void MITM_init( void );
 
 extern void SIMtrace_USB_Initialize( void );
-extern void _ISO7816_Init( void );
 
 /*  Exit functions   */
 extern void Sniffer_exit( void );

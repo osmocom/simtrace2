@@ -965,7 +965,6 @@ unsigned char CCID_Write(void *pBuffer,
                          TransferCallback fCallback,
                          void *pArgument)
 {
-    PR("ccid wr\n");
     return USBD_Write(CCID_EPT_DATA_IN, pBuffer, dLength, fCallback, pArgument);
 }
 

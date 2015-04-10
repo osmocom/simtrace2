@@ -94,8 +94,8 @@ void _ISO7816_Init( void )
     /* Configure USART */
     PMC_EnablePeripheral(ID_USART_PHONE);
 
-    USART1->US_IDR = 0xffffffff;
-    USART_EnableIt( USART1, US_IER_RXRDY) ;
+    USART_PHONE->US_IDR = 0xffffffff;
+    USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
     /* enable USART1 interrupt */
     NVIC_EnableIRQ( USART1_IRQn ) ;
     

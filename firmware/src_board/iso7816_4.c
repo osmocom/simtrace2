@@ -57,11 +57,6 @@
 #define USART_SEND 0
 #define USART_RCV  1
 
-#if !defined(BOARD_ISO7816_BASE_USART)
-  #define BOARD_ISO7816_BASE_USART USART1
-  #define BOARD_ISO7816_ID_USART   ID_USART1
-#endif
-
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
@@ -619,16 +614,23 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 /** Initializes a ISO driver
  *  \param pPinIso7816RstMC Pin ISO 7816 Rst MC
  */
-void ISO7816_Init( const Pin *pPinIso7816RstMC )
+void ISO7816_Init( const Pin *pPinIso7816RstMC, Usart *base_usart, bool master_clock )
 {
+    uint32_t clk;
     TRACE_DEBUG("ISO_Init\n\r");
 
     /* Pin ISO7816 initialize */
     st_pinIso7816RstMC  = (Pin *)pPinIso7816RstMC;
 
-    USART_Configure( BOARD_ISO7816_BASE_USART,
+    if (master_clock == true) {
+        clk = US_MR_USCLKS_MCK;
+    } else {
+        clk = US_MR_USCLKS_SCK;
+    }
+
+    USART_Configure( base_usart,
                      US_MR_USART_MODE_IS07816_T_0
-                     | US_MR_USCLKS_MCK
+                     | clk
                      | US_MR_NBSTOP_1_BIT
                      | US_MR_PAR_EVEN
                      | US_MR_CHRL_8_BIT
@@ -640,21 +642,21 @@ void ISO7816_Init( const Pin *pPinIso7816RstMC )
     /* Configure USART */
     PMC_EnablePeripheral(BOARD_ISO7816_ID_USART);
     /* Disable interrupts */
-    BOARD_ISO7816_BASE_USART->US_IDR = (uint32_t) -1;
+    base_usart->US_IDR = (uint32_t) -1;
 
-    BOARD_ISO7816_BASE_USART->US_FIDI = 372;  /* by default */
+    base_usart->US_FIDI = 372;  /* by default */
     /* Define the baud rate divisor register */
     /* CD  = MCK / SCK */
     /* SCK = FIDI x BAUD = 372 x 9600 */
     /* BOARD_MCK */
     /* CD = MCK/(FIDI x BAUD) = 48000000 / (372x9600) = 13 */
-    BOARD_ISO7816_BASE_USART->US_BRGR = BOARD_MCK / (372*9600);
+    base_usart->US_BRGR = BOARD_MCK / (372*9600);
 
     /* Write the Timeguard Register */
-    BOARD_ISO7816_BASE_USART->US_TTGR = 5;
+    base_usart->US_TTGR = 5;
 
-    USART_SetTransmitterEnabled(BOARD_ISO7816_BASE_USART, 1);
-    USART_SetReceiverEnabled(BOARD_ISO7816_BASE_USART, 1);
+    USART_SetTransmitterEnabled(base_usart, 1);
+    USART_SetReceiverEnabled(base_usart, 1);
 
 }
 

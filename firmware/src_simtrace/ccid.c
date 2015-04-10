@@ -162,7 +162,7 @@ void CCID_init( void )
     /* power up the card */
 //    PIO_Set(&pinsPower[0]);
 
-    ISO7816_Init( &pinIso7816RstMC ) ;
+    ISO7816_Init( &pinIso7816RstMC, USART_SIM, CLK_MASTER ) ;
 
     /*  Read ATR */
     ISO7816_warm_reset() ;

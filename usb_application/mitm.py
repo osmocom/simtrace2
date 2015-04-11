@@ -42,7 +42,7 @@ ERR_TIMEOUT = 110
 
 def poll_ep(dev, ep):
     try:
-        return dev.read(ep, 64, 100)
+        return dev.read(ep, 64, 10)
     except usb.core.USBError as e:
         if e.errno != ERR_TIMEOUT:
             raise
@@ -50,7 +50,7 @@ def poll_ep(dev, ep):
 
 def write_phone(dev, resp):
     print("WR: ", HEX(resp))
-    dev.write(PHONE_WR, resp, 100)
+    dev.write(PHONE_WR, resp, 10)
 
 def do_mitm():
     dev = find_dev()

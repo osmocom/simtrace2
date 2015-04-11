@@ -1,24 +1,20 @@
 #ifndef SIMTRACE_H
 #define SIMTRACE_H
 
+#include "ringbuffer.h"
+
 /* Endpoint numbers */
 #define DATAOUT     1
 #define DATAIN      2
 #define INT         3
 
-#define BUFLEN  5
+#define BUFLEN  64
 
 #define PHONE_DATAOUT     4
 #define PHONE_DATAIN      5
 #define PHONE_INT         6
 
-typedef struct ring_buffer
-{
-    uint8_t     buf[BUFLEN*2];   // data buffer
-    uint8_t     idx;                // number of items in the buffer
-} ring_buffer;
-
-extern volatile ring_buffer buf;
+extern volatile ringbuf sim_rcv_buf;
 
 extern volatile bool rcvdChar;
 extern volatile uint32_t char_stat;

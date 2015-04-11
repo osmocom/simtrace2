@@ -36,27 +36,12 @@
 #include <string.h>
 
 volatile uint32_t char_stat;
-volatile bool rcvdChar = 0;
 
-//#define BUFLEN  14
 // FIXME: Remove:
 #define PR TRACE_INFO
 //#define PR printf 
 
-/*typedef struct ring_buffer
-{
-    uint8_t     buf[BUFLEN*2];   // data buffer
-    uint8_t     idx;                // number of items in the buffer
-} ring_buffer;
-*/
-volatile ring_buffer buf = { {0}, 0 };
-
-void buf_push(uint8_t item)
-{
-    buf.buf[buf.idx % (BUFLEN*2)] = item;
-    PR("Psh: %x %x\n\r", buf.idx, buf.buf[buf.idx]);
-    buf.idx = (buf.idx+1) % (BUFLEN*2);
-}
+volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 
 /** Initializes a ISO driver
  */ 
@@ -102,49 +87,39 @@ void _ISO7816_Init( void )
 //    USART_PHONE->US_IER = US_IER_RXRDY | US_IER_OVRE | US_IER_FRAME | US_IER_PARE | US_IER_NACK | US_IER_ITER;
 }
 
-/* 
- *  Initializes rcvdChar with the char received on USART interface                            
- *  char_stat is zero if no error occured. 
- *  Otherwise it is filled with the content of the status register.                           
+/*
+ *  char_stat is zero if no error occured.
+ *  Otherwise it is filled with the content of the status register.
  */
-void USART1_IrqHandler( void )                                                                
-{   
-    uint32_t stat;                                                                            
+void USART1_IrqHandler( void )
+{
+    uint32_t stat;
     char_stat = 0;
     // Rcv buf full
-/*    if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {                                           
+/*    if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {
         TRACE_DEBUG("Rcv buf full");
-        USART_DisableIt(USART1, US_IDR_RXBUFF);                                               
-    }                                                                                         
-*/  
-    uint32_t csr = USART_PHONE->US_CSR;                                                       
-    
+        USART_DisableIt(USART1, US_IDR_RXBUFF);
+    }
+*/
+    uint32_t csr = USART_PHONE->US_CSR;
 //    PR("---- stat: %x\n\r", csr);
 
     if (csr & US_CSR_TXRDY) {
-        /* transmit buffer empty, nothing to transmit */                                      
-    }  
+        /* transmit buffer empty, nothing to transmit */
+    }
     if (csr & US_CSR_RXRDY) {
         stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
                         US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
                         (1<<10)));
-        int c = (USART_PHONE->US_RHR) & 0xFF;
+//        int c = (USART_PHONE->US_RHR) & 0xFF;
 //        printf(" %x", c);
 
         if (stat == 0 ) {
             /* Fill char into buffer */
-            buf_push((USART_PHONE->US_RHR) & 0xFF);
+            rbuf_write(&sim_rcv_buf, (USART_PHONE->US_RHR) & 0xFF);
         } else {
-//            buf_push((USART_PHONE->US_RHR) & 0xFF);
-            PR("e");
-            PR("%x\n\r", (USART_PHONE->US_RHR) & 0xFF);
-            PR("st: %x ", stat);
+            PR("e %x st: %x\n", (USART_PHONE->US_RHR) & 0xFF, stat);
         } /* else: error occured */
-
-        if ((buf.idx % BUFLEN) == BUFLEN-1) {
-            rcvdChar = 1;
-            printf("r. ");
-        }
 
         char_stat = stat;
     }

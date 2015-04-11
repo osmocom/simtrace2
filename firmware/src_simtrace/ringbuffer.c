@@ -1,34 +1,35 @@
-typedef struct ringbuf {
-    uint8_t buf[BUFLEN];
-    uint8_t *buf_end;
-    uint8_t *reader;
-    uint8_t *writer;
-} ringbuf;
+#include "ringbuffer.h"
+#include "trace.h"
 
-void rbuf_init(ringbuf *rb)
+void rbuf_reset(volatile ringbuf *rb)
 {
-    rb->buf_end = buf[BUFLEN-1];
-    rb->buf = {0};
-    rb->reader = rb->buf[0];
-    rb->writer = rb->buf[0];
+    rb->ird = 0;
+    rb->iwr = 0;
 }
 
-uint8_t rbuf_read(ringbuf *rb)
+uint8_t rbuf_read(volatile ringbuf *rb)
 {
-    uint8_t val = *(rb->reader);
-    if (rb->reader == rb->buf_end) {
-        rb->reader = rb->buf;
-    } else{
-        rb->reader++;
-    }
+    uint8_t val = rb->buf[rb->ird];
+    rb->ird = (rb->ird + 1)%RING_BUFLEN;
     return val;
 }
 
-void rbuf_write(ringbuf *rb, uint8_t item) {
-    *(rb->writer) = item;
-    if (rb->writer == rb->buf_end) {
-        rb->writer = rb->buf;
-    } else{
-        rb->writer++;
+void rbuf_write(volatile volatile ringbuf *rb, uint8_t item)
+{
+    if(!rbuf_is_full(rb)) {
+        rb->buf[rb->iwr] = item;
+        rb->iwr = (rb->iwr + 1)%RING_BUFLEN;
+    } else {
+        TRACE_ERROR("Ringbuffer full, losing bytes!");
     }
+}
+
+bool rbuf_is_empty(volatile ringbuf *rb)
+{
+    return rb->ird == rb->iwr;
+}
+
+bool rbuf_is_full(volatile ringbuf *rb)
+{
+    return rb->ird == (rb->iwr+1)%RING_BUFLEN;
 }

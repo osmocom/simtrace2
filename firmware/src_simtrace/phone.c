@@ -71,8 +71,9 @@ it to the driver using the RDR_to_PC_DataBlock response. During this period, the
 from the smart card is still in progress and hence the device cannot indefinitely wait for IN tokens on
 the USB bulk-in endpoint. Hence, it is required of the driver to readily supply ‘IN’ tokens on the USB
 bulk-in endpoint. On failure to do so, some of the wait time extension responses, will not be queued to
-the driver. 
+the driver.
 */
+extern volatile uint8_t timeout_occured;
 
 /*------------------------------------------------------------------------------
  *         Internal variables
@@ -111,30 +112,23 @@ static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 #define USART_SEND 0
 #define USART_RCV  1
 
-enum states{
-    WAIT_FOR_RST            = 9,
-    RST_RCVD        = 10,
-    WAIT_CMD_PHONE  = 11,
-    WAIT_CMD_PC     = 12,
-    WAIT_ATR        = 13,
-};
-
+// FIXME: Comments
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
 /** Variable for state of send and receive froom USART */
 static uint8_t StateUsartGlobal = USART_RCV;
 
-static enum states state;
-
-extern volatile uint8_t timeout_occured;
+static bool write_to_host_in_progress = false;
+static uint8_t host_to_sim_buf[BUFLEN];
 
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
-#define     RESET   'R'
 static void ISR_PhoneRST( const Pin *pPin)
 {
+    int ret;
+    // FIXME: no printfs in ISRs?
     printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
     if ( ((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)  )
     {
@@ -144,10 +138,14 @@ static void ISR_PhoneRST( const Pin *pPin)
             printf(" 1 ");
         }
     }
-    state = RST_RCVD;
+
+    if ((ret = USBD_Write( PHONE_INT, "R", 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
+        TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
+        return;
+    }
 
     /* Interrupt enabled after ATR is sent to phone */
-    PIO_DisableIt( &pinPhoneRST ) ;
+   // PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 /**
@@ -239,6 +237,32 @@ uint32_t _ISO7816_SendChar( uint8_t CharToSend )
     return( status );
 }
 
+void receive_from_host( void );
+void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+{
+    if (status != USBD_STATUS_SUCCESS) {
+        TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
+        return;
+    }
+    PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
+    PR("Resp: %x %x %x .. %x", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
+
+    for (uint32_t i = 0; i < transferred; i++ ) {
+        _ISO7816_SendChar(host_to_sim_buf[i]);
+    }
+
+    receive_from_host();
+}
+
+void receive_from_host()
+{
+    int ret;
+    if ((ret = USBD_Read(PHONE_DATAOUT, &host_to_sim_buf, sizeof(host_to_sim_buf),
+                (TransferCallback)&sendResponse_to_phone, 0)) == USBD_STATUS_SUCCESS) {
+    } else {
+        TRACE_ERROR("USB Err: %X", ret);
+    }
+}
 void Phone_configure( void ) {
     PIO_ConfigureIt( &pinPhoneRST, ISR_PhoneRST ) ;
     NVIC_EnableIRQ( PIOA_IRQn );
@@ -266,99 +290,51 @@ void Phone_init( void ) {
     /*  Configure ISO7816 driver */
     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
-    state = WAIT_FOR_RST;
-
-
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
 //    USBD_Connect();
 
     USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
 
-    Timer_Init();
+    //Timer_Init();
+
+    receive_from_host();
 }
 
-void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remaining)
-{
-    uint32_t i;
 
+void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+{
     if (status != USBD_STATUS_SUCCESS) {
         TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
-        return;
     }
-    PR("Send %x %x .. %x (tr: %d, st: %x)", ATR[0], ATR[1], ATR[transferred-1], transferred, status);
-    for ( i = 0; i < transferred; i++ ) {
-        _ISO7816_SendChar(*(ATR++));
-    }
-    state = WAIT_CMD_PHONE;
-    PIO_EnableIt( &pinPhoneRST ) ;
+    write_to_host_in_progress = false;
 }
 
-void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+int send_to_host()
 {
-    uint32_t i;
-
-    if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
-        return;
-    }
-    PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
-    PR("Resp: %x %x %x .. %x", pArg[0], pArg[1], pArg[2], pArg[transferred-1]);
-
-    for ( i = 0; i < transferred; i++ ) {
-        _ISO7816_SendChar(*(pArg++));
-    }
-/*
-    if (*(pArg-1) == 0x8A) {
-        for (i=0; i<20000; i++) ;
-        _ISO7816_SendChar(0x90);
-        _ISO7816_SendChar(0x00);
-    }
-*/
-    state = WAIT_CMD_PHONE;
-}
-
-#define     MAX_MSG_LEN     64
-
-void wait_for_response(uint8_t pBuffer[]) {
+    static uint8_t msg[RING_BUFLEN];
     int ret = 0;
-    if (rcvdChar != 0) {
-        printf(" rr ");
+    int i;
 
-        /*  DATA_IN for host side is data_out for simtrace side   */
-        ret = USBD_Write( PHONE_DATAIN, (void *)buf.buf, BUFLEN, 0, 0 );
-        if (ret != USBD_STATUS_SUCCESS) {
-            TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-            return;
-        }
-        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
-
-        rcvdChar = 0;
-    } else if (timeout_occured && buf.idx != 0) {
-        printf(" to ");
-
-        ret = USBD_Write( PHONE_DATAIN, (void *) buf.buf, buf.idx, 0, 0 );
-        if (ret != USBD_STATUS_SUCCESS) {
-            TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-            return;
-        }
-
-        timeout_occured = 0;
-        buf.idx = 0;
-        rcvdChar = 0;
-        PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
-    } else {
-        return;
+    for(i = 0; !rbuf_is_empty(&sim_rcv_buf); i++) {
+        msg[i] = rbuf_read(&sim_rcv_buf);
     }
-    if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN,
-                (TransferCallback)&sendResponse, pBuffer)) == USBD_STATUS_SUCCESS) {
-        PR("wait_rsp\n\r");
-//        state = WAIT_CMD_PC;
-        buf.idx = 0;
-        TC0_Counter_Reset();
-    } else {
-        PR("USB Err: %X", ret);
-        return;
+    write_to_host_in_progress = true;
+    ret = USBD_Write( PHONE_DATAIN, msg, i, (TransferCallback)&USB_write_callback, 0 );
+    return ret;
+}
+
+int check_data_from_phone()
+{
+    int ret = 0;
+
+    while (rbuf_is_empty(&sim_rcv_buf) || write_to_host_in_progress == true)
+        __WFI();
+    ret = send_to_host();
+    if (ret != USBD_STATUS_SUCCESS) {
+        TRACE_ERROR("Error sending to host (%x)", ret);
+        return ret;
     }
+    return ret;
 }
 
 // Sniffed Phone to SIM card communication:
@@ -376,38 +352,5 @@ void wait_for_response(uint8_t pBuffer[]) {
 
 void Phone_run( void )
 {
-    int ret;
-    uint8_t pBuffer[MAX_MSG_LEN];
-    int msg = RESET;
-// FIXME: remove:
-//    uint8_t ATR[] = {0x3B, 0x9A, 0x94, 0x00, 0x92, 0x02, 0x75, 0x93, 0x11, 0x00, 0x01, 0x02, 0x02, 0x19}; 
-//    send_ATR(ATR, (sizeof(ATR)/sizeof(ATR[0])));
-    switch (state) {
-        case RST_RCVD:
-            if ((ret = USBD_Write( PHONE_INT, &msg, 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
-                TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-                return;
-            }
-            //buf.idx = 0;
-            //rcvdChar = 0;
-//            TC0_Counter_Reset();
-            // send_ATR sets state to WAIT_CMD
-            if ((ret = USBD_Read(PHONE_DATAOUT, pBuffer, MAX_MSG_LEN, (TransferCallback)&send_ATR, pBuffer)) == USBD_STATUS_SUCCESS) {
-                PR("Reading started sucessfully (ATR)");
-                state = WAIT_ATR;
-            } else {
-                TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-                return;
-            }
-            break;
-        case WAIT_CMD_PHONE:
-// FIXME:            TC0_Counter_Reset();
-            wait_for_response(pBuffer);
-            break;
-        case WAIT_FOR_RST:
-            break;
-        default:
-//            PR(":(");
-            break;
-    }
+    check_data_from_phone();
 }

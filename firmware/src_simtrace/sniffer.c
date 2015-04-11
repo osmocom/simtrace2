@@ -86,6 +86,7 @@ void Sniffer_init( void )
 
 void Sniffer_run( void )
 {
+#if 0
     if (rcvdChar != 0) {
         /*  DATA_IN for host side is data_out for simtrace side   */
         /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
@@ -94,4 +95,5 @@ void Sniffer_run( void )
         PR("----- Rcvd char\n\r");
         rcvdChar = 0;
     }
+#endif
 }

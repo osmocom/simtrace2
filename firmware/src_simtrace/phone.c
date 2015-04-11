@@ -282,7 +282,7 @@ void send_ATR(uint8_t *ATR, uint8_t status, uint32_t transferred, uint32_t remai
     uint32_t i;
 
     if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, status);
+        TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
         return;
     }
     PR("Send %x %x .. %x (tr: %d, st: %x)", ATR[0], ATR[1], ATR[transferred-1], transferred, status);
@@ -298,7 +298,7 @@ void sendResponse( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t
     uint32_t i;
 
     if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, status);
+        TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
         return;
     }
     PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
@@ -327,7 +327,7 @@ void wait_for_response(uint8_t pBuffer[]) {
         /*  DATA_IN for host side is data_out for simtrace side   */
         ret = USBD_Write( PHONE_DATAIN, (void *)buf.buf, BUFLEN, 0, 0 );
         if (ret != USBD_STATUS_SUCCESS) {
-            TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+            TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
             return;
         }
         PR("b:%x %x %x %x %x.\n\r", buf.buf[0], buf.buf[1],buf.buf[2], buf.buf[3], buf.buf[4]);
@@ -338,7 +338,7 @@ void wait_for_response(uint8_t pBuffer[]) {
 
         ret = USBD_Write( PHONE_DATAIN, (void *) buf.buf, buf.idx, 0, 0 );
         if (ret != USBD_STATUS_SUCCESS) {
-            TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+            TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
             return;
         }
 
@@ -385,7 +385,7 @@ void Phone_run( void )
     switch (state) {
         case RST_RCVD:
             if ((ret = USBD_Write( PHONE_INT, &msg, 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
-                TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+                TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
                 return;
             }
             //buf.idx = 0;
@@ -396,7 +396,7 @@ void Phone_run( void )
                 PR("Reading started sucessfully (ATR)");
                 state = WAIT_ATR;
             } else {
-                TRACE_ERROR("USB err status: %d (%s)", __FUNCTION__, ret);
+                TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
                 return;
             }
             break;

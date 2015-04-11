@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-static const Pin pTC[] = PINS_TC;
+static const Pin pTC[] = {PINS_TC};
 
 /** Global timestamp in milliseconds since start of application */
 volatile uint32_t dwTimeStamp = 0;

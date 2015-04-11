@@ -5,6 +5,8 @@ import smartcard.util
 
 import array
 
+from util import HEX
+
 class SmartcardException(Exception):
     pass
 
@@ -22,7 +24,7 @@ class SmartcardConnection:
         print 'Reader:', reader
         print 'State:', state
         print 'Protocol:', protocol
-        print 'ATR:', smartcard.util.toHexString(atr, smartcard.util.HEX)
+        print 'ATR:', HEX(atr)
         return array.array('B', atr)
 
     def reset_card(self):
@@ -67,14 +69,13 @@ class SmartcardConnection:
         print 'Released context.'
 
     def send_receive_cmd(self, cmd):
-        print("Cmd: ")
+        print("Cmd to SIM: " + HEX(cmd))
         hresult, resp = SCardTransmit(self.hcard, self.dwActiveProtocol,
             cmd.tolist())
         if hresult != SCARD_S_SUCCESS:
             raise SmartcardException('Failed to transmit: ' +
                 SCardGetErrorMessage(hresult))
-        print 'Ans: ' + smartcard.util.toHexString(resp,
-            smartcard.util.HEX)
+        print 'SIM Ans: ' + HEX(resp)
         return array.array('B', resp)
 
     def disconnect_card(self):

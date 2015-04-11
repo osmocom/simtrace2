@@ -24,8 +24,7 @@
 
 #include <string.h>
 
-//FIXME:
-static const Pin pTC[] = {{PIO_PA4B_TCLK0, PIO_PA0B_TIOA0, PIO_PA1B_TIOB0}};
+static const Pin pTC[] = PINS_TC;
 
 /** Global timestamp in milliseconds since start of application */
 volatile uint32_t dwTimeStamp = 0;
@@ -41,7 +40,6 @@ volatile uint8_t timeout_occured = 0;
 void SysTick_Handler( void )
 {
     dwTimeStamp ++;
-    
 }
 
 

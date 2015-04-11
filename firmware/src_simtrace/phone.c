@@ -84,9 +84,14 @@ unsigned char USBState = STATE_IDLE;
 /** ISO7816 pins */
 static const Pin pinsISO7816_PHONE[]    = {PINS_ISO7816_PHONE};
 /** Bus switch pins */
+
+#if DEBUG_PHONE_SNIFF
+# warning "Debug phone sniff via logic analyzer is enabled"
+// Logic analyzer probes are easier to attach to the SIM card slot
+static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
+#else
 static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
-// FIXME: temporary enable bus switch 
-//static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
+#endif
 
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;
@@ -245,7 +250,7 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
         return;
     }
     PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
-    PR("Resp: %x %x %x .. %x", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
+    PR("Resp: %x %x %x .. %x\n", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
 
     for (uint32_t i = 0; i < transferred; i++ ) {
         _ISO7816_SendChar(host_to_sim_buf[i]);
@@ -260,7 +265,7 @@ void receive_from_host()
     if ((ret = USBD_Read(PHONE_DATAOUT, &host_to_sim_buf, sizeof(host_to_sim_buf),
                 (TransferCallback)&sendResponse_to_phone, 0)) == USBD_STATUS_SUCCESS) {
     } else {
-        TRACE_ERROR("USB Err: %X", ret);
+        TRACE_ERROR("USB Err: %X\n", ret);
     }
 }
 void Phone_configure( void ) {

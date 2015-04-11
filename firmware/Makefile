@@ -52,6 +52,8 @@ TRACE_LEVEL = 1
 #FIXME: Remove this variable
 NOAUTOCALLBACK=no
 
+DEBUG_PHONE_SNIFF=0
+
 #CFLAGS+=-DUSB_NO_DEBUG=1
 
 # Optimization level, put in comment for debugging
@@ -117,7 +119,7 @@ CFLAGS += -Dprintf=iprintf
 #CFLAGS += -save-temps -fverbose-asm
 #CFLAGS += -Wa,-a,-ad
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
-CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL)
+CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats

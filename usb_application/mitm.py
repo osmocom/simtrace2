@@ -18,9 +18,14 @@ def find_dev():
 
 def pattern_match(inpt):
     print("Matching inpt", inpt)
-    if (inpt == ATR_SYSMOCOM1):
+    if (inpt == ATR_SYSMOCOM1) or (inpt == ATR_STRANGE_SIM):
+        print("ATR: ", inpt)
         return NEW_ATR
     elif (inpt == CMD_SEL_FILE):
+        print("CMD_SEL_FILE:", inpt)
+        return CMD_SEL_ROOT
+    elif (inpt == CMD_GET_DATA):
+        print("CMD_DATA:", inpt)
         return CMD_SEL_ROOT
     else:
         return inpt

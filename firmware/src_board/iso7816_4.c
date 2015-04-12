@@ -655,7 +655,7 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
                      | US_MR_PAR_EVEN
                      | US_MR_CHRL_8_BIT
                      | US_MR_CLKO
-                     | (3<<24), /* MAX_ITERATION */
+                     | (0<<24), /* MAX_ITERATION */
                      1,
                      0);
 

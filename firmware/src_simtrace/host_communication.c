@@ -15,7 +15,7 @@ int send_to_host()
 {
     static uint8_t msg[RING_BUFLEN];
     int ret = 0;
-    int i;
+    unsigned int i;
 
     for(i = 0; !rbuf_is_empty(&sim_rcv_buf) && i < sizeof(msg); i++) {
         msg[i] = rbuf_read(&sim_rcv_buf);

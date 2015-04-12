@@ -14,6 +14,9 @@
 #define PHONE_DATAIN      5
 #define PHONE_INT         6
 
+#define CLK_MASTER      1
+#define CLK_SLAVE       0
+
 extern volatile ringbuf sim_rcv_buf;
 
 extern volatile bool rcvdChar;
@@ -45,12 +48,7 @@ typedef struct {
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
-/*  Helper functions    */
 int check_data_from_phone();
-
-// FIXME: static function definitions
-extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );
-extern uint32_t _ISO7816_SendChar( uint8_t CharToSend );
 
 /*  Configure functions   */
 extern void Sniffer_configure( void );
@@ -65,7 +63,6 @@ extern void Phone_init( void );
 extern void MITM_init( void );
 
 extern void SIMtrace_USB_Initialize( void );
-extern void _ISO7816_Init( void );
 
 /*  Exit functions   */
 extern void Sniffer_exit( void );

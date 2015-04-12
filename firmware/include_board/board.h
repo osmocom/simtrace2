@@ -12,6 +12,7 @@
 #include "iso7816_4.h"
 #include "led.h"
 #include "cciddriver.h"
+#include "usart.h"
 #include "USBD.h"
 
 #include "USBD_Config.h"

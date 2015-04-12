@@ -71,7 +71,7 @@ it to the driver using the RDR_to_PC_DataBlock response. During this period, the
 from the smart card is still in progress and hence the device cannot indefinitely wait for IN tokens on
 the USB bulk-in endpoint. Hence, it is required of the driver to readily supply ‘IN’ tokens on the USB
 bulk-in endpoint. On failure to do so, some of the wait time extension responses, will not be queued to
-the driver.
+the driver. 
 */
 extern volatile uint8_t timeout_occured;
 
@@ -107,6 +107,8 @@ static const Pin pPwr[] = {
 
 
 static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
+
+static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE};
 
 #define PR  TRACE_INFO
 
@@ -152,95 +154,6 @@ static void ISR_PhoneRST( const Pin *pPin)
    // PIO_DisableIt( &pinPhoneRST ) ;
 }
 
-/**
- * Get a character from ISO7816
- * \param pCharToReceive Pointer for store the received char
- * \return 0: if timeout else status of US_CSR
- */
-/* FIXME: This code is taken from cciddriver.c
-        --> Reuse the code!!! */
-uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive )
-{
-    uint32_t status;
-    uint32_t timeout=0;
-
-    TRACE_DEBUG("--");
-
-    if( StateUsartGlobal == USART_SEND ) {
-        while((USART_PHONE->US_CSR & US_CSR_TXEMPTY) == 0) {}
-        USART_PHONE->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-        StateUsartGlobal = USART_RCV;
-    }
-
-    /* Wait USART ready for reception */
-    while( ((USART_PHONE->US_CSR & US_CSR_RXRDY) == 0) ) {
-        if(timeout++ > 12000 * (BOARD_MCK/1000000)) {
-            TRACE_DEBUG("TimeOut\n\r");
-            return( 0 );
-        }
-    }
-
-    /* At least one complete character has been received and US_RHR has not yet been read. */
-
-    /* Get a char */
-    *pCharToReceive = ((USART_PHONE->US_RHR) & 0xFF);
-
-    status = (USART_PHONE->US_CSR&(US_CSR_OVRE|US_CSR_FRAME|
-                                      US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
-                                      (1<<10)));
-
-    if (status != 0 ) {
-        TRACE_DEBUG("R:0x%X\n\r", status); 
-        TRACE_DEBUG("R:0x%X\n\r", USART_PHONE->US_CSR);
-        TRACE_DEBUG("Nb:0x%X\n\r", USART_PHONE->US_NER );
-        USART_PHONE->US_CR = US_CR_RSTSTA;
-    }
-
-    /* Return status */
-    return( status );
-}
-
-/**
- * Send a char to ISO7816
- * \param CharToSend char to be send
- * \return status of US_CSR
- */
-uint32_t _ISO7816_SendChar( uint8_t CharToSend )
-{
-    uint32_t status;
-
-    TRACE_DEBUG("********** Send char: %c (0x%X)\n\r", CharToSend, CharToSend);
-
-    if( StateUsartGlobal == USART_RCV ) {
-        USART_PHONE->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-        StateUsartGlobal = USART_SEND;
-    }
-
-    /* Wait USART ready for transmit */
-    while((USART_PHONE->US_CSR & US_CSR_TXRDY) == 0)  {}
-    /* There is no character in the US_THR */
-
-    /* Transmit a char */
-    USART_PHONE->US_THR = CharToSend;
-
-    status = (USART_PHONE->US_CSR&(US_CSR_OVRE|US_CSR_FRAME|
-                                      US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
-                                      (1<<10)));
-
-    if (status != 0 ) {
-        TRACE_DEBUG("******* status: 0x%X (Overrun: %lu, NACK: %lu, Timeout: %lu, underrun: %lu)\n\r",
-                    status, ((status & US_CSR_OVRE)>> 5), ((status & US_CSR_NACK) >> 13),
-                    ((status & US_CSR_TIMEOUT) >> 8), ((status & (1 << 10)) >> 10));
-
-        TRACE_DEBUG("E (USART CSR reg):0x%X\n\r", USART_PHONE->US_CSR);
-        TRACE_DEBUG("Nb (Number of errors):0x%X\n\r", USART_PHONE->US_NER );
-        USART_PHONE->US_CR = US_CR_RSTSTA;
-    }
-
-    /* Return status */
-    return( status );
-}
-
 void receive_from_host( void );
 void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
@@ -252,7 +165,7 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
     PR("Resp: %x %x %x .. %x\n", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
 
     for (uint32_t i = 0; i < transferred; i++ ) {
-        _ISO7816_SendChar(host_to_sim_buf[i]);
+        ISO7816_SendChar(host_to_sim_buf[i], &usart_info);
     }
 
     receive_from_host();
@@ -267,6 +180,7 @@ void receive_from_host()
         TRACE_ERROR("USB Err: %X\n", ret);
     }
 }
+
 void Phone_configure( void ) {
     PIO_ConfigureIt( &pinPhoneRST, ISR_PhoneRST ) ;
     NVIC_EnableIRQ( PIOA_IRQn );
@@ -286,7 +200,7 @@ void Phone_init( void ) {
     PIO_Configure( &pinPhoneRST, 1);
 
     PIO_EnableIt( &pinPhoneRST ) ;
-    _ISO7816_Init();
+    ISO7816_Init(&usart_info, CLK_SLAVE);
 
     USART_SetTransmitterEnabled(USART_PHONE, 1);
     USART_SetReceiverEnabled(USART_PHONE, 1);

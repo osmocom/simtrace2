@@ -26,6 +26,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ----------------------------------------------------------------------------
  */
+#include <stdbool.h>
+#include "board.h"
 
 //------------------------------------------------------------------------------
 /** \file
@@ -67,7 +69,11 @@
 /*------------------------------------------------------------------------------
  *         Exported functions
  *----------------------------------------------------------------------------*/
-extern void ISO7816_Init( const Pin *pPinIso7816RstMC );
+extern void ISO7816_Init( Usart_info *base_usart, bool master_clock );
+extern void ISO7816_Set_Reset_Pin(const Pin *pPinIso7816RstMC);
+extern uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart );
+extern uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart);
+
 extern void ISO7816_IccPowerOff(void);
 extern uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
                                         uint8_t *pMessage,

@@ -31,7 +31,7 @@ volatile enum confNum simtrace_config = CFG_NUM_SNIFF;
 /*------------------------------------------------------------------------------
  *        Main
  *------------------------------------------------------------------------------*/
-
+#define MAX_USB_ITER BOARD_MCK/72  // This should be around a second
 extern int main( void )
 {
     uint8_t isUsbConnected = 0;
@@ -50,6 +50,15 @@ extern int main( void )
 
     printf("%s", "USB init\n\r");
 
+    int i = 0;
+    while(USBD_GetState() < USBD_STATE_CONFIGURED){
+        if(i >= MAX_USB_ITER) {
+            TRACE_ERROR("Resetting board (USB could not be configured)\n");
+            NVIC_SystemReset();
+        }
+        i++;
+    }
+
     for (unsigned int i = 0; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
     {
         config_func_ptrs[i].configure();
@@ -58,8 +67,6 @@ extern int main( void )
     config_func_ptrs[simtrace_config-1].init();
     last_simtrace_config = simtrace_config;
 
-// FIXME: why don't we get any interrupts with this line?:
-    while(USBD_GetState() < USBD_STATE_CONFIGURED);
 
     TRACE_DEBUG("%s", "Start\n\r");
 

@@ -200,9 +200,9 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-                                      DATAOUT),
+                                      PHONE_DATAOUT),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAOUT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -211,9 +211,9 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
         USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-                                      DATAIN),
+                                      PHONE_DATAIN),
         USBEndpointDescriptor_BULK,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(DATAIN),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
             USBEndpointDescriptor_MAXBULKSIZE_FS),
         0 /* Must be 0 for full-speed bulk endpoints */
     },
@@ -221,9 +221,9 @@ const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffe
     {
         sizeof(USBEndpointDescriptor),
         USBGenericDescriptor_ENDPOINT,
-        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, INT ),
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, PHONE_INT ),
         USBEndpointDescriptor_INTERRUPT,
-        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(INT),
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
             USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
         0x10
     }

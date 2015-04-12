@@ -65,14 +65,17 @@ static const Pin pPwr[] = {
  *-----------------------------------------------------------------------------*/
 
 void Sniffer_configure( void ){
+    TRACE_INFO("Sniffer config\n");
 }
 
 void Sniffer_exit( void ){
+    TRACE_INFO("Sniffer exit\n");
     USART_SetReceiverEnabled(USART_PHONE, 0);
 }
 
 void Sniffer_init( void )
 {
+    TRACE_INFO("Sniffer Init\n");
     /*  Configure ISO7816 driver */
     PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
     PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
@@ -86,14 +89,5 @@ void Sniffer_init( void )
 
 void Sniffer_run( void )
 {
-#if 0
-    if (rcvdChar != 0) {
-        /*  DATA_IN for host side is data_out for simtrace side   */
-        /* FIXME: Performancewise sending a USB packet for every byte is a disaster */
-        PR("----- %x %x %x ..\n\r", buf.buf[0], buf.buf[1],buf.buf[2] );
-        USBD_Write( DATAIN, (void *) buf.buf, BUFLEN, 0, 0 );
-        PR("----- Rcvd char\n\r");
-        rcvdChar = 0;
-    }
-#endif
+    check_data_from_phone();
 }

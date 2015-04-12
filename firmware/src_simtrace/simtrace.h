@@ -46,6 +46,7 @@ typedef struct {
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
 /*  Helper functions    */
+int check_data_from_phone();
 
 // FIXME: static function definitions
 extern uint32_t _ISO7816_GetChar( uint8_t *pCharToReceive );

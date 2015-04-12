@@ -102,7 +102,6 @@ void USART1_IrqHandler( void )
     }
 */
     uint32_t csr = USART_PHONE->US_CSR;
-//    PR("---- stat: %x\n\r", csr);
 
     if (csr & US_CSR_TXRDY) {
         /* transmit buffer empty, nothing to transmit */
@@ -111,14 +110,15 @@ void USART1_IrqHandler( void )
         stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
                         US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
                         (1<<10)));
-//        int c = (USART_PHONE->US_RHR) & 0xFF;
+        uint8_t c = (USART_PHONE->US_RHR) & 0xFF;
 //        printf(" %x", c);
 
         if (stat == 0 ) {
             /* Fill char into buffer */
-            rbuf_write(&sim_rcv_buf, (USART_PHONE->US_RHR) & 0xFF);
+            rbuf_write(&sim_rcv_buf, c);
         } else {
-            PR("e %x st: %x\n", (USART_PHONE->US_RHR) & 0xFF, stat);
+            rbuf_write(&sim_rcv_buf, c);
+            PR("e %x st: %x\n", c, stat);
         } /* else: error occured */
 
         char_stat = stat;

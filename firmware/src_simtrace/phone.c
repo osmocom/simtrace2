@@ -124,7 +124,6 @@ static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 /** Variable for state of send and receive froom USART */
 static uint8_t StateUsartGlobal = USART_RCV;
 
-static bool write_to_host_in_progress = false;
 static uint8_t host_to_sim_buf[BUFLEN];
 
 /*-----------------------------------------------------------------------------
@@ -305,42 +304,6 @@ void Phone_init( void ) {
     receive_from_host();
 }
 
-
-void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
-{
-    if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
-    }
-    write_to_host_in_progress = false;
-}
-
-int send_to_host()
-{
-    static uint8_t msg[RING_BUFLEN];
-    int ret = 0;
-    int i;
-
-    for(i = 0; !rbuf_is_empty(&sim_rcv_buf); i++) {
-        msg[i] = rbuf_read(&sim_rcv_buf);
-    }
-    write_to_host_in_progress = true;
-    ret = USBD_Write( PHONE_DATAIN, msg, i, (TransferCallback)&USB_write_callback, 0 );
-    return ret;
-}
-
-int check_data_from_phone()
-{
-    int ret = 0;
-
-    while (rbuf_is_empty(&sim_rcv_buf) || write_to_host_in_progress == true)
-        __WFI();
-    ret = send_to_host();
-    if (ret != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("Error sending to host (%x)", ret);
-        return ret;
-    }
-    return ret;
-}
 
 // Sniffed Phone to SIM card communication:
 // phone > sim : RST

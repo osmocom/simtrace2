@@ -3,7 +3,9 @@
 import usb.core
 import usb.util
 import sys
+import array
 
+from constants import PHONE_RD
 
 def find_dev():
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
@@ -46,14 +48,18 @@ def find_eps(dev):
 # main code
 def sniff():
     dev = find_dev()
+    ans = array.array('B', [])
 
     while True:
         #ep_out.write("Hello")
         try:
-            ans = dev.read(0x82, 64, 1000)
-            print("".join("%02x " % b for b in ans))
+            ans += dev.read(PHONE_RD, 64, 1000)
         except KeyboardInterrupt:
             print("Bye")
             sys.exit()
-        except: 
-            print("Timeout")
+        except Exception as e:
+            print e
+
+        if len(ans) >= 15:
+            print("".join("%02x " % b for b in ans))
+            ans = array.array('B', [])

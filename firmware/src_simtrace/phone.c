@@ -169,9 +169,13 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
     PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
     PR("Resp: %x %x %x .. %x\n", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
 
+    USART_SetReceiverEnabled(USART_PHONE, 0);
+    USART_SetTransmitterEnabled(USART_PHONE, 1);
     for (uint32_t i = 0; i < transferred; i++ ) {
         ISO7816_SendChar(host_to_sim_buf[i], &usart_info);
     }
+    USART_SetTransmitterEnabled(USART_PHONE, 0);
+    USART_SetReceiverEnabled(USART_PHONE, 1);
 
     receive_from_host();
 }
@@ -193,6 +197,7 @@ void Phone_configure( void ) {
 
 void Phone_exit( void ) {
     PIO_DisableIt( &pinPhoneRST ) ;
+    NVIC_DisableIRQ(USART1_IRQn);
     USART_DisableIt( USART_PHONE, US_IER_RXRDY) ;
     USART_SetTransmitterEnabled(USART_PHONE, 0);
     USART_SetReceiverEnabled(USART_PHONE, 0);
@@ -207,16 +212,17 @@ void Phone_init( void ) {
     PIO_EnableIt( &pinPhoneRST ) ;
     ISO7816_Init(&usart_info, CLK_SLAVE);
 
-    USART_SetTransmitterEnabled(USART_PHONE, 1);
+    USART_SetTransmitterEnabled(USART_PHONE, 0);
     USART_SetReceiverEnabled(USART_PHONE, 1);
+
+    USART_EnableIt(USART_PHONE, US_IER_RXRDY); // TODO: interrupt enable/disable is shared with sniffer
+    NVIC_EnableIRQ(USART1_IRQn);
 
     /*  Configure ISO7816 driver */
     // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
 
 // FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
 //    USBD_Connect();
-
-    USART_EnableIt( USART_PHONE, US_IER_RXRDY) ;
 
     //Timer_Init();
 

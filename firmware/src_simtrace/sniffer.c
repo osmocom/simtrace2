@@ -72,9 +72,10 @@ void Sniffer_configure( void ){
 
 void Sniffer_exit( void ){
     TRACE_INFO("Sniffer exit\n");
+    USART_DisableIt(USART_PHONE, US_IER_RXRDY);
+    NVIC_DisableIRQ(USART1_IRQn);
     USART_SetReceiverEnabled(USART_PHONE, 0);
 }
-
 void Sniffer_init( void )
 {
     TRACE_INFO("Sniffer Init\n");
@@ -87,6 +88,8 @@ void Sniffer_init( void )
     ISO7816_Init(&usart_info, CLK_SLAVE);
 
     USART_SetReceiverEnabled(USART_PHONE, 1);
+    USART_EnableIt(USART_PHONE, US_IER_RXRDY);
+    NVIC_EnableIRQ(USART1_IRQn);
 }
 
 void Sniffer_run( void )

@@ -131,6 +131,11 @@ static uint8_t host_to_sim_buf[BUFLEN];
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
+void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+{
+    printf("rstCB\n\r");
+    PIO_EnableIt( &pinPhoneRST ) ;
+}
 static void ISR_PhoneRST( const Pin *pPin)
 {
     int ret;
@@ -145,13 +150,13 @@ static void ISR_PhoneRST( const Pin *pPin)
         }
     }
 
-    if ((ret = USBD_Write( PHONE_INT, "R", 1, 0, 0 )) != USBD_STATUS_SUCCESS) {
+    if ((ret = USBD_Write( PHONE_INT, "R", 1, (TransferCallback)&Callback_PhoneRST_ISR, 0 )) != USBD_STATUS_SUCCESS) {
         TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
         return;
     }
 
     /* Interrupt enabled after ATR is sent to phone */
-   // PIO_DisableIt( &pinPhoneRST ) ;
+    PIO_DisableIt( &pinPhoneRST ) ;
 }
 
 void receive_from_host( void );

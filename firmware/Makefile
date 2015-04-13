@@ -184,7 +184,7 @@ program:
 SERIAL ?= /dev/ttyUSB0
 log:
 	stty -F $(SERIAL) 115200
-	sed -u "s/\r//" $(SERIAL) | ts
+	lsof $(SERIAL) && echo "log is already opened" || ( sed -u "s/\r//" $(SERIAL) | ts )
 
 clean:
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst

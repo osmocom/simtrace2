@@ -60,6 +60,6 @@ def sniff():
         except Exception as e:
             print e
 
-        if len(ans) >= 15:
+        if len(ans) >= 1:
             print("".join("%02x " % b for b in ans))
             ans = array.array('B', [])

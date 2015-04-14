@@ -49,6 +49,7 @@ class Apdu_splitter:
 
     def func_APDU_S_DATA(self, c):
         self.buf.append(c)
+        self.data.append(c)
         self.data_remaining -= 1
         if self.data_remaining == 0:
             self.state = apdu_states.APDU_S_SW1;
@@ -66,20 +67,22 @@ class Apdu_splitter:
             if c == self.ins or c == self.ins + 1 or c == ~(self.ins+1):
                 print("ACK")
                 self.state = apdu_states.APDU_S_DATA
+                self.data = []
             else:
                 # check for 'only next byte' type ACK */
                 if c == ~(self.ins):
                     self.state = apdu_states.APDU_S_DATA_SINGLE
                 else:
                     # must be SW1
+                    self.sw1 = c
                     self.buf.append(c)
                     self.state = apdu_states.APDU_S_SW2
 
     def func_APDU_S_SW2(self, c):
         self.buf.append(c)
+        self.sw2 = c
         print("APDU:", hex(self.ins), ' '.join(hex(x) for x in self.buf))
-        self.state = apdu_states.APDU_S_CLA
-        self.buf = []
+        self.state = apdu_states.APDU_S_FIN
 
     Apdu_S = {
             apdu_states.APDU_S_CLA :            func_APDU_S_CLA_P1_P2,
@@ -103,7 +106,12 @@ if __name__ == '__main__':
             0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x09, 0x91, 0x00, 0x17, 0x04, 0x00, 0x00, 0x00,
             0x83, 0x8A, 0x90, 0x00]
-    apdus = Apdu_splitter()
-
+    apdus = []
+    apdu = Apdu_splitter()
     for c in msg2 + msg1:
-        apdus.split(c)
+        apdu.split(c)
+        if apdu.state == apdu_states.APDU_S_FIN:
+            apdus.append(apdu)
+            apdu = Apdu_splitter()
+    for a in apdus:
+        print(' '.join(hex(x) for x in a.buf))

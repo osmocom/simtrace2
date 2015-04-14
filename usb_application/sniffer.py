@@ -1,11 +1,13 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
 import usb.core
 import usb.util
 import sys
 import array
 
-from constants import PHONE_RD
+from apdu_split import Apdu_splitter, apdu_states
+
+from constants import PHONE_RD, ERR_TIMEOUT, ERR_NO_SUCH_DEV
 
 def find_dev():
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
@@ -24,7 +26,7 @@ def find_eps(dev):
     intf = cfg[(0,0)]
 
     ep_in = usb.util.find_descriptor(
-        intf, 
+        intf,
         custom_match = \
         lambda e: \
             usb.util.endpoint_direction(e.bEndpointAddress) == \
@@ -33,7 +35,7 @@ def find_eps(dev):
     assert ep_in is not None
 
     ep_out = usb.util.find_descriptor(
-        intf, 
+        intf,
         custom_match = \
         lambda e: \
             usb.util.endpoint_direction(e.bEndpointAddress) == \
@@ -50,6 +52,9 @@ def sniff():
     dev = find_dev()
     ans = array.array('B', [])
 
+    apdus = []
+    apdu = Apdu_splitter()
+
     while True:
         #ep_out.write("Hello")
         try:
@@ -58,8 +63,15 @@ def sniff():
             print("Bye")
             sys.exit()
         except Exception as e:
+            if e.errno != ERR_TIMEOUT and e.errno != ERR_NO_SUCH_DEV:
+                raise
             print e
 
         if len(ans) >= 1:
-            print("".join("%02x " % b for b in ans))
+#            print("".join("%02x " % b for b in ans))
+            for c in ans:
+                apdu.split(c)
+                if apdu.state == apdu_states.APDU_S_FIN:
+                    apdus.append(apdu)
+                    apdu = Apdu_splitter()
             ans = array.array('B', [])

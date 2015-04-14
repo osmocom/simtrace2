@@ -7,7 +7,7 @@ import phone
 from contextlib import closing
 
 from util import HEX
-from constants import PHONE_WR, PHONE_RD, PHONE_INT, SIM_WR, SIM_RD, SIM_INT
+from constants import *
 
 def find_dev():
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
@@ -30,8 +30,6 @@ def pattern_match(inpt):
         return CMD_SEL_ROOT
     else:
         return inpt
-
-ERR_TIMEOUT = 110
 
 def poll_ep(dev, ep):
     try:

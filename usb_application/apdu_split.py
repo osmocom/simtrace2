@@ -15,8 +15,7 @@
 
 from enum import Enum
 
-class Apdu_splitter:
-
+class apdu_states(Enum):
     APDU_S_CLA = 1
     APDU_S_INS = 2
     APDU_S_P1 = 3
@@ -28,35 +27,35 @@ class Apdu_splitter:
     APDU_S_SW2 = 9
     APDU_S_FIN = 10
 
-    def __init__(self):
-        self.state = APDU_S_CLA
-        self.buf = []
 
-    def split(self, c):
-        Apdu_S[state](c)
+class Apdu_splitter:
+
+    def __init__(self):
+        self.state = apdu_states.APDU_S_CLA
+        self.buf = []
 
     def func_APDU_S_INS(self, c):
         self.ins = c
 
     def func_APDU_S_CLA_P1_P2(self, c):
         self.buf.append(c)
-        self.state += 1
+        self.state = apdu_states(self.state.value + 1)
 
     def func_APDU_S_P3(self, c):
         self.buf.append(c)
         self.data_remaining = 256 if c == 0 else c
-        self.state = func_APDU_S_SW1
+        self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_DATA(self, c):
         self.buf.append(c)
         self.data_remaining -= 1
         if data_remaining == 0:
-            self.state = APDU_S_SW1;
+            self.state = apdu_states.APDU_S_SW1;
 
     def func_APDU_S_DATA_SINGLE(self, c):
         self.buf.append(c)
         self.data_remaining -= 1
-        self.state = APDU_S_SW1
+        self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_SW1(self, c):
         if (c == 0x60):
@@ -65,31 +64,34 @@ class Apdu_splitter:
             # check for 'all remaining' type ACK
             if c == self.ins or c == self.ins + 1 or c == ~(self.ins+1):
                 print("ACK")
-                self.state = APDU_S_DATA
+                self.state = apdu_states.APDU_S_DATA
             else:
                 # check for 'only next byte' type ACK */
                 if c == ~(self.ins):
-                    self.state = APDU_S_DATA_SINGLE
+                    self.state = apdu_states.APDU_S_DATA_SINGLE
                 else:
                     # must be SW1
                     self.buf.append(c)
-                    self.state = func_APDU_S_SW2
+                    self.state = apdu_states.APDU_S_SW2
 
     def func_APDU_S_SW2(self, c):
         self.buf.append(c)
         print("APDU:", self.buf)
-        self.state = APDU_S_FIN
+        self.state = apdu_states.APDU_S_FIN
 
     Apdu_S = {
-            APDU_S_CLA :            func_APDU_S_CLA_P1_P2,
-            APDU_S_INS :            func_APDU_S_INS,
-            APDU_S_P1 :             func_APDU_S_CLA_P1_P2,
-            APDU_S_P2 :             func_APDU_S_CLA_P1_P2,
-            APDU_S_P3 :             func_APDU_S_P3,
-            APDU_S_DATA :           func_APDU_S_DATA,
-            APDU_S_DATA_SINGLE :    func_APDU_S_DATA_SINGLE,
-            APDU_S_SW1 :            func_APDU_S_SW1,
-            APDU_S_SW2 :            func_APDU_S_SW2 }
+            apdu_states.APDU_S_CLA :            func_APDU_S_CLA_P1_P2,
+            apdu_states.APDU_S_INS :            func_APDU_S_INS,
+            apdu_states.APDU_S_P1 :             func_APDU_S_CLA_P1_P2,
+            apdu_states.APDU_S_P2 :             func_APDU_S_CLA_P1_P2,
+            apdu_states.APDU_S_P3 :             func_APDU_S_P3,
+            apdu_states.APDU_S_DATA :           func_APDU_S_DATA,
+            apdu_states.APDU_S_DATA_SINGLE :    func_APDU_S_DATA_SINGLE,
+            apdu_states.APDU_S_SW1 :            func_APDU_S_SW1,
+            apdu_states.APDU_S_SW2 :            func_APDU_S_SW2 }
+
+    def split(self, c):
+        self.Apdu_S[self.state](self, c)
 
 
 if __name__ == '__main__':
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     apdus = Apdu_splitter()
 
     for c in msg:
-        print(c)
+        print(hex(c))
         apdus.split(c)
 
 

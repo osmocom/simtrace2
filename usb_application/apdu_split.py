@@ -27,7 +27,6 @@ class apdu_states(Enum):
     APDU_S_SW2 = 9
     APDU_S_FIN = 10
 
-
 class Apdu_splitter:
 
     def __init__(self):
@@ -36,6 +35,8 @@ class Apdu_splitter:
 
     def func_APDU_S_INS(self, c):
         self.ins = c
+        self.buf.append(c)
+        self.state = apdu_states(self.state.value + 1)
 
     def func_APDU_S_CLA_P1_P2(self, c):
         self.buf.append(c)
@@ -43,13 +44,13 @@ class Apdu_splitter:
 
     def func_APDU_S_P3(self, c):
         self.buf.append(c)
-        self.data_remaining = 256 if c == 0 else c
+        self.data_remaining = 256 if c == 0  else c
         self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_DATA(self, c):
         self.buf.append(c)
         self.data_remaining -= 1
-        if data_remaining == 0:
+        if self.data_remaining == 0:
             self.state = apdu_states.APDU_S_SW1;
 
     def func_APDU_S_DATA_SINGLE(self, c):
@@ -76,8 +77,9 @@ class Apdu_splitter:
 
     def func_APDU_S_SW2(self, c):
         self.buf.append(c)
-        print("APDU:", self.buf)
-        self.state = apdu_states.APDU_S_FIN
+        print("APDU:", hex(self.ins), ' '.join(hex(x) for x in self.buf))
+        self.state = apdu_states.APDU_S_CLA
+        self.buf = []
 
     Apdu_S = {
             apdu_states.APDU_S_CLA :            func_APDU_S_CLA_P1_P2,
@@ -95,11 +97,13 @@ class Apdu_splitter:
 
 
 if __name__ == '__main__':
-    msg = [0xA0, 0xA4, 0x00, 0x00, 0x02]
+    msg1 = [0xA0, 0xA4, 0x00, 0x00, 0x02, 0xA4, 0x7F, 0x20, 0x9F, 0x16]
+    msg2 = [0xA0, 0xC0, 0x00, 0x00, 0x16, 0xC0,
+            0x00, 0x00, 0x00, 0x00, 0x7F, 0x20,
+            0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x09, 0x91, 0x00, 0x17, 0x04, 0x00, 0x00, 0x00,
+            0x83, 0x8A, 0x90, 0x00]
     apdus = Apdu_splitter()
 
-    for c in msg:
-        print(hex(c))
+    for c in msg2 + msg1:
         apdus.split(c)
-
-

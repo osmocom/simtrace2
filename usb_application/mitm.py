@@ -2,12 +2,12 @@ import usb.core
 import usb.util
 
 from ccid_raw import SmartcardConnection
-import phone
 
 from contextlib import closing
 
 from util import HEX
 from constants import *
+from apdu_split import Apdu_splitter, apdu_states
 
 def find_dev():
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
@@ -47,6 +47,10 @@ def do_mitm():
     dev = find_dev()
     with closing(SmartcardConnection()) as sm_con:
         atr = sm_con.getATR()
+
+        apdus = []
+        apdu = Apdu_splitter()
+
         while True:
             cmd = poll_ep(dev, PHONE_INT)
             if cmd is not None:
@@ -60,5 +64,18 @@ def do_mitm():
             cmd = poll_ep(dev, PHONE_RD)
             if cmd is not None:
                 print("RD: ", HEX(cmd))
-                sim_data = sm_con.send_receive_cmd(cmd)
-                write_phone(dev, sim_data)
+                for c in cmd:
+                    apdu.split(c)
+                    if apdu.state == apdu_states.APDU_S_SW1:
+                        if len(apdu.data) == 0:
+                            # FIXME: implement other ACK types
+                            write_phone(dev, apdu.ins)
+                            apdu.split(apdu.ins)
+                        else:
+                            sim_data = sm_con.send_receive_cmd(apdu.buf)
+                            write_phone(dev, sim_data)
+                            for c in sim_data:
+                                apdu.split(c)
+                    elif apdu.state == apdu_states.APDU_S_FIN:
+                        apdus.append(apdu)
+                        apdu = Apdu_splitter()

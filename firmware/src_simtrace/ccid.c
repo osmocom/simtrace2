@@ -65,8 +65,6 @@ static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM, .s
  *         Optional smartcard detection
  *------------------------------------------------------------------------------*/
 
-#ifdef SMARTCARD_CONNECT_PIN
-
 /** Smartcard detection pin.*/
 static const Pin pinSmartCard = SMARTCARD_CONNECT_PIN;
 
@@ -116,19 +114,6 @@ static void ConfigureCardDetection( void )
     NVIC_EnableIRQ( PIOA_IRQn );
     PIO_EnableIt( &pinSmartCard ) ;
 }
-
-#else
-
-/**
- * Dummy implementation.
- */
-static void ConfigureCardDetection( void )
-{
-    printf( "-I- Smartcard detection not supported.\n\r" ) ;
-}
-
-#endif
-
 
 /*-----------------------------------------------------------------------------
  *          Initialization and run

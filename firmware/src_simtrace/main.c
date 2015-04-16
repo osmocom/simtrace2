@@ -36,6 +36,7 @@ extern int main( void )
 {
     uint8_t isUsbConnected = 0;
     enum confNum last_simtrace_config = simtrace_config;
+    unsigned int i = 0;
 
     LED_Configure(LED_NUM_RED);
     LED_Configure(LED_NUM_GREEN);
@@ -49,8 +50,6 @@ extern int main( void )
     SIMtrace_USB_Initialize();
 
     printf("%s", "USB init\n\r");
-
-    int i = 0;
     while(USBD_GetState() < USBD_STATE_CONFIGURED){
         if(i >= MAX_USB_ITER) {
             TRACE_ERROR("Resetting board (USB could not be configured)\n");
@@ -59,7 +58,7 @@ extern int main( void )
         i++;
     }
 
-    for (unsigned int i = 0; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
+    for (i = 0; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
     {
         config_func_ptrs[i].configure();
     }

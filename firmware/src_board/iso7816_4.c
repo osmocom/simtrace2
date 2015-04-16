@@ -60,12 +60,10 @@
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
-/** Variable for state of send and receive froom USART */
-static uint8_t StateUsartGlobal = USART_RCV;
 /** Pin reset master card */
 static Pin *st_pinIso7816RstMC;
 
-struct Usart_info usart_sim = {.base = USART_SIM, .id = ID_USART_SIM};
+struct Usart_info usart_sim = {.base = USART_SIM, .id = ID_USART_SIM, .state = USART_RCV};
 
 /*----------------------------------------------------------------------------
  *          Internal functions
@@ -84,10 +82,10 @@ uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart)
     Usart *us_base = usart->base;
     uint32_t us_id = usart->id;
 
-    if( StateUsartGlobal == USART_SEND ) {
+    if( usart->state == USART_SEND ) {
         while((us_base->US_CSR & US_CSR_TXEMPTY) == 0) {}
         us_base->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-        StateUsartGlobal = USART_RCV;
+        usart->state = USART_RCV;
     }
 
     /* Wait USART ready for reception */
@@ -133,9 +131,9 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
 
     TRACE_DEBUG("***Send char: 0x%X\n\r", CharToSend);
 
-    if( StateUsartGlobal == USART_RCV ) {
+    if( usart->state == USART_RCV ) {
         us_base->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-        StateUsartGlobal = USART_SEND;
+        usart->state = USART_SEND;
     }
 
     /* Wait USART ready for transmit */

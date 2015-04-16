@@ -59,7 +59,7 @@ static const Pin pinsPower[] = {PWR_PINS};
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RSTMC;
 static uint8_t sim_inserted = 0;
 
-static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM};
+static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM, .state = USART_RCV};
 
 /*------------------------------------------------------------------------------
  *         Optional smartcard detection

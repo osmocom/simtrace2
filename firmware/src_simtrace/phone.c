@@ -108,7 +108,7 @@ static const Pin pPwr[] = {
 
 static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 
-static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE};
+static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
 
 #define PR  TRACE_INFO
 
@@ -123,9 +123,6 @@ static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
-/** Variable for state of send and receive froom USART */
-static uint8_t StateUsartGlobal = USART_RCV;
-
 static uint8_t host_to_sim_buf[BUFLEN];
 
 /*-----------------------------------------------------------------------------

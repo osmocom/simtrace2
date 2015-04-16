@@ -14,8 +14,16 @@
 #define PHONE_DATAIN      5
 #define PHONE_INT         6
 
-#define CLK_MASTER      1
-#define CLK_SLAVE       0
+#define CLK_MASTER      true
+#define CLK_SLAVE       false
+
+/* ===================================================*/
+/*                      Taken from iso7816_4.c        */
+/* ===================================================*/
+/** Flip flop for send and receive char */
+#define USART_SEND 0
+#define USART_RCV  1
+
 
 extern volatile ringbuf sim_rcv_buf;
 

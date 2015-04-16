@@ -97,6 +97,7 @@
 
 typedef struct Usart_info {
     Usart *base;
+    uint8_t state;
     uint32_t id;
 } Usart_info;
 

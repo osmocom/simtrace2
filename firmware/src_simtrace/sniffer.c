@@ -60,7 +60,7 @@ static const Pin pPwr[] = {
     {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
-static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE};
+static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
 
 /*-----------------------------------------------------------------------------
  *          Initialization routine

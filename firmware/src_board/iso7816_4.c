@@ -137,7 +137,16 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
     }
 
     /* Wait USART ready for transmit */
-    while((us_base->US_CSR & US_CSR_TXRDY) == 0)  {}
+    int i = 0;
+    while((us_base->US_CSR & (US_CSR_TXRDY)) == 0)  {
+        i++;
+        if (!(i%1000000)) {
+            printf("s: %x\n", us_base->US_CSR);
+              printf("s: %x\n", us_base->US_RHR & 0xFF);
+            us_base->US_CR = US_CR_RSTTX;
+            us_base->US_CR = US_CR_RSTRX;
+      }
+    }
     /* There is no character in the US_THR */
 
     /* Transmit a char */
@@ -148,12 +157,12 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
                                       (1<<10)));
 
     if (status != 0 ) {
-        TRACE_DEBUG("******* status: 0x%" PRIX32 " (Overrun: %" PRIX32
+        TRACE_INFO("******* status: 0x%" PRIX32 " (Overrun: %" PRIX32
                     ", NACK: %" PRIX32 ", Timeout: %" PRIX32 ", underrun: %" PRIX32 ")\n\r",
                     status, ((status & US_CSR_OVRE)>> 5), ((status & US_CSR_NACK) >> 13),
                     ((status & US_CSR_TIMEOUT) >> 8), ((status & (1 << 10)) >> 10));
-        TRACE_DEBUG("E (USART CSR reg):0x%" PRIX32 "\n\r", us_base->US_CSR);
-        TRACE_DEBUG("Nb (Number of errors):0x%" PRIX32 "\n\r", us_base->US_NER );
+        TRACE_INFO("E (USART CSR reg):0x%" PRIX32 "\n\r", us_base->US_CSR);
+        TRACE_INFO("Nb (Number of errors):0x%" PRIX32 "\n\r", us_base->US_NER );
         us_base->US_CR = US_CR_RSTSTA;
     }
 
@@ -640,6 +649,11 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
     Usart *us_base = usart->base;
     uint32_t us_id = usart->id;
 
+    us_base->US_CR = US_CR_RSTRX
+                | US_CR_RSTTX
+                | US_CR_RXDIS
+                | US_CR_TXDIS;
+
     if (master_clock == true) {
         clk = US_MR_USCLKS_MCK;
     } else {
@@ -653,14 +667,16 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
                      | US_MR_PAR_EVEN
                      | US_MR_CHRL_8_BIT
                      | US_MR_CLKO
-                     | (0<<24), /* MAX_ITERATION */
+                     | US_MR_INACK  /* Inhibit errors */
+                     | (3<<24), /* MAX_ITERATION */
                      1,
                      0);
 
-    /* Configure USART */
-    PMC_EnablePeripheral(us_id);
     /* Disable interrupts */
     us_base->US_IDR = (uint32_t) -1;
+
+    /* Configure USART */
+    PMC_EnablePeripheral(us_id);
 
     us_base->US_FIDI = 372;  /* by default */
     /* Define the baud rate divisor register */
@@ -668,13 +684,16 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
     /* SCK = FIDI x BAUD = 372 x 9600 */
     /* BOARD_MCK */
     /* CD = MCK/(FIDI x BAUD) = 48000000 / (372x9600) = 13 */
-    us_base->US_BRGR = BOARD_MCK / (372*9600);
+    us_base->US_BRGR = US_BRGR_CD(1);
+//    us_base->US_BRGR = BOARD_MCK / (372*9150);
 
     /* Write the Timeguard Register */
+//    us_base->US_RTOR = 0;
     us_base->US_TTGR = 5;
 
     USART_SetTransmitterEnabled(us_base, 1);
     USART_SetReceiverEnabled(us_base, 1);
 
+    us_base->US_RHR;
 }
 

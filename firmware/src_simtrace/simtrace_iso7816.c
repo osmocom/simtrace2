@@ -117,7 +117,6 @@ void USART1_IrqHandler( void )
             /* Fill char into buffer */
             rbuf_write(&sim_rcv_buf, c);
         } else {
-            rbuf_write(&sim_rcv_buf, c);
             PR("e %x st: %x\n", c, stat);
         } /* else: error occured */
 

@@ -649,11 +649,6 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
     Usart *us_base = usart->base;
     uint32_t us_id = usart->id;
 
-    us_base->US_CR = US_CR_RSTRX
-                | US_CR_RSTTX
-                | US_CR_RXDIS
-                | US_CR_TXDIS;
-
     if (master_clock == true) {
         clk = US_MR_USCLKS_MCK;
     } else {
@@ -684,16 +679,14 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
     /* SCK = FIDI x BAUD = 372 x 9600 */
     /* BOARD_MCK */
     /* CD = MCK/(FIDI x BAUD) = 48000000 / (372x9600) = 13 */
-    us_base->US_BRGR = US_BRGR_CD(1);
-//    us_base->US_BRGR = BOARD_MCK / (372*9150);
+    if (master_clock == true) {
+        us_base->US_BRGR = BOARD_MCK / (372*9600);
+    } else {
+        us_base->US_BRGR = US_BRGR_CD(1);
+    }
 
     /* Write the Timeguard Register */
 //    us_base->US_RTOR = 0;
     us_base->US_TTGR = 5;
-
-    USART_SetTransmitterEnabled(us_base, 1);
-    USART_SetReceiverEnabled(us_base, 1);
-
-    us_base->US_RHR;
 }
 

@@ -128,6 +128,8 @@ void CCID_configure ( void ) {
 
 void CCID_exit ( void ) {
     PIO_DisableIt( &pinSmartCard ) ;
+    USART_SetTransmitterEnabled(usart_info.base, 0);
+    USART_SetReceiverEnabled(usart_info.base, 0);
 }
 
 void CCID_init( void )
@@ -150,6 +152,9 @@ void CCID_init( void )
 //    PIO_Set(&pinsPower[0]);
 
     ISO7816_Init(&usart_info, CLK_MASTER);
+    USART_SetTransmitterEnabled(usart_info.base, 1);
+    USART_SetReceiverEnabled(usart_info.base, 1);
+
     ISO7816_Set_Reset_Pin(&pinIso7816RstMC);
     /*  Read ATR */
     ISO7816_warm_reset() ;

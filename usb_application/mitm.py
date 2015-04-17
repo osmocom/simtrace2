@@ -2,6 +2,7 @@ import usb.core
 import usb.util
 
 from ccid_raw import SmartcardConnection
+from smartcard_emulator import SmartCardEmulator
 
 from contextlib import closing
 
@@ -43,9 +44,13 @@ def write_phone(dev, resp):
     print("WR: ", HEX(resp))
     dev.write(PHONE_WR, resp, 10)
 
-def do_mitm():
+def do_mitm(sim_emul=True):
     dev = find_dev()
-    with closing(SmartcardConnection()) as sm_con:
+    if sim_emul == True:
+        my_class = SmartCardEmulator
+    else:
+        my_class = SmartcardConnection
+    with closing(my_class()) as sm_con:
         atr = sm_con.getATR()
 
         apdus = []

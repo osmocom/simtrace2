@@ -4,16 +4,11 @@ import argparse
 import sniffer
 import ccid
 import ccid_select
-import phone
 import mitm
 
 import usb.core
 import usb.util
-
-import hashlib
-import os
-import random
-import re
+import sys
 import time
 
 cmd1 = {0x00, 0x10, 0x00, 0x00}
@@ -91,9 +86,9 @@ def main():
     if args.select_file is True:
         ccid_select.select()
     if args.phone is True:
-        phone.emulate_sim()
+        mitm.do_mitm(sim_emul=True)
     if args.mitm is True:
-        mitm.do_mitm()
+        mitm.do_mitm(sim_emul=False)
 
     return
 

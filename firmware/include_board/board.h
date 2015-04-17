@@ -124,9 +124,8 @@
 //#define SMARTCARD_CONNECT_PIN {SW_SIM, PIOB, ID_PIOB, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_EDGE}
 
 /// PIN used for resetting the smartcard
-#define RST_SIM     (1 << 7)
 // FIXME: Card is resetted with pin set to 0 --> PIO_OUTPUT_1 as default is right?
-#define PIN_ISO7816_RSTMC       {RST_SIM, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_ISO7816_RSTMC       {PIO_PA7, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 
 /// Pins used for connect the smartcard
 #define PIN_SIM_IO_INPUT    {PIO_PA1, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}

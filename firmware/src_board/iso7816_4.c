@@ -684,9 +684,5 @@ void ISO7816_Init( Usart_info *usart, bool master_clock )
     } else {
         us_base->US_BRGR = US_BRGR_CD(1);
     }
-
-    /* Write the Timeguard Register */
-//    us_base->US_RTOR = 0;
-    us_base->US_TTGR = 5;
 }
 

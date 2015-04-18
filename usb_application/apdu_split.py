@@ -14,6 +14,8 @@
 #  GNU General Public License for more details.
 
 from enum import Enum
+from util import HEX
+from array import array
 
 class apdu_states(Enum):
     APDU_S_CLA = 1
@@ -21,17 +23,21 @@ class apdu_states(Enum):
     APDU_S_P1 = 3
     APDU_S_P2 = 4
     APDU_S_P3 = 5
-    APDU_S_DATA = 6
-    APDU_S_DATA_SINGLE = 7
-    APDU_S_SW1 = 8
-    APDU_S_SW2 = 9
-    APDU_S_FIN = 10
+    APDU_S_SEND_DATA = 6
+    APDU_S_DATA = 7
+    APDU_S_DATA_SINGLE = 8
+    APDU_S_SW1 = 9
+    APDU_S_SW2 = 10
+    APDU_S_FIN = 11
 
 class Apdu_splitter:
 
     def __init__(self):
         self.state = apdu_states.APDU_S_CLA
         self.buf = []
+        self.data = []
+        self.ins = array('B', [])
+        self.data_remainig = 0
 
     def func_APDU_S_INS(self, c):
         self.ins = c
@@ -45,14 +51,17 @@ class Apdu_splitter:
     def func_APDU_S_P3(self, c):
         self.buf.append(c)
         self.data_remaining = 256 if c == 0  else c
-        self.state = apdu_states.APDU_S_SW1
+        if self.ins in self.INS_data_expected:
+            self.state = apdu_states.APDU_S_SEND_DATA
+        else:
+            self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_DATA(self, c):
         self.buf.append(c)
         self.data.append(c)
         self.data_remaining -= 1
         if self.data_remaining == 0:
-            self.state = apdu_states.APDU_S_SW1;
+            self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_DATA_SINGLE(self, c):
         self.buf.append(c)
@@ -81,7 +90,7 @@ class Apdu_splitter:
     def func_APDU_S_SW2(self, c):
         self.buf.append(c)
         self.sw2 = c
-        print("APDU:", hex(self.ins), ' '.join(hex(x) for x in self.buf))
+        print("APDU:", HEX(self.ins), HEX(self.buf))
         self.state = apdu_states.APDU_S_FIN
 
     Apdu_S = {
@@ -90,12 +99,16 @@ class Apdu_splitter:
             apdu_states.APDU_S_P1 :             func_APDU_S_CLA_P1_P2,
             apdu_states.APDU_S_P2 :             func_APDU_S_CLA_P1_P2,
             apdu_states.APDU_S_P3 :             func_APDU_S_P3,
+            apdu_states.APDU_S_SEND_DATA :      func_APDU_S_DATA,
             apdu_states.APDU_S_DATA :           func_APDU_S_DATA,
             apdu_states.APDU_S_DATA_SINGLE :    func_APDU_S_DATA_SINGLE,
             apdu_states.APDU_S_SW1 :            func_APDU_S_SW1,
             apdu_states.APDU_S_SW2 :            func_APDU_S_SW2 }
 
+    INS_data_expected = [0xC0, 0xB0]
+
     def split(self, c):
+        print("state: ", self.state, c)
         self.Apdu_S[self.state](self, c)
 
 
@@ -114,4 +127,4 @@ if __name__ == '__main__':
             apdus.append(apdu)
             apdu = Apdu_splitter()
     for a in apdus:
-        print(' '.join(hex(x) for x in a.buf))
+        print(HEX(a.buf))

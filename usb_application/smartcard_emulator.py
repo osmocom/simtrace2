@@ -4,32 +4,22 @@ import constants
 import array
 
 INS = 1
-CNT = 4
+LEN = 4
 
 class SmartCardEmulator:
     def getATR(self):
         return array.array('B', constants.ATR_SYSMOCOM2)
 
     def send_receive_cmd(self, cmd):
-        if len(cmd) == 5:         # Received cmd from phone
-            if cmd[INS] == 0xA4:
-                resp = [cmd[INS]]       # Respond with INS byte
-            elif cmd[INS] == 0xC0:
-                data = [0x00, 0x00, 0x00, 0x00,
-                        0x7F, 0x20, 0x02, 0x00,
-                        0x00, 0x00, 0x00, 0x00,
-                        0x09, 0x91, 0x00, 0x17,
-                        0x04, 0x00, 0x83, 0x8A,
-                        0x83, 0x8A]
-                SW = [0x90, 0x00]
-                resp = [cmd[INS]] + data + SW       # Respond with INS byte
-                #state = WAIT_RST
-            else:
-                print("Unknown cmd")
-                resp = [0x60, 0x00]
-        elif len(cmd) == 2:
+        if cmd[INS] == 0xA4:
             resp = [0x9F, 0x16]
+        elif len(cmd) == 5 and  cmd[INS] == 0xC0:
+            data = self.ans_from_len[cmd[LEN]]
+            SW = [0x90, 0x00]
+            resp = data + SW       # Respond with INS byte
+            #state = WAIT_RST
         else:
+            print("Unknown cmd")
             resp = [0x60, 0x00]
 
         print("Cmd, resp: ")
@@ -43,3 +33,8 @@ class SmartCardEmulator:
 
     def close(self):
         pass
+
+    ans_from_len = {0x16: [0x00, 0x00, 0x00, 0x00, 0x7F, 0x20, 0x02, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x09, 0x91, 0x00, 0x17,
+                    0x04, 0x00, 0x83, 0x8A, 0x83, 0x8A],
+                    }

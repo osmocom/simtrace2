@@ -1,5 +1,6 @@
 import usb.core
 import usb.util
+import array
 
 from ccid_raw import SmartcardConnection
 from smartcard_emulator import SmartCardEmulator
@@ -65,22 +66,33 @@ def do_mitm(sim_emul=True):
 #               sm_con.reset_card()
                 print("Write atr: ", HEX(atr))
                 write_phone(dev, atr)
+                apdus = []
+                apdu = Apdu_splitter()
 
             cmd = poll_ep(dev, PHONE_RD)
             if cmd is not None:
                 print("RD: ", HEX(cmd))
                 for c in cmd:
+                    if apdu.state == apdu_states.APDU_S_FIN:
+                        apdus.append(apdu)
+                        apdu = Apdu_splitter()
+
                     apdu.split(c)
+
                     if apdu.state == apdu_states.APDU_S_SW1:
-                        if len(apdu.data) == 0:
+                        if apdu.data is not None and len(apdu.data) == 0:
                             # FIXME: implement other ACK types
-                            write_phone(dev, apdu.ins)
+                            write_phone(dev,  array('B', [apdu.ins]))
                             apdu.split(apdu.ins)
                         else:
                             sim_data = sm_con.send_receive_cmd(apdu.buf)
                             write_phone(dev, sim_data)
                             for c in sim_data:
                                 apdu.split(c)
-                    elif apdu.state == apdu_states.APDU_S_FIN:
-                        apdus.append(apdu)
-                        apdu = Apdu_splitter()
+                    elif apdu.state == apdu_states.APDU_S_SEND_DATA:
+                            sim_data = sm_con.send_receive_cmd(apdu.buf)
+                            sim_data.insert(0, apdu.ins)
+                            write_phone(dev, sim_data)
+                            apdu.state = apdu_states.APDU_S_SW1
+                            for c in sim_data:
+                                apdu.split(c)

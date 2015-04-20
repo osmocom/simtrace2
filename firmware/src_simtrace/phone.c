@@ -94,7 +94,6 @@ static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
 #endif
 
 /** ISO7816 RST pin */
-static const Pin pinIso7816RstMC  = PIN_ISO7816_RST_PHONE;
 static uint8_t sim_inserted = 0;
 
 static const Pin pPwr[] = {
@@ -105,8 +104,7 @@ static const Pin pPwr[] = {
     {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
-
-static const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
+const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 
 static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
 
@@ -124,37 +122,6 @@ static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE
  *          Internal variables
  *-----------------------------------------------------------------------------*/
 static uint8_t host_to_sim_buf[BUFLEN];
-
-/*-----------------------------------------------------------------------------
- *          Interrupt routines
- *-----------------------------------------------------------------------------*/
-void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
-{
-    printf("rstCB\n\r");
-    PIO_EnableIt( &pinPhoneRST ) ;
-}
-static void ISR_PhoneRST( const Pin *pPin)
-{
-    int ret;
-    // FIXME: no printfs in ISRs?
-    printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
-    if ( ((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)  )
-    {
-        if(PIO_Get( &pinPhoneRST ) == 0) {
-            printf(" 0 ");
-        } else {
-            printf(" 1 ");
-        }
-    }
-
-    if ((ret = USBD_Write( PHONE_INT, "R", 1, (TransferCallback)&Callback_PhoneRST_ISR, 0 )) != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-        return;
-    }
-
-    /* Interrupt enabled after ATR is sent to phone */
-    PIO_DisableIt( &pinPhoneRST ) ;
-}
 
 void receive_from_host( void );
 void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)

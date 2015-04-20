@@ -31,6 +31,8 @@ extern volatile bool rcvdChar;
 extern volatile uint32_t char_stat;
 extern volatile enum confNum simtrace_config;
 
+extern const Pin pinPhoneRST;
+
 enum confNum {
     CFG_NUM_SNIFF = 1, CFG_NUM_CCID, CFG_NUM_PHONE, CFG_NUM_MITM, NUM_CONF
 };
@@ -57,6 +59,7 @@ typedef struct {
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
 int check_data_from_phone();
+void ISR_PhoneRST( const Pin *pPin);
 
 /*  Configure functions   */
 extern void Sniffer_configure( void );

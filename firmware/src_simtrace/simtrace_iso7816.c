@@ -43,6 +43,37 @@ volatile uint32_t char_stat;
 
 volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 
+/*-----------------------------------------------------------------------------
+ *          Interrupt routines
+ *-----------------------------------------------------------------------------*/
+void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+{
+    printf("rstCB\n\r");
+    PIO_EnableIt( &pinPhoneRST ) ;
+}
+void ISR_PhoneRST( const Pin *pPin)
+{
+    int ret;
+    // FIXME: no printfs in ISRs?
+    printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
+    if ( ((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)  )
+    {
+        if(PIO_Get( &pinPhoneRST ) == 0) {
+            printf(" 0 ");
+        } else {
+            printf(" 1 ");
+        }
+    }
+
+    if ((ret = USBD_Write( PHONE_INT, "R", 1, (TransferCallback)&Callback_PhoneRST_ISR, 0 )) != USBD_STATUS_SUCCESS) {
+        TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
+        return;
+    }
+
+    /* Interrupt enabled after ATR is sent to phone */
+    PIO_DisableIt( &pinPhoneRST ) ;
+}
+
 /*
  *  char_stat is zero if no error occured.
  *  Otherwise it is filled with the content of the status register.

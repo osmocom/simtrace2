@@ -45,6 +45,21 @@ def write_phone(dev, resp):
     print("WR: ", HEX(resp))
     dev.write(PHONE_WR, resp, 10)
 
+def replace(data):
+    if data is None:
+        raise MITMReplaceError
+    else:
+        try:
+            if data[0] == 0x3B:
+                print("*** Replace ATR")
+                return array('B', ATR_SYSMOCOM2)
+            elif data[0] == 0x9F:
+                print("*** Replace return val")
+#                return array('B', [0x60, 0x00])
+        except ValueError:
+            print("*** Value error! ")
+    return data
+
 def do_mitm(sim_emul=True):
     dev = find_dev()
     if sim_emul == True:
@@ -65,7 +80,7 @@ def do_mitm(sim_emul=True):
 # FIXME: restart card anyways?
 #               sm_con.reset_card()
                 print("Write atr: ", HEX(atr))
-                write_phone(dev, atr)
+                write_phone(dev, replace(atr))
                 apdus = []
                 apdu = Apdu_splitter()
 
@@ -82,17 +97,17 @@ def do_mitm(sim_emul=True):
                     if apdu.state == apdu_states.APDU_S_SW1:
                         if apdu.data is not None and len(apdu.data) == 0:
                             # FIXME: implement other ACK types
-                            write_phone(dev,  array('B', [apdu.ins]))
+                            write_phone(dev,  replace(array('B', [apdu.ins])))
                             apdu.split(apdu.ins)
                         else:
                             sim_data = sm_con.send_receive_cmd(apdu.buf)
-                            write_phone(dev, sim_data)
+                            write_phone(dev, replace(sim_data))
                             for c in sim_data:
                                 apdu.split(c)
                     elif apdu.state == apdu_states.APDU_S_SEND_DATA:
-                            sim_data = sm_con.send_receive_cmd(apdu.buf)
+                            sim_data = sm_con.send_receive_cmd(replace(apdu.buf))
                             sim_data.insert(0, apdu.ins)
-                            write_phone(dev, sim_data)
+                            write_phone(dev, replace(sim_data))
                             apdu.state = apdu_states.APDU_S_SW1
                             for c in sim_data:
                                 apdu.split(c)

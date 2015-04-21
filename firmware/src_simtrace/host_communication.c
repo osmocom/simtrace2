@@ -8,7 +8,7 @@ void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uin
         TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
     }
     write_to_host_in_progress = false;
-    printf("WR_CB\n");
+    TRACE_DEBUG("WR_CB\n");
 }
 
 int send_to_host()
@@ -20,7 +20,7 @@ int send_to_host()
     for(i = 0; !rbuf_is_empty(&sim_rcv_buf) && i < sizeof(msg); i++) {
         msg[i] = rbuf_read(&sim_rcv_buf);
     }
-    printf("Wr %d\n", i);
+    TRACE_DEBUG("Wr %d\n", i);
     write_to_host_in_progress = true;
     ret = USBD_Write( PHONE_DATAIN, msg, i, (TransferCallback)&USB_write_callback, 0 );
     if (ret != USBD_STATUS_SUCCESS) {

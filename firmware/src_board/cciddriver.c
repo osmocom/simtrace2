@@ -923,7 +923,7 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 void CCID_SmartCardRequest( void )
 {
     unsigned char bStatus;
-    TRACE_INFO("CCID_req\n");
+    TRACE_DEBUG("CCID_req\n");
 
     do {
 
@@ -931,8 +931,8 @@ void CCID_SmartCardRequest( void )
                              sizeof(S_ccid_bulk_out_header),
                              (TransferCallback)&CCIDCommandDispatcher,
                              (void*)0 );
-    } 
-    while (bStatus != USBD_STATUS_SUCCESS);
+    }
+    while (0);
 }
 
 

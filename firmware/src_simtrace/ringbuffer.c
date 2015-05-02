@@ -14,6 +14,11 @@ uint8_t rbuf_read(volatile ringbuf *rb)
     return val;
 }
 
+uint8_t rbuf_peek(volatile ringbuf *rb)
+{
+    return rb->buf[rb->ird];
+}
+
 void rbuf_write(volatile volatile ringbuf *rb, uint8_t item)
 {
     if(!rbuf_is_full(rb)) {

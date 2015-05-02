@@ -58,7 +58,37 @@ typedef struct {
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
+/***    PTS parsing     ***/
+/* detailed sub-states of ISO7816_S_IN_PTS */
+enum pts_state {
+	PTS_S_WAIT_REQ_PTSS,
+	PTS_S_WAIT_REQ_PTS0,
+	PTS_S_WAIT_REQ_PTS1,
+	PTS_S_WAIT_REQ_PTS2,
+	PTS_S_WAIT_REQ_PTS3,
+	PTS_S_WAIT_REQ_PCK,
+	PTS_S_WAIT_RESP_PTSS = PTS_S_WAIT_REQ_PTSS | 0x10,
+	PTS_S_WAIT_RESP_PTS0 = PTS_S_WAIT_REQ_PTS0 | 0x10,
+	PTS_S_WAIT_RESP_PTS1 = PTS_S_WAIT_REQ_PTS1 | 0x10,
+	PTS_S_WAIT_RESP_PTS2 = PTS_S_WAIT_REQ_PTS2 | 0x10,
+	PTS_S_WAIT_RESP_PTS3 = PTS_S_WAIT_REQ_PTS3 | 0x10,
+	PTS_S_WAIT_RESP_PCK = PTS_S_WAIT_REQ_PCK | 0x10,
+	PTS_END
+};
+
+struct iso7816_3_handle {
+	uint8_t fi;
+	uint8_t di;
+
+	enum pts_state pts_state;
+	uint8_t pts_req[6];
+	uint8_t pts_resp[6];
+        uint8_t pts_bytes_processed;
+};
+
 int check_data_from_phone();
+enum pts_state process_byte_pts(struct iso7816_3_handle *ih, uint8_t byte);
+
 void ISR_PhoneRST( const Pin *pPin);
 
 /*  Configure functions   */

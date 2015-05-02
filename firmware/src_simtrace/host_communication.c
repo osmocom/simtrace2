@@ -1,6 +1,9 @@
 #include "board.h"
 
 static volatile bool write_to_host_in_progress = false;
+static struct iso7816_3_handle ih = {0};
+static bool check_for_pts = false;
+static enum pts_state state;
 
 void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
@@ -36,6 +39,26 @@ int check_data_from_phone()
 
     if((rbuf_is_empty(&sim_rcv_buf) || write_to_host_in_progress == true)) {
         return ret;
+    }
+    if ((check_for_pts == false) && (rbuf_peek(&sim_rcv_buf) == 0xff)) {
+// FIXME: set var to false
+        check_for_pts = true;
+        ih = (struct iso7816_3_handle){0};
+    }
+    if (check_for_pts == true) {
+        while (!rbuf_is_empty(&sim_rcv_buf) && (ih.pts_state != PTS_END)) {
+            state = process_byte_pts(&ih, rbuf_read(&sim_rcv_buf));
+        }
+        if (ih.pts_bytes_processed > 6 && ih.pts_state != PTS_END) {
+            int i;
+            for (i = 0; i < ih.pts_bytes_processed; i++)
+                printf("s: %x", ih.pts_req[i]);
+                check_for_pts = false;
+                rbuf_write(&sim_rcv_buf, ih.pts_req[i]);
+        } else {
+            printf("fin pts\n", ih.pts_state);
+            check_for_pts = false;
+        }
     }
     ret = send_to_host();
     return ret;

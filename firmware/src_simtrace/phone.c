@@ -122,6 +122,7 @@ static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE
  *          Internal variables
  *-----------------------------------------------------------------------------*/
 static uint8_t host_to_sim_buf[BUFLEN];
+static bool change_fidi = false;
 
 void receive_from_host( void );
 void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
@@ -135,11 +136,24 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
 
     USART_SetReceiverEnabled(USART_PHONE, 0);
     USART_SetTransmitterEnabled(USART_PHONE, 1);
-    for (uint32_t i = 0; i < transferred; i++ ) {
+    uint32_t i = 0;
+    if (host_to_sim_buf[0] == 0xff) {
+        printf("Change FIDI detected\n");
+        // PTS command, change FIDI after command
+        i = 2;
+        change_fidi = true;
+    }
+    for (; i < transferred; i++ ) {
         ISO7816_SendChar(host_to_sim_buf[i], &usart_info);
     }
     USART_SetTransmitterEnabled(USART_PHONE, 0);
     USART_SetReceiverEnabled(USART_PHONE, 1);
+
+    if (change_fidi == true) {
+        printf("Change FIDI: %x\n", host_to_sim_buf[2]);
+        update_fidi(host_to_sim_buf[2]);
+        change_fidi = false;
+    }
 
     receive_from_host();
 }

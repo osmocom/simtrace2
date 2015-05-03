@@ -34,6 +34,7 @@
 #include "board.h"
 
 #include <string.h>
+#include <errno.h>
 
 volatile uint32_t char_stat;
 
@@ -109,4 +110,63 @@ void USART1_IrqHandler( void )
 
         char_stat = stat;
     }
+}
+
+/*  FIDI update functions   */
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+/* Table 6 from ISO 7816-3 */
+static const uint16_t fi_table[] = {
+	0, 372, 558, 744, 1116, 1488, 1860, 0,
+	0, 512, 768, 1024, 1536, 2048, 0, 0
+};
+
+/* Table 7 from ISO 7816-3 */
+static const uint8_t di_table[] = {
+	0, 1, 2, 4, 8, 16, 0, 0,
+	0, 0, 2, 4, 8, 16, 32, 64,
+};
+
+/* compute the F/D ratio based on Fi and Di values */
+static int compute_fidi_ratio(uint8_t fi, uint8_t di)
+{
+	uint16_t f, d;
+	int ret;
+
+	if (fi >= ARRAY_SIZE(fi_table) ||
+	    di >= ARRAY_SIZE(di_table))
+		return -EINVAL;
+
+	f = fi_table[fi];
+	if (f == 0)
+		return -EINVAL;
+
+	d = di_table[di];
+	if (d == 0)
+		return -EINVAL;
+
+	if (di < 8) 
+		ret = f / d;
+	else
+		ret = f * d;
+
+	return ret;
+}
+
+void update_fidi(uint8_t fidi)
+{
+	int rc;
+
+        uint8_t fi = fidi >> 4;
+        uint8_t di = fidi & 0xf;
+
+	rc = compute_fidi_ratio(fi, di);
+	if (rc > 0 && rc < 0x400) {
+		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d", fi, di, rc);
+/*              make sure UART uses new F/D ratio */
+		USART_PHONE->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
+		USART_PHONE->US_FIDI = rc & 0x3ff;
+		USART_PHONE->US_CR |= US_CR_RXEN | US_CR_STTTO;
+	} else
+		TRACE_INFO("computed FiDi ratio %d unsupported", rc);
 }

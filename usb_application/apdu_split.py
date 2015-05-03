@@ -108,7 +108,9 @@ class Apdu_splitter:
     INS_data_expected = [0xC0, 0xB0]
 
     def split(self, c):
-        print("state: ", self.state, c)
+        if c == 0xA0:
+            self.state = apdu_states.APDU_S_CLA
+#        print("state: ", self.state, c)
         self.Apdu_S[self.state](self, c)
 
 

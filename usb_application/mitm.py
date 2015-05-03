@@ -52,7 +52,7 @@ def replace(data):
         try:
             if data[0] == 0x3B:
                 print("*** Replace ATR")
-                return array('B', ATR_SYSMOCOM2)
+#                return array('B', ATR_SYSMOCOM2)
             elif data[0] == 0x9F:
                 print("*** Replace return val")
 #                return array('B', [0x60, 0x00])

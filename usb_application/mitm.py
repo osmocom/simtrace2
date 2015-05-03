@@ -93,6 +93,10 @@ def do_mitm(sim_emul=True):
                         apdu = Apdu_splitter()
 
                     apdu.split(c)
+                    if apdu.state == apdu_states.APDU_S_FIN and apdu.pts_buf == [0xff, 0x00, 0xff]:
+                        sim_data = sm_con.send_receive_cmd(apdu.pts_buf)
+                        write_phone(dev,  replace(array('B', sim_data)))
+                        continue;
 
                     if apdu.state == apdu_states.APDU_S_SW1:
                         if apdu.data is not None and len(apdu.data) == 0:

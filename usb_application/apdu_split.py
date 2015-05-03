@@ -29,12 +29,14 @@ class apdu_states(Enum):
     APDU_S_SW1 = 9
     APDU_S_SW2 = 10
     APDU_S_FIN = 11
+    PTS = 12
 
 class Apdu_splitter:
 
     def __init__(self):
         self.state = apdu_states.APDU_S_CLA
         self.buf = []
+        self.pts_buf = []
         self.data = []
         self.ins = array('B', [])
         self.data_remainig = 0
@@ -44,9 +46,19 @@ class Apdu_splitter:
         self.buf.append(c)
         self.state = apdu_states(self.state.value + 1)
 
+    def func_PTS(self, c):
+        self.pts_buf.append(c)
+        print("PTS: ", self.pts_buf)
+        if self.pts_buf == [0xff, 0x00, 0xff]:
+            self.state = apdu_states.APDU_S_FIN
+
     def func_APDU_S_CLA_P1_P2(self, c):
-        self.buf.append(c)
-        self.state = apdu_states(self.state.value + 1)
+        if self.state == apdu_states.APDU_S_CLA and c == 0xff:
+            self.state = apdu_states.PTS
+            self.pts_buf = [c]
+        else:
+            self.buf.append(c)
+            self.state = apdu_states(self.state.value + 1)
 
     def func_APDU_S_P3(self, c):
         self.buf.append(c)
@@ -103,7 +115,8 @@ class Apdu_splitter:
             apdu_states.APDU_S_DATA :           func_APDU_S_DATA,
             apdu_states.APDU_S_DATA_SINGLE :    func_APDU_S_DATA_SINGLE,
             apdu_states.APDU_S_SW1 :            func_APDU_S_SW1,
-            apdu_states.APDU_S_SW2 :            func_APDU_S_SW2 }
+            apdu_states.APDU_S_SW2 :            func_APDU_S_SW2,
+            apdu_states.PTS :                   func_PTS }
 
     INS_data_expected = [0xC0, 0xB0]
 
@@ -121,9 +134,10 @@ if __name__ == '__main__':
             0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x09, 0x91, 0x00, 0x17, 0x04, 0x00, 0x00, 0x00,
             0x83, 0x8A, 0x90, 0x00]
+    pts = [0xff, 0x00, 0xff]
     apdus = []
     apdu = Apdu_splitter()
-    for c in msg2 + msg1:
+    for c in pts + msg2 + msg1:
         apdu.split(c)
         if apdu.state == apdu_states.APDU_S_FIN:
             apdus.append(apdu)

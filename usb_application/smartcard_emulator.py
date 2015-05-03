@@ -8,11 +8,13 @@ LEN = 4
 
 class SmartCardEmulator:
     def getATR(self):
-        return array.array('B', constants.ATR_SYSMOCOM2)
+        return array.array('B', constants.ATR_SYSMOCOM1)
 
     def send_receive_cmd(self, cmd):
         if cmd[INS] == 0xA4:
             resp = [0x9F, 0x16]
+        elif cmd == [0xff, 0x00, 0xff]:
+            resp = [0xff]
         elif len(cmd) == 5 and  cmd[INS] == 0xC0:
             data = self.ans_from_len[cmd[LEN]]
             SW = [0x90, 0x00]

@@ -14,7 +14,7 @@ class SmartCardEmulator:
         if cmd[INS] == 0xA4:
             resp = [0x9F, 0x16]
         elif cmd == [0xff, 0x00, 0xff]:
-            resp = [0xff]
+            resp = cmd
         elif len(cmd) == 5 and  cmd[INS] == 0xC0:
             data = self.ans_from_len[cmd[LEN]]
             SW = [0x90, 0x00]

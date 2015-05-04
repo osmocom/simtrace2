@@ -52,7 +52,7 @@ def replace(data):
         try:
             if data[0] == 0x3B:
                 print("*** Replace ATR")
-#                return array('B', ATR_SYSMOCOM2)
+                return array('B', NEW_ATR)
             elif data[0] == 0x9F:
                 print("*** Replace return val")
 #                return array('B', [0x60, 0x00])
@@ -94,8 +94,9 @@ def do_mitm(sim_emul=True):
 
                     apdu.split(c)
                     if apdu.state == apdu_states.APDU_S_FIN and apdu.pts_buf == [0xff, 0x00, 0xff]:
-                        sim_data = sm_con.send_receive_cmd(apdu.pts_buf)
-                        write_phone(dev,  replace(array('B', sim_data)))
+                        #sim_data = sm_con.send_receive_cmd(apdu.pts_buf)
+                        #write_phone(dev,  replace(array('B', sim_data)))
+                        write_phone(dev,  replace(array('B', apdu.pts_buf)))
                         continue;
 
                     if apdu.state == apdu_states.APDU_S_SW1:

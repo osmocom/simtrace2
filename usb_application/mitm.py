@@ -56,6 +56,9 @@ def replace(data):
             elif data[0] == 0x9F:
                 print("*** Replace return val")
 #                return array('B', [0x60, 0x00])
+            elif data == PHONE_BOOK_RESP:
+                print("*** Replace phone book")
+                return PHONE_BOOK_RESP_MITM
         except ValueError:
             print("*** Value error! ")
     return data

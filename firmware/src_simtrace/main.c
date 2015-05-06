@@ -40,7 +40,7 @@ extern int main( void )
 
     LED_Configure(LED_NUM_RED);
     LED_Configure(LED_NUM_GREEN);
-    LED_Set(LED_NUM_GREEN);
+    LED_Set(LED_NUM_RED);
 
     /* Disable watchdog*/
     WDT_Disable( WDT ) ;
@@ -82,6 +82,8 @@ extern int main( void )
         }
         else if (isUsbConnected == 0) {
             printf("USB is now configured\n\r");
+            LED_Set(LED_NUM_GREEN);
+            LED_Clear(LED_NUM_RED);
 
             isUsbConnected = 1;
 //            TC_Start(TC0, 0);

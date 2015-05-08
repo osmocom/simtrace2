@@ -95,7 +95,6 @@ static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE
 #define USART_SEND 0
 #define USART_RCV  1
 
-// FIXME: Comments
 /*-----------------------------------------------------------------------------
  *          Internal variables
  *-----------------------------------------------------------------------------*/
@@ -171,33 +170,11 @@ void Phone_init( void ) {
     USART_SetTransmitterEnabled(USART_PHONE, 0);
     USART_SetReceiverEnabled(USART_PHONE, 1);
 
-    USART_EnableIt(USART_PHONE, US_IER_RXRDY); // TODO: interrupt enable/disable is shared with sniffer
+    USART_EnableIt(USART_PHONE, US_IER_RXRDY);
     NVIC_EnableIRQ(USART1_IRQn);
-
-    /*  Configure ISO7816 driver */
-    // FIXME:    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
-
-// FIXME: Or do I need to call VBUS_CONFIGURE() here instead, which will call USBD_Connect() later?
-//    USBD_Connect();
-
-    //Timer_Init();
 
     receive_from_host();
 }
-
-
-// Sniffed Phone to SIM card communication:
-// phone > sim : RST
-// phone < sim : ATR
-// phone > sim : A0 A4 00 00 02 (Select File)
-// phone < sim : A4 (INS repeated)
-// phone > sim : 7F 02 (= ??)
-// phone < sim : 9F 16 (9F: success, can deliver 0x16 (=22) byte)
-// phone > sim : ?? (A0 C0 00 00 16)
-// phone < sim : C0 (INS repeated)
-// phone < sim : 00 00 00 00   7F 20 02 00   00 00 00 00   09 91 00 17   04 00 83 8A (data of length 22 -2)
-// phone <? sim : 90 00 (OK, everything went fine)
-// phone ? sim : 00 (??)
 
 void Phone_run( void )
 {

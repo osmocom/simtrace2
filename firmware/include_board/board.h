@@ -181,10 +181,8 @@
 #define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
 //#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_SELFPOWERED_RWAKEUP
 
-#define ATMEL_VENDOR_ID             0x03EB
-#define SIMTRACE_PRODUCT_ID         0x6004
-//#define OPENPCD_VENDOR_ID           0x16c0
-//#define SIMTRACE_PRODUCT_ID         0x0762
+#define SIMTRACE_VENDOR_ID          0x16c0
+#define SIMTRACE_PRODUCT_ID         0x0762
 #define USB_VENDOR_ID               OPENPCD_VENDOR_ID
 #define USB_PRODUCT_ID              SIMTRACE_PRODUCT_ID
 

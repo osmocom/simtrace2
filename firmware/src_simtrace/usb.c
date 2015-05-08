@@ -564,7 +564,7 @@ const USBDeviceDescriptor deviceDescriptor = {
     0xff,
 //    CDCDeviceDescriptor_PROTOCOL,
     BOARD_USB_ENDPOINTS_MAXPACKETSIZE(0),
-    ATMEL_VENDOR_ID,
+    SIMTRACE_VENDOR_ID,
     SIMTRACE_PRODUCT_ID,
     1, /* Release number */
     0, /* No string descriptor for manufacturer */

@@ -39,7 +39,7 @@ class find_class(object):
         return False
 
 def find_dev():
-    dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
+    dev = usb.core.find(idVendor=0x16c0, idProduct=0x0762)
     if dev is None:
         raise ValueError("Device not found")
     else:

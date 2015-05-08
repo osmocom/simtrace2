@@ -108,8 +108,6 @@ const Pin pinPhoneRST = PIN_ISO7816_RST_PHONE;
 
 static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
 
-#define PR  TRACE_INFO
-
 /* ===================================================*/
 /*                      Taken from iso7816_4.c        */
 /* ===================================================*/
@@ -131,8 +129,8 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
         TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
         return;
     }
-    PR("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
-    PR("Resp: %x %x %x .. %x\n", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
+    TRACE_DEBUG("sendResp, stat: %X, trnsf: %x, rem: %x\n\r", status, transferred, remaining);
+    TRACE_DEBUG("Resp: %x %x %x .. %x\n", host_to_sim_buf[0], host_to_sim_buf[1], host_to_sim_buf[2], host_to_sim_buf[transferred-1]);
 
     USART_SetReceiverEnabled(USART_PHONE, 0);
     USART_SetTransmitterEnabled(USART_PHONE, 1);

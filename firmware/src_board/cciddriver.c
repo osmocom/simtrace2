@@ -59,8 +59,6 @@
 #define DFU_NUM_STRINGS 0
 #define DFU_STRING_DESCRIPTORS
 
-#define PR  TRACE_INFO
-
 //------------------------------------------------------------------------------
 //         Local definition
 //------------------------------------------------------------------------------
@@ -428,11 +426,11 @@ static void PCtoRDRXfrBlock( void )
     uint16_t msglen = 0;
     uint32_t ret;
 
-    PR("PCtoRDRXfrBlock\n");
+    TRACE_DEBUG("PCtoRDRXfrBlock\n");
 
     // Check the block length
     if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
-        PR("Err block/msg len");
+        TRACE_DEBUG("Err block/msg len");
         ccidDriver.sCcidMessage.bStatus = 1;
         ccidDriver.sCcidMessage.bError  = 0;
     }
@@ -449,7 +447,7 @@ static void PCtoRDRXfrBlock( void )
 
             case CCID_FEATURES_EXC_TPDU:
                 if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO) {
-                    PR("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
+                    TRACE_DEBUG("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
 
                     // Send commande APDU
                     ret = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU ,
@@ -463,16 +461,16 @@ static void PCtoRDRXfrBlock( void )
                 }
                 else {
                     if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
-                        PR("Not supported T=1\n\r");
+                        TRACE_DEBUG("Not supported T=1\n\r");
                     }
                     else {
-                        PR("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
+                        TRACE_DEBUG("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
                     }
                 }
                 break;
 
             case CCID_FEATURES_EXC_APDU:
-                PR("Not supported CCID_FEATURES_EXC_APDU\n\r");
+                TRACE_DEBUG("Not supported CCID_FEATURES_EXC_APDU\n\r");
                 break;
 
             default:

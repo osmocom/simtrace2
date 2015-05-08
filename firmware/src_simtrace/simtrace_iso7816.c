@@ -38,10 +38,6 @@
 
 volatile uint32_t char_stat;
 
-// FIXME: Remove:
-#define PR TRACE_INFO
-//#define PR printf 
-
 volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 
 /*-----------------------------------------------------------------------------
@@ -105,7 +101,7 @@ void USART1_IrqHandler( void )
             /* Fill char into buffer */
             rbuf_write(&sim_rcv_buf, c);
         } else {
-            PR("e %x st: %x\n", c, stat);
+            TRACE_DEBUG("e %x st: %x\n", c, stat);
         } /* else: error occured */
 
         char_stat = stat;

@@ -144,10 +144,6 @@ enum strDescNum {
 
 /** List of string descriptors used by the device */
 const unsigned char *stringDescriptors[] = {
-/* FIXME: Is it true that I can't use the string desc #0, 
- * because 0 also stands for "no string desc"? 
- * on the other hand, dmesg output: 
- * "string descriptor 0 malformed (err = -61), defaulting to 0x0409" */
     langDesc,
     productStringDescriptor,
     snifferConfigStringDescriptor,
@@ -518,8 +514,8 @@ const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
         3, /* Number of endpoints */
         0xff,
         0,
-        0, 
-        0, /* FIXME: string descriptor for this interface */
+        0,
+        PHONE_CONF_STR, /* string descriptor for this interface */
     },
     /* Bulk-OUT endpoint standard descriptor */
     {

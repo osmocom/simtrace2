@@ -50,21 +50,6 @@ void MITM_init( void )
     Phone_init();
 
     return;
-    /*  Configure ISO7816 driver */
-// FIXME: Phone and SIM card side:
-//    PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
-/*
-    PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
-    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
-
-//  FIXME: phone is clk master, sim is clk slave
-    _ISO7816_Init();
-
-    USART_SetReceiverEnabled(USART_SIM, 1);
-    USART_SetTransmitterEnabled(USART_SIM, 1);
-    USART_SetReceiverEnabled(USART_PHONE, 1);
-    USART_SetTransmitterEnabled(USART_PHONE, 1);
-*/
 }
 
 void MITM_exit( void )

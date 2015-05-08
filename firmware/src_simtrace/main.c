@@ -66,18 +66,13 @@ extern int main( void )
     config_func_ptrs[simtrace_config-1].init();
     last_simtrace_config = simtrace_config;
 
-
-    TRACE_DEBUG("%s", "Start\n\r");
-
     printf("%s", "Start\n\r");
     while(1) {
 
-            /* Device is not configured */
         if (USBD_GetState() < USBD_STATE_CONFIGURED) {
 
             if (isUsbConnected) {
                 isUsbConnected = 0;
-//                TC_Stop(TC0, 0);
             }
         }
         else if (isUsbConnected == 0) {
@@ -86,13 +81,9 @@ extern int main( void )
             LED_Clear(LED_NUM_RED);
 
             isUsbConnected = 1;
-//            TC_Start(TC0, 0);
         }
 
-//        for (int i=0; i <10000; i++);
 
-/*  FIXME: Or should we move the while loop into every case, and break out
-    in case the config changes? */
         if (last_simtrace_config != simtrace_config) {
             config_func_ptrs[last_simtrace_config-1].exit();
             config_func_ptrs[simtrace_config-1].init();

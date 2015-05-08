@@ -38,8 +38,6 @@
 /*------------------------------------------------------------------------------
  *         Internal definitions
  *------------------------------------------------------------------------------*/
-// FIXME: Remove:
-#define PR TRACE_DEBUG
 
 /** Maximum ucSize in bytes of the smartcard answer to a command.*/
 #define MAX_ANSWER_SIZE         10

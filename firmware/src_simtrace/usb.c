@@ -616,8 +616,6 @@ void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 static void _ConfigureUsbClock(void)
 {
     /* Enable PLLB for USB */
-// FIXME: are these the dividers I actually need?
-// FIXME: I could just use PLLA, since it has a frequ of 48Mhz anyways?
     PMC->CKGR_PLLBR = CKGR_PLLBR_DIVB(5)
                     | CKGR_PLLBR_MULB(0xc)  /* MULT+1=0xd*/
                     | CKGR_PLLBR_PLLBCOUNT_Msk;
@@ -639,11 +637,8 @@ void SIMtrace_USB_Initialize( void )
     // Initialize standard USB driver
     USBDDriver_Initialize(pUsbd,
                           &driverDescriptors,
-// FIXME: 2 interface settings supported in MITM mode
                           0); // Multiple interface settings not supported
-    
     USBD_Init();
-    
     USBD_Connect();
 
     NVIC_EnableIRQ( UDP_IRQn );

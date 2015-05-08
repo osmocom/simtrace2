@@ -53,26 +53,6 @@
 /// The USB device is in resume state
 #define STATE_RESUME  5
 
-/* WTX (Wait time extension):
-*   R-block PCB begins with (msb) 10 , ends with 000011 for WTX req, 100011 for WTX resp
-*
-* The standard says:
-*   Rule 3 — If the card requires more than BWT to process the previously received I-block, it transmits S(WTX
-*   request) where INF conveys one byte encoding an integer multiplier of the BWT value. The interface device
-*   shall acknowledge by S(WTX response) with the same INF.
-*   The time allocated starts at the leading edge of the last character of S(WTX response).
-*/
-// FIXME: Two times the same name for the define, which one is right?
-//#define     WTX_req     0b10000011
-//#define     WTX_req     0b10100011
-// Alternatively:
-/* For T = 0 Protocol: The firmware on receiving the NULL (0x60) Procedure byte from the card, notifies
-it to the driver using the RDR_to_PC_DataBlock response. During this period, the reception of bytes
-from the smart card is still in progress and hence the device cannot indefinitely wait for IN tokens on
-the USB bulk-in endpoint. Hence, it is required of the driver to readily supply ‘IN’ tokens on the USB
-bulk-in endpoint. On failure to do so, some of the wait time extension responses, will not be queued to
-the driver. 
-*/
 extern volatile uint8_t timeout_occured;
 
 /*------------------------------------------------------------------------------

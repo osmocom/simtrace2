@@ -63,10 +63,7 @@ class Apdu_splitter:
     def func_APDU_S_P3(self, c):
         self.buf.append(c)
         self.data_remaining = 256 if c == 0  else c
-        if self.ins in self.INS_data_expected:
-            self.state = apdu_states.APDU_S_SEND_DATA
-        else:
-            self.state = apdu_states.APDU_S_SW1
+        self.state = apdu_states.APDU_S_SW1
 
     def func_APDU_S_DATA(self, c):
         self.buf.append(c)
@@ -87,8 +84,11 @@ class Apdu_splitter:
             # check for 'all remaining' type ACK
             if c == self.ins or c == self.ins + 1 or c == ~(self.ins+1):
                 print("ACK")
-                self.state = apdu_states.APDU_S_DATA
                 self.data = []
+                if self.ins in self.INS_data_expected:
+                    self.state = apdu_states.APDU_S_SEND_DATA
+                else:
+                    self.state = apdu_states.APDU_S_DATA
             else:
                 # check for 'only next byte' type ACK */
                 if c == ~(self.ins):
@@ -134,10 +134,14 @@ if __name__ == '__main__':
             0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x09, 0x91, 0x00, 0x17, 0x04, 0x00, 0x00, 0x00,
             0x83, 0x8A, 0x90, 0x00]
+    msg3 = [0xa0, 0xc0, 0x00, 0x00, 0x16, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x7f,
+            0x20, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x91, 0x00, 0x17,
+            0x04, 0x00, 0x83, 0x8a, 0x83, 0x8a, 0x90]
+
     pts = [0xff, 0x00, 0xff]
     apdus = []
     apdu = Apdu_splitter()
-    for c in pts + msg2 + msg1:
+    for c in pts + msg2 + msg1 + msg3:
         apdu.split(c)
         if apdu.state == apdu_states.APDU_S_FIN:
             apdus.append(apdu)

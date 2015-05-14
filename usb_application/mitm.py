@@ -12,14 +12,6 @@ from util import HEX
 from constants import *
 from apdu_split import Apdu_splitter, apdu_states
 
-def find_dev():
-    dev = usb.core.find(idVendor=0x03eb, idProduct=0x6004)
-    if dev is None:
-        raise ValueError("Device not found")
-    else:
-        print("Found device")
-    return dev
-
 def pattern_match(inpt):
     print("Matching inpt", inpt)
     if (inpt == ATR_SYSMOCOM1) or (inpt == ATR_STRANGE_SIM):
@@ -64,8 +56,7 @@ def replace(data):
             print("*** Value error! ")
     return data
 
-def do_mitm(sim_emul=True):
-    dev = find_dev()
+def do_mitm(dev, sim_emul=True):
     if sim_emul == True:
         my_class = SmartCardEmulator
     else:

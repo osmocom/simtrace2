@@ -35,9 +35,9 @@ class Apdu_splitter:
 
     def __init__(self):
         self.state = apdu_states.APDU_S_CLA
-        self.buf = []
-        self.pts_buf = []
-        self.data = []
+        self.buf = array('B', [])
+        self.pts_buf = array('B', [])
+        self.data = array('B', [])
         self.ins = array('B', [])
         self.data_remainig = 0
 

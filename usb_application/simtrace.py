@@ -11,33 +11,6 @@ import usb.util
 import sys
 import time
 
-cmd1 = {0x00, 0x10, 0x00, 0x00}
-cmd2 =  {0x00, 0x20, 0x00, 0x00, 0x02}
-cmd_poweron = {0x62, 0x62, 0x00, 0x00}
-cmd_poweroff = {0x63, 0x63, 0x00, 0x00}
-cmd_get_slot_stat = {0x65, 0x65, 0x00, 0x00}
-cmd_get_param = {0x00, 0x6C, 0x00, 0x00}
-
-class find_class(object):
-    def __init__(self, class_):
-        self._class = class_
-    def __call__(self, device):
-        # first, let's check the device
-        if device.bDeviceClass == self._class:
-            return True
-        # ok, transverse all devices to find an
-        # interface that matches our class
-        for cfg in device:
-            # find_descriptor: what's it?
-            intf = usb.util.find_descriptor(
-                                        cfg,
-                                        bInterfaceClass=self._class
-                                )
-            if intf is not None:
-                return True
-
-        return False
-
 def find_dev():
     dev = usb.core.find(idVendor=0x16c0, idProduct=0x0762)
     if dev is None:
@@ -61,48 +34,21 @@ def main():
     args = parser.parse_args()
     print("args: ", args)
 
-
-# FIXME: why is it a ccid function?
     if args.conf is not None:
-#FIXME: Change means to find devices
         dev = find_dev()
         dev.set_configuration(args.conf)
         # Give pcsclite time to find the device
         time.sleep(1)
-
     if args.read_bin is True: 
         ccid.pySim_read() 
-
-    if args.cmd is not None:
-#FIXME: Change means to find devices
-        devs = usb.core.find(find_all=1, custom_match=find_class(0xb))  # 0xb = Smartcard
-        for dev in devs:
-            dev.write(0x1, args.cmd)
-            ret = dev.read(0x82, 64)
-#            ret = dev.read(0x83, 64, 100)
-            print(ret)
     if args.sniff is True:
         sniffer.sniff(dev)
     if args.select_file is True:
         ccid_select.select()
     if args.phone is True:
-        mitm.do_mitm(sim_emul=True)
+        mitm.do_mitm(dev, sim_emul=True)
     if args.mitm is True:
-        mitm.do_mitm(sim_emul=False)
-
+        mitm.do_mitm(dev, sim_emul=False)
     return
-
-#    (epi, epo) = find_eps(dev)
-    while True:
-        #ep_out.write("Hello")
-        try:
-            ans = dev.read(0x82, 64, 1000)
-            print("".join("%02x " % b for b in ans))
-        except KeyboardInterrupt:
-            print("Bye")
-            sys.exit()
-        except: 
-            print("Timeout")
-    #    print(ep_in.read(1, 5000));
 
 main()

@@ -49,8 +49,7 @@ def find_eps(dev):
     return (ep_in, ep_out)
 
 # main code
-def sniff():
-    dev = find_dev()
+def sniff(dev):
     ans = array.array('B', [])
 
     apdus = []

@@ -82,7 +82,7 @@ def main():
 #            ret = dev.read(0x83, 64, 100)
             print(ret)
     if args.sniff is True:
-        sniffer.sniff()
+        sniffer.sniff(dev)
     if args.select_file is True:
         ccid_select.select()
     if args.phone is True:

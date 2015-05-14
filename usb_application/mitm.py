@@ -4,6 +4,7 @@ import array
 
 from ccid_raw import SmartcardConnection
 from smartcard_emulator import SmartCardEmulator
+from gsmtap import gsmtap_send_apdu
 
 from contextlib import closing
 
@@ -93,6 +94,7 @@ def do_mitm(sim_emul=True):
                 for c in cmd:
                     if apdu.state == apdu_states.APDU_S_FIN:
                         apdus.append(apdu)
+                        gsmtap_send_apdu(apdu.buf)
                         apdu = Apdu_splitter()
 
                     apdu.split(c)

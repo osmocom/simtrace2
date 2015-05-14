@@ -6,6 +6,7 @@ import sys
 import array
 
 from apdu_split import Apdu_splitter, apdu_states
+from gsmtap import gsmtap_send_apdu
 
 from constants import PHONE_RD, ERR_TIMEOUT, ERR_NO_SUCH_DEV
 
@@ -73,5 +74,6 @@ def sniff():
                 apdu.split(c)
                 if apdu.state == apdu_states.APDU_S_FIN:
                     apdus.append(apdu)
+                    gsmtap_send_apdu(apdu.buf)
                     apdu = Apdu_splitter()
             ans = array.array('B', [])

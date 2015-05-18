@@ -24,7 +24,6 @@ def main():
     parser = argparse.ArgumentParser()
 # FIXME: config names instead of numbers
     parser.add_argument("-C", "--conf", type=int, choices=[1, 2, 3, 4], help="Set USB config")
-    parser.add_argument("-b", "--read_bin", help="read ICCID, IMSI, etc.", action='store_true')
     parser.add_argument("-s", "--sniff", help="Sniff communication!", action='store_true') 
     parser.add_argument("-S", "--select_file", help="Transmit SELECT cmd!", action='store_true')
     parser.add_argument("-p", "--phone", help="Emulates simcard", action='store_true')
@@ -38,8 +37,6 @@ def main():
         dev.set_configuration(args.conf)
         # Give pcsclite time to find the device
         time.sleep(1)
-    if args.read_bin is True: 
-        ccid.pySim_read() 
     if args.sniff is True:
         sniffer.sniff(dev)
     if args.select_file is True:

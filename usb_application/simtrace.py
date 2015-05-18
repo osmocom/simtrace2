@@ -39,6 +39,7 @@ def main():
         time.sleep(1)
     if args.sniff is True:
         sniffer.sniff(dev)
+# FIXME: This command is test code and should be removed in near future:
     if args.select_file is True:
         ccid_select.select()
     if args.phone is True:

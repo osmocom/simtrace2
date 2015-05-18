@@ -22,15 +22,14 @@ def find_dev():
 # main code
 def main():
     parser = argparse.ArgumentParser()
+# FIXME: config names instead of numbers
     parser.add_argument("-C", "--conf", type=int, choices=[1, 2, 3, 4], help="Set USB config")
     parser.add_argument("-b", "--read_bin", help="read ICCID, IMSI, etc.", action='store_true')
-    parser.add_argument("-c", "--cmd", help="cmds to send to sim card (Not supported yet)", 
-        choices=["cmd1", "cmd2", "cmd_poweron", "cmd_poweroff", "cmd_get_slot_stat", "cmd_get_param"])
     parser.add_argument("-s", "--sniff", help="Sniff communication!", action='store_true') 
     parser.add_argument("-S", "--select_file", help="Transmit SELECT cmd!", action='store_true')
     parser.add_argument("-p", "--phone", help="Emulates simcard", action='store_true')
     parser.add_argument("-m", "--mitm", help="Intercept communication (MITM)", action='store_true')
-    
+
     args = parser.parse_args()
     print("args: ", args)
 

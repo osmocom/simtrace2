@@ -105,10 +105,10 @@ def do_mitm(dev, sim_emul=True):
                             write_phone(dev, replace(sim_data))
                             for c in sim_data:
                                 apdu.split(c)
-                    elif apdu.state == apdu_states.APDU_S_SEND_DATA:
-                            sim_data = sm_con.send_receive_cmd(replace(apdu.buf))
-                            sim_data.insert(0, apdu.ins)
-                            write_phone(dev, replace(sim_data))
-                            apdu.state = apdu_states.APDU_S_SW1
-                            for c in sim_data:
-                                apdu.split(c)
+                    if apdu.state == apdu_states.APDU_S_SEND_DATA:
+                        sim_data = sm_con.send_receive_cmd(replace(apdu.buf))
+                        #sim_data.insert(0, apdu.ins)
+                        write_phone(dev, replace(sim_data))
+                        #apdu.state = apdu_states.APDU_S_SW1
+                        for c in sim_data:
+                            apdu.split(c)

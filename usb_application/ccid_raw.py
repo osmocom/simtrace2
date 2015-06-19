@@ -71,7 +71,7 @@ class SmartcardConnection:
     def send_receive_cmd(self, cmd):
         print("Cmd to SIM: " + HEX(cmd))
         hresult, resp = SCardTransmit(self.hcard, self.dwActiveProtocol,
-            cmd)
+            cmd.tolist())
         if hresult != SCARD_S_SUCCESS:
             raise SmartcardException('Failed to transmit: ' +
                 SCardGetErrorMessage(hresult))

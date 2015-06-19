@@ -31,9 +31,9 @@ def main():
 
     args = parser.parse_args()
     print("args: ", args)
+    dev = find_dev()
 
     if args.conf is not None:
-        dev = find_dev()
         dev.set_configuration(args.conf)
         # Give pcsclite time to find the device
         time.sleep(1)

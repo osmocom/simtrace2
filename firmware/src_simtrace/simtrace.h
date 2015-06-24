@@ -8,7 +8,7 @@
 #define DATAIN      2
 #define INT         3
 
-#define BUFLEN  64
+#define BUFLEN  512
 
 #define PHONE_DATAOUT     4
 #define PHONE_DATAIN      5

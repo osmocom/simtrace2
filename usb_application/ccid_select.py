@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# This is only test code for testing the smartcard communication
+# by sending a test command and printing the answer of the smartcard.
 
 from smartcard.scard import *
 import smartcard.util

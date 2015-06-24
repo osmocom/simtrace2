@@ -118,12 +118,12 @@ class Apdu_splitter:
             apdu_states.APDU_S_SW2 :            func_APDU_S_SW2,
             apdu_states.PTS :                   func_PTS }
 
-    INS_data_expected = [0xC0, 0xB0]
+    INS_data_expected = [0xC0, 0xB0, 0xB2, 0x12, 0xF2]
 
     def split(self, c):
-        if c == 0xA0:
-            self.state = apdu_states.APDU_S_CLA
-#        print("state: ", self.state, c)
+       # if c == 0xA0:
+       #     self.state = apdu_states.APDU_S_CLA
+        print("state: ", self.state, hex(c))
         self.Apdu_S[self.state](self, c)
 
 

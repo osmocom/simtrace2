@@ -51,7 +51,7 @@ extern int main( void )
 
     printf("%s", "USB init\n\r");
     while(USBD_GetState() < USBD_STATE_CONFIGURED){
-        if(i >= MAX_USB_ITER) {
+        if(i >= MAX_USB_ITER*3) {
             TRACE_ERROR("Resetting board (USB could not be configured)\n");
             NVIC_SystemReset();
         }

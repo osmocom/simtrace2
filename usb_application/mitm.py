@@ -12,6 +12,8 @@ from util import HEX
 from constants import *
 from apdu_split import Apdu_splitter, apdu_states
 
+from replace import replace
+
 def pattern_match(inpt):
     print("Matching inpt", inpt)
     if (inpt == ATR_SYSMOCOM1) or (inpt == ATR_STRANGE_SIM):
@@ -37,24 +39,6 @@ def poll_ep(dev, ep):
 def write_phone(dev, resp):
     print("WR: ", HEX(resp))
     dev.write(PHONE_WR, resp, 10)
-
-def replace(data):
-    if data is None:
-        raise MITMReplaceError
-    else:
-        try:
-            if data[0] == 0x3B:
-                print("*** Replace ATR")
-                return array('B', NEW_ATR)
-            elif data[0] == 0x9F:
-                print("*** Replace return val")
-#                return array('B', [0x60, 0x00])
-            elif data == PHONE_BOOK_RESP:
-                print("*** Replace phone book")
-                return PHONE_BOOK_RESP_MITM
-        except ValueError:
-            print("*** Value error! ")
-    return data
 
 def do_mitm(dev, sim_emul=True):
     if sim_emul == True:

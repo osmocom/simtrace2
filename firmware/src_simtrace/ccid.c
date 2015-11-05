@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
+ * Copyright (c) 2014, Christina Quast
  *
  * All rights reserved.
  *
@@ -74,33 +75,21 @@ static const Pin pinSmartCard = SMARTCARD_CONNECT_PIN;
  */
 static void ISR_PioSmartCard( const Pin *pPin )
 {
-/* FIXME: why is pinSmartCard.pio->PIO_ISR the wrong number?
-    printf("+++++ Trying to check for pending interrupts (PIO ISR: 0x%X)\n\r", pinSmartCard.pio->PIO_ISR);
-    printf("+++++ Mask: 0x%X\n\r", pinSmartCard.mask);
-Output:
-    +++++ Trying to check for pending interrupts (PIO ISR: 0x400)) = 1<<10
-    +++++ Mask: 0x100 = 1<<8
-*/
-    // PA10 is DTXD, which is the debug uart transmit pin
-
-    printf("Interrupt!!\n\r");
-    /*  Check all pending interrupts */
-    // FIXME: this if condition is not always true...
-//    if ( (pinSmartCard.pio->PIO_ISR & pinSmartCard.mask) != 0 )
+    /*  Check current level on pin */
+    /*  The interrupt is already erased on read from the PIO_ISR (PIO Interrupt
+     *  Status Register) by the calling higher level interrupt handler
+     */
+    if ( PIO_Get( &pinSmartCard ) == 0 )
     {
-        /*  Check current level on pin */
-        if ( PIO_Get( &pinSmartCard ) == 0 )
-        {
-            sim_inserted = 1;
-            printf( "-I- Smartcard inserted\n\r" ) ;
-            CCID_Insertion();
-        }
-        else
-        {
-            sim_inserted = 0;
-            printf( "-I- Smartcard removed\n\r" ) ;
-            CCID_Removal();
-        }
+        sim_inserted = 1;
+        printf( "-I- Smartcard inserted\n\r" ) ;
+        CCID_Insertion();
+    }
+    else
+    {
+        sim_inserted = 0;
+        printf( "-I- Smartcard removed\n\r" ) ;
+        CCID_Removal();
     }
 }
 

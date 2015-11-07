@@ -49,7 +49,7 @@ static const unsigned char langDesc[] = {
 
 const unsigned char productStringDescriptor[] = {
 
-    USBStringDescriptor_LENGTH(8),
+    USBStringDescriptor_LENGTH(10),
     USBGenericDescriptor_STRING,
     USBStringDescriptor_UNICODE('S'),
     USBStringDescriptor_UNICODE('I'),
@@ -59,11 +59,13 @@ const unsigned char productStringDescriptor[] = {
     USBStringDescriptor_UNICODE('a'),
     USBStringDescriptor_UNICODE('c'),
     USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('2'),
 };
 
 const unsigned char snifferConfigStringDescriptor[] = {
 
-    USBStringDescriptor_LENGTH(15),
+    USBStringDescriptor_LENGTH(16),
     USBGenericDescriptor_STRING,
     USBStringDescriptor_UNICODE('S'),
     USBStringDescriptor_UNICODE('I'),
@@ -73,6 +75,7 @@ const unsigned char snifferConfigStringDescriptor[] = {
     USBStringDescriptor_UNICODE('a'),
     USBStringDescriptor_UNICODE('c'),
     USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE(' '),
     USBStringDescriptor_UNICODE('S'),
     USBStringDescriptor_UNICODE('n'),
     USBStringDescriptor_UNICODE('i'),
@@ -84,7 +87,7 @@ const unsigned char snifferConfigStringDescriptor[] = {
 
 const unsigned char CCIDConfigStringDescriptor[] = {
 
-    USBStringDescriptor_LENGTH(12),
+    USBStringDescriptor_LENGTH(13),
     USBGenericDescriptor_STRING,
     USBStringDescriptor_UNICODE('S'),
     USBStringDescriptor_UNICODE('I'),
@@ -94,6 +97,7 @@ const unsigned char CCIDConfigStringDescriptor[] = {
     USBStringDescriptor_UNICODE('a'),
     USBStringDescriptor_UNICODE('c'),
     USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE(' '),
     USBStringDescriptor_UNICODE('C'),
     USBStringDescriptor_UNICODE('C'),
     USBStringDescriptor_UNICODE('I'),
@@ -101,6 +105,27 @@ const unsigned char CCIDConfigStringDescriptor[] = {
 };
 
 const unsigned char phoneConfigStringDescriptor[] = {
+
+    USBStringDescriptor_LENGTH(14),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_UNICODE('S'),
+    USBStringDescriptor_UNICODE('I'),
+    USBStringDescriptor_UNICODE('M'),
+    USBStringDescriptor_UNICODE('t'),
+    USBStringDescriptor_UNICODE('r'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('c'),
+    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('P'),
+    USBStringDescriptor_UNICODE('h'),
+    USBStringDescriptor_UNICODE('o'),
+    USBStringDescriptor_UNICODE('n'),
+    USBStringDescriptor_UNICODE('e'),
+};
+
+
+const unsigned char MITMConfigStringDescriptor[] = {
 
     USBStringDescriptor_LENGTH(13),
     USBGenericDescriptor_STRING,
@@ -112,26 +137,7 @@ const unsigned char phoneConfigStringDescriptor[] = {
     USBStringDescriptor_UNICODE('a'),
     USBStringDescriptor_UNICODE('c'),
     USBStringDescriptor_UNICODE('e'),
-    USBStringDescriptor_UNICODE('P'),
-    USBStringDescriptor_UNICODE('h'),
-    USBStringDescriptor_UNICODE('o'),
-    USBStringDescriptor_UNICODE('n'),
-    USBStringDescriptor_UNICODE('e'),
-};
-
-
-const unsigned char MITMConfigStringDescriptor[] = {
-
-    USBStringDescriptor_LENGTH(12),
-    USBGenericDescriptor_STRING,
-    USBStringDescriptor_UNICODE('S'),
-    USBStringDescriptor_UNICODE('I'),
-    USBStringDescriptor_UNICODE('M'),
-    USBStringDescriptor_UNICODE('t'),
-    USBStringDescriptor_UNICODE('r'),
-    USBStringDescriptor_UNICODE('a'),
-    USBStringDescriptor_UNICODE('c'),
-    USBStringDescriptor_UNICODE('e'),
+    USBStringDescriptor_UNICODE(' '),
     USBStringDescriptor_UNICODE('M'),
     USBStringDescriptor_UNICODE('I'),
     USBStringDescriptor_UNICODE('T'),

@@ -47,6 +47,36 @@ static const unsigned char langDesc[] = {
     USBStringDescriptor_ENGLISH_US
 };
 
+const unsigned char manufStringDescriptor[] = {
+
+    USBStringDescriptor_LENGTH(24),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_UNICODE('s'),
+    USBStringDescriptor_UNICODE('y'),
+    USBStringDescriptor_UNICODE('s'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE('o'),
+    USBStringDescriptor_UNICODE('c'),
+    USBStringDescriptor_UNICODE('o'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('-'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('s'),
+    USBStringDescriptor_UNICODE('.'),
+    USBStringDescriptor_UNICODE('f'),
+    USBStringDescriptor_UNICODE('.'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE('.'),
+    USBStringDescriptor_UNICODE('c'),
+    USBStringDescriptor_UNICODE('.'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('G'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE('b'),
+    USBStringDescriptor_UNICODE('H'),
+};
+
 const unsigned char productStringDescriptor[] = {
 
     USBStringDescriptor_LENGTH(10),
@@ -145,17 +175,18 @@ const unsigned char MITMConfigStringDescriptor[] = {
 };
 
 enum strDescNum {
-    PRODUCT_STRING = 1, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
+    PRODUCT_STRING = 1, MANUF_STR, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
 };
 
 /** List of string descriptors used by the device */
 static const unsigned char *stringDescriptors[] = {
     langDesc,
-    productStringDescriptor,
-    snifferConfigStringDescriptor,
-    CCIDConfigStringDescriptor,
-    phoneConfigStringDescriptor,
-    MITMConfigStringDescriptor
+    [PRODUCT_STRING]	= productStringDescriptor,
+    [MANUF_STR]	= manufStringDescriptor,
+    [SNIFFER_CONF_STR] 	= snifferConfigStringDescriptor,
+    [CCID_CONF_STR] 	= CCIDConfigStringDescriptor,
+    [PHONE_CONF_STR]	= phoneConfigStringDescriptor,
+    [MITM_CONF_STR]	= MITMConfigStringDescriptor
 };
 
 /*------------------------------------------------------------------------------
@@ -573,7 +604,7 @@ const USBDeviceDescriptor deviceDescriptor = {
     SIMTRACE_VENDOR_ID,
     SIMTRACE_PRODUCT_ID,
     1, /* Release number */
-    0, /* No string descriptor for manufacturer */
+    MANUF_STR, /* Indesx of manufacturer string descriptor */
     PRODUCT_STRING, /* Index of product string descriptor */
     0, /* No string descriptor for serial number */
     4 /* Device has 4 possible configurations */

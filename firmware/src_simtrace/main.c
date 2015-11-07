@@ -9,9 +9,13 @@
  *         Internal variables
  *------------------------------------------------------------------------------*/
 typedef struct {
+    /* static initialization, called whether or not the usb config is active */
     void (* configure) ( void );
+    /* initialization function after the config was selected */
     void (* init) ( void );
+    /* de-initialization before selecting new config */
     void (* exit) ( void );
+    /* main loop content for given configuration */
     void (* run) ( void );
 } conf_func;
 

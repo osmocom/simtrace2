@@ -29,7 +29,6 @@ extern volatile ringbuf sim_rcv_buf;
 
 extern volatile bool rcvdChar;
 extern volatile uint32_t char_stat;
-extern volatile enum confNum simtrace_config;
 
 extern const Pin pinPhoneRST;
 

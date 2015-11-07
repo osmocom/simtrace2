@@ -51,7 +51,17 @@ static const conf_func config_func_ptrs[] = {
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-volatile enum confNum simtrace_config = CFG_NUM_SNIFF;
+static volatile enum confNum simtrace_config = CFG_NUM_SNIFF;
+
+/*----------------------------------------------------------------------------
+ *       Callbacks
+ *----------------------------------------------------------------------------*/
+
+void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
+{
+    TRACE_INFO_WP("cfgChanged%d ", cfgnum);
+    simtrace_config = cfgnum;
+}
 
 /*------------------------------------------------------------------------------
  *        Main

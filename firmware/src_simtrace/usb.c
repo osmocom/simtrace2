@@ -596,17 +596,6 @@ const USBDDriverDescriptors driverDescriptors = {
 
 
 /*----------------------------------------------------------------------------
- *       Callbacks
- *----------------------------------------------------------------------------*/
-
-void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
-{
-    TRACE_INFO_WP("cfgChanged%d ", cfgnum);
-    simtrace_config = cfgnum;
-}
-
-
-/*----------------------------------------------------------------------------
  *        Functions 
  *----------------------------------------------------------------------------*/
 

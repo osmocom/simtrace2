@@ -19,7 +19,7 @@ typedef struct {
     void (* run) ( void );
 } conf_func;
 
-conf_func config_func_ptrs[] = {
+static const conf_func config_func_ptrs[] = {
 	/* array slot 0 is empty, usb configs start at 1 */
 	[CFG_NUM_SNIFF] = {
 		.configure = Sniffer_configure,

@@ -20,10 +20,31 @@ typedef struct {
 } conf_func;
 
 conf_func config_func_ptrs[] = {
-    {Sniffer_configure, Sniffer_init, Sniffer_exit, Sniffer_run},  /*  CFG_NUM_SNIFF */
-    {CCID_configure, CCID_init, CCID_exit, CCID_run},  /*  CFG_NUM_CCID */
-    {Phone_configure, Phone_init, Phone_exit, Phone_run},  /* CFG_NUM_PHONE */
-    {MITM_configure, MITM_init, MITM_exit, MITM_run},  /* CFG_NUM_MITM */
+	/* array slot 0 is empty, usb configs start at 1 */
+	[CFG_NUM_SNIFF] = {
+		.configure = Sniffer_configure,
+		.init = Sniffer_init,
+		.exit = Sniffer_exit,
+		.run = Sniffer_run,
+	},
+	[CFG_NUM_CCID] = {
+		.configure = CCID_configure,
+		.init = CCID_init,
+		.exit = CCID_exit,
+		.run = CCID_run,
+	},
+	[CFG_NUM_PHONE] = {
+		.configure = Phone_configure,
+		.init = Phone_init,
+		.exit = Phone_exit,
+		.run = Phone_run,
+	},
+	[CFG_NUM_MITM] = {
+		.configure = MITM_configure,
+		.init = MITM_init,
+		.exit = MITM_exit,
+		.run = MITM_run
+	},
 };
 
 
@@ -62,12 +83,12 @@ extern int main( void )
         i++;
     }
 
-    for (i = 0; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
+    for (i = 1; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
     {
         config_func_ptrs[i].configure();
     }
 
-    config_func_ptrs[simtrace_config-1].init();
+    config_func_ptrs[simtrace_config].init();
     last_simtrace_config = simtrace_config;
 
     printf("%s", "Start\n\r");
@@ -89,11 +110,11 @@ extern int main( void )
 
 
         if (last_simtrace_config != simtrace_config) {
-            config_func_ptrs[last_simtrace_config-1].exit();
-            config_func_ptrs[simtrace_config-1].init();
+            config_func_ptrs[last_simtrace_config].exit();
+            config_func_ptrs[simtrace_config].init();
             last_simtrace_config = simtrace_config;
         } else {
-            config_func_ptrs[simtrace_config-1].run();
+            config_func_ptrs[simtrace_config].run();
         }
     }
 }

@@ -101,8 +101,8 @@ static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE
 static uint8_t host_to_sim_buf[BUFLEN];
 static bool change_fidi = false;
 
-void receive_from_host( void );
-void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+static void receive_from_host( void );
+static void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     if (status != USBD_STATUS_SUCCESS) {
         TRACE_ERROR("USB err status: %d (%s)\n", __FUNCTION__, status);
@@ -135,7 +135,7 @@ void sendResponse_to_phone( uint8_t *pArg, uint8_t status, uint32_t transferred,
     receive_from_host();
 }
 
-void receive_from_host()
+static void receive_from_host()
 {
     int ret;
     if ((ret = USBD_Read(PHONE_DATAOUT, &host_to_sim_buf, sizeof(host_to_sim_buf),

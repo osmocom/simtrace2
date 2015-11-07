@@ -5,7 +5,7 @@ static bool check_for_pts = false;
 
 static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
 
-void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+static void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     if (status != USBD_STATUS_SUCCESS) {
         TRACE_ERROR("USB err status: %d(%s)\n", __FUNCTION__, status);
@@ -14,7 +14,7 @@ void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uin
     TRACE_DEBUG("WR_CB\n");
 }
 
-int send_to_host()
+static int send_to_host()
 {
     static uint8_t msg[RING_BUFLEN];
     int ret = 0;

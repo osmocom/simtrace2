@@ -149,7 +149,7 @@ enum strDescNum {
 };
 
 /** List of string descriptors used by the device */
-const unsigned char *stringDescriptors[] = {
+static const unsigned char *stringDescriptors[] = {
     langDesc,
     productStringDescriptor,
     snifferConfigStringDescriptor,
@@ -173,7 +173,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorSniffer;
 
-const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffer = {
+static const SIMTraceDriverConfigurationDescriptorSniffer configurationDescriptorSniffer = {
     /* Standard configuration descriptor */
     {
         sizeof(USBConfigurationDescriptor),
@@ -252,7 +252,7 @@ typedef struct {
 } __attribute__ ((packed)) CCIDDriverConfigurationDescriptors;
 */
 
-const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
+static const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
 
     // Standard USB configuration descriptor
     {
@@ -349,7 +349,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
     USBEndpointDescriptor       phone_interruptIn;
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorPhone;
 
-const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = {
+static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = {
     /* Standard configuration descriptor */
     {
         sizeof(USBConfigurationDescriptor),
@@ -429,7 +429,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorMITM;
 
-const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
+static const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMITM = {
     /* Standard configuration descriptor */
     {
         sizeof(USBConfigurationDescriptor),
@@ -587,7 +587,7 @@ const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
 };
 
 /* AT91SAM3S only supports full speed, but not high speed USB */
-const USBDDriverDescriptors driverDescriptors = {
+static const USBDDriverDescriptors driverDescriptors = {
     &deviceDescriptor,
     (const USBConfigurationDescriptor **) &(configurationDescriptorsArr),   /* first full-speed configuration descriptor */
     0, /* No full-speed device qualifier descriptor */

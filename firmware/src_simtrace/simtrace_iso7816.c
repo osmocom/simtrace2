@@ -43,7 +43,7 @@ volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
-void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+static void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
 {
     printf("rstCB\n\r");
     PIO_EnableIt( &pinPhoneRST ) ;

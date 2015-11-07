@@ -284,7 +284,7 @@ static const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
         CCID_DECRIPTOR_TYPE,    // bDescriptorType:Functional descriptor type
         CCID1_10,               // bcdCCID: CCID version
         0,               // bMaxSlotIndex: Value 0 indicates that one slot is supported
-        VOLTS_5_0,       // bVoltageSupport
+        VOLTS_3_0,       // bVoltageSupport
         (1 << PROTOCOL_TO),     // dwProtocols
         3580,            // dwDefaultClock
         3580,            // dwMaxClock
@@ -460,7 +460,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMI
         CCID_DECRIPTOR_TYPE,    // bDescriptorType:Functional descriptor type
         CCID1_10,               // bcdCCID: CCID version
         0,               // bMaxSlotIndex: Value 0 indicates that one slot is supported
-        VOLTS_5_0,       // bVoltageSupport
+        VOLTS_3_0,       // bVoltageSupport
         (1 << PROTOCOL_TO),     // dwProtocols
         3580,            // dwDefaultClock
         3580,            // dwMaxClock

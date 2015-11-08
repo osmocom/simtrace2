@@ -20,9 +20,8 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include "utils.h"
 #include "iso7816_fidi.h"
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* Table 7 of ISO 7816-3:2006 */
 static const uint16_t fi_table[] = {

@@ -58,7 +58,6 @@ static const Pin pinsBus[]    = {PINS_BUS_DEFAULT};
 static const Pin pinsPower[] = {PWR_PINS};
 /** ISO7816 RST pin */
 static const Pin pinIso7816RstMC  = PIN_ISO7816_RSTMC;
-static uint8_t sim_inserted = 0;
 
 static struct Usart_info usart_info = {.base = USART_SIM, .id = ID_USART_SIM, .state = USART_RCV};
 
@@ -81,14 +80,10 @@ static void ISR_PioSmartCard( const Pin *pPin )
      */
     if ( PIO_Get( &pinSmartCard ) == 0 )
     {
-        sim_inserted = 1;
-        printf( "-I- Smartcard inserted\n\r" ) ;
         CCID_Insertion();
     }
     else
     {
-        sim_inserted = 0;
-        printf( "-I- Smartcard removed\n\r" ) ;
         CCID_Removal();
     }
 }

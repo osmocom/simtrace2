@@ -1,98 +1,49 @@
-import usb.core
-import usb.util
+#!/usr/bin/env python
+
 import array
-
-from ccid_raw import SmartcardConnection
-from smartcard_emulator import SmartCardEmulator
-from gsmtap import gsmtap_send_apdu
-
-from contextlib import closing
-
-from util import HEX
 from constants import *
-from apdu_split import Apdu_splitter, apdu_states
 
-from replace import replace
 
-def pattern_match(inpt):
-    print("Matching inpt", inpt)
-    if (inpt == ATR_SYSMOCOM1) or (inpt == ATR_STRANGE_SIM):
-        print("ATR: ", inpt)
-        return NEW_ATR
-    elif (inpt == CMD_SEL_FILE):
-        print("CMD_SEL_FILE:", inpt)
-        return CMD_SEL_ROOT
-    elif (inpt == CMD_GET_DATA):
-        print("CMD_DATA:", inpt)
-        return CMD_SEL_ROOT
-    else:
-        return inpt
+# Address book entries
+name = 'deine mudda'
+phone = '0123456789abcdef'
 
-def poll_ep(dev, ep):
-    try:
-        return dev.read(ep, 64, 10)
-    except usb.core.USBError as e:
-        if e.errno != ERR_TIMEOUT:
-            raise
-        return None
+states = {ATR, PTS_BUF, APDU_INS, SIM_DATA}
 
-def write_phone(dev, resp):
-    print("WR: ", HEX(resp))
-    dev.write(PHONE_WR, resp, 10)
+class MitM:
+    def attack(self, state, data):
+        print(replace.last_req)
+        if data is None:
+            raise MITMReplaceError
+        else:
+            try:
+                if data[0] == 0xA0:
+                    print("INS: ", hex(data[1]))
+                    replace.last_req = data
+                    return data
 
-def do_mitm(dev, sim_emul=True):
-    if sim_emul == True:
-        my_class = SmartCardEmulator
-    else:
-        my_class = SmartcardConnection
-    with closing(my_class()) as sm_con:
-        atr = sm_con.getATR()
+                if data[0] == 0x3B:
+                    return data
+                    #print("*** Replace ATR")
+                    #return array('B', NEW_ATR)
+                elif data[0] == 0x9F:
+                    return data
+    #                print("*** Replace return val")
+    #                return array('B', [0x60, 0x00])
+                elif replace.last_req[1:5] == array('B', [0xB2, 0x01, 0x04, 0x1A]):   # phone book request
+                    print("*** Replace phone book")
+    #                return array('B',  [0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0xff, 0xff, 0xff, 0xff, 0x09, 0x81, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xff, 0xff, 0xff, 0xff, 0x90, 0x00])
+                    resp = map(ord, name) + ([0xff]*(12-len(name))) + [len(name) + 1] + [0x81]
+                    for x in range(1,len(phone)/2+1):
+                        list.append(resp, int(phone[x*2-2:2*x:], 16))
+                    resp += ([0xff]*(replace.last_req[4]-len(resp))) + [0x90, 0x00]
+                    return array('B', resp)
+            except ValueError:
+                print("*** Value error! ")
+        return data
 
-        apdus = []
-        apdu = Apdu_splitter()
+replace.last_req = array('B')
 
-        while True:
-            cmd = poll_ep(dev, PHONE_INT)
-            if cmd is not None:
-                print("Int line ", HEX(cmd))
-                assert cmd[0] == ord('R')
-# FIXME: restart card anyways?
-#               sm_con.reset_card()
-                print("Write atr: ", HEX(atr))
-                write_phone(dev, replace(atr))
-                apdus = []
-                apdu = Apdu_splitter()
-
-            cmd = poll_ep(dev, PHONE_RD)
-            if cmd is not None:
-                print("RD: ", HEX(cmd))
-                for c in cmd:
-                    if apdu.state == apdu_states.APDU_S_FIN:
-                        apdus.append(apdu)
-                        gsmtap_send_apdu(apdu.buf)
-                        apdu = Apdu_splitter()
-
-                    apdu.split(c)
-                    if apdu.state == apdu_states.APDU_S_FIN and apdu.pts_buf == [0xff, 0x00, 0xff]:
-                        #sim_data = sm_con.send_receive_cmd(apdu.pts_buf)
-                        #write_phone(dev,  replace(array('B', sim_data)))
-                        write_phone(dev,  replace(array('B', apdu.pts_buf)))
-                        continue;
-
-                    if apdu.state == apdu_states.APDU_S_SW1:
-                        if apdu.data is not None and len(apdu.data) == 0:
-                            # FIXME: implement other ACK types
-                            write_phone(dev,  replace(array('B', [apdu.ins])))
-                            apdu.split(apdu.ins)
-                        else:
-                            sim_data = sm_con.send_receive_cmd(apdu.buf)
-                            write_phone(dev, replace(sim_data))
-                            for c in sim_data:
-                                apdu.split(c)
-                    if apdu.state == apdu_states.APDU_S_SEND_DATA:
-                        sim_data = sm_con.send_receive_cmd(replace(apdu.buf))
-                        #sim_data.insert(0, apdu.ins)
-                        write_phone(dev, replace(sim_data))
-                        #apdu.state = apdu_states.APDU_S_SW1
-                        for c in sim_data:
-                            apdu.split(c)
+if __name__ == '__main__':
+    print("Replacing PHONE_BOOK_REQ", PHONE_BOOK_REQ, "with", replace(PHONE_BOOK_REQ))
+    print("Replacing PHONE_BOOK_RESP", PHONE_BOOK_RESP, "with", replace(PHONE_BOOK_RESP))

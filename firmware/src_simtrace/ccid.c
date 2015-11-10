@@ -153,10 +153,10 @@ void CCID_init( void )
     /*  Decode ATR and print it */
     ISO7816_Decode_ATR( pAtr ) ;
 
-    // FIXME. what if smcard is not inserted?
     if(PIO_Get(&pinSmartCard) == 0) {
-        printf("SIM card inserted\n\r");
         CCID_Insertion();
+    } else {
+        CCID_Removal();
     }
 }
 

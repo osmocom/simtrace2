@@ -73,12 +73,13 @@ enum pts_state {
 #define _PTS3	4
 #define _PCK	5
 
+/* T-PDU state machine states */
 enum tpdu_state {
-	TPDU_S_WAIT_CLA,
-	TPDU_S_WAIT_INS,
-	TPDU_S_WAIT_P1,
-	TPDU_S_WAIT_P2,
-	TPDU_S_WAIT_P3,
+	TPDU_S_WAIT_CLA,	/* waiting for CLA byte from reader */
+	TPDU_S_WAIT_INS,	/* waiting for INS byte from reader */
+	TPDU_S_WAIT_P1,		/* waiting for P1 byte from reader */
+	TPDU_S_WAIT_P2,		/* waiting for P2 byte from reader */
+	TPDU_S_WAIT_P3,		/* waiting for P3 byte from reader */
 	TPDU_S_WAIT_PB,		/* waiting for Tx of procedure byte */
 	TPDU_S_WAIT_RX,		/* waiitng for more data from reader */
 	TPDU_S_WAIT_TX,		/* waiting for more data to reader */
@@ -98,7 +99,7 @@ struct card_handle {
 	uint8_t in_reset;	/* 1 = RST low, 0 = RST high */
 	uint8_t clocked;	/* 1 = active, 0 = inactive */
 
-	/* timing */
+	/* timing parameters, from PTS */
 	uint8_t fi;
 	uint8_t di;
 	uint8_t wi;
@@ -120,18 +121,18 @@ struct card_handle {
 	/* PPS / PTS support */
 	struct {
 		enum pts_state state;
-		uint8_t req[6];
-		uint8_t resp[6];
+		uint8_t req[6];		/* request bytes */
+		uint8_t resp[6];	/* response bytes */
 	} pts;
 
 	/* TPDU */
 	struct {
 		enum tpdu_state state;
-		uint8_t hdr[5];
+		uint8_t hdr[5];		/* CLA INS P1 P2 P3 */
 	} tpdu;
 
-	struct req_ctx *uart_rx_ctx;
-	struct req_ctx *uart_tx_ctx;
+	struct req_ctx *uart_rx_ctx;	/* UART RX -> USB TX */
+	struct req_ctx *uart_tx_ctx;	/* USB RX -> UART TX */
 
 	struct {
 		uint32_t tx_bytes;

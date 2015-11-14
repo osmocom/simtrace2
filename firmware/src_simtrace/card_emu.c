@@ -371,17 +371,34 @@ static int get_byte_pts(struct card_handle *ch, uint8_t *byte)
  * TPDU handling
  **********************************************************************/
 
+
+/* compute number of data bytes according to Chapter 10.3.2 of 7816-3 */
+static unsigned int t0_num_data_bytes(uint8_t p3, int reader_to_card)
+{
+	if (reader_to_card) {
+		return p3;
+	} else {
+		if (p3 == 0)
+			return 256;
+		else
+			return p3;
+	}
+}
+
 /* add a just-received TPDU byte (from reader) to USB buffer */
-static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
+static enum iso7816_3_card_state add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 {
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_rx_data *rd;
+	unsigned int num_data_bytes = t0_num_data_bytes(ch->tpdu.hdr[_P3], 0);
 
 	/* ensure we have a buffer */
 	if (!ch->uart_rx_ctx) {
-		rctx = ch->uart_rx_ctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-		if (!ch->uart_rx_ctx)
+		rctx = ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+		if (!ch->uart_rx_ctx) {
+			TRACE_DEBUG("Received UART byte but unable to allocate Rx Buf\n");
 			return;
+		}
 		rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
 		cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
 		rctx->tot_len = sizeof(*rd);
@@ -395,8 +412,14 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 	rctx->tot_len++;
 
 	/* check if the buffer is full. If so, send it */
-	if (rctx->tot_len >= rctx->size)
+	if (rctx->tot_len >= sizeof(*rd) + num_data_bytes) {
+		rd->flags |= CEMU_DATA_F_FINAL;
 		flush_rx_buffer(ch);
+		return ISO_S_WAIT_TPDU;
+	} else if (rctx->tot_len >= rctx->size)
+		flush_rx_buffer(ch);
+
+	return ISO_S_IN_TPDU;
 }
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
@@ -459,7 +482,7 @@ static void send_tpdu_header(struct card_handle *ch)
 	}
 
 	/* ensure we have a new buffer */
-	ch->uart_rx_ctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+	ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
 	if (!ch->uart_rx_ctx)
 		return;
 	rctx = ch->uart_rx_ctx;
@@ -484,31 +507,34 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 	switch (ch->tpdu.state) {
 	case TPDU_S_WAIT_CLA:
 		ch->tpdu.hdr[_CLA] = byte;
+		set_tpdu_state(ch, next_tpdu_state(ch));
 		break;
 	case TPDU_S_WAIT_INS:
 		ch->tpdu.hdr[_INS] = byte;
+		set_tpdu_state(ch, next_tpdu_state(ch));
 		break;
 	case TPDU_S_WAIT_P1:
 		ch->tpdu.hdr[_P1] = byte;
+		set_tpdu_state(ch, next_tpdu_state(ch));
 		break;
 	case TPDU_S_WAIT_P2:
 		ch->tpdu.hdr[_P2] = byte;
+		set_tpdu_state(ch, next_tpdu_state(ch));
 		break;
 	case TPDU_S_WAIT_P3:
 		ch->tpdu.hdr[_P3] = byte;
+		set_tpdu_state(ch, next_tpdu_state(ch));
 		/* FIXME: start timer to transmit further 0x60 */
 		/* send the TPDU header as part of a procedure byte
 		 * request to the USB host */
 		send_tpdu_header(ch);
 		break;
 	case TPDU_S_WAIT_RX:
-		add_tpdu_byte(ch, byte);
-		break;
+		return add_tpdu_byte(ch, byte);
 	default:
 		TRACE_DEBUG("process_byte_tpdu() in invalid state %u\n",
 			    ch->tpdu.state);
 	}
-	set_tpdu_state(ch, next_tpdu_state(ch));
 
 	/* ensure we stay in TPDU ISO state */
 	return ISO_S_IN_TPDU;
@@ -523,7 +549,7 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 	/* ensure we are aware of any data that might be pending for
 	 * transmit */
 	if (!ch->uart_tx_ctx) {
-		ch->uart_tx_ctx = req_ctx_find_get(1, RCTX_S_UART_TX_PENDING,
+		ch->uart_tx_ctx = req_ctx_find_get(0, RCTX_S_UART_TX_PENDING,
 						   RCTX_S_UART_TX_BUSY);
 		if (!ch->uart_tx_ctx)
 			return 0;
@@ -536,7 +562,7 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 	td = (struct cardemu_usb_msg_tx_data *) rctx->data;
 
 #if 0
-	/* this must happen _after_ the byte has been transmittd */
+	/* FIXME: this must happen _after_ the byte has been transmittd */
 	switch (ch->tpdu.state) {
 	case TPDU_S_WAIT_PB:
 		if (td->flags & CEMU_DATA_F_PB_AND_TX)
@@ -592,6 +618,8 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 	case ISO_S_WAIT_CLK:
 	case ISO_S_WAIT_RST:
 	case ISO_S_WAIT_ATR:
+		TRACE_DEBUG("Received UART char in 7816 state %u\n",
+				ch->state);
 		/* we shouldn't receive any data from the reader yet! */
 		break;
 	case ISO_S_WAIT_TPDU:
@@ -640,6 +668,8 @@ int card_emu_get_tx_byte(struct card_handle *ch, uint8_t *byte)
 	if (rc)
 		ch->stats.tx_bytes++;
 
+	/* if we return 0 here, the UART needs to disable transmit-ready
+	 * interrupts */
 	return rc;
 }
 

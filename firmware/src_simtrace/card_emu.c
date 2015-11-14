@@ -299,41 +299,42 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 }
 
 /* return a single byte to be transmitted to the reader */
-static int get_byte_pps(struct card_handle *ch, uint8_t *byte)
+static int get_byte_pts(struct card_handle *ch, uint8_t *byte)
 {
-	/* FIXME */
-#if 0
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_RESP_PTSS:
-		ch->pts.resp[_PTSS] = byte;
+		*byte = ch->pts.resp[_PTSS];
 		break;
 	case PTS_S_WAIT_RESP_PTS0:
-		ch->pts.resp[_PTS0] = byte;
+		*byte = ch->pts.resp[_PTS0];
 		break;
 	case PTS_S_WAIT_RESP_PTS1:
+		*byte = ch->pts.resp[_PTS1];
 		/* This must be TA1 */
-		ch->fi = byte >> 4;
-		ch->di = byte & 0xf;
+		ch->fi = *byte >> 4;
+		ch->di = *byte & 0xf;
 		TRACE_DEBUG("found Fi=%u Di=%u\n", ch->fi, ch->di);
-		ch->sh.flags |= SIMTRACE_FLAG_PPS_FIDI;
-		ch->pts.resp[_PTS1] = byte;
+		//ch->sh.flags |= SIMTRACE_FLAG_PPS_FIDI;
 		break;
 	case PTS_S_WAIT_RESP_PTS2:
-		ch->pts.resp[_PTS2] = byte;
+		*byte = ch->pts.resp[_PTS2];
 		break;
 	case PTS_S_WAIT_RESP_PTS3:
-		ch->pts.resp[_PTS3] = byte;
+		*byte = ch->pts.resp[_PTS3];
 		break;
 	case PTS_S_WAIT_RESP_PCK:
-		ch->pts.resp[_PCK] = byte;
-		/* FIXME: check PCK */
+		*byte = ch->pts.resp[_PCK];
 		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		/* update baud rate generator with Fi/Di */
 		update_fidi(ch);
 		/* Wait for the next TPDU */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
+	default:
+		TRACE_DEBUG("get_byte_pts() in invalid state %u\n",
+			ch->pts.state);
+		break;
 	}
-#endif
+
 	/* calculate the next state and set it */
 	set_pts_state(ch, next_pts_state(ch));
 
@@ -591,7 +592,7 @@ int card_emu_get_tx_byte(struct card_handle *ch, uint8_t *byte)
 		}
 		break;
 	case ISO_S_IN_PTS:
-		rc = get_byte_pps(ch, byte);
+		rc = get_byte_pts(ch, byte);
 		break;
 	case ISO_S_IN_TPDU:
 		rc = get_byte_tpdu(ch, byte);

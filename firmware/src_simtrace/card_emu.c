@@ -141,7 +141,7 @@ struct card_handle {
 	} stats;
 };
 
-static int update_fidi(struct card_handle *ch)
+static void update_fidi(struct card_handle *ch)
 {
 	int rc;
 

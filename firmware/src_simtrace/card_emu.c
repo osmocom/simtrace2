@@ -145,6 +145,26 @@ struct card_handle {
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts);
 static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
 
+static void flush_rx_buffer(struct card_handle *ch)
+{
+	struct req_ctx *rctx;
+	struct cardemu_usb_msg_rx_data *rd;
+
+	rctx = ch->uart_rx_ctx;
+	if (!rctx)
+		return;
+
+	rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
+
+	/* store length of data payload fild in header */
+	rd->hdr.data_len = rctx->idx;
+	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+	ch->uart_rx_ctx = NULL;
+
+	/* FIXME: call into USB code to see if this buffer can
+	 * be transmitted now */
+}
+
 static void update_fidi(struct card_handle *ch)
 {
 	int rc;
@@ -359,7 +379,7 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 
 	/* ensure we have a buffer */
 	if (!ch->uart_rx_ctx) {
-		ch->uart_rx_ctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+		rctx = ch->uart_rx_ctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
 		if (!ch->uart_rx_ctx)
 			return;
 		rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
@@ -375,14 +395,8 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 	rctx->tot_len++;
 
 	/* check if the buffer is full. If so, send it */
-	if (rctx->tot_len >= rctx->size) {
-		/* store length of data payload fild in header */
-		rd->hdr.data_len = rctx->idx;
-		req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-		ch->uart_rx_ctx = NULL;
-		/* FIXME: call into USB code to see if this buffer can
-		 * be transmitted now */
-	}
+	if (rctx->tot_len >= rctx->size)
+		flush_rx_buffer(ch);
 }
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
@@ -441,10 +455,7 @@ static void send_tpdu_header(struct card_handle *ch)
 
 	/* if we already/still have a context, send it off */
 	if (ch->uart_rx_ctx && ch->uart_rx_ctx->idx) {
-		/* FIXME: do we need to initialize the USB protocol
-		 * header? .... */
-		req_ctx_set_state(ch->uart_rx_ctx, RCTX_S_USB_TX_PENDING);
-		ch->uart_rx_ctx = NULL;
+		flush_rx_buffer(ch);
 	}
 
 	/* ensure we have a new buffer */
@@ -462,9 +473,9 @@ static void send_tpdu_header(struct card_handle *ch)
 
 	/* copy TPDU header to data field */
 	memcpy(rd->data, ch->tpdu.hdr, sizeof(ch->tpdu.hdr));
-	rd->hdr.data_len = sizeof(ch->tpdu.hdr);
+	/* rd->data_len is set in flush_rx_buffer() */
 
-	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+	flush_rx_buffer(ch);
 }
 
 static enum iso7816_3_card_state

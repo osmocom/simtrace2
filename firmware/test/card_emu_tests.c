@@ -25,7 +25,23 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 {
-	printf("uart_enable(uart_chan=%u, rxtx=0x%02x)\n", uart_chan, rxtx);
+	char *rts;
+	switch (rxtx) {
+	case 0:
+		rts = "OFF";
+		break;
+	case ENABLE_TX:
+		rts = "TX";
+		break;
+	case ENABLE_RX:
+		rts = "RX";
+		break;
+	default:
+		rts = "unknown";
+		break;
+	};
+
+	printf("uart_enable(uart_chan=%u, %s)\n", uart_chan, rts);
 }
 
 void tc_etu_set_wtime(uint8_t tc_chan, uint16_t wtime)
@@ -124,6 +140,7 @@ static void dump_rctx(struct req_ctx *rctx)
 	}
 }
 
+/* emulate a TPDU header being sent by the reader/phone */
 static void send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 {
 	struct req_ctx *rctx;
@@ -139,9 +156,51 @@ static void send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 	rctx = req_ctx_find_get(1, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
 	assert(rctx);
 	dump_rctx(rctx);
+
+	/* free the req_ctx, indicating it has fully arrived on the host */
+	req_ctx_set_state(rctx, RCTX_S_FREE);
+}
+
+/* emulate a CEMU_USB_MSGT_DT_TX_DATA received from USB */
+static void host_to_device_data(const uint8_t *data, uint16_t len, int continue_rx)
+{
+	struct req_ctx *rctx;
+	struct cardemu_usb_msg_rx_data *rd;
+
+	/* allocate a free req_ctx */
+	rctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
+	assert(rctx);
+
+	/* initialize the header */
+	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
+	rctx->size = sizeof(*rd);
+	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
+	if (continue_rx)
+		rd->flags = CEMU_DATA_F_PB_AND_RX;
+	else
+		rd->flags = CEMU_DATA_F_PB_AND_TX;
+	/* copy data and set length */
+	rd->hdr.data_len = len;
+	memcpy(rd->data, data, len);
+
+	/* hand the req_ctx to the UART transmit code */
+	req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
+}
+
+static int print_tx_chars(struct card_handle *ch)
+{
+	uint8_t byte;
+	int count = 0;
+
+	while (card_emu_get_tx_byte(ch, &byte)) {
+		printf("UART_TX(%02x)\n", byte);
+		count++;
+	}
+	return count;
 }
 
 const uint8_t tpdu_hdr_sel_mf[] = { 0xA0, 0xA4, 0x00, 0x00, 0x02 };
+const uint8_t tpdu_pb_sw[] = { 0xA4, 0x90, 0x00 };
 
 int main(int argc, char **argv)
 {
@@ -152,9 +211,17 @@ int main(int argc, char **argv)
 	ch = card_emu_init(0, 23, 42);
 	assert(ch);
 
+	/* start up the card (VCC/RST, ATR) */
 	io_start_card(ch);
+	assert(!print_tx_chars(ch));
 
+	/* emulate the reader sending a TPDU header */
 	send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
+	assert(!print_tx_chars(ch));
+	/* card emulator sends a response via USB */
+	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), 0);
+	/* obtain any pending tx chars */
+	assert(print_tx_chars(ch) == sizeof(tpdu_pb_sw));
 
 	exit(0);
 }

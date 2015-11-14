@@ -101,8 +101,8 @@ void req_ctx_set_state(struct req_ctx *ctx, uint32_t new_state)
 		return;
 	}
 	local_irq_save(flags);
-	old_state = ctx->state;
 #ifdef REQ_CTX_LISTS
+	old_state = ctx->state;
 	if (ctx->prev)
 		ctx->prev->next = ctx->next;
 	else
@@ -178,7 +178,7 @@ void req_ctx_init(void)
 		req_ctx[i].tot_len = 0;
 		req_ctx[i].data = rctx_data[i];
 		req_ctx[i].state = RCTX_S_FREE;
-		TRACE_DEBUG("SMALL req_ctx[%02i] initialized at %08X, Data: %08X => %08X\n",
+		TRACE_DEBUG("SMALL req_ctx[%02i] initialized at %p, Data: %p => %p\n",
 			i, req_ctx + i, req_ctx[i].data, req_ctx[i].data + RCTX_SIZE_SMALL);
 	}
 
@@ -191,7 +191,7 @@ void req_ctx_init(void)
 		req_ctx[i].tot_len = 0;
 		req_ctx[i].data = rctx_data_large[i];
 		req_ctx[i].state = RCTX_S_FREE;
-		TRACE_DEBUG("LARGE req_ctx[%02i] initialized at %08X, Data: %08X => %08X\n",
+		TRACE_DEBUG("LARGE req_ctx[%02i] initialized at %p, Data: %p => %p\n",
 			i, req_ctx + i, req_ctx[i].data, req_ctx[i].data + RCTX_SIZE_LARGE);
 	}
 #ifdef REQ_CTX_LISTS

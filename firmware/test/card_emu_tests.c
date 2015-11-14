@@ -203,7 +203,7 @@ static int print_tx_chars(struct card_handle *ch)
 }
 
 const uint8_t tpdu_hdr_sel_mf[] = { 0xA0, 0xA4, 0x00, 0x00, 0x00 };
-const uint8_t tpdu_pb_sw[] = { 0xA4, 0x90, 0x00 };
+const uint8_t tpdu_pb_sw[] = { 0x90, 0x00 };
 
 const uint8_t tpdu_hdr_upd_bin[] = { 0xA0, 0xB2, 0x00, 0x00, 0x0A };
 const uint8_t tpdu_body_upd_bin[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 	assert(!print_tx_chars(ch));
 
 	for (i = 0; i < 2; i++) {
-		printf("\n==> transmitting APDU (PB + SW $%u)\n", i);
+		printf("\n==> transmitting APDU (SW $%u)\n", i);
 		/* emulate the reader sending a TPDU header */
 		send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
 		assert(!print_tx_chars(ch));
@@ -259,6 +259,11 @@ int main(int argc, char **argv)
 
 		/* ensure there is no extra data received on usb */
 		assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+
+		/* card emulator sends SW via USB */
+		host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), 0);
+		/* obtain any pending tx chars */
+		assert(print_tx_chars(ch) == sizeof(tpdu_pb_sw));
 
 		/* simulate some clock stop */
 		card_emu_io_statechg(ch, CARD_IO_CLK, 0);

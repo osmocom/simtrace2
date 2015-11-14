@@ -386,7 +386,7 @@ static unsigned int t0_num_data_bytes(uint8_t p3, int reader_to_card)
 }
 
 /* add a just-received TPDU byte (from reader) to USB buffer */
-static enum iso7816_3_card_state add_tpdu_byte(struct card_handle *ch, uint8_t byte)
+static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 {
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_rx_data *rd;
@@ -415,11 +415,10 @@ static enum iso7816_3_card_state add_tpdu_byte(struct card_handle *ch, uint8_t b
 	if (rctx->tot_len >= sizeof(*rd) + num_data_bytes) {
 		rd->flags |= CEMU_DATA_F_FINAL;
 		flush_rx_buffer(ch);
-		return ISO_S_WAIT_TPDU;
+		/* We need to transmit the SW now, */
+		set_tpdu_state(ch, TPDU_S_WAIT_TX);
 	} else if (rctx->tot_len >= rctx->size)
 		flush_rx_buffer(ch);
-
-	return ISO_S_IN_TPDU;
 }
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
@@ -530,7 +529,8 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 		send_tpdu_header(ch);
 		break;
 	case TPDU_S_WAIT_RX:
-		return add_tpdu_byte(ch, byte);
+		add_tpdu_byte(ch, byte);
+		break;
 	default:
 		TRACE_DEBUG("process_byte_tpdu() in invalid state %u\n",
 			    ch->tpdu.state);

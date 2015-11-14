@@ -17,6 +17,7 @@
  *
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
@@ -286,6 +287,10 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		/* FIXME: check PCK */
 		memcpy(ch->pts.resp, ch->pts.req, sizeof(ch->pts.resp));
 		break;
+	default:
+		TRACE_DEBUG("process_byte_pts() in invalid state %u\n",
+			ch->pts.state);
+		break;
 	}
 	/* calculate the next state and set it */
 	set_pts_state(ch, next_pts_state(ch));
@@ -412,6 +417,9 @@ static enum tpdu_state next_tpdu_state(struct card_handle *ch)
 	case TPDU_S_WAIT_TX:
 		return TPDU_S_WAIT_TX;
 	}
+	/* we should never reach here */
+	assert(0);
+	return -1;
 }
 
 static void send_tpdu_header(struct card_handle *ch)

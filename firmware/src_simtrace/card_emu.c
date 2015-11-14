@@ -142,6 +142,8 @@ struct card_handle {
 	} stats;
 };
 
+static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts);
+
 static void update_fidi(struct card_handle *ch)
 {
 	int rc;
@@ -191,6 +193,7 @@ static void card_set_state(struct card_handle *ch,
 		break;
 	case ISO_S_WAIT_TPDU:
 		/* enable the receiver, disable transmitter */
+		set_tpdu_state(ch, TPDU_S_WAIT_CLA);
 		card_emu_uart_enable(ch->uart_chan, ENABLE_RX);
 		break;
 	case ISO_S_IN_ATR:
@@ -429,7 +432,10 @@ static void send_tpdu_header(struct card_handle *ch)
 	struct cardemu_usb_msg_rx_data *rd;
 
 	/* if we already/still have a context, send it off */
-	if (ch->uart_rx_ctx && rctx->idx) {
+	if (ch->uart_rx_ctx && ch->uart_rx_ctx->idx) {
+		/* FIXME: do we need to initialize the USB protocol
+		 * header? .... */
+		req_ctx_set_state(ch->uart_rx_ctx, RCTX_S_USB_TX_PENDING);
 		ch->uart_rx_ctx = NULL;
 	}
 
@@ -528,11 +534,17 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 	/* check if the buffer has now been fully transmitted */
 	if ((rctx->idx >= td->hdr.data_len) ||
 	    (rctx->idx + sizeof(*td) - sizeof(td->hdr) >= rctx->tot_len)) {
+		if (td->flags & CEMU_DATA_F_FINAL) {
+			/* this was the final part of the APDU, go
+			 * back to state one*/
+			card_set_state(ch, ISO_S_WAIT_TPDU);
+		} else {
+			/* FIXME: call into USB code to chec if we need
+			 * to submit a free buffer to accept furthe data
+			 * on bulk out endpoint */
+		}
 		req_ctx_set_state(rctx, RCTX_S_FREE);
 		ch->uart_tx_ctx = NULL;
-		/* FIXME: call into USB code to chec if we need to
-		 * submit a free buffer to accept furthe data on bulk
-		 * out endpoint */
 	}
 
 	return 1;

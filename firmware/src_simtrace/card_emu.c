@@ -540,14 +540,21 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 	/* check if the buffer has now been fully transmitted */
 	if ((rctx->idx >= td->hdr.data_len) ||
 	    (rctx->idx + sizeof(*td) - sizeof(td->hdr) >= rctx->tot_len)) {
-		if (td->flags & CEMU_DATA_F_FINAL) {
-			/* this was the final part of the APDU, go
-			 * back to state one*/
-			card_set_state(ch, ISO_S_WAIT_TPDU);
+		if (td->flags & CEMU_DATA_F_PB_AND_RX) {
+			/* we have just sent the procedure byte and now
+			 * need to continue receiving */
+			set_tpdu_state(ch, TPDU_S_WAIT_RX);
 		} else {
-			/* FIXME: call into USB code to chec if we need
-			 * to submit a free buffer to accept furthe data
-			 * on bulk out endpoint */
+			/* we have transmitted all bytes */
+			if (td->flags & CEMU_DATA_F_FINAL) {
+				/* this was the final part of the APDU, go
+				 * back to state one*/
+				card_set_state(ch, ISO_S_WAIT_TPDU);
+			} else {
+				/* FIXME: call into USB code to chec if we need
+				 * to submit a free buffer to accept
+				 * further data on bulk out endpoint */
+			}
 		}
 		req_ctx_set_state(rctx, RCTX_S_FREE);
 		ch->uart_tx_ctx = NULL;

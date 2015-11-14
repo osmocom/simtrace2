@@ -113,8 +113,10 @@ static void io_start_card(struct card_handle *ch)
 static void send_bytes(struct card_handle *ch, const uint8_t *bytes, unsigned int len)
 {
 	unsigned int i;
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
+		printf("UART_RX(%02x)\n", bytes[i]);
 		card_emu_process_rx_byte(ch, bytes[i]);
+	}
 }
 
 static void dump_rctx(struct req_ctx *rctx)
@@ -148,12 +150,12 @@ static void send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 	/* we don't want a receive context to become available during
 	 * the first four bytes */
 	send_bytes(ch, tpdu_hdr, 4);
-	assert(!req_ctx_find_get(1, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
 
 	send_bytes(ch, tpdu_hdr+4, 1);
 	/* but then after the final byte of the TPDU header, we want a
 	 * receive context to be available for USB transmission */
-	rctx = req_ctx_find_get(1, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
 	assert(rctx);
 	dump_rctx(rctx);
 
@@ -165,20 +167,21 @@ static void send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 static void host_to_device_data(const uint8_t *data, uint16_t len, int continue_rx)
 {
 	struct req_ctx *rctx;
-	struct cardemu_usb_msg_rx_data *rd;
+	struct cardemu_usb_msg_tx_data *rd;
 
 	/* allocate a free req_ctx */
-	rctx = req_ctx_find_get(1, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
+	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
 	assert(rctx);
 
 	/* initialize the header */
 	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
-	rctx->size = sizeof(*rd);
+	rctx->tot_len = sizeof(*rd);
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
+	rd->flags = CEMU_DATA_F_FINAL;
 	if (continue_rx)
-		rd->flags = CEMU_DATA_F_PB_AND_RX;
+		rd->flags |= CEMU_DATA_F_PB_AND_RX;
 	else
-		rd->flags = CEMU_DATA_F_PB_AND_TX;
+		rd->flags |= CEMU_DATA_F_PB_AND_TX;
 	/* copy data and set length */
 	rd->hdr.data_len = len;
 	memcpy(rd->data, data, len);
@@ -199,12 +202,17 @@ static int print_tx_chars(struct card_handle *ch)
 	return count;
 }
 
-const uint8_t tpdu_hdr_sel_mf[] = { 0xA0, 0xA4, 0x00, 0x00, 0x02 };
+const uint8_t tpdu_hdr_sel_mf[] = { 0xA0, 0xA4, 0x00, 0x00, 0x00 };
 const uint8_t tpdu_pb_sw[] = { 0xA4, 0x90, 0x00 };
+
+const uint8_t tpdu_hdr_upd_bin[] = { 0xA0, 0xB2, 0x00, 0x00, 0x0A };
+const uint8_t tpdu_body_upd_bin[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
 
 int main(int argc, char **argv)
 {
 	struct card_handle *ch;
+	struct req_ctx *rctx;
+	unsigned int i;
 
 	req_ctx_init();
 
@@ -215,13 +223,47 @@ int main(int argc, char **argv)
 	io_start_card(ch);
 	assert(!print_tx_chars(ch));
 
-	/* emulate the reader sending a TPDU header */
-	send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
-	assert(!print_tx_chars(ch));
-	/* card emulator sends a response via USB */
-	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), 0);
-	/* obtain any pending tx chars */
-	assert(print_tx_chars(ch) == sizeof(tpdu_pb_sw));
+	for (i = 0; i < 2; i++) {
+		printf("\n==> transmitting APDU (PB + SW $%u)\n", i);
+		/* emulate the reader sending a TPDU header */
+		send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
+		assert(!print_tx_chars(ch));
+		/* card emulator sends a response via USB */
+		host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), 0);
+		/* obtain any pending tx chars */
+		assert(print_tx_chars(ch) == sizeof(tpdu_pb_sw));
+
+		/* simulate some clock stop */
+		card_emu_io_statechg(ch, CARD_IO_CLK, 0);
+		card_emu_io_statechg(ch, CARD_IO_CLK, 1);
+	}
+
+	for (i = 0; i < 2; i++) {
+		printf("\n==> transmitting APDU (PB + RX #%u)\n", i);
+		/* emulate the reader sending a TPDU header */
+		send_tpdu_hdr(ch, tpdu_hdr_upd_bin);
+		assert(!print_tx_chars(ch));
+		/* card emulator sends a response via USB */
+		host_to_device_data(tpdu_hdr_upd_bin+1, 1, 1);
+		/* obtain any pending tx chars */
+		assert(print_tx_chars(ch) == 1);
+
+		/* emulate more characters from reader to card */
+		send_bytes(ch, tpdu_body_upd_bin, sizeof(tpdu_body_upd_bin));
+
+		/* check if we have received them on the USB side */
+		rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+		assert(rctx);
+		dump_rctx(rctx);
+		req_ctx_set_state(rctx, RCTX_S_FREE);
+
+		/* ensure there is no extra data received on usb */
+		assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+
+		/* simulate some clock stop */
+		card_emu_io_statechg(ch, CARD_IO_CLK, 0);
+		card_emu_io_statechg(ch, CARD_IO_CLK, 1);
+	}
 
 	exit(0);
 }

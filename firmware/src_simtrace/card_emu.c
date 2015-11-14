@@ -143,6 +143,7 @@ struct card_handle {
 };
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts);
+static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
 
 static void update_fidi(struct card_handle *ch)
 {
@@ -172,6 +173,7 @@ static void card_set_state(struct card_handle *ch,
 		card_emu_uart_enable(ch->uart_chan, 0);
 		break;
 	case ISO_S_WAIT_ATR:
+		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		/* Reset to initial Fi / Di ratio */
 		ch->fi = 1;
 		ch->di = 1;
@@ -649,8 +651,8 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	case CARD_IO_RST:
 		if (active == 0 && ch->in_reset &&
 		    ch->vcc_active && ch->clocked) {
+			card_set_state(ch, ISO_S_WAIT_ATR);
 			/* FIXME: wait 400 clocks */
-			//card_set_state(ch, ISO_S_WAIT_ATR);
 			card_set_state(ch, ISO_S_IN_ATR);
 		}
 		ch->in_reset = active;

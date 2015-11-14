@@ -385,9 +385,14 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 {
+	if (ch->tpdu.state == new_ts)
+		return;
+
 	TRACE_DEBUG("7816 TPDU state %u -> %u\n", ch->tpdu.state, new_ts);
+
 	switch (new_ts) {
 	case TPDU_S_WAIT_CLA:
+	case TPDU_S_WAIT_RX:
 		card_emu_uart_enable(ch->uart_chan, ENABLE_RX);
 		break;
 	case TPDU_S_WAIT_PB:
@@ -397,6 +402,7 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
 		break;
 	}
+
 	ch->tpdu.state = new_ts;
 }
 

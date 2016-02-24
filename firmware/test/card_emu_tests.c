@@ -19,7 +19,7 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 {
-	printf("TX: 0x%02x\n", byte);
+	printf("UART_TX(%02x)\n", byte);
 	return 1;
 }
 
@@ -56,17 +56,23 @@ void tc_etu_set_etu(uint8_t tc_chan, uint16_t etu)
 
 void tc_etu_init(uint8_t chan_nr, void *handle)
 {
+	printf("tc_etu_init(tc_chan=%u)\n", chan_nr);
 }
 
+void tc_etu_enable(uint8_t chan_nr)
+{
+	printf("tc_etu_enable(tc_chan=%u)\n", chan_nr);
+}
 
+void tc_etu_disable(uint8_t chan_nr)
+{
+	printf("tc_etu_disable(tc_chan=%u)\n", chan_nr);
+}
 
 
 #if 0
 /* process a single byte received from the reader */
 void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte);
-
-/* return a single byte to be transmitted to the reader */
-int card_emu_get_tx_byte(struct card_handle *ch, uint8_t *byte);
 
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active);
@@ -82,28 +88,24 @@ static int verify_atr(struct card_handle *ch)
 	uint8_t byte;
 	unsigned int i;
 
-	printf("receiving + verifying ATR:");
+	printf("receiving + verifying ATR:\n");
 	for (i = 0; i < sizeof(atr); i++) {
-		assert(card_emu_get_tx_byte(ch, &atr[i]) == 1);
-		printf(" %02x", atr[i]);
+		assert(card_emu_tx_byte(ch) == 1);
 	}
-	printf("\n");
-	assert(card_emu_get_tx_byte(ch, &byte) == 0);
+	assert(card_emu_tx_byte(ch) == 0);
 
 	return 1;
 }
 
 static void io_start_card(struct card_handle *ch)
 {
-	uint8_t byte;
-
 	/* bring the card up from the dead */
 	card_emu_io_statechg(ch, CARD_IO_VCC, 1);
-	assert(card_emu_get_tx_byte(ch, &byte) == 0);
+	assert(card_emu_tx_byte(ch) == 0);
 	card_emu_io_statechg(ch, CARD_IO_CLK, 1);
-	assert(card_emu_get_tx_byte(ch, &byte) == 0);
+	assert(card_emu_tx_byte(ch) == 0);
 	card_emu_io_statechg(ch, CARD_IO_RST, 1);
-	assert(card_emu_get_tx_byte(ch, &byte) == 0);
+	assert(card_emu_tx_byte(ch) == 0);
 
 	/* release from reset and verify th ATR */
 	card_emu_io_statechg(ch, CARD_IO_RST, 0);
@@ -195,8 +197,7 @@ static int print_tx_chars(struct card_handle *ch)
 	uint8_t byte;
 	int count = 0;
 
-	while (card_emu_get_tx_byte(ch, &byte)) {
-		printf("UART_TX(%02x)\n", byte);
+	while (card_emu_tx_byte(ch)) {
 		count++;
 	}
 	return count;
@@ -224,7 +225,7 @@ int main(int argc, char **argv)
 	assert(!print_tx_chars(ch));
 
 	for (i = 0; i < 2; i++) {
-		printf("\n==> transmitting APDU (SW $%u)\n", i);
+		printf("\n==> transmitting APDU (SW 90 00 #%u)\n", i);
 		/* emulate the reader sending a TPDU header */
 		send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
 		assert(!print_tx_chars(ch));

@@ -506,7 +506,7 @@ static void send_tpdu_header(struct card_handle *ch)
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
 	rd->flags = CEMU_DATA_F_TPDU_HDR;
 	rctx->tot_len = sizeof(*rd) + sizeof(ch->tpdu.hdr);
-	rctx->idx = 0;
+	rctx->idx = sizeof(ch->tpdu.hdr);
 
 	/* copy TPDU header to data field */
 	memcpy(rd->data, ch->tpdu.hdr, sizeof(ch->tpdu.hdr));

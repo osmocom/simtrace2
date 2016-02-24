@@ -17,10 +17,23 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	return 0;
 }
 
+/* a buffer in which we store those bytes send by the UART towards the card
+ * reader, so we can verify in test cases what was actually written  */
+static uint8_t tx_debug_buf[1024];
+static unsigned int tx_debug_buf_idx;
+
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 {
 	printf("UART_TX(%02x)\n", byte);
+	tx_debug_buf[tx_debug_buf_idx++] = byte;
 	return 1;
+}
+
+static void reader_check_and_clear(const uint8_t *data, unsigned int len)
+{
+	assert(len == tx_debug_buf_idx);
+	assert(!memcmp(tx_debug_buf, data, len));
+	tx_debug_buf_idx = 0;
 }
 
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
@@ -69,23 +82,10 @@ void tc_etu_disable(uint8_t chan_nr)
 	printf("tc_etu_disable(tc_chan=%u)\n", chan_nr);
 }
 
-
-#if 0
-/* process a single byte received from the reader */
-void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte);
-
-/* hardware driver informs us that a card I/O signal has changed */
-void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active);
-
-/* User sets a new ATR to be returned during next card reset */
-int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len);
-#endif
-
+const uint8_t atr[] = { 0x3b, 0x02, 0x14, 0x50 };
 
 static int verify_atr(struct card_handle *ch)
 {
-	uint8_t atr[4];
-	uint8_t byte;
 	unsigned int i;
 
 	printf("receiving + verifying ATR:\n");
@@ -93,12 +93,15 @@ static int verify_atr(struct card_handle *ch)
 		assert(card_emu_tx_byte(ch) == 1);
 	}
 	assert(card_emu_tx_byte(ch) == 0);
+	reader_check_and_clear(atr, sizeof(atr));
 
 	return 1;
 }
 
 static void io_start_card(struct card_handle *ch)
 {
+	card_emu_set_atr(ch, atr, sizeof(atr));
+
 	/* bring the card up from the dead */
 	card_emu_io_statechg(ch, CARD_IO_VCC, 1);
 	assert(card_emu_tx_byte(ch) == 0);
@@ -144,7 +147,7 @@ static void dump_rctx(struct req_ctx *rctx)
 	}
 }
 
-static void get_and_verify_rctx(int state, const char *data, unsigned int len)
+static void get_and_verify_rctx(int state, const uint8_t *data, unsigned int len)
 {
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_tx_data *td;
@@ -202,7 +205,7 @@ static void host_to_device_data(const uint8_t *data, uint16_t len, unsigned int 
 	assert(rctx);
 
 	/* initialize the header */
-	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
+	rd = (struct cardemu_usb_msg_tx_data *) rctx->data;
 	rctx->tot_len = sizeof(*rd) + len;
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
 	rd->flags = flags;
@@ -215,14 +218,17 @@ static void host_to_device_data(const uint8_t *data, uint16_t len, unsigned int 
 }
 
 /* card-transmit any pending characters */
-static int card_tx_print_chars(struct card_handle *ch)
+static int card_tx_verify_chars(struct card_handle *ch, const uint8_t *data, unsigned int data_len)
 {
-	uint8_t byte;
 	int count = 0;
 
 	while (card_emu_tx_byte(ch)) {
 		count++;
 	}
+
+	assert(count == data_len);
+	reader_check_and_clear(data, data_len);
+
 	return count;
 }
 
@@ -237,12 +243,12 @@ test_tpdu_reader2card(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	/* emulate the reader sending a TPDU header */
 	rdr_send_tpdu_hdr(ch, hdr);
 	/* we shouldn't have any pending card-TX yet */
-	assert(!card_tx_print_chars(ch));
+	card_tx_verify_chars(ch, NULL, 0);
 
 	/* card emulator PC sends a singly byte PB response via USB */
 	host_to_device_data(hdr+1, 1, CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_RX);
 	/* card actually sends that single PB */
-	assert(card_tx_print_chars(ch) == 1);
+	card_tx_verify_chars(ch, hdr+1, 1);
 
 	/* emulate more characters from reader to card */
 	reader_send_bytes(ch, body, body_len);
@@ -257,7 +263,7 @@ test_tpdu_reader2card(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
 			    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_TX);
 	/* obtain any pending tx chars */
-	assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
+	card_tx_verify_chars(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw));
 
 	/* simulate some clock stop */
 	card_emu_io_statechg(ch, CARD_IO_CLK, 0);
@@ -271,18 +277,18 @@ test_tpdu_card2reader(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 
 	/* emulate the reader sending a TPDU header */
 	rdr_send_tpdu_hdr(ch, hdr);
-	assert(!card_tx_print_chars(ch));
+	card_tx_verify_chars(ch, NULL, 0);
 
 	/* card emulator PC sends a response PB via USB */
 	host_to_device_data(hdr+1, 1, CEMU_DATA_F_PB_AND_TX);
 
 	/* card actually sends that PB */
-	assert(card_tx_print_chars(ch) == 1);
+	card_tx_verify_chars(ch, hdr+1, 1);
 
 	/* emulate more characters from card to reader */
 	host_to_device_data(body, body_len, 0);
 	/* obtain those bytes as they arrvive on the card */
-	assert(card_tx_print_chars(ch) == body_len);
+	card_tx_verify_chars(ch, body, body_len);
 
 	/* ensure there is no extra data received on usb */
 	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
@@ -291,7 +297,7 @@ test_tpdu_card2reader(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), CEMU_DATA_F_FINAL);
 
 	/* obtain any pending tx chars */
-	assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
+	card_tx_verify_chars(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw));
 
 	/* simulate some clock stop */
 	card_emu_io_statechg(ch, CARD_IO_CLK, 0);
@@ -319,7 +325,7 @@ int main(int argc, char **argv)
 
 	/* start up the card (VCC/RST, ATR) */
 	io_start_card(ch);
-	assert(!card_tx_print_chars(ch));
+	card_tx_verify_chars(ch, NULL, 0);
 
 	for (i = 0; i < 2; i++) {
 		test_tpdu_reader2card(ch, tpdu_hdr_write_rec, tpdu_body_write_rec, sizeof(tpdu_body_write_rec));

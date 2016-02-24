@@ -15,8 +15,8 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 /* process a single byte received from the reader */
 void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte);
 
-/* return a single byte to be transmitted to the reader */
-int card_emu_get_tx_byte(struct card_handle *ch, uint8_t *byte);
+/* transmit a single byte to the reader */
+int card_emu_tx_byte(struct card_handle *ch);
 
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active);

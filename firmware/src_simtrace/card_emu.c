@@ -324,46 +324,61 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 }
 
 /* return a single byte to be transmitted to the reader */
-static int get_byte_pts(struct card_handle *ch, uint8_t *byte)
+static int tx_byte_pts(struct card_handle *ch)
 {
+	uint8_t byte;
+
+	/* 1: Determine the next transmit byte */
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_RESP_PTSS:
-		*byte = ch->pts.resp[_PTSS];
+		byte = ch->pts.resp[_PTSS];
 		break;
 	case PTS_S_WAIT_RESP_PTS0:
-		*byte = ch->pts.resp[_PTS0];
+		byte = ch->pts.resp[_PTS0];
 		break;
 	case PTS_S_WAIT_RESP_PTS1:
-		*byte = ch->pts.resp[_PTS1];
+		byte = ch->pts.resp[_PTS1];
 		/* This must be TA1 */
-		ch->fi = *byte >> 4;
-		ch->di = *byte & 0xf;
+		ch->fi = byte >> 4;
+		ch->di = byte & 0xf;
 		TRACE_DEBUG("found Fi=%u Di=%u\n", ch->fi, ch->di);
-		//ch->sh.flags |= SIMTRACE_FLAG_PPS_FIDI;
 		break;
 	case PTS_S_WAIT_RESP_PTS2:
-		*byte = ch->pts.resp[_PTS2];
+		byte = ch->pts.resp[_PTS2];
 		break;
 	case PTS_S_WAIT_RESP_PTS3:
-		*byte = ch->pts.resp[_PTS3];
+		byte = ch->pts.resp[_PTS3];
 		break;
 	case PTS_S_WAIT_RESP_PCK:
-		*byte = ch->pts.resp[_PCK];
-		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
+		byte = ch->pts.resp[_PCK];
 		/* update baud rate generator with Fi/Di */
 		update_fidi(ch);
-		/* Wait for the next TPDU */
-		card_set_state(ch, ISO_S_WAIT_TPDU);
+		break;
 	default:
 		TRACE_DEBUG("get_byte_pts() in invalid state %u\n",
 			ch->pts.state);
+		return 0;
+	}
+
+	/* 2: Transmit the byte */
+	card_emu_uart_tx(ch->uart_chan, byte);
+
+	/* 3: Update the state */
+
+	switch (ch->pts.state) {
+	case PTS_S_WAIT_RESP_PCK:
+		/* Wait for the next TPDU */
+		card_set_state(ch, ISO_S_WAIT_TPDU);
+		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
+		break;
+	default:
+		/* calculate the next state and set it */
+		set_pts_state(ch, next_pts_state(ch));
 		break;
 	}
 
-	/* calculate the next state and set it */
-	set_pts_state(ch, next_pts_state(ch));
-
-	return 0;
+	/* return number of bytes transmitted */
+	return 1;
 }
 
 
@@ -540,11 +555,12 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 	return ISO_S_IN_TPDU;
 }
 
-/* return a single byte to be transmitted to the reader */
-static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
+/* tx a single byte to be transmitted to the reader */
+static int tx_byte_tpdu(struct card_handle *ch)
 {
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_tx_data *td;
+	uint8_t byte;
 
 	/* ensure we are aware of any data that might be pending for
 	 * transmit */
@@ -561,20 +577,10 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 	rctx = ch->uart_tx_ctx;
 	td = (struct cardemu_usb_msg_tx_data *) rctx->data;
 
-#if 0
-	/* FIXME: this must happen _after_ the byte has been transmittd */
-	switch (ch->tpdu.state) {
-	case TPDU_S_WAIT_PB:
-		if (td->flags & CEMU_DATA_F_PB_AND_TX)
-			set_tpdu_state(ch, TPDU_S_WAIT_TX);
-		else if (td->flags & CEMU_DATA_F_PB_AND_RX)
-			set_tpdu_state(ch, TPDU_S_WAIT_RX);
-		break;
-	}
-#endif
-
 	/* take the next pending byte out of the rctx */
-	*byte = td->data[rctx->idx++];
+	byte = td->data[rctx->idx++];
+
+	card_emu_uart_tx(ch->uart_chan, byte);
 
 	/* check if the buffer has now been fully transmitted */
 	if ((rctx->idx >= td->hdr.data_len) ||
@@ -597,6 +603,16 @@ static int get_byte_tpdu(struct card_handle *ch, uint8_t *byte)
 		}
 		req_ctx_set_state(rctx, RCTX_S_FREE);
 		ch->uart_tx_ctx = NULL;
+	}
+
+	/* this must happen _after_ the byte has been transmittd */
+	switch (ch->tpdu.state) {
+	case TPDU_S_WAIT_PB:
+		if (td->flags & CEMU_DATA_F_PB_AND_TX)
+			set_tpdu_state(ch, TPDU_S_WAIT_TX);
+		else if (td->flags & CEMU_DATA_F_PB_AND_RX)
+			set_tpdu_state(ch, TPDU_S_WAIT_RX);
+		break;
 	}
 
 	return 1;
@@ -642,26 +658,30 @@ out_silent:
 		card_set_state(ch, new_state);
 }
 
-/* return a single byte to be transmitted to the reader */
-int card_emu_get_tx_byte(struct card_handle *ch, uint8_t *byte)
+/* transmit a single byte to the reader */
+int card_emu_tx_byte(struct card_handle *ch)
 {
 	int rc = 0;
 
 	switch (ch->state) {
 	case ISO_S_IN_ATR:
 		if (ch->atr.idx < ch->atr.len) {
-			*byte = ch->atr.atr[ch->atr.idx++];
+			uint8_t byte;
+			byte = ch->atr.atr[ch->atr.idx++];
 			rc = 1;
+
+			card_emu_uart_tx(ch->uart_chan, byte);
+
 			/* detect end of ATR */
 			if (ch->atr.idx >= ch->atr.len)
 				card_set_state(ch, ISO_S_WAIT_TPDU);
 		}
 		break;
 	case ISO_S_IN_PTS:
-		rc = get_byte_pts(ch, byte);
+		rc = tx_byte_pts(ch);
 		break;
 	case ISO_S_IN_TPDU:
-		rc = get_byte_tpdu(ch, byte);
+		rc = tx_byte_tpdu(ch);
 		break;
 	}
 
@@ -678,9 +698,10 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 {
 	switch (io) {
 	case CARD_IO_VCC:
-		if (active == 0)
+		if (active == 0) {
+			tc_etu_disable(ch);
 			card_set_state(ch, ISO_S_WAIT_POWER);
-		else if (active == 1 && ch->vcc_active == 0)
+		} else if (active == 1 && ch->vcc_active == 0)
 			card_set_state(ch, ISO_S_WAIT_CLK);
 		ch->vcc_active = active;
 		break;
@@ -692,9 +713,13 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	case CARD_IO_RST:
 		if (active == 0 && ch->in_reset &&
 		    ch->vcc_active && ch->clocked) {
+			/* enable the TC/ETU counter once reset has been released */
+			tc_etu_enable(ch);
 			card_set_state(ch, ISO_S_WAIT_ATR);
-			/* FIXME: wait 400 clocks */
+			/* FIXME: wait 400 to 40k clock cycles before sending ATR */
 			card_set_state(ch, ISO_S_IN_ATR);
+		} else if (active) {
+			tc_etu_disable(ch);
 		}
 		ch->in_reset = active;
 		break;

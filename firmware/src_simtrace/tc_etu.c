@@ -1,6 +1,6 @@
 /* SIMtrace TC (Timer / Clock) code for ETU tracking */
 
-/* (C) 2006-2015 by Harald Welte <hwelte@hmw-consulting.de>
+/* (C) 2006-2016 by Harald Welte <hwelte@hmw-consulting.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -133,6 +133,22 @@ void tc_etu_set_etu(uint8_t chan_nr, uint16_t etu)
 	recalc_nr_events(te);
 }
 
+void tc_etu_enable(uint8_t chan_nr)
+{
+	struct tc_etu_state *te = get_te(chan_nr);
+
+	te->nr_events = 0;
+	te->chan->TC_CCR = TC_CCR_CLKEN|TC_CCR_SWTRG;
+}
+
+void tc_etu_disable(uint8_t chan_nr)
+{
+	struct tc_etu_state *te = get_te(chan_nr);
+
+	te->nr_events = 0;
+	te->chan->TC_CCR = TC_CCR_CLKDIS;
+}
+
 void tc_etu_init(uint8_t chan_nr, void *handle)
 {
 	struct tc_etu_state *te = get_te(chan_nr);
@@ -186,8 +202,8 @@ void tc_etu_init(uint8_t chan_nr, void *handle)
 
 	tc_etu_set_etu(chan_nr, 372);
 
-	/* enable master clock for TC */
-	te->chan->TC_CCR = TC_CCR_CLKEN;
+	/* start with a disabled clock */
+	tc_etu_disable(chan_nr);
 
 	/* Reset to start timers */
 	TC0->TC_BCR = TC_BCR_SYNC;

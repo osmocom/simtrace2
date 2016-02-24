@@ -699,7 +699,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	switch (io) {
 	case CARD_IO_VCC:
 		if (active == 0) {
-			tc_etu_disable(ch);
+			tc_etu_disable(ch->tc_chan);
 			card_set_state(ch, ISO_S_WAIT_POWER);
 		} else if (active == 1 && ch->vcc_active == 0)
 			card_set_state(ch, ISO_S_WAIT_CLK);
@@ -714,12 +714,12 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 		if (active == 0 && ch->in_reset &&
 		    ch->vcc_active && ch->clocked) {
 			/* enable the TC/ETU counter once reset has been released */
-			tc_etu_enable(ch);
+			tc_etu_enable(ch->tc_chan);
 			card_set_state(ch, ISO_S_WAIT_ATR);
 			/* FIXME: wait 400 to 40k clock cycles before sending ATR */
 			card_set_state(ch, ISO_S_IN_ATR);
 		} else if (active) {
-			tc_etu_disable(ch);
+			tc_etu_disable(ch->tc_chan);
 		}
 		ch->in_reset = active;
 		break;

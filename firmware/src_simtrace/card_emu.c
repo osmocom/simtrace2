@@ -582,9 +582,21 @@ static int tx_byte_tpdu(struct card_handle *ch)
 
 	card_emu_uart_tx(ch->uart_chan, byte);
 
+	/* this must happen _after_ the byte has been transmittd */
+	switch (ch->tpdu.state) {
+	case TPDU_S_WAIT_PB:
+		/* if we just transmitted the procedure byte, we need to decide
+		 * if we want to continue to receive or transmit */
+		if (td->flags & CEMU_DATA_F_PB_AND_TX)
+			set_tpdu_state(ch, TPDU_S_WAIT_TX);
+		else if (td->flags & CEMU_DATA_F_PB_AND_RX)
+			set_tpdu_state(ch, TPDU_S_WAIT_RX);
+		break;
+	}
+
 	/* check if the buffer has now been fully transmitted */
 	if ((rctx->idx >= td->hdr.data_len) ||
-	    (rctx->idx + sizeof(*td) - sizeof(td->hdr) >= rctx->tot_len)) {
+	    (td->data + rctx->idx >= rctx->data + rctx->tot_len)) {
 		if (td->flags & CEMU_DATA_F_PB_AND_RX) {
 			/* we have just sent the procedure byte and now
 			 * need to continue receiving */
@@ -603,16 +615,6 @@ static int tx_byte_tpdu(struct card_handle *ch)
 		}
 		req_ctx_set_state(rctx, RCTX_S_FREE);
 		ch->uart_tx_ctx = NULL;
-	}
-
-	/* this must happen _after_ the byte has been transmittd */
-	switch (ch->tpdu.state) {
-	case TPDU_S_WAIT_PB:
-		if (td->flags & CEMU_DATA_F_PB_AND_TX)
-			set_tpdu_state(ch, TPDU_S_WAIT_TX);
-		else if (td->flags & CEMU_DATA_F_PB_AND_RX)
-			set_tpdu_state(ch, TPDU_S_WAIT_RX);
-		break;
 	}
 
 	return 1;

@@ -203,6 +203,80 @@ static int card_tx_print_chars(struct card_handle *ch)
 const uint8_t tpdu_hdr_sel_mf[] = { 0xA0, 0xA4, 0x00, 0x00, 0x00 };
 const uint8_t tpdu_pb_sw[] = { 0x90, 0x00 };
 
+static void
+test_tpdu_reader2card(struct card_handle *ch, const uint8_t *hdr, const uint8_t *body, uint8_t body_len)
+{
+	struct req_ctx *rctx;
+
+	printf("\n==> transmitting APDU (HDR + PB + card-RX)\n");
+
+	/* emulate the reader sending a TPDU header */
+	rdr_send_tpdu_hdr(ch, hdr);
+	/* we shouldn't have any pending card-TX yet */
+	assert(!card_tx_print_chars(ch));
+	/* card emulator PC sends a singly byte PB response via USB */
+	host_to_device_data(hdr+1, 1, CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_RX);
+	/* card actually sends that single PB */
+	assert(card_tx_print_chars(ch) == 1);
+
+	/* emulate more characters from reader to card */
+	reader_send_bytes(ch, body, body_len);
+
+	/* check if we have received them on the USB side */
+	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+	assert(rctx);
+	dump_rctx(rctx);
+	req_ctx_set_state(rctx, RCTX_S_FREE);
+
+	/* ensure there is no extra data received on usb */
+	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+
+	/* card emulator sends SW via USB */
+	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
+			    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_TX);
+	/* obtain any pending tx chars */
+	assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
+
+	/* simulate some clock stop */
+	card_emu_io_statechg(ch, CARD_IO_CLK, 0);
+	card_emu_io_statechg(ch, CARD_IO_CLK, 1);
+}
+
+static void
+test_tpdu_card2reader(struct card_handle *ch, const uint8_t *hdr, const uint8_t *body, uint8_t body_len)
+{
+	printf("\n==> transmitting APDU (HDR + PB + card-TX)\n");
+
+	/* emulate the reader sending a TPDU header */
+	rdr_send_tpdu_hdr(ch, hdr);
+	assert(!card_tx_print_chars(ch));
+
+	/* card emulator PC sends a response PB via USB */
+	host_to_device_data(hdr+1, 1, CEMU_DATA_F_PB_AND_TX);
+
+	/* card actually sends that PB */
+	assert(card_tx_print_chars(ch) == 1);
+
+	/* emulate more characters from card to reader */
+	host_to_device_data(body, body_len, 0);
+	/* obtain those bytes as they arrvive on the card */
+	assert(card_tx_print_chars(ch) == body_len);
+
+	/* ensure there is no extra data received on usb */
+	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+
+	/* card emulator sends SW via USB */
+	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), CEMU_DATA_F_FINAL);
+
+	/* obtain any pending tx chars */
+	assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
+
+	/* simulate some clock stop */
+	card_emu_io_statechg(ch, CARD_IO_CLK, 0);
+	card_emu_io_statechg(ch, CARD_IO_CLK, 1);
+}
+
+
 /* READ RECORD (offset 0, 10 bytes) */
 const uint8_t tpdu_hdr_read_rec[] = { 0xA0, 0xB2, 0x00, 0x00, 0x0A };
 const uint8_t tpdu_body_read_rec[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
@@ -214,7 +288,6 @@ const uint8_t tpdu_body_write_rec[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
 int main(int argc, char **argv)
 {
 	struct card_handle *ch;
-	struct req_ctx *rctx;
 	unsigned int i;
 
 	req_ctx_init();
@@ -227,88 +300,9 @@ int main(int argc, char **argv)
 	assert(!card_tx_print_chars(ch));
 
 	for (i = 0; i < 2; i++) {
-		printf("\n==> transmitting APDU (SW 90 00 #%u)\n", i);
-		/* emulate the reader sending a TPDU header */
-		rdr_send_tpdu_hdr(ch, tpdu_hdr_sel_mf);
-		/* we shouldn't have any pending card-TX yet */
-		assert(!card_tx_print_chars(ch));
-		/* card emulator PC sends a response via USB */
-		host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
-				    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_TX);
-		/* card emulator transmits chars just received via PC */
-		assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
+		test_tpdu_reader2card(ch, tpdu_hdr_write_rec, tpdu_body_write_rec, sizeof(tpdu_body_write_rec));
 
-		/* simulate some clock stop */
-		card_emu_io_statechg(ch, CARD_IO_CLK, 0);
-		card_emu_io_statechg(ch, CARD_IO_CLK, 1);
-	}
-
-	for (i = 0; i < 2; i++) {
-		printf("\n==> transmitting APDU (PB + card-RX #%u)\n", i);
-		/* emulate the reader sending a TPDU header */
-		rdr_send_tpdu_hdr(ch, tpdu_hdr_read_rec);
-		/* we shouldn't have any pending card-TX yet */
-		assert(!card_tx_print_chars(ch));
-		/* card emulator PC sends a singly byte PB response via USB */
-		host_to_device_data(tpdu_hdr_read_rec+1, 1,
-				    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_RX);
-		/* card actually sends that single PB */
-		assert(card_tx_print_chars(ch) == 1);
-
-		/* emulate more characters from reader to card */
-		reader_send_bytes(ch, tpdu_body_read_rec, sizeof(tpdu_body_read_rec));
-
-		/* check if we have received them on the USB side */
-		rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
-		assert(rctx);
-		dump_rctx(rctx);
-		req_ctx_set_state(rctx, RCTX_S_FREE);
-
-		/* ensure there is no extra data received on usb */
-		assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
-
-		/* card emulator sends SW via USB */
-		host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
-				    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_TX);
-		/* obtain any pending tx chars */
-		assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
-
-		/* simulate some clock stop */
-		card_emu_io_statechg(ch, CARD_IO_CLK, 0);
-		card_emu_io_statechg(ch, CARD_IO_CLK, 1);
-	}
-
-	for (i = 0; i < 2; i++) {
-		printf("\n==> transmitting APDU (PB + card-TX #%u)\n", i);
-
-		/* emulate the reader sending a TPDU header */
-		rdr_send_tpdu_hdr(ch, tpdu_hdr_write_rec);
-		assert(!card_tx_print_chars(ch));
-
-		/* card emulator PC sends a response PB via USB */
-		host_to_device_data(tpdu_hdr_write_rec+1, 1,
-				    CEMU_DATA_F_PB_AND_TX);
-		/* card actually sends that PB */
-		assert(card_tx_print_chars(ch) == 1);
-
-		/* emulate more characters from card to reader */
-		host_to_device_data(tpdu_body_write_rec, sizeof(tpdu_body_write_rec),
-				    0);
-		/* obtain those bytes as they arrvive on the card */
-		assert(card_tx_print_chars(ch) == sizeof(tpdu_body_write_rec));
-
-		/* ensure there is no extra data received on usb */
-		assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
-
-		/* card emulator sends SW via USB */
-		host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
-				    CEMU_DATA_F_FINAL);
-		/* obtain any pending tx chars */
-		assert(card_tx_print_chars(ch) == sizeof(tpdu_pb_sw));
-
-		/* simulate some clock stop */
-		card_emu_io_statechg(ch, CARD_IO_CLK, 0);
-		card_emu_io_statechg(ch, CARD_IO_CLK, 1);
+		test_tpdu_card2reader(ch, tpdu_hdr_read_rec, tpdu_body_read_rec, sizeof(tpdu_body_read_rec));
 	}
 
 	exit(0);

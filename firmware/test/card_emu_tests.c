@@ -180,6 +180,25 @@ static void get_and_verify_rctx(int state, const uint8_t *data, unsigned int len
 	req_ctx_set_state(rctx, RCTX_S_FREE);
 }
 
+static void get_and_verify_rctx_pps(const uint8_t *data, unsigned int len)
+{
+	struct req_ctx *rctx;
+	struct cardemu_usb_msg_pts_info *ptsi;
+
+	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+	assert(rctx);
+	dump_rctx(rctx);
+
+	ptsi = (struct cardemu_usb_msg_pts_info *) rctx->data;
+	/* FIXME: verify */
+	assert(ptsi->hdr.msg_type == CEMU_USB_MSGT_DO_PTS);
+	assert(!memcmp(ptsi->req, data, len));
+	assert(!memcmp(ptsi->resp, data, len));
+
+	/* free the req_ctx, indicating it has fully arrived on the host */
+	req_ctx_set_state(rctx, RCTX_S_FREE);
+}
+
 /* emulate a TPDU header being sent by the reader/phone */
 static void rdr_send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 {
@@ -304,6 +323,27 @@ test_tpdu_card2reader(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	card_emu_io_statechg(ch, CARD_IO_CLK, 1);
 }
 
+const uint8_t pps[] = {
+	/* PPSS identifies the PPS request or response and is set to
+	 * 'FF'. */
+	0xFF,		// PPSS
+	/* In PPS0, each bit 5, 6 or 7 set to 1 indicates the presence
+	 * of an optional byte PPS 1 , PPS 2 , PPS 3 ,
+	 * respectively. Bits 4 to 1 encode a type T to propose a
+	 * transmission protocol. Bit 8 is reserved for future
+	 * use and shall be set to 0. */
+	0b00010000,	// PPS0: PPS1 present
+	0x00,		// PPS1 proposed Fi/Di value
+	0xFF ^ 0b00010000// PCK
+};
+
+static void
+test_ppss(struct card_handle *ch)
+{
+	reader_send_bytes(ch, pps, sizeof(pps));
+	get_and_verify_rctx_pps(pps, sizeof(pps));
+	card_tx_verify_chars(ch, pps, sizeof(pps));
+}
 
 /* READ RECORD (offset 0, 10 bytes) */
 const uint8_t tpdu_hdr_read_rec[] = { 0xA0, 0xB2, 0x00, 0x00, 0x0A };
@@ -326,6 +366,8 @@ int main(int argc, char **argv)
 	/* start up the card (VCC/RST, ATR) */
 	io_start_card(ch);
 	card_tx_verify_chars(ch, NULL, 0);
+
+	test_ppss(ch);
 
 	for (i = 0; i < 2; i++) {
 		test_tpdu_reader2card(ch, tpdu_hdr_write_rec, tpdu_body_write_rec, sizeof(tpdu_body_write_rec));

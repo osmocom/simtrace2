@@ -165,6 +165,45 @@ static void flush_rx_buffer(struct card_handle *ch)
 	 * be transmitted now */
 }
 
+/* convert a non-contiguous PTS request/responsei into a contiguous
+ * buffer, returning the number of bytes used in the buffer */
+static int serialize_pts(uint8_t *out,  const uint8_t *in)
+{
+	int i = 0;
+
+	out[i++] = in[_PTSS];
+	out[i++] = in[_PTS0];
+	if (in[_PTS0] & (1 << 4))
+		out[i++] = in[_PTS1];
+	if (in[_PTS0] & (1 << 5))
+		out[i++] = in[_PTS2];
+	if (in[_PTS0] & (1 << 6))
+		out[i++] = in[_PTS3];
+	out[i++] = in[_PCK];
+
+	return i;
+}
+
+static void flush_pts(struct card_handle *ch)
+{
+	struct req_ctx *rctx;
+	struct cardemu_usb_msg_pts_info *ptsi;
+
+	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+	if (!rctx)
+		return;
+
+	ptsi = (struct cardemu_usb_msg_pts_info *) rctx->data;
+	ptsi->hdr.msg_type = CEMU_USB_MSGT_DO_PTS;
+	ptsi->hdr.data_len = serialize_pts(ptsi->req, ch->pts.req);
+	serialize_pts(ptsi->resp, ch->pts.resp);
+
+	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+
+	/* FIXME: call into USB code to see if this buffer can
+	 * be transmitted now */
+}
+
 static void update_fidi(struct card_handle *ch)
 {
 	int rc;
@@ -310,6 +349,7 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 	case PTS_S_WAIT_REQ_PCK:
 		ch->pts.req[_PCK] = byte;
 		/* FIXME: check PCK */
+		/* FIXME: check if proposal matches capabilities in ATR */
 		memcpy(ch->pts.resp, ch->pts.req, sizeof(ch->pts.resp));
 		break;
 	default:
@@ -319,6 +359,12 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 	}
 	/* calculate the next state and set it */
 	set_pts_state(ch, next_pts_state(ch));
+
+	if (ch->pts.state == PTS_S_WAIT_RESP_PTSS) {
+		flush_pts(ch);
+		/* activate UART TX to transmit PTS response */
+		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+	}
 
 	return ISO_S_IN_PTS;
 }

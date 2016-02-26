@@ -184,6 +184,22 @@ static int serialize_pts(uint8_t *out,  const uint8_t *in)
 	return i;
 }
 
+static uint8_t csum_pts(const uint8_t *in)
+{
+	uint8_t out[6];
+	int len = serialize_pts(out, in);
+	uint8_t csum = 0;
+	int i;
+
+	/* we don't include the PCK byte in the checksumming process */
+	len -= 1;
+
+	for (i = 0; i < len; i++)
+		csum = csum ^ out[i];
+
+	return csum;
+}
+
 static void flush_pts(struct card_handle *ch)
 {
 	struct req_ctx *rctx;
@@ -348,7 +364,12 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		break;
 	case PTS_S_WAIT_REQ_PCK:
 		ch->pts.req[_PCK] = byte;
-		/* FIXME: check PCK */
+		if (ch->pts.req[_PCK] != csum_pts(ch->pts.req)) {
+			TRACE_DEBUG("Error in PTS Checksum!\n");
+			/* Wait for the next TPDU */
+			set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
+			return ISO_S_WAIT_TPDU;
+		}
 		/* FIXME: check if proposal matches capabilities in ATR */
 		memcpy(ch->pts.resp, ch->pts.req, sizeof(ch->pts.resp));
 		break;

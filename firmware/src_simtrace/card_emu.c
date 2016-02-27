@@ -220,7 +220,7 @@ static void flush_pts(struct card_handle *ch)
 	 * be transmitted now */
 }
 
-static void update_fidi(struct card_handle *ch)
+static void emu_update_fidi(struct card_handle *ch)
 {
 	int rc;
 
@@ -252,7 +252,7 @@ static void card_set_state(struct card_handle *ch,
 		/* Reset to initial Fi / Di ratio */
 		ch->fi = 1;
 		ch->di = 1;
-		update_fidi(ch);
+		emu_update_fidi(ch);
 		/* initialize todefault WI, this will be overwritten if we
 		 * receive TC2, and it will be programmed into hardware after
 		 * ATR is finished */
@@ -419,7 +419,7 @@ static int tx_byte_pts(struct card_handle *ch)
 	case PTS_S_WAIT_RESP_PCK:
 		byte = ch->pts.resp[_PCK];
 		/* update baud rate generator with Fi/Di */
-		update_fidi(ch);
+		emu_update_fidi(ch);
 		break;
 	default:
 		TRACE_DEBUG("get_byte_pts() in invalid state %u\n",

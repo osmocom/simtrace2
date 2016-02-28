@@ -91,7 +91,11 @@ NM = $(CROSS_COMPILE)nm
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 
 INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isrc_simtrace
-INCLUDES += -Iinclude_board/simtrace
+
+# FIXME: This must be made configurable!
+#INCLUDES += -Iinclude_board/simtrace
+INCLUDES += -Iinclude_board/owhw
+
 INCLUDES += -Icmsis
 INCLUDES += $(INCLUDES_USB)
 

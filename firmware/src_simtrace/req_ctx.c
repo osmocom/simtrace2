@@ -25,8 +25,8 @@
 #include "trace.h"
 #include "req_ctx.h"
 
-#define NUM_RCTX_SMALL 0
-#define NUM_RCTX_LARGE 20
+#define NUM_RCTX_SMALL 10
+#define NUM_RCTX_LARGE 0
 
 #define NUM_REQ_CTX	(NUM_RCTX_SMALL+NUM_RCTX_LARGE)
 

@@ -21,37 +21,52 @@ typedef struct {
 
 static const conf_func config_func_ptrs[] = {
 	/* array slot 0 is empty, usb configs start at 1 */
+#ifdef HAVE_SNIFFER
 	[CFG_NUM_SNIFF] = {
 		.configure = Sniffer_configure,
 		.init = Sniffer_init,
 		.exit = Sniffer_exit,
 		.run = Sniffer_run,
 	},
+#endif
+#ifdef HAVE_CCID
 	[CFG_NUM_CCID] = {
 		.configure = CCID_configure,
 		.init = CCID_init,
 		.exit = CCID_exit,
 		.run = CCID_run,
 	},
+#endif
+#ifdef HAVE_CARDEM
 	[CFG_NUM_PHONE] = {
 		.configure = Phone_configure,
 		.init = Phone_init,
 		.exit = Phone_exit,
 		.run = Phone_run,
 	},
+#endif
+#ifdef HAVE_MITM
 	[CFG_NUM_MITM] = {
 		.configure = MITM_configure,
 		.init = MITM_init,
 		.exit = MITM_exit,
 		.run = MITM_run
 	},
+#endif
 };
 
 
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
+#if defined(HAVE_SNIFFER)
 static volatile enum confNum simtrace_config = CFG_NUM_SNIFF;
+#elif defined(HAVE_CARDEM)
+static volatile enum confNum simtrace_config = CFG_NUM_PHONE;
+#elif defined(HAVE_CCID)
+static volatile enum confNum simtrace_config = CFG_NUM_CCID;
+#endif
+
 
 /*----------------------------------------------------------------------------
  *       Callbacks

@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "board.h"
+#include "utils.h"
 
 #include <cciddriverdescriptors.h>
 
@@ -193,6 +194,7 @@ static const unsigned char *stringDescriptors[] = {
  *       USB Device descriptors 
  *------------------------------------------------------------------------------*/
 
+#ifdef HAVE_SNIFFER
 typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
 
     /** Standard configuration descriptor. */
@@ -261,7 +263,10 @@ static const SIMTraceDriverConfigurationDescriptorSniffer configurationDescripto
         0x10
     }
 };
+#endif /* HAVE_SNIFFER */
 
+
+#ifdef HAVE_CCID
 /*
 /// CCIDDriverConfiguration Descriptors
 /// List of descriptors that make up the configuration descriptors of a
@@ -367,8 +372,10 @@ static const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
         0x10                              
     },
 };
+#endif /* HAVE_CCID */
 
 
+#ifdef HAVE_CARDEM
 /* SIM card emulator */
 typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
 
@@ -437,8 +444,9 @@ static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorP
         0x10
     }
 };
+#endif /* HAVE_CARDEM */
 
-
+#ifdef HAVE_MITM
 typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 
     /** Standard configuration descriptor. */
@@ -587,6 +595,22 @@ static const SIMTraceDriverConfigurationDescriptorMITM configurationDescriptorMI
         0x10
     }
 };
+#endif /* HAVE_CARDEM */
+
+const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
+#ifdef HAVE_SNIFFER
+    &configurationDescriptorSniffer.configuration,
+#endif
+#ifdef HAVE_CCID
+    &configurationDescriptorCCID.configuration,
+#endif
+#ifdef HAVE_CARDEM
+    &configurationDescriptorPhone.configuration,
+#endif
+#ifdef HAVE_MITM
+    &configurationDescriptorMITM.configuration,
+#endif
+};
 
 /** Standard USB device descriptor for the CDC serial driver */
 const USBDeviceDescriptor deviceDescriptor = {
@@ -607,14 +631,7 @@ const USBDeviceDescriptor deviceDescriptor = {
     MANUF_STR, /* Indesx of manufacturer string descriptor */
     PRODUCT_STRING, /* Index of product string descriptor */
     0, /* No string descriptor for serial number */
-    4 /* Device has 4 possible configurations */
-};
-
-const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
-    &configurationDescriptorSniffer.configuration,
-    &configurationDescriptorCCID.configuration,
-    &configurationDescriptorPhone.configuration,
-    &configurationDescriptorMITM.configuration,
+    ARRAY_SIZE(configurationDescriptorsArr) /* Device has N possible configs */
 };
 
 /* AT91SAM3S only supports full speed, but not high speed USB */

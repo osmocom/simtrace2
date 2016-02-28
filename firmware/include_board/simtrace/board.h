@@ -76,3 +76,8 @@
 #define SIMTRACE_PRODUCT_ID         0x60e3
 #define USB_VENDOR_ID               SIMTRACE_VENDOR_ID
 #define USB_PRODUCT_ID              SIMTRACE_PRODUCT_ID
+
+#define HAVE_SNIFFER
+#define HAVE_CCID
+#define HAVE_CARDEM
+#define HAVE_MITM

@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#define REQ_CTX_LISTS
+
 #define __ramfunc
 
 enum req_ctx_state {

@@ -39,10 +39,10 @@ static const conf_func config_func_ptrs[] = {
 #endif
 #ifdef HAVE_CARDEM
 	[CFG_NUM_PHONE] = {
-		.configure = Phone_configure,
-		.init = Phone_init,
-		.exit = Phone_exit,
-		.run = Phone_run,
+		.configure = mode_cardemu_configure,
+		.init = mode_cardemu_init,
+		.exit = mode_cardemu_exit,
+		.run = mode_cardemu_run,
 	},
 #endif
 #ifdef HAVE_MITM
@@ -140,6 +140,7 @@ extern int main( void )
             last_simtrace_config = simtrace_config;
         } else {
             config_func_ptrs[simtrace_config].run();
+	    usb_to_host();
         }
     }
 }

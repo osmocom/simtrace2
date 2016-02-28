@@ -1,45 +1,66 @@
 #include "board.h"
+#include "req_ctx.h"
 
-static volatile bool write_to_host_in_progress = false;
-static bool check_for_pts = false;
-
-static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
-
-static void USB_write_callback(uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+/* call-back after (successful?) transfer of a buffer */
+static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
+			 uint32_t remaining)
 {
-    if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d(%s)\n", __FUNCTION__, status);
-    }
-    write_to_host_in_progress = false;
-    TRACE_DEBUG("WR_CB\n");
+	struct req_ctx *rctx = (struct req_ctx *) arg;
+
+	if (status != USBD_STATUS_SUCCESS)
+		TRACE_ERROR("%s error, status=%d\n", __func__, status);
+
+	/* release request contxt to pool */
+	req_ctx_set_state(rctx, RCTX_S_FREE);
 }
 
-static int send_to_host()
+int usb_to_host(void)
 {
-    static uint8_t msg[RING_BUFLEN];
-    int ret = 0;
-    unsigned int i;
+	struct req_ctx *rctx;
+	int rc;
 
-    for(i = 0; !rbuf_is_empty(&sim_rcv_buf) && i < sizeof(msg); i++) {
-        msg[i] = rbuf_read(&sim_rcv_buf);
-    }
-    TRACE_DEBUG("Wr %d\n", i);
-    write_to_host_in_progress = true;
-    ret = USBD_Write( PHONE_DATAIN, msg, i, (TransferCallback)&USB_write_callback, 0 );
-    if (ret != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("Error sending to host (%x)\n", ret);
-        write_to_host_in_progress = false;
-    }
-    return ret;
+	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+
+	/* FIXME: obtain endpoint number from req_ctx! */
+	rc = USBD_Write(PHONE_DATAIN, rctx->data, rctx->tot_len,
+			(TransferCallback) &usb_write_cb, rctx);
+	if (rc != USBD_STATUS_SUCCESS) {
+		TRACE_ERROR("%s error %x\n", __func__, ret);
+		req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+		return 0;
+	}
+
+	return 1;
 }
 
-int check_data_from_phone()
+static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
+			uint32_t remaining)
 {
-    int ret = 0;
+	struct req_ctx *rctx = (struct req_ctx *) arg;
 
-    if((rbuf_is_empty(&sim_rcv_buf) || write_to_host_in_progress == true)) {
-        return ret;
-    }
-    ret = send_to_host();
-    return ret;
+	if (status != USBD_STATUS_SUCCESS) {
+		TRACE_ERROR("%s error, status=%d\n", __func__, status);
+		/* release request contxt to pool */
+		req_ctx_put(rctx);
+		return;
+	}
+	req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
+}
+
+int usb_from_host(int ep)
+{
+	struct req_ctx *rctx;
+	int rc;
+
+	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
+
+	rc = USBD_Read(ep, rctx->data, rctx->size,
+			(TransferCallback) &usb_read_cb, rctx);
+
+	if (rc != USBD_STATUS_SUCCESS) {
+		TRACE_ERROR("%s error %x\n", __func__, ret);
+		req_ctx_put(rctx);
+	}
+
+	return 0;
 }

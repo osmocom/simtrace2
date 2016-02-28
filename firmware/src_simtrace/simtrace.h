@@ -65,13 +65,13 @@ void ISR_PhoneRST( const Pin *pPin);
 /*  Configure functions   */
 extern void Sniffer_configure( void );
 extern void CCID_configure( void );
-extern void Phone_configure( void );
+extern void mode_cardemu_configure(void);
 extern void MITM_configure( void );
 
 /*  Init functions   */
 extern void Sniffer_init( void );
 extern void CCID_init( void );
-extern void Phone_init( void );
+extern void mode_cardemu_init(void);
 extern void MITM_init( void );
 
 extern void SIMtrace_USB_Initialize( void );
@@ -79,17 +79,20 @@ extern void SIMtrace_USB_Initialize( void );
 /*  Exit functions   */
 extern void Sniffer_exit( void );
 extern void CCID_exit( void );
-extern void Phone_exit( void );
+extern void mode_cardemu_exit(void);
 extern void MITM_exit( void );
 
 /*  Run functions   */
 extern void Sniffer_run( void );
 extern void CCID_run( void );
-extern void Phone_run( void );
+extern void mode_cardemu_run(void);
 extern void MITM_run( void );
 
 /*  Timer helper function */
 void Timer_Init( void );
 void TC0_Counter_Reset( void );
+
+int usb_to_host(void);
+int usb_from_host(int ep);
 
 #endif  /*  SIMTRACE_H  */

@@ -1,5 +1,8 @@
 #include "board.h"
 #include "card_emu.h"
+#include "iso7816_fidi.h"
+
+#define TRACE_ENTRY()	TRACE_DEBUG("%s entering\n", __func__)
 
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 
@@ -99,6 +102,26 @@ void usart_irq_rx(uint8_t uart, uint32_t csr, uint8_t byte)
 	}
 }
 
+/* call-back from card_emu.c to change UART baud rate */
+int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
+{
+	int rc;
+        uint8_t fi = fidi >> 4;
+        uint8_t di = fidi & 0xf;
+	Usart *usart = get_usart_by_chan(uart_chan);
+
+	rc = compute_fidi_ratio(fi, di);
+	if (rc > 0 && rc < 0x400) {
+		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d", fi, di, rc);
+		usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
+		usart->US_FIDI = rc & 0x3ff;
+		usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
+		return 0;
+	} else {
+		TRACE_INFO("computed FiDi ratio %d unsupported", rc);
+		return -1;
+	}
+}
 
 /***********************************************************************
  * Core USB  / mainloop integration
@@ -107,11 +130,14 @@ void usart_irq_rx(uint8_t uart, uint32_t csr, uint8_t byte)
 /* executed once at system boot for each config */
 void mode_cardemu_configure(void)
 {
+	TRACE_ENTRY();
 }
 
 /* called if config is activated */
 void mode_cardemu_init(void)
 {
+	TRACE_ENTRY();
+
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
 
 	PIO_Configure(pins_usim1, PIO_LISTSIZE(pins_usim1));
@@ -132,6 +158,8 @@ void mode_cardemu_init(void)
 /* called if config is deactivated */
 void mode_cardemu_exit(void)
 {
+	TRACE_ENTRY();
+
 	NVIC_DisableIRQ(USART1_IRQn);
 	USART_SetTransmitterEnabled(USART1, 0);
 	USART_SetReceiverEnabled(USART1, 0);

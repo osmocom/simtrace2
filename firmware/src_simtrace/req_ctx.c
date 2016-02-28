@@ -81,6 +81,8 @@ req_ctx_find_get(int large, uint32_t old_state, uint32_t new_state)
 	}
 #endif
 	local_irq_restore(flags);
+	TRACE_DEBUG("%s(%u, %u, %u)=%p\n", __func__, large, old_state,
+			new_state, toReturn);
 	return toReturn;
 }
 
@@ -94,7 +96,7 @@ void req_ctx_set_state(struct req_ctx *ctx, uint32_t new_state)
 	unsigned long flags;
 	unsigned old_state;
 
-	TRACE_DEBUG("rctx_set_state(ctx=%p, new_state=%u)\n", ctx, new_state);
+	TRACE_DEBUG("%s(ctx=%p, new_state=%u)\n", __func__, ctx, new_state);
 
 	if (new_state >= RCTX_STATE_COUNT) {
 		TRACE_DEBUG("Invalid new_state for req_ctx_set_state\n");

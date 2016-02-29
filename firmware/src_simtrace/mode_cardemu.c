@@ -59,22 +59,25 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	Usart *usart = get_usart_by_chan(uart_chan);
 	switch (rxtx) {
 	case ENABLE_TX:
-		USART_EnableIt(usart, US_IER_TXRDY);
 		USART_DisableIt(usart, ~US_IER_TXRDY);
 		USART_SetReceiverEnabled(usart, 0);
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+		USART_EnableIt(usart, US_IER_TXRDY);
 		USART_SetTransmitterEnabled(usart, 1);
 		break;
 	case ENABLE_RX:
-		USART_SetTransmitterEnabled(usart, 0);
-		USART_SetReceiverEnabled(usart, 1);
-		USART_EnableIt(usart, US_IER_RXRDY);
 		USART_DisableIt(usart, ~US_IER_RXRDY);
+		USART_SetTransmitterEnabled(usart, 0);
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+		USART_EnableIt(usart, US_IER_RXRDY);
+		USART_SetReceiverEnabled(usart, 1);
 		break;
 	case 0:
 	default:
 		USART_SetTransmitterEnabled(usart, 0);
 		USART_SetReceiverEnabled(usart, 0);
 		USART_DisableIt(usart, 0xFFFFFFFF);
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		break;
 	}
 }

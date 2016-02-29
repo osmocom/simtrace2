@@ -111,21 +111,12 @@ void usart_irq_rx(uint8_t uart, uint32_t csr, uint8_t byte)
 int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 {
 	int rc;
-        uint8_t fi = fidi >> 4;
-        uint8_t di = fidi & 0xf;
 	Usart *usart = get_usart_by_chan(uart_chan);
 
-	rc = compute_fidi_ratio(fi, di);
-	if (rc > 0 && rc < 0x400) {
-		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d", fi, di, rc);
-		usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
-		usart->US_FIDI = rc & 0x3ff;
-		usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
-		return 0;
-	} else {
-		TRACE_INFO("computed FiDi ratio %d unsupported", rc);
-		return -1;
-	}
+	usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
+	usart->US_FIDI = fidi & 0x3ff;
+	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
+	return 0;
 }
 
 /***********************************************************************

@@ -43,7 +43,7 @@ req_ctx_find_get(int large, uint32_t old_state, uint32_t new_state)
 	unsigned int i;
 
 	if (old_state >= RCTX_STATE_COUNT || new_state >= RCTX_STATE_COUNT) {
-		TRACE_DEBUG("Invalid parameters for req_ctx_find_get");
+		TRACE_DEBUG("Invalid parameters for req_ctx_find_get\r\n");
 		return NULL;
 	}
 
@@ -57,8 +57,9 @@ req_ctx_find_get(int large, uint32_t old_state, uint32_t new_state)
 	}
 	local_irq_restore(flags);
 
-	TRACE_DEBUG("%s(%u, %u, %u)=%p\n", __func__, large, old_state,
+	TRACE_DEBUG("%s(%u, %u, %u)=%p\r\n", __func__, large, old_state,
 			new_state, toReturn);
+
 	return toReturn;
 }
 
@@ -71,10 +72,10 @@ void req_ctx_set_state(struct req_ctx *ctx, uint32_t new_state)
 {
 	unsigned long flags;
 
-	TRACE_DEBUG("%s(ctx=%p, new_state=%u)\n", __func__, ctx, new_state);
+	TRACE_DEBUG("%s(ctx=%p, new_state=%u)\r\n", __func__, ctx, new_state);
 
 	if (new_state >= RCTX_STATE_COUNT) {
-		TRACE_DEBUG("Invalid new_state for req_ctx_set_state\n");
+		TRACE_DEBUG("Invalid new_state for req_ctx_set_state\r\n");
 		return;
 	}
 	local_irq_save(flags);
@@ -102,10 +103,10 @@ void req_print(int state) {
 	}
 	TRACE_DEBUG("NULL");
 	if (!req_ctx_queues[state] && req_ctx_tails[state]) {
-		TRACE_DEBUG("NULL head, NON-NULL tail");
+		TRACE_DEBUG("NULL head, NON-NULL tail\r\n");
 	}
 	if (last != req_ctx_tails[state]) {
-		TRACE_DEBUG("Tail does not match last element");
+		TRACE_DEBUG("Tail does not match last element\r\n");
 	}
 }
 #endif
@@ -123,7 +124,7 @@ void req_ctx_init(void)
 		req_ctx[i].tot_len = 0;
 		req_ctx[i].data = rctx_data[i];
 		req_ctx[i].state = RCTX_S_FREE;
-		TRACE_DEBUG("SMALL req_ctx[%02i] initialized at %p, Data: %p => %p\n",
+		TRACE_DEBUG("SMALL req_ctx[%02i] initialized at %p, Data: %p => %p\r\n",
 			i, req_ctx + i, req_ctx[i].data, req_ctx[i].data + RCTX_SIZE_SMALL);
 	}
 
@@ -132,7 +133,7 @@ void req_ctx_init(void)
 		req_ctx[i].tot_len = 0;
 		req_ctx[i].data = rctx_data_large[i];
 		req_ctx[i].state = RCTX_S_FREE;
-		TRACE_DEBUG("LARGE req_ctx[%02i] initialized at %p, Data: %p => %p\n",
+		TRACE_DEBUG("LARGE req_ctx[%02i] initialized at %p, Data: %p => %p\r\n",
 			i, req_ctx + i, req_ctx[i].data, req_ctx[i].data + RCTX_SIZE_LARGE);
 	}
 }

@@ -57,17 +57,22 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	Usart *usart = get_usart_by_chan(uart_chan);
 	switch (rxtx) {
 	case ENABLE_TX:
+		USART_EnableIt(usart, US_IER_TXRDY);
+		USART_DisableIt(usart, ~US_IER_TXRDY);
 		USART_SetReceiverEnabled(usart, 0);
 		USART_SetTransmitterEnabled(usart, 1);
 		break;
 	case ENABLE_RX:
 		USART_SetTransmitterEnabled(usart, 0);
 		USART_SetReceiverEnabled(usart, 1);
+		USART_EnableIt(usart, US_IER_RXRDY);
+		USART_DisableIt(usart, ~US_IER_RXRDY);
 		break;
 	case 0:
 	default:
 		USART_SetTransmitterEnabled(usart, 0);
 		USART_SetReceiverEnabled(usart, 0);
+		USART_DisableIt(usart, 0xFFFFFFFF);
 		break;
 	}
 }
@@ -142,14 +147,14 @@ void mode_cardemu_init(void)
 
 	PIO_Configure(pins_usim1, PIO_LISTSIZE(pins_usim1));
 	ISO7816_Init(&usart_info[0], CLK_SLAVE);
-	USART_EnableIt(USART1, US_IER_RXRDY);
+	//USART_EnableIt(USART1, US_IER_RXRDY);
 	NVIC_EnableIRQ(USART1_IRQn);
 	ch1 = card_emu_init(0, 2, 0);
 
 #ifdef CARDEMU_SECOND_UART
 	PIO_Configure(pins_usim2, PIO_LISTSIZE(pins_usim2));
 	ISO7816_Init(&usart_info[1], CLK_SLAVE);
-	USART_EnableIt(USART0, US_IER_RXRDY);
+	//USART_EnableIt(USART0, US_IER_RXRDY);
 	NVIC_EnableIRQ(USART0_IRQn);
 	ch2 = card_emu_init(1, 0, 1);
 #endif

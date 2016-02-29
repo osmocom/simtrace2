@@ -11,16 +11,27 @@
 #define __ramfunc
 
 enum req_ctx_state {
+	/* free to be allocated */
 	RCTX_S_FREE,
+
 	/* USB -> UART */
+	/* In USB driver, waiting for data from host */
 	RCTX_S_USB_RX_BUSY,
+	/* somewhere in the main loop */
 	RCTX_S_MAIN_PROCESSING,
+	/* pending (in queue) for transmission on UART */
 	RCTX_S_UART_TX_PENDING,
+	/* currently in active transmission on UART */
 	RCTX_S_UART_TX_BUSY,
+
 	/* UART -> USB */
+	/* currently in active reception on UART */
 	RCTX_S_UART_RX_BUSY,
+	/* pending (in queue) for transmission over USB to host */
 	RCTX_S_USB_TX_PENDING,
+	/* currently in transmission over USB to host */
 	RCTX_S_USB_TX_BUSY,
+
 	/* number of states */
 	RCTX_STATE_COUNT
 };

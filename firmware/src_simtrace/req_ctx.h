@@ -5,8 +5,7 @@
 #define MAX_HDRSIZE	sizeof(struct openpcd_hdr)
 
 #include <stdint.h>
-
-#define REQ_CTX_LISTS
+#include "linuxlist.h"
 
 #define __ramfunc
 
@@ -37,12 +36,12 @@ enum req_ctx_state {
 };
 
 struct req_ctx {
+	/* if this req_ctx is on a queue... */
+	struct llist_head list;
+	uint32_t ep;
+
 	/* enum req_ctx_state */
 	volatile uint32_t state;
-#ifdef REQ_CTX_LISTS
-	/* pointers for queues */
-	volatile struct req_ctx *prev, *next;
-#endif
 	/* size of th 'data' buffer */
 	uint16_t size;
 	/* total number of used bytes in buffer */

@@ -111,7 +111,7 @@ CFLAGS += #-Wpacked
 CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
 CFLAGS += -Wcast-align
-CFLAGS += -std=c11
+#CFLAGS += -std=c11
 CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion
 CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable

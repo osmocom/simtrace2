@@ -18,6 +18,7 @@ static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
 #endif
 
 static struct card_handle *ch1, *ch2;
+static struct ringbuf ch1_rb;
 
 static struct Usart_info usart_info[] = {
 	{
@@ -87,23 +88,31 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 
 
 /* FIXME: integrate this with actual irq handler */
-void usart_irq_rx(uint8_t uart, uint32_t csr, uint8_t byte)
+void usart_irq_rx(uint8_t uart)
 {
+	Usart *usart = get_usart_by_chan(uart);
 	struct card_handle *ch = ch1;
+	uint32_t csr;
+	uint8_t byte = 0;
+
 #ifdef CARDEMU_SECOND_UART
-	if (uart == 0)
+	if (uart == 1)
 		ch = ch2;
 #endif
+	csr = usart->US_CSR;
 
 	if (csr & US_CSR_TXRDY)
 		card_emu_tx_byte(ch);
 
-	if (csr & US_CSR_RXRDY)
-		card_emu_process_rx_byte(ch, byte);
+	if (csr & US_CSR_RXRDY) {
+        	byte = (usart->US_RHR) & 0xFF;
+		rbuf_write(&ch1_rb, byte);
+	}
 
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|
 		   US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) {
-		TRACE_DEBUG("e 0x%x st: 0x%x\n", byte, csr);
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+		TRACE_ERROR("e 0x%x st: 0x%x\n", byte, csr);
 	}
 }
 
@@ -123,6 +132,20 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
  * Core USB  / mainloop integration
  ***********************************************************************/
 
+static void usim1_rst_irqhandler(const Pin *pPin)
+{
+	int active = PIO_Get(&pin_usim1_rst) ? 0 : 1;
+	card_emu_io_statechg(ch1, CARD_IO_RST, active);
+}
+
+static void usim1_vcc_irqhandler(const Pin *pPin)
+{
+	int active = PIO_Get(&pin_usim1_vcc) ? 1 : 0;
+	card_emu_io_statechg(ch1, CARD_IO_VCC, active);
+	/* FIXME do this for real */
+	card_emu_io_statechg(ch1, CARD_IO_CLK, active);
+}
+
 /* executed once at system boot for each config */
 void mode_cardemu_configure(void)
 {
@@ -134,12 +157,20 @@ void mode_cardemu_init(void)
 {
 	TRACE_ENTRY();
 
+	rbuf_reset(&ch1_rb);
+
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
 
 	PIO_Configure(pins_usim1, PIO_LISTSIZE(pins_usim1));
 	ISO7816_Init(&usart_info[0], CLK_SLAVE);
 	//USART_EnableIt(USART1, US_IER_RXRDY);
 	NVIC_EnableIRQ(USART1_IRQn);
+
+	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
+	PIO_EnableIt(&pin_usim1_rst);
+	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
+	PIO_EnableIt(&pin_usim1_vcc);
+
 	ch1 = card_emu_init(0, 2, 0);
 
 #ifdef CARDEMU_SECOND_UART
@@ -156,6 +187,9 @@ void mode_cardemu_exit(void)
 {
 	TRACE_ENTRY();
 
+	PIO_DisableIt(&pin_usim1_rst);
+	PIO_DisableIt(&pin_usim1_vcc);
+
 	NVIC_DisableIRQ(USART1_IRQn);
 	USART_SetTransmitterEnabled(USART1, 0);
 	USART_SetReceiverEnabled(USART1, 0);
@@ -170,16 +204,20 @@ void mode_cardemu_exit(void)
 /* main loop function, called repeatedly */
 void mode_cardemu_run(void)
 {
-	int rst_active, vcc_active;
 
 	/* usb_to_host() is handled by main() */
 
 	if (ch1) {
-		rst_active = PIO_Get(&pin_usim1_rst) ? 0 : 1;
-		vcc_active = PIO_Get(&pin_usim1_vcc) ? 1 : 0;
-		card_emu_io_statechg(ch1, CARD_IO_RST, rst_active);
-		card_emu_io_statechg(ch1, CARD_IO_VCC, vcc_active);
-		/* FIXME: clock ? */
+		while (1) {
+			__disable_irq();
+			if (rbuf_is_empty(&ch1_rb)) {
+				__enable_irq();
+				break;
+			}
+			uint8_t byte = rbuf_read(&ch1_rb);
+			__enable_irq();
+			card_emu_process_rx_byte(ch1, byte);
+		}
 	}
 	usb_from_host(PHONE_DATAOUT);
 

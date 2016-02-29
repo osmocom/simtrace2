@@ -557,6 +557,11 @@ static void send_tpdu_header(struct card_handle *ch)
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_rx_data *rd;
 
+	TRACE_DEBUG("%s: %02x %02x %02x %02x %02x\r\n", __func__,
+			ch->tpdu.hdr[0], ch->tpdu.hdr[1],
+			ch->tpdu.hdr[2], ch->tpdu.hdr[3],
+			ch->tpdu.hdr[4]);
+
 	/* if we already/still have a context, send it off */
 	if (ch->uart_rx_ctx && ch->uart_rx_ctx->idx) {
 		flush_rx_buffer(ch);

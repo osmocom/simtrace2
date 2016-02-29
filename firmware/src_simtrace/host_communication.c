@@ -25,7 +25,7 @@ int usb_to_host(void)
 	rc = USBD_Write(PHONE_DATAIN, rctx->data, rctx->tot_len,
 			(TransferCallback) &usb_write_cb, rctx);
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %x\n", __func__, ret);
+		TRACE_ERROR("%s error %x\n", __func__, rc);
 		req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
 		return 0;
 	}
@@ -58,7 +58,7 @@ int usb_from_host(int ep)
 			(TransferCallback) &usb_read_cb, rctx);
 
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %x\n", __func__, ret);
+		TRACE_ERROR("%s error %x\n", __func__, rc);
 		req_ctx_put(rctx);
 	}
 

@@ -1,6 +1,7 @@
 #include "board.h"
 #include "card_emu.h"
 #include "iso7816_fidi.h"
+#include "utils.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\n", __func__)
 
@@ -204,10 +205,8 @@ void mode_cardemu_exit(void)
 /* main loop function, called repeatedly */
 void mode_cardemu_run(void)
 {
-
-	/* usb_to_host() is handled by main() */
-
 	if (ch1) {
+		/* drain the ring buffer from UART into card_emu */
 		while (1) {
 			__disable_irq();
 			if (rbuf_is_empty(&ch1_rb)) {
@@ -218,8 +217,9 @@ void mode_cardemu_run(void)
 			__enable_irq();
 			card_emu_process_rx_byte(ch1, byte);
 		}
+		usb_refill_to_host(card_emu_get_usb_tx_queue(ch1), PHONE_DATAIN);
+		usb_refill_from_host(card_emu_get_uart_tx_queue(ch1), PHONE_DATAOUT);
 	}
-	usb_from_host(PHONE_DATAOUT);
 
 #ifdef CARDEMU_SECOND_UART
 	if (ch2) {

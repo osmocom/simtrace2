@@ -140,7 +140,6 @@ extern int main( void )
             last_simtrace_config = simtrace_config;
         } else {
             config_func_ptrs[simtrace_config].run();
-	    usb_to_host();
         }
     }
 }

@@ -30,6 +30,7 @@
 #include "card_emu.h"
 #include "req_ctx.h"
 #include "cardemu_prot.h"
+#include "linuxlist.h"
 
 
 #define NUM_SLOTS		2
@@ -135,12 +136,25 @@ struct card_handle {
 	struct req_ctx *uart_rx_ctx;	/* UART RX -> USB TX */
 	struct req_ctx *uart_tx_ctx;	/* USB RX -> UART TX */
 
+	struct llist_head usb_tx_queue;
+	struct llist_head uart_tx_queue;
+
 	struct {
 		uint32_t tx_bytes;
 		uint32_t rx_bytes;
 		uint32_t pps;
 	} stats;
 };
+
+struct llist_head *card_emu_get_usb_tx_queue(struct card_handle *ch)
+{
+	return &ch->usb_tx_queue;
+}
+
+struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch)
+{
+	return &ch->uart_tx_queue;
+}
 
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts);
 static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
@@ -154,12 +168,14 @@ static void flush_rx_buffer(struct card_handle *ch)
 	if (!rctx)
 		return;
 
-	rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
+	ch->uart_rx_ctx = NULL;
 
 	/* store length of data payload fild in header */
+	rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
 	rd->hdr.data_len = rctx->idx;
+
+	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-	ch->uart_rx_ctx = NULL;
 
 	/* FIXME: call into USB code to see if this buffer can
 	 * be transmitted now */
@@ -214,6 +230,7 @@ static void flush_pts(struct card_handle *ch)
 	ptsi->hdr.data_len = serialize_pts(ptsi->req, ch->pts.req);
 	serialize_pts(ptsi->resp, ch->pts.resp);
 
+	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
 
 	/* FIXME: call into USB code to see if this buffer can
@@ -637,10 +654,14 @@ static int tx_byte_tpdu(struct card_handle *ch)
 	/* ensure we are aware of any data that might be pending for
 	 * transmit */
 	if (!ch->uart_tx_ctx) {
-		ch->uart_tx_ctx = req_ctx_find_get(0, RCTX_S_UART_TX_PENDING,
-						   RCTX_S_UART_TX_BUSY);
-		if (!ch->uart_tx_ctx)
+		if (llist_empty(&ch->uart_tx_queue))
 			return 0;
+
+		/* dequeue first at head */
+		ch->uart_tx_ctx = llist_entry(ch->uart_tx_queue.next,
+					      struct req_ctx, list);
+		llist_del(&ch->uart_tx_ctx->list);
+		req_ctx_set_state(ch->uart_tx_ctx, RCTX_S_UART_TX_BUSY);
 
 		/* start with index zero */
 		ch->uart_tx_ctx->idx = 0;
@@ -854,6 +875,9 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 	ch = &card_handles[slot_num];
 
 	memset(ch, 0, sizeof(*ch));
+
+	INIT_LLIST_HEAD(&ch->usb_tx_queue);
+	INIT_LLIST_HEAD(&ch->uart_tx_queue);
 
 	/* initialize the card_handle with reasonabe defaults */
 	ch->state = ISO_S_WAIT_POWER;

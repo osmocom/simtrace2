@@ -92,7 +92,8 @@ extern void MITM_run( void );
 void Timer_Init( void );
 void TC0_Counter_Reset( void );
 
-int usb_to_host(void);
-int usb_from_host(int ep);
+struct llist_head;
+int usb_refill_to_host(struct llist_head *queue, uint32_t ep);
+int usb_refill_from_host(struct llist_head *queue, int ep);
 
 #endif  /*  SIMTRACE_H  */

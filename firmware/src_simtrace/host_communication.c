@@ -1,11 +1,16 @@
 #include "board.h"
 #include "req_ctx.h"
+#include "linuxlist.h"
+
+static volatile uint32_t usbep_in_progress[BOARD_USB_NUMENDPOINTS];
 
 /* call-back after (successful?) transfer of a buffer */
 static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			 uint32_t remaining)
 {
 	struct req_ctx *rctx = (struct req_ctx *) arg;
+
+	usbep_in_progress[rctx->ep] = 0;
 
 	if (status != USBD_STATUS_SUCCESS)
 		TRACE_ERROR("%s error, status=%d\n", __func__, status);
@@ -14,21 +19,32 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	req_ctx_set_state(rctx, RCTX_S_FREE);
 }
 
-int usb_to_host(void)
+int usb_refill_to_host(struct llist_head *queue, uint32_t ep)
 {
 	struct req_ctx *rctx;
 	int rc;
 
-	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
+	if (usbep_in_progress[ep])
+		return 0;
 
-	/* FIXME: obtain endpoint number from req_ctx! */
-	rc = USBD_Write(PHONE_DATAIN, rctx->data, rctx->tot_len,
+	if (llist_empty(queue))
+		return 0;
+
+	rctx = llist_entry(queue->next, struct req_ctx, list);
+	llist_del(&rctx->list);
+
+	req_ctx_set_state(rctx, RCTX_S_USB_TX_BUSY);
+	rctx->ep = ep;
+
+	rc = USBD_Write(ep, rctx->data, rctx->tot_len,
 			(TransferCallback) &usb_write_cb, rctx);
 	if (rc != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error %x\n", __func__, rc);
 		req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
 		return 0;
 	}
+
+	usbep_in_progress[ep] = 1;
 
 	return 1;
 }
@@ -37,6 +53,9 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			uint32_t remaining)
 {
 	struct req_ctx *rctx = (struct req_ctx *) arg;
+	struct llist_head *queue = (struct llist_head *) usbep_in_progress[rctx->ep];
+
+	usbep_in_progress[rctx->ep] = 0;
 
 	if (status != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error, status=%d\n", __func__, status);
@@ -45,14 +64,19 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 		return;
 	}
 	req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
+	llist_add_tail(&rctx->list, queue);
 }
 
-int usb_from_host(int ep)
+int usb_refill_from_host(struct llist_head *queue, int ep)
 {
 	struct req_ctx *rctx;
 	int rc;
 
+	if (usbep_in_progress[ep])
+		return 0;
+
 	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
+	rctx->ep = ep;
 
 	rc = USBD_Read(ep, rctx->data, rctx->size,
 			(TransferCallback) &usb_read_cb, rctx);
@@ -60,7 +84,10 @@ int usb_from_host(int ep)
 	if (rc != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error %x\n", __func__, rc);
 		req_ctx_put(rctx);
+		return 0;
 	}
 
-	return 0;
+	usbep_in_progress[ep] = (uint32_t) queue;
+
+	return 1;
 }

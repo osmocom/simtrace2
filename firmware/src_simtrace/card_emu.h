@@ -24,6 +24,8 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active);
 /* User sets a new ATR to be returned during next card reset */
 int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len);
 
+struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch);
+struct llist_head *card_emu_get_usb_tx_queue(struct card_handle *ch);
 
 #define ENABLE_TX	0x01
 #define ENABLE_RX	0x02

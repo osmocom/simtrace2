@@ -52,6 +52,7 @@ struct req_ctx {
 	uint8_t *data;
 };
 
+extern void req_ctx_init(void);
 extern struct req_ctx __ramfunc *req_ctx_find_get(int large, uint32_t old_state, uint32_t new_state);
 extern struct req_ctx *req_ctx_find_busy(void);
 extern void req_ctx_set_state(struct req_ctx *ctx, uint32_t new_state);

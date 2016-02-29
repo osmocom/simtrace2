@@ -4,6 +4,8 @@
  *------------------------------------------------------------------------------*/
 
 #include "board.h"
+#include "utils.h"
+#include "req_ctx.h"
 
 /*------------------------------------------------------------------------------
  *         Internal variables
@@ -94,6 +96,8 @@ extern int main( void )
 
     /* Disable watchdog*/
     WDT_Disable( WDT ) ;
+
+    req_ctx_init();
 
     PIO_InitializeInterrupts(0);
 

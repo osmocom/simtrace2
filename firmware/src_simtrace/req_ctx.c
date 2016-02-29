@@ -52,6 +52,7 @@ req_ctx_find_get(int large, uint32_t old_state, uint32_t new_state)
 		if (req_ctx[i].state == old_state) {
 			toReturn = &req_ctx[i];
 			toReturn->state = new_state;
+			break;
 		}
 	}
 	local_irq_restore(flags);

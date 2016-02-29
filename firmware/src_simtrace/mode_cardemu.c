@@ -102,8 +102,10 @@ void usart_irq_rx(uint8_t uart)
 #endif
 	csr = usart->US_CSR;
 
-	if (csr & US_CSR_TXRDY)
-		card_emu_tx_byte(ch);
+	if (csr & US_CSR_TXRDY) {
+		if (card_emu_tx_byte(ch) == 0)
+			USART_DisableIt(usart, US_IER_TXRDY);
+	}
 
 	if (csr & US_CSR_RXRDY) {
         	byte = (usart->US_RHR) & 0xFF;

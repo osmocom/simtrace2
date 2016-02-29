@@ -103,20 +103,28 @@ extern WEAK void LowLevelInit( void )
 
     /* Switch to 3-20MHz Xtal oscillator */
     PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN | CKGR_MOR_MOSCSEL;
+    /* wait for Main XTAL oscillator stabilization */
     timeout = 0;
     while (!(PMC->PMC_SR & PMC_SR_MOSCSELS) && (timeout++ < CLOCK_TIMEOUT));
+
+    /* "switch" to main clock as master clock source (should already be the case */
     PMC->PMC_MCKR = (PMC->PMC_MCKR & ~(uint32_t)PMC_MCKR_CSS_Msk) | PMC_MCKR_CSS_MAIN_CLK;
+    /* wait for master clock to be ready */
     for ( timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT) ; );
 
     /* Initialize PLLA */
     PMC->CKGR_PLLAR = BOARD_PLLAR;
+    /* Wait for PLLA to lock */
     timeout = 0;
     while (!(PMC->PMC_SR & PMC_SR_LOCKA) && (timeout++ < CLOCK_TIMEOUT));
 
-    /* Switch to main clock */
+    /* Switch to main clock (again ?!?) */
     PMC->PMC_MCKR = (BOARD_MCKR & ~PMC_MCKR_CSS_Msk) | PMC_MCKR_CSS_MAIN_CLK;
+    /* wait for master clock to be ready */
     for ( timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT) ; );
 
+    /* switch to PLLA as master clock source */
     PMC->PMC_MCKR = BOARD_MCKR ;
+    /* wait for master clock to be ready */
     for ( timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT) ; );
 }

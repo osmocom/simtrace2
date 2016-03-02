@@ -47,15 +47,6 @@
  *        Definitions
  *----------------------------------------------------------------------------*/
 
-/** Console baudrate always using 115200. */
-#define CONSOLE_BAUDRATE    115200
-/** Usart Hw interface used by the console (UART0). */
-#define CONSOLE_USART       UART0
-/** Usart Hw ID used by the console (UART0). */
-#define CONSOLE_ID          ID_UART0
-/** Pins description corresponding to Rxd,Txd, (UART pins) */
-#define CONSOLE_PINS        {PINS_UART}
-
 /*----------------------------------------------------------------------------
  *        Variables
  *----------------------------------------------------------------------------*/

@@ -229,6 +229,7 @@ static int usb_pending_old = 0;
 static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
 {
 	struct cardemu_usb_msg_hdr *hdr;
+	struct cardemu_usb_msg_set_atr *atr;
 	struct llist_head *queue;
 
 	hdr = (struct cardemu_usb_msg_hdr *) rctx->data;
@@ -240,6 +241,11 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
 		card_emu_have_new_uart_tx(ch);
 		break;
 	case CEMU_USB_MSGT_DT_SET_ATR:
+		atr = (struct cardemu_usb_msg_set_atr *) hdr;
+		card_emu_set_atr(ch, atr->atr, hdr->data_len);
+		llist_del(&rctx->list);
+		req_ctx_put(rctx);
+		break;
 	case CEMU_USB_MSGT_DT_GET_STATS:
 	case CEMU_USB_MSGT_DT_GET_STATUS:
 	default:
@@ -252,9 +258,9 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
  * them */
 static void process_any_usb_commands(struct llist_head *main_q, struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct req_ctx *rctx, *tmp;
 
-	llist_for_each_entry(rctx, main_q, list)
+	llist_for_each_entry_safe(rctx, tmp, main_q, list)
 		dispatch_usb_command(rctx, ch);
 }
 

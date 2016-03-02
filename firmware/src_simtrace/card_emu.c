@@ -876,7 +876,21 @@ void tc_etu_wtime_half_expired(void *handle)
 {
 	struct card_handle *ch = handle;
 	/* transmit NULL procedure byte well before waiting time expires */
-	card_emu_uart_tx(ch->uart_chan, ISO7816_3_PB_NULL);
+	switch (ch->state) {
+	case ISO_S_IN_TPDU:
+		switch (ch->tpdu.state) {
+		case TPDU_S_WAIT_PB:
+		case TPDU_S_WAIT_TX:
+			putchar('N');
+			card_emu_uart_tx(ch->uart_chan, ISO7816_3_PB_NULL);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 /* hardware driver informs us that one (more) ETU has expired */

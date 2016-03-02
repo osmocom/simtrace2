@@ -538,6 +538,8 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 		 * transmitter and transmit the procedure byte */
 		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
 		break;
+	default:
+		break;
 	}
 
 	ch->tpdu.state = new_ts;
@@ -692,6 +694,8 @@ static int tx_byte_tpdu(struct card_handle *ch)
 		else if (td->flags & CEMU_DATA_F_PB_AND_RX)
 			set_tpdu_state(ch, TPDU_S_WAIT_RX);
 		break;
+	default:
+		break;
 	}
 
 	/* check if the buffer has now been fully transmitted */
@@ -784,6 +788,8 @@ int card_emu_tx_byte(struct card_handle *ch)
 		break;
 	case ISO_S_IN_TPDU:
 		rc = tx_byte_tpdu(ch);
+		break;
+	default:
 		break;
 	}
 

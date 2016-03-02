@@ -788,6 +788,23 @@ int card_emu_tx_byte(struct card_handle *ch)
 	return rc;
 }
 
+void card_emu_have_new_uart_tx(struct card_handle *ch)
+{
+	switch (ch->state) {
+	case ISO_S_IN_TPDU:
+		switch (ch->tpdu.state) {
+		case TPDU_S_WAIT_TX:
+		case TPDU_S_WAIT_PB:
+			card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+			break;
+		default:
+			break;
+		}
+	default:
+		break;
+	}
+}
+
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 {

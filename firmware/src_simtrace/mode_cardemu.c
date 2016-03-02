@@ -2,6 +2,7 @@
 #include "card_emu.h"
 #include "iso7816_fidi.h"
 #include "utils.h"
+#include "linuxlist.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\n", __func__)
 
@@ -207,9 +208,24 @@ void mode_cardemu_exit(void)
 #endif
 }
 
+static int llist_count(struct llist_head *head)
+{
+	struct llist_head *list;
+	int i = 0;
+
+	llist_for_each(list, head)
+		i++;
+
+	return i;
+}
+
+static int usb_pending_old = 0;
+
 /* main loop function, called repeatedly */
 void mode_cardemu_run(void)
 {
+	struct llist_head *queue;
+
 	if (ch1) {
 		/* drain the ring buffer from UART into card_emu */
 		while (1) {
@@ -221,9 +237,21 @@ void mode_cardemu_run(void)
 			uint8_t byte = rbuf_read(&ch1_rb);
 			__enable_irq();
 			card_emu_process_rx_byte(ch1, byte);
+			TRACE_ERROR("Rx%02x\r\n", byte);
 		}
-		usb_refill_to_host(card_emu_get_usb_tx_queue(ch1), PHONE_DATAIN);
-		usb_refill_from_host(card_emu_get_uart_tx_queue(ch1), PHONE_DATAOUT);
+
+		queue = card_emu_get_usb_tx_queue(ch1);
+		int usb_pending = llist_count(queue);
+		if (usb_pending != usb_pending_old) {
+//			printf("usb_pending=%d\r\n", usb_pending);
+			usb_pending_old = usb_pending;
+		}
+		usb_refill_to_host(queue, PHONE_DATAIN);
+
+		queue = card_emu_get_uart_tx_queue(ch1);
+		usb_refill_from_host(queue, PHONE_DATAOUT);
+		if (llist_count(queue))
+			card_emu_have_new_uart_tx(ch1);
 	}
 
 #ifdef CARDEMU_SECOND_UART

@@ -171,7 +171,7 @@ static void flush_rx_buffer(struct card_handle *ch)
 	ch->uart_rx_ctx = NULL;
 
 	/* store length of data payload fild in header */
-	rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
+	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
 	rd->hdr.data_len = rctx->idx;
 
 	llist_add_tail(&rctx->list, &ch->usb_tx_queue);

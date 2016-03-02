@@ -3,6 +3,8 @@
 #include "iso7816_fidi.h"
 #include "utils.h"
 #include "linuxlist.h"
+#include "req_ctx.h"
+#include "cardemu_prot.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\n", __func__)
 
@@ -12,11 +14,13 @@ static const Pin pins_cardsim[] = PINS_CARDSIM;
 static const Pin pins_usim1[]	= {PINS_USIM1};
 static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
+static LLIST_HEAD(usb_out_queue_usim1);
 
 #ifdef CARDEMU_SECOND_UART
 static const Pin pins_usim2[]    = {PINS_USIM1};
 static const Pin pin_usim2_rst	= PIN_USIM2_nRST;
 static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
+static LLIST_HEAD(usb_out_queue_usim2);
 #endif
 
 static struct card_handle *ch1, *ch2;
@@ -221,6 +225,39 @@ static int llist_count(struct llist_head *head)
 
 static int usb_pending_old = 0;
 
+/* handle a single USB command as received from the USB host */
+static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
+{
+	struct cardemu_usb_msg_hdr *hdr;
+	struct llist_head *queue;
+
+	hdr = (struct cardemu_usb_msg_hdr *) rctx->data;
+	switch (hdr->msg_type) {
+	case CEMU_USB_MSGT_DT_TX_DATA:
+		queue = card_emu_get_uart_tx_queue(ch);
+		req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
+		llist_add_tail(&rctx->list, queue);
+		card_emu_have_new_uart_tx(ch);
+		break;
+	case CEMU_USB_MSGT_DT_SET_ATR:
+	case CEMU_USB_MSGT_DT_GET_STATS:
+	case CEMU_USB_MSGT_DT_GET_STATUS:
+	default:
+		/* FIXME */
+		break;
+	}
+}
+
+/* iterate over the queue of incoming USB commands and dispatch/execute
+ * them */
+static void process_any_usb_commands(struct llist_head *main_q, struct card_handle *ch)
+{
+	struct req_ctx *rctx;
+
+	llist_for_each_entry(rctx, main_q, list)
+		dispatch_usb_command(rctx, ch);
+}
+
 /* main loop function, called repeatedly */
 void mode_cardemu_run(void)
 {
@@ -248,10 +285,11 @@ void mode_cardemu_run(void)
 		}
 		usb_refill_to_host(queue, PHONE_DATAIN);
 
-		queue = card_emu_get_uart_tx_queue(ch1);
+		/* ensure we can handle incoming USB messages from the
+		 * host */
+		queue = &usb_out_queue_usim1;
 		usb_refill_from_host(queue, PHONE_DATAOUT);
-		if (llist_count(queue))
-			card_emu_have_new_uart_tx(ch1);
+		process_any_usb_commands(queue, ch1);
 	}
 
 #ifdef CARDEMU_SECOND_UART

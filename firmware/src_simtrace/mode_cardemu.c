@@ -14,29 +14,45 @@ static const Pin pins_cardsim[] = PINS_CARDSIM;
 static const Pin pins_usim1[]	= {PINS_USIM1};
 static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
-static LLIST_HEAD(usb_out_queue_usim1);
 
 #ifdef CARDEMU_SECOND_UART
 static const Pin pins_usim2[]    = {PINS_USIM1};
 static const Pin pin_usim2_rst	= PIN_USIM2_nRST;
 static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
-static LLIST_HEAD(usb_out_queue_usim2);
 #endif
 
-static struct card_handle *ch1, *ch2;
-static struct ringbuf ch1_rb;
+struct cardem_inst {
+	struct card_handle *ch;
+	struct llist_head usb_out_queue;
+	struct ringbuf rb;
+	struct Usart_info usart_info;
+	int usb_pending_old;
+	uint8_t ep_out;
+	uint8_t ep_in;
+	uint8_t ep_int;
+};
 
-static struct Usart_info usart_info[] = {
+static struct cardem_inst cardem_inst[] = {
 	{
-		.base = USART1,
-		.id = ID_USART1,
-		.state = USART_RCV
+		.usart_info = 	{
+			.base = USART1,
+			.id = ID_USART1,
+			.state = USART_RCV
+		},
+		.ep_out = PHONE_DATAOUT,
+		.ep_in = PHONE_DATAIN,
+		.ep_int = PHONE_INT,
 	},
 #ifdef CARDEMU_SECOND_UART
 	{
-		.base = USART0,
-		.id = ID_USART0,
-		.state = USART_RCV
+		.usart_info = {
+			.base = USART0,
+			.id = ID_USART0,
+			.state = USART_RCV
+		},
+		.ep_out = CARDEM_USIM2_DATAOUT,
+		.ep_in = CARDEM_USIM2_DATAIN,
+		.ep_int = CARDEM_USIM2_INT,
 	},
 #endif
 };
@@ -90,8 +106,22 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 /* call-back from card_emu.c to transmit a byte */
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 {
+	Usart *usart = get_usart_by_chan(uart_chan);
+#if 0
 	Usart_info *ui = &usart_info[uart_chan];
 	ISO7816_SendChar(byte, ui);
+#else
+	int i = 0;
+	while ((usart->US_CSR & (US_CSR_TXRDY)) == 0) {
+		if (!(i%1000000)) {
+			printf("s: %x %02X", usart->US_CSR, usart->US_RHR & 0xFF);
+			usart->US_CR = US_CR_RSTTX;
+			usart->US_CR = US_CR_RSTRX;
+		}
+	}
+	usart->US_THR = byte;
+	TRACE_ERROR("Sx%02x\r\n", byte);
+#endif
 	return 1;
 }
 
@@ -100,23 +130,23 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 void usart_irq_rx(uint8_t uart)
 {
 	Usart *usart = get_usart_by_chan(uart);
-	struct card_handle *ch = ch1;
+	struct cardem_inst *ci = &cardem_inst[0];
 	uint32_t csr;
 	uint8_t byte = 0;
 
 #ifdef CARDEMU_SECOND_UART
 	if (uart == 1)
-		ch = ch2;
+		ci = &cardem_inst[1];
 #endif
 	csr = usart->US_CSR;
 
 	if (csr & US_CSR_RXRDY) {
         	byte = (usart->US_RHR) & 0xFF;
-		rbuf_write(&ch1_rb, byte);
+		rbuf_write(&ci->rb, byte);
 	}
 
 	if (csr & US_CSR_TXRDY) {
-		if (card_emu_tx_byte(ch) == 0)
+		if (card_emu_tx_byte(ci->ch) == 0)
 			USART_DisableIt(usart, US_IER_TXRDY);
 	}
 
@@ -146,16 +176,32 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 static void usim1_rst_irqhandler(const Pin *pPin)
 {
 	int active = PIO_Get(&pin_usim1_rst) ? 0 : 1;
-	card_emu_io_statechg(ch1, CARD_IO_RST, active);
+	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_RST, active);
 }
 
 static void usim1_vcc_irqhandler(const Pin *pPin)
 {
 	int active = PIO_Get(&pin_usim1_vcc) ? 1 : 0;
-	card_emu_io_statechg(ch1, CARD_IO_VCC, active);
+	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_VCC, active);
 	/* FIXME do this for real */
-	card_emu_io_statechg(ch1, CARD_IO_CLK, active);
+	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_CLK, active);
 }
+
+#ifdef CARDEMU_SECOND_UART
+static void usim2_rst_irqhandler(const Pin *pPin)
+{
+	int active = PIO_Get(&pin_usim2_rst) ? 0 : 1;
+	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_RST, active);
+}
+
+static void usim2_vcc_irqhandler(const Pin *pPin)
+{
+	int active = PIO_Get(&pin_usim2_vcc) ? 1 : 0;
+	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_VCC, active);
+	/* FIXME do this for real */
+	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_CLK, active);
+}
+#endif
 
 /* executed once at system boot for each config */
 void mode_cardemu_configure(void)
@@ -166,30 +212,34 @@ void mode_cardemu_configure(void)
 /* called if config is activated */
 void mode_cardemu_init(void)
 {
-	TRACE_ENTRY();
+	int i;
 
-	rbuf_reset(&ch1_rb);
+	TRACE_ENTRY();
 
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
 
+	INIT_LLIST_HEAD(&cardem_inst[0].usb_out_queue);
+	rbuf_reset(&cardem_inst[0].rb);
 	PIO_Configure(pins_usim1, PIO_LISTSIZE(pins_usim1));
-	ISO7816_Init(&usart_info[0], CLK_SLAVE);
-	//USART_EnableIt(USART1, US_IER_RXRDY);
+	ISO7816_Init(&cardem_inst[0].usart_info, CLK_SLAVE);
 	NVIC_EnableIRQ(USART1_IRQn);
-
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
-
-	ch1 = card_emu_init(0, 2, 0);
+	cardem_inst[0].ch = card_emu_init(0, 2, 0);
 
 #ifdef CARDEMU_SECOND_UART
+	INIT_LLIST_HEAD(&cardem_inst[1].usb_out_queue);
+	rbuf_reset(&cardem_inst[1].rb);
 	PIO_Configure(pins_usim2, PIO_LISTSIZE(pins_usim2));
-	ISO7816_Init(&usart_info[1], CLK_SLAVE);
-	//USART_EnableIt(USART0, US_IER_RXRDY);
+	ISO7816_Init(&cardem_inst[1].usart_info, CLK_SLAVE);
 	NVIC_EnableIRQ(USART0_IRQn);
-	ch2 = card_emu_init(1, 0, 1);
+	PIO_ConfigureIt(&pin_usim2_rst, usim2_rst_irqhandler);
+	PIO_EnableIt(&pin_usim2_rst);
+	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
+	PIO_EnableIt(&pin_usim2_vcc);
+	cardem_inst[1].ch = card_emu_init(1, 0, 1);
 #endif
 }
 
@@ -206,6 +256,9 @@ void mode_cardemu_exit(void)
 	USART_SetReceiverEnabled(USART1, 0);
 
 #ifdef CARDEMU_SECOND_UART
+	PIO_DisableIt(&pin_usim2_rst);
+	PIO_DisableIt(&pin_usim2_vcc);
+
 	NVIC_DisableIRQ(USART0_IRQn);
 	USART_SetTransmitterEnabled(USART0, 0);
 	USART_SetReceiverEnabled(USART0, 0);
@@ -222,8 +275,6 @@ static int llist_count(struct llist_head *head)
 
 	return i;
 }
-
-static int usb_pending_old = 0;
 
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
@@ -268,44 +319,37 @@ static void process_any_usb_commands(struct llist_head *main_q, struct card_hand
 void mode_cardemu_run(void)
 {
 	struct llist_head *queue;
+	unsigned int i;
 
-	if (ch1) {
+	for (i = 0; i < ARRAY_SIZE(cardem_inst); i++) {
+		struct cardem_inst *ci = &cardem_inst[i];
+
 		/* drain the ring buffer from UART into card_emu */
 		while (1) {
 			__disable_irq();
-			if (rbuf_is_empty(&ch1_rb)) {
+			if (rbuf_is_empty(&ci->rb)) {
 				__enable_irq();
 				break;
 			}
-			uint8_t byte = rbuf_read(&ch1_rb);
+			uint8_t byte = rbuf_read(&ci->rb);
 			__enable_irq();
-			card_emu_process_rx_byte(ch1, byte);
+			card_emu_process_rx_byte(ci->ch, byte);
 			TRACE_ERROR("Rx%02x\r\n", byte);
 		}
 
-		queue = card_emu_get_usb_tx_queue(ch1);
+		queue = card_emu_get_usb_tx_queue(ci->ch);
 		int usb_pending = llist_count(queue);
-		if (usb_pending != usb_pending_old) {
+		if (usb_pending != ci->usb_pending_old) {
 //			printf("usb_pending=%d\r\n", usb_pending);
-			usb_pending_old = usb_pending;
+			ci->usb_pending_old = usb_pending;
 		}
-		usb_refill_to_host(queue, PHONE_DATAIN);
+		usb_refill_to_host(queue, ci->ep_in);
 
 		/* ensure we can handle incoming USB messages from the
 		 * host */
-		queue = &usb_out_queue_usim1;
-		usb_refill_from_host(queue, PHONE_DATAOUT);
-		process_any_usb_commands(queue, ch1);
+		queue = &ci->usb_out_queue;
+		usb_refill_from_host(queue, ci->ep_out);
+		process_any_usb_commands(queue, ci->ch);
 	}
 
-#ifdef CARDEMU_SECOND_UART
-	if (ch2) {
-		rst_active = PIO_Get(&pin_usim2_rst) ? 0 : 1;
-		vcc_active = PIO_Get(&pin_usim2_vcc) ? 1 : 0;
-		card_emu_io_statechg(ch2, CARD_IO_RST, rst_active);
-		card_emu_io_statechg(ch2, CARD_IO_VCC, vcc_active);
-		/* FIXME: clock ? */
-	}
-	usb_from_host(FIXME);
-#endif
 }

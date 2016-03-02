@@ -580,14 +580,21 @@ static void send_tpdu_header(struct card_handle *ch)
 			ch->tpdu.hdr[4]);
 
 	/* if we already/still have a context, send it off */
-	if (ch->uart_rx_ctx && ch->uart_rx_ctx->idx) {
-		flush_rx_buffer(ch);
+	if (ch->uart_rx_ctx) {
+		TRACE_DEBUG("have old buffer\r\n");
+		if (ch->uart_rx_ctx->idx) {
+			TRACE_DEBUG("flushing old buffer\r\n");
+			flush_rx_buffer(ch);
+		}
+	} else {
+		TRACE_DEBUG("allocating new buffer\r\n");
+		/* ensure we have a new buffer */
+		ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+		if (!ch->uart_rx_ctx) {
+			TRACE_ERROR("%s: ENOMEM\r\n", __func__);
+			return;
+		}
 	}
-
-	/* ensure we have a new buffer */
-	ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-	if (!ch->uart_rx_ctx)
-		return;
 	rctx = ch->uart_rx_ctx;
 	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
 

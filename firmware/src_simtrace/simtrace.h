@@ -14,6 +14,10 @@
 #define PHONE_DATAIN      5
 #define PHONE_INT         6
 
+#define CARDEM_USIM2_DATAOUT	DATAOUT
+#define CARDEM_USIM2_DATAIN	DATAIN
+#define CARDEM_USIM2_INT	INT
+
 #define CLK_MASTER      true
 #define CLK_SLAVE       false
 

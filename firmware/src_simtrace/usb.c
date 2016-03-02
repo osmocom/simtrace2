@@ -175,8 +175,57 @@ const unsigned char MITMConfigStringDescriptor[] = {
     USBStringDescriptor_UNICODE('M'),
 };
 
+const unsigned char cardem_usim1_intf_str[] = {
+
+    USBStringDescriptor_LENGTH(18),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_UNICODE('C'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('r'),
+    USBStringDescriptor_UNICODE('d'),
+    USBStringDescriptor_UNICODE('E'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE('u'),
+    USBStringDescriptor_UNICODE('l'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('t'),
+    USBStringDescriptor_UNICODE('o'),
+    USBStringDescriptor_UNICODE('r'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('U'),
+    USBStringDescriptor_UNICODE('S'),
+    USBStringDescriptor_UNICODE('I'),
+    USBStringDescriptor_UNICODE('M'),
+    USBStringDescriptor_UNICODE('1'),
+};
+
+const unsigned char cardem_usim2_intf_str[] = {
+
+    USBStringDescriptor_LENGTH(18),
+    USBGenericDescriptor_STRING,
+    USBStringDescriptor_UNICODE('C'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('r'),
+    USBStringDescriptor_UNICODE('d'),
+    USBStringDescriptor_UNICODE('E'),
+    USBStringDescriptor_UNICODE('m'),
+    USBStringDescriptor_UNICODE('u'),
+    USBStringDescriptor_UNICODE('l'),
+    USBStringDescriptor_UNICODE('a'),
+    USBStringDescriptor_UNICODE('t'),
+    USBStringDescriptor_UNICODE('o'),
+    USBStringDescriptor_UNICODE('r'),
+    USBStringDescriptor_UNICODE(' '),
+    USBStringDescriptor_UNICODE('U'),
+    USBStringDescriptor_UNICODE('S'),
+    USBStringDescriptor_UNICODE('I'),
+    USBStringDescriptor_UNICODE('M'),
+    USBStringDescriptor_UNICODE('2'),
+};
+
 enum strDescNum {
-    PRODUCT_STRING = 1, MANUF_STR, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR, STRING_DESC_CNT
+    PRODUCT_STRING = 1, MANUF_STR, SNIFFER_CONF_STR, CCID_CONF_STR, PHONE_CONF_STR, MITM_CONF_STR,
+    CARDEM_USIM1_INTF_STR, CARDEM_USIM2_INTF_STR, STRING_DESC_CNT
 };
 
 /** List of string descriptors used by the device */
@@ -187,7 +236,9 @@ static const unsigned char *stringDescriptors[] = {
     [SNIFFER_CONF_STR] 	= snifferConfigStringDescriptor,
     [CCID_CONF_STR] 	= CCIDConfigStringDescriptor,
     [PHONE_CONF_STR]	= phoneConfigStringDescriptor,
-    [MITM_CONF_STR]	= MITMConfigStringDescriptor
+    [MITM_CONF_STR]	= MITMConfigStringDescriptor,
+    [CARDEM_USIM1_INTF_STR] = cardem_usim1_intf_str,
+    [CARDEM_USIM2_INTF_STR] = cardem_usim2_intf_str,
 };
 
 /*------------------------------------------------------------------------------
@@ -385,6 +436,12 @@ typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
     USBEndpointDescriptor       phone_dataOut;
     USBEndpointDescriptor       phone_dataIn;
     USBEndpointDescriptor       phone_interruptIn;
+#ifdef CARDEMU_SECOND_UART
+    USBInterfaceDescriptor      usim2;
+    USBEndpointDescriptor       usim2_dataOut;
+    USBEndpointDescriptor       usim2_dataIn;
+    USBEndpointDescriptor       usim2_interruptIn;
+#endif
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorPhone;
 
 static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorPhone = {
@@ -393,7 +450,11 @@ static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorP
         sizeof(USBConfigurationDescriptor),
         USBGenericDescriptor_CONFIGURATION,
         sizeof(SIMTraceDriverConfigurationDescriptorPhone),
+#ifdef CARDEMU_SECOND_UART
+	2,
+#else
         1, /* There is one interface in this configuration */
+#endif
         CFG_NUM_PHONE, /* configuration number */
         PHONE_CONF_STR, /* string descriptor for this configuration */
         USBD_BMATTRIBUTES,
@@ -409,7 +470,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorP
         0xff, /* Descriptor Class: Vendor specific */
         0, /* No subclass */
         0, /* No l */
-        PHONE_CONF_STR  /* Third in string descriptor for this interface */
+        CARDEM_USIM1_INTF_STR
     },
     /* Bulk-OUT endpoint standard descriptor */
     {
@@ -442,7 +503,53 @@ static const SIMTraceDriverConfigurationDescriptorPhone configurationDescriptorP
         MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
             USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
         0x10
+    },
+#ifdef CARDEMU_SECOND_UART
+    /* Communication class interface standard descriptor */
+    {
+        sizeof(USBInterfaceDescriptor),
+        USBGenericDescriptor_INTERFACE,
+        1, /* This is interface #0 */
+        0, /* This is alternate setting #0 for this interface */
+        3, /* Number of endpoints */
+        0xff, /* Descriptor Class: Vendor specific */
+        0, /* No subclass */
+        0, /* No l */
+        CARDEM_USIM2_INTF_STR
+    },
+    /* Bulk-OUT endpoint standard descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
+                                      CARDEM_USIM2_DATAOUT),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAOUT),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Bulk-IN endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
+                                      CARDEM_USIM2_DATAIN),
+        USBEndpointDescriptor_BULK,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAIN),
+            USBEndpointDescriptor_MAXBULKSIZE_FS),
+        0 /* Must be 0 for full-speed bulk endpoints */
+    },
+    /* Notification endpoint descriptor */
+    {
+        sizeof(USBEndpointDescriptor),
+        USBGenericDescriptor_ENDPOINT,
+        USBEndpointDescriptor_ADDRESS( USBEndpointDescriptor_IN, CARDEM_USIM2_INT ),
+        USBEndpointDescriptor_INTERRUPT,
+        MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_INT),
+            USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+        0x10
     }
+#endif
 };
 #endif /* HAVE_CARDEM */
 

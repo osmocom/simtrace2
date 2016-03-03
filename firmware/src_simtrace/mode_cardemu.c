@@ -1,3 +1,5 @@
+#define TRACE_LEVEL 6
+
 #include "board.h"
 #include "simtrace.h"
 #include "ringbuffer.h"
@@ -249,6 +251,9 @@ void mode_cardemu_init(void)
 void mode_cardemu_exit(void)
 {
 	TRACE_ENTRY();
+
+	/* FIXME: stop tc_fdt */
+	/* FIXME: release all rctx, unlink them from any queue */
 
 	PIO_DisableIt(&pin_usim1_rst);
 	PIO_DisableIt(&pin_usim1_vcc);

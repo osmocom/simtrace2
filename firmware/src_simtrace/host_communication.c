@@ -1,3 +1,5 @@
+//#define TRACE_LEVEL 6
+
 #include "board.h"
 #include "req_ctx.h"
 #include "linuxlist.h"

@@ -17,6 +17,8 @@
  *
  */
 
+#define TRACE_LEVEL 6
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>

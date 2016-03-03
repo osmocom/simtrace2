@@ -129,8 +129,6 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
     Usart *us_base = usart->base;
     uint32_t us_id = usart->id;
 
-    TRACE_DEBUG("***Send char: 0x%X\n\r", CharToSend);
-
     if( usart->state == USART_RCV ) {
         us_base->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
         usart->state = USART_SEND;

@@ -48,7 +48,7 @@ MEMORIES = flash
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 1
+TRACE_LEVEL = 4
 #FIXME: Remove this variable
 NOAUTOCALLBACK=no
 
@@ -110,7 +110,7 @@ CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked
 CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
 CFLAGS += -Wunreachable-code
-CFLAGS += -Wcast-align
+#CFLAGS += -Wcast-align
 #CFLAGS += -std=c11
 CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion

@@ -141,8 +141,8 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
     while((us_base->US_CSR & (US_CSR_TXRDY)) == 0)  {
         i++;
         if (!(i%1000000)) {
-            printf("s: %x\n", us_base->US_CSR);
-              printf("s: %x\n", us_base->US_RHR & 0xFF);
+            printf("s: %x ", us_base->US_CSR);
+            printf("s: %x\r\n", us_base->US_RHR & 0xFF);
             us_base->US_CR = US_CR_RSTTX;
             us_base->US_CR = US_CR_RSTRX;
       }
@@ -151,6 +151,8 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
 
     /* Transmit a char */
     us_base->US_THR = CharToSend;
+
+    TRACE_ERROR("Sx%02X\r\n", CharToSend);
 
     status = (us_base->US_CSR&(US_CSR_OVRE|US_CSR_FRAME|
                                       US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|

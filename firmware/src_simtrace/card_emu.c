@@ -495,7 +495,7 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 	if (!ch->uart_rx_ctx) {
 		rctx = ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
 		if (!ch->uart_rx_ctx) {
-			TRACE_DEBUG("Received UART byte but unable to allocate Rx Buf\r\n");
+			TRACE_ERROR("Received UART byte but ENOMEM\r\n");
 			return;
 		}
 		rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
@@ -845,7 +845,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 		break;
 	case CARD_IO_RST:
 		if (active == 0 && ch->in_reset) {
-			TRACE_DEBUG("RST released\r\n");
+			TRACE_INFO("RST released\r\n");
 			if (ch->vcc_active && ch->clocked) {
 				/* enable the TC/ETU counter once reset has been released */
 				tc_etu_enable(ch->tc_chan);
@@ -854,7 +854,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 				card_set_state(ch, ISO_S_IN_ATR);
 			}
 		} else if (active && !ch->in_reset) {
-			TRACE_DEBUG("RST asserted\r\n");
+			TRACE_INFO("RST asserted\r\n");
 			tc_etu_disable(ch->tc_chan);
 		}
 		ch->in_reset = active;
@@ -902,6 +902,7 @@ void tc_etu_wtime_half_expired(void *handle)
 /* hardware driver informs us that one (more) ETU has expired */
 void tc_etu_wtime_expired(void *handle)
 {
+	TRACE_ERROR("wtime_exp\r\n");
 }
 
 /* shortest ATR found in smartcard_list.txt */

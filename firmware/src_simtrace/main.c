@@ -103,7 +103,7 @@ extern int main( void )
 
     SIMtrace_USB_Initialize();
 
-    printf("%s", "USB init\n\r");
+    TRACE_INFO("USB init...\n\r");
     while(USBD_GetState() < USBD_STATE_CONFIGURED){
         if(i >= MAX_USB_ITER*3) {
             TRACE_ERROR("Resetting board (USB could not be configured)\n");
@@ -112,16 +112,21 @@ extern int main( void )
         i++;
     }
 
+    TRACE_DEBUG("calling configure of all configurations...\n\r");
     for (i = 1; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
     {
         config_func_ptrs[i].configure();
     }
 
+    TRACE_DEBUG("calling init of config %u...\n\r", simtrace_config);
     config_func_ptrs[simtrace_config].init();
     last_simtrace_config = simtrace_config;
 
-    printf("%s", "Start\n\r");
+    TRACE_DEBUG("entering main loop...\n\r");
     while(1) {
+	const char rotor[] = { '-', '\\', '|', '/' };
+	putchar('\b');
+	putchar(rotor[i++ % ARRAY_SIZE(rotor)]);
 
         if (USBD_GetState() < USBD_STATE_CONFIGURED) {
 
@@ -130,15 +135,14 @@ extern int main( void )
             }
         }
         else if (isUsbConnected == 0) {
-            printf("USB is now configured\n\r");
+            TRACE_INFO("USB is now configured\n\r");
             LED_Set(LED_NUM_GREEN);
             LED_Clear(LED_NUM_RED);
 
             isUsbConnected = 1;
         }
-
-
         if (last_simtrace_config != simtrace_config) {
+	    TRACE_INFO("USB config chg %u -> %u\r\n", last_simtrace_config, simtrace_config);
             config_func_ptrs[last_simtrace_config].exit();
             config_func_ptrs[simtrace_config].init();
             last_simtrace_config = simtrace_config;

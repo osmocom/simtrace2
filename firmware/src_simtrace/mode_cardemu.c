@@ -1,4 +1,6 @@
 #include "board.h"
+#include "simtrace.h"
+#include "ringbuffer.h"
 #include "card_emu.h"
 #include "iso7816_fidi.h"
 #include "utils.h"

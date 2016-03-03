@@ -44,6 +44,10 @@
 //------------------------------------------------------------------------------
 
 #include "board.h"
+#include "simtrace.h"
+
+#ifdef HAVE_CCID
+
 #include <USBDDriver.h>
 #include <USBRequests.h>
 #include <USBDescriptors.h>
@@ -1029,4 +1033,4 @@ unsigned char RDRtoPCHardwareError( unsigned char bSlot,
     return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 4, 0, 0 );
 }
 
-
+#endif /* HAVE_CCID */

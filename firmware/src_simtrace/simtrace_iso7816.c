@@ -32,6 +32,8 @@
  *------------------------------------------------------------------------------*/
 
 #include "board.h"
+#include "simtrace.h"
+#include "ringbuffer.h"
 #include "iso7816_fidi.h"
 
 #include <string.h>

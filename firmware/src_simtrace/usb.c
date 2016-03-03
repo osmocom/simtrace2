@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "board.h"
+#include "simtrace.h"
 #include "utils.h"
 
 #include <cciddriverdescriptors.h>

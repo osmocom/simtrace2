@@ -6,6 +6,7 @@
 #define TRACE_LEVEL 5
 
 #include "board.h"
+#include "simtrace.h"
 #include "utils.h"
 #include "req_ctx.h"
 

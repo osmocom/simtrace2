@@ -2,6 +2,7 @@
 #define SIMTRACE_H
 
 #include "ringbuffer.h"
+#include "board.h"
 
 /* Endpoint numbers */
 #define DATAOUT     1
@@ -37,7 +38,20 @@ extern volatile uint32_t char_stat;
 extern const Pin pinPhoneRST;
 
 enum confNum {
-    CFG_NUM_SNIFF = 1, CFG_NUM_CCID, CFG_NUM_PHONE, CFG_NUM_MITM, NUM_CONF
+	CFG_NUM_NONE	= 0,
+#ifdef HAVE_SNIFFER
+	CFG_NUM_SNIFF,
+#endif
+#ifdef HAVE_CCID
+	CFG_NUM_CCID,
+#endif
+#ifdef HAVE_CARDEM
+	CFG_NUM_PHONE,
+#endif
+#ifdef HAVE_MITM
+	CFG_NUM_MITM,
+#endif
+	NUM_CONF
 };
 
 /// CCIDDriverConfiguration Descriptors

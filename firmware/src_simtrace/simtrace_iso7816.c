@@ -46,32 +46,36 @@ volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 /*-----------------------------------------------------------------------------
  *          Interrupt routines
  *-----------------------------------------------------------------------------*/
-static void Callback_PhoneRST_ISR( uint8_t *pArg, uint8_t status, uint32_t transferred, uint32_t remaining)
+static void Callback_PhoneRST_ISR(uint8_t * pArg, uint8_t status,
+				  uint32_t transferred, uint32_t remaining)
 {
-    printf("rstCB\n\r");
-    PIO_EnableIt( &pinPhoneRST ) ;
+	printf("rstCB\n\r");
+	PIO_EnableIt(&pinPhoneRST);
 }
-void ISR_PhoneRST( const Pin *pPin)
+
+void ISR_PhoneRST(const Pin * pPin)
 {
-    int ret;
-    // FIXME: no printfs in ISRs?
-    printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
-    if ( ((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)  )
-    {
-        if(PIO_Get( &pinPhoneRST ) == 0) {
-            printf(" 0 ");
-        } else {
-            printf(" 1 ");
-        }
-    }
+	int ret;
+	// FIXME: no printfs in ISRs?
+	printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
+	if (((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)) {
+		if (PIO_Get(&pinPhoneRST) == 0) {
+			printf(" 0 ");
+		} else {
+			printf(" 1 ");
+		}
+	}
 
-    if ((ret = USBD_Write( PHONE_INT, "R", 1, (TransferCallback)&Callback_PhoneRST_ISR, 0 )) != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
-        return;
-    }
+	if ((ret =
+	     USBD_Write(PHONE_INT, "R", 1,
+			(TransferCallback) & Callback_PhoneRST_ISR,
+			0)) != USBD_STATUS_SUCCESS) {
+		TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
+		return;
+	}
 
-    /* Interrupt enabled after ATR is sent to phone */
-    PIO_DisableIt( &pinPhoneRST ) ;
+	/* Interrupt enabled after ATR is sent to phone */
+	PIO_DisableIt(&pinPhoneRST);
 }
 
 extern void usart_irq_rx(uint8_t num);
@@ -79,40 +83,40 @@ extern void usart_irq_rx(uint8_t num);
  *  char_stat is zero if no error occured.
  *  Otherwise it is filled with the content of the status register.
  */
-void USART1_IrqHandler( void )
+void USART1_IrqHandler(void)
 {
 #if 0
-    uint32_t stat;
-    char_stat = 0;
-    // Rcv buf full
-/*    if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {
-        TRACE_DEBUG("Rcv buf full");
-        USART_DisableIt(USART1, US_IDR_RXBUFF);
-    }
+	uint32_t stat;
+	char_stat = 0;
+	// Rcv buf full
+/*	if((stat & US_CSR_RXBUFF) == US_CSR_RXBUFF) {
+		TRACE_DEBUG("Rcv buf full");
+		USART_DisableIt(USART1, US_IDR_RXBUFF);
+	}
 */
-    uint32_t csr = USART_PHONE->US_CSR;
+	uint32_t csr = USART_PHONE->US_CSR;
 
-    if (csr & US_CSR_TXRDY) {
-        /* transmit buffer empty, nothing to transmit */
-    }
-    if (csr & US_CSR_RXRDY) {
-        stat = (csr&(US_CSR_OVRE|US_CSR_FRAME|
-                        US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|
-                        (1<<10)));
-        uint8_t c = (USART_PHONE->US_RHR) & 0xFF;
-//        printf(" %x", c);
+	if (csr & US_CSR_TXRDY) {
+		/* transmit buffer empty, nothing to transmit */
+	}
+	if (csr & US_CSR_RXRDY) {
+		stat = (csr & (US_CSR_OVRE | US_CSR_FRAME |
+			       US_CSR_PARE | US_CSR_TIMEOUT | US_CSR_NACK |
+			       (1 << 10)));
+		uint8_t c = (USART_PHONE->US_RHR) & 0xFF;
+//		printf(" %x", c);
 
-        if (stat == 0 ) {
-            /* Fill char into buffer */
-            rbuf_write(&sim_rcv_buf, c);
-        } else {
-            TRACE_DEBUG("e %x st: %x\n", c, stat);
-        } /* else: error occured */
+		if (stat == 0) {
+			/* Fill char into buffer */
+			rbuf_write(&sim_rcv_buf, c);
+		} else {
+			TRACE_DEBUG("e %x st: %x\n", c, stat);
+		}		/* else: error occured */
 
-        char_stat = stat;
-    }
+		char_stat = stat;
+	}
 #else
-    usart_irq_rx(0);
+	usart_irq_rx(0);
 #endif
 }
 
@@ -121,13 +125,13 @@ void update_fidi(uint8_t fidi)
 {
 	int rc;
 
-        uint8_t fi = fidi >> 4;
-        uint8_t di = fidi & 0xf;
+	uint8_t fi = fidi >> 4;
+	uint8_t di = fidi & 0xf;
 
 	rc = compute_fidi_ratio(fi, di);
 	if (rc > 0 && rc < 0x400) {
 		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d", fi, di, rc);
-/*              make sure UART uses new F/D ratio */
+		/* make sure UART uses new F/D ratio */
 		USART_PHONE->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
 		USART_PHONE->US_FIDI = rc & 0x3ff;
 		USART_PHONE->US_CR |= US_CR_RXEN | US_CR_STTTO;

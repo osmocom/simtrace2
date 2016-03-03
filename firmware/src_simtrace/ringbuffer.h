@@ -8,16 +8,16 @@
 #define RING_BUFLEN 1024
 
 typedef struct ringbuf {
-    uint8_t buf[RING_BUFLEN];
-    size_t ird;
-    size_t iwr;
+	uint8_t buf[RING_BUFLEN];
+	size_t ird;
+	size_t iwr;
 } ringbuf;
 
-void rbuf_reset(volatile ringbuf *rb);
-uint8_t rbuf_read(volatile ringbuf *rb);
-uint8_t rbuf_peek(volatile ringbuf *rb);
-void rbuf_write(volatile ringbuf *rb, uint8_t item);
-bool rbuf_is_empty(volatile ringbuf *rb);
-bool rbuf_is_full(volatile ringbuf *rb);
+void rbuf_reset(volatile ringbuf * rb);
+uint8_t rbuf_read(volatile ringbuf * rb);
+uint8_t rbuf_peek(volatile ringbuf * rb);
+void rbuf_write(volatile ringbuf * rb, uint8_t item);
+bool rbuf_is_empty(volatile ringbuf * rb);
+bool rbuf_is_full(volatile ringbuf * rb);
 
 #endif /* end of include guard: SIMTRACE_RINGBUF_H */

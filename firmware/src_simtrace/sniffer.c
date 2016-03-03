@@ -50,50 +50,58 @@
  *         Internal variables
  *------------------------------------------------------------------------------*/
 /** ISO7816 pins */
-static const Pin pinsISO7816_sniff[]    = {PINS_SIM_SNIFF_SIM};
-static const Pin pins_bus[]    = {PINS_BUS_SNIFF};
+static const Pin pinsISO7816_sniff[] = { PINS_SIM_SNIFF_SIM };
+static const Pin pins_bus[] = { PINS_BUS_SNIFF };
+
 static const Pin pPwr[] = {
-    /* Enable power converter 4.5-6V to 3.3V; low: off */
-    {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT},
-    
-    /* Enable second power converter: VCC_PHONE to VCC_SIM; high: on */
-    {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+	/* Enable power converter 4.5-6V to 3.3V; low: off */
+	{SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT},
+
+	/* Enable second power converter: VCC_PHONE to VCC_SIM; high: on */
+	{VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
-static struct Usart_info usart_info = {.base = USART_PHONE, .id = ID_USART_PHONE, .state = USART_RCV};
+static struct Usart_info usart_info = {
+	.base = USART_PHONE,
+	.id = ID_USART_PHONE,
+	.state = USART_RCV,
+};
 
 /*-----------------------------------------------------------------------------
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
-void Sniffer_configure( void ){
-    TRACE_INFO("Sniffer config\n");
-}
-
-void Sniffer_exit( void ){
-    TRACE_INFO("Sniffer exit\n");
-    USART_DisableIt(USART_PHONE, US_IER_RXRDY);
-    NVIC_DisableIRQ(USART1_IRQn);
-    USART_SetReceiverEnabled(USART_PHONE, 0);
-}
-void Sniffer_init( void )
+void Sniffer_configure(void)
 {
-    TRACE_INFO("Sniffer Init\n");
-    /*  Configure ISO7816 driver */
-    PIO_Configure( pinsISO7816_sniff, PIO_LISTSIZE( pinsISO7816_sniff ) ) ;
-    PIO_Configure( pins_bus, PIO_LISTSIZE( pins_bus) ) ;
-
-    PIO_Configure(pPwr, PIO_LISTSIZE( pPwr ));
-
-    ISO7816_Init(&usart_info, CLK_SLAVE);
-
-    USART_SetReceiverEnabled(USART_PHONE, 1);
-    USART_EnableIt(USART_PHONE, US_IER_RXRDY);
-    NVIC_EnableIRQ(USART1_IRQn);
+	TRACE_INFO("Sniffer config\n");
 }
 
-void Sniffer_run( void )
+void Sniffer_exit(void)
 {
-    check_data_from_phone();
+	TRACE_INFO("Sniffer exit\n");
+	USART_DisableIt(USART_PHONE, US_IER_RXRDY);
+	NVIC_DisableIRQ(USART1_IRQn);
+	USART_SetReceiverEnabled(USART_PHONE, 0);
+}
+
+void Sniffer_init(void)
+{
+	TRACE_INFO("Sniffer Init\n");
+	/*  Configure ISO7816 driver */
+	PIO_Configure(pinsISO7816_sniff, PIO_LISTSIZE(pinsISO7816_sniff));
+	PIO_Configure(pins_bus, PIO_LISTSIZE(pins_bus));
+
+	PIO_Configure(pPwr, PIO_LISTSIZE(pPwr));
+
+	ISO7816_Init(&usart_info, CLK_SLAVE);
+
+	USART_SetReceiverEnabled(USART_PHONE, 1);
+	USART_EnableIt(USART_PHONE, US_IER_RXRDY);
+	NVIC_EnableIRQ(USART1_IRQn);
+}
+
+void Sniffer_run(void)
+{
+	check_data_from_phone();
 }
 #endif /* HAVE_SNIFFER */

@@ -37,32 +37,31 @@
 
 #include <string.h>
 
+static const Pin pins_bus[] = { PINS_BUS_DEFAULT };
 
-static const Pin pins_bus[]    = {PINS_BUS_DEFAULT};
-
-void MITM_configure( void )
+void MITM_configure(void)
 {
-    Phone_configure();
-    CCID_configure();
+	Phone_configure();
+	CCID_configure();
 }
 
-void MITM_init( void )
+void MITM_init(void)
 {
-    CCID_init();
-    Phone_init();
+	CCID_init();
+	Phone_init();
 
-    return;
+	return;
 }
 
-void MITM_exit( void )
+void MITM_exit(void)
 {
-    Phone_exit();
-    CCID_exit();
+	Phone_exit();
+	CCID_exit();
 }
 
-void MITM_run( void )
+void MITM_run(void)
 {
-    Phone_run();
-    CCID_run();
+	Phone_run();
+	CCID_run();
 }
 #endif /* HAVE_MITM */

@@ -3,6 +3,8 @@
  *          Headers
  *------------------------------------------------------------------------------*/
 
+#define TRACE_LEVEL 5
+
 #include "board.h"
 #include "utils.h"
 #include "req_ctx.h"
@@ -115,7 +117,8 @@ extern int main( void )
     TRACE_DEBUG("calling configure of all configurations...\n\r");
     for (i = 1; i < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0]); ++i)
     {
-        config_func_ptrs[i].configure();
+	if (config_func_ptrs[i].configure)
+            config_func_ptrs[i].configure();
     }
 
     TRACE_DEBUG("calling init of config %u...\n\r", simtrace_config);

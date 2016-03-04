@@ -29,6 +29,7 @@ enum cardemu_usb_msg_type {
 	CEMU_USB_MSGT_DT_SET_ATR,	/* Set the ATR stored in simulator */
 	CEMU_USB_MSGT_DT_GET_STATS,	/* request DO_STATS */
 	CEMU_USB_MSGT_DT_GET_STATUS,	/* request DO_STATUS */
+	CEMU_USB_MSGT_DT_CARDINSERT,	/* insert/remove card */
 
 	/* Bulk in pipe */
 	CEMU_USB_MSGT_DO_RX_DATA,	/* TPDU data */
@@ -53,6 +54,12 @@ struct cardemu_usb_msg_hdr {
 #define CEMU_DATA_F_PB_AND_TX	0x00000004
 /* incdicates a PB is present and we should continue with RX */
 #define CEMU_DATA_F_PB_AND_RX	0x00000008
+
+/* CEMU_USB_MSGT_DT_CARDINSERT */
+struct cardemu_usb_msg_cardinsert {
+	struct cardemu_usb_msg_hdr hdr;
+	uint8_t card_insert;
+} __attribute__ ((packed));
 
 /* CEMU_USB_MSGT_DT_SET_ATR */
 struct cardemu_usb_msg_set_atr {

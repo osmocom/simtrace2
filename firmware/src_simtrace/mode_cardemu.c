@@ -34,6 +34,7 @@ struct cardem_inst {
 	uint8_t ep_out;
 	uint8_t ep_in;
 	uint8_t ep_int;
+	const Pin pin_insert;
 };
 
 static struct cardem_inst cardem_inst[] = {
@@ -46,6 +47,7 @@ static struct cardem_inst cardem_inst[] = {
 		.ep_out = PHONE_DATAOUT,
 		.ep_in = PHONE_DATAIN,
 		.ep_int = PHONE_INT,
+		.pin_insert = PIN_SET_USIM1_PRES,
 	},
 #ifdef CARDEMU_SECOND_UART
 	{
@@ -57,6 +59,7 @@ static struct cardem_inst cardem_inst[] = {
 		.ep_out = CARDEM_USIM2_DATAOUT,
 		.ep_in = CARDEM_USIM2_DATAIN,
 		.ep_int = CARDEM_USIM2_INT,
+		.pin_insert = PIN_SET_USIM2_PRES,
 	},
 #endif
 };
@@ -284,25 +287,33 @@ static int llist_count(struct llist_head *head)
 }
 
 /* handle a single USB command as received from the USB host */
-static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
+static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 {
 	struct cardemu_usb_msg_hdr *hdr;
 	struct cardemu_usb_msg_set_atr *atr;
+	struct cardemu_usb_msg_cardinsert *cardins;
 	struct llist_head *queue;
 
 	hdr = (struct cardemu_usb_msg_hdr *) rctx->data;
 	switch (hdr->msg_type) {
 	case CEMU_USB_MSGT_DT_TX_DATA:
-		queue = card_emu_get_uart_tx_queue(ch);
+		queue = card_emu_get_uart_tx_queue(ci->ch);
 		req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
 		llist_add_tail(&rctx->list, queue);
-		card_emu_have_new_uart_tx(ch);
+		card_emu_have_new_uart_tx(ci->ch);
 		break;
 	case CEMU_USB_MSGT_DT_SET_ATR:
 		atr = (struct cardemu_usb_msg_set_atr *) hdr;
-		card_emu_set_atr(ch, atr->atr, hdr->data_len);
+		card_emu_set_atr(ci->ch, atr->atr, hdr->data_len);
 		llist_del(&rctx->list);
 		req_ctx_put(rctx);
+		break;
+	case CEMU_USB_MSGT_DT_CARDINSERT:
+		cardins = (struct cardemu_usb_msg_cardinsert *) hdr;
+		if (cardins->card_insert)
+			PIO_Set(&ci->pin_insert);
+		else
+			PIO_Clear(&ci->pin_insert);
 		break;
 	case CEMU_USB_MSGT_DT_GET_STATS:
 	case CEMU_USB_MSGT_DT_GET_STATUS:
@@ -314,12 +325,12 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct card_handle *ch)
 
 /* iterate over the queue of incoming USB commands and dispatch/execute
  * them */
-static void process_any_usb_commands(struct llist_head *main_q, struct card_handle *ch)
+static void process_any_usb_commands(struct llist_head *main_q, struct cardem_inst *ci)
 {
 	struct req_ctx *rctx, *tmp;
 
 	llist_for_each_entry_safe(rctx, tmp, main_q, list)
-		dispatch_usb_command(rctx, ch);
+		dispatch_usb_command(rctx, ci);
 }
 
 /* main loop function, called repeatedly */
@@ -356,7 +367,7 @@ void mode_cardemu_run(void)
 		 * host */
 		queue = &ci->usb_out_queue;
 		usb_refill_from_host(queue, ci->ep_out);
-		process_any_usb_commands(queue, ci->ch);
+		process_any_usb_commands(queue, ci);
 	}
 
 }

@@ -305,7 +305,6 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 	case CEMU_USB_MSGT_DT_SET_ATR:
 		atr = (struct cardemu_usb_msg_set_atr *) hdr;
 		card_emu_set_atr(ci->ch, atr->atr, hdr->data_len);
-		llist_del(&rctx->list);
 		req_ctx_put(rctx);
 		break;
 	case CEMU_USB_MSGT_DT_CARDINSERT:
@@ -314,11 +313,13 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 			PIO_Set(&ci->pin_insert);
 		else
 			PIO_Clear(&ci->pin_insert);
+		req_ctx_put(rctx);
 		break;
 	case CEMU_USB_MSGT_DT_GET_STATS:
 	case CEMU_USB_MSGT_DT_GET_STATUS:
 	default:
 		/* FIXME */
+		req_ctx_put(rctx);
 		break;
 	}
 }
@@ -329,8 +330,10 @@ static void process_any_usb_commands(struct llist_head *main_q, struct cardem_in
 {
 	struct req_ctx *rctx, *tmp;
 
-	llist_for_each_entry_safe(rctx, tmp, main_q, list)
+	llist_for_each_entry_safe(rctx, tmp, main_q, list) {
+		llist_del(&rctx->list);
 		dispatch_usb_command(rctx, ci);
+	}
 }
 
 /* main loop function, called repeatedly */

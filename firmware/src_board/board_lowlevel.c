@@ -77,15 +77,14 @@
  * This includes EFC and master clock configuration.
  * It also enable a low level on the pin NRST triggers a user reset.
  */
-#define _LED_GREN (1 << 18)
-#define _LED_RED   (1 << 17)
 extern WEAK void LowLevelInit( void )
 {
     uint32_t timeout = 0;
 
-    PIOA->PIO_PER |= _LED_RED | _LED_GREN;
-    PIOA->PIO_OER |= _LED_RED | _LED_GREN;
-    PIOA->PIO_CODR |= _LED_RED | _LED_GREN;
+    /* enable both LED and green LED */
+    PIOA->PIO_PER |= LED_RED | LED_GREEN;
+    PIOA->PIO_OER |= LED_RED | LED_GREEN;
+    PIOA->PIO_CODR |= LED_RED | LED_GREEN;
 
     /* Set 3 FWS for Embedded Flash Access */
     EFC->EEFC_FMR = EEFC_FMR_FWS(3);
@@ -116,7 +115,8 @@ extern WEAK void LowLevelInit( void )
     timeout = 0;
     while (!(PMC->PMC_SR & PMC_SR_MOSCSELS) && (timeout++ < CLOCK_TIMEOUT));
 
-    PIOA->PIO_SODR = _LED_RED;
+    /* disable the red LED after main clock initialization */
+    PIOA->PIO_SODR = LED_RED;
 
     /* "switch" to main clock as master clock source (should already be the case */
     PMC->PMC_MCKR = (PMC->PMC_MCKR & ~(uint32_t)PMC_MCKR_CSS_Msk) | PMC_MCKR_CSS_MAIN_CLK;

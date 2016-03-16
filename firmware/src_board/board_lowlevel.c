@@ -94,14 +94,17 @@ extern WEAK void LowLevelInit( void )
 */
 
     /* Initialize main oscillator */
-/*    if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
+    if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
     {
         PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN;
         timeout = 0;
         while (!(PMC->PMC_SR & PMC_SR_MOSCXTS) && (timeout++ < CLOCK_TIMEOUT));
-    }*/
+    }
 
     /* Switch to 3-20MHz Xtal oscillator */
+    PIOB->PIO_PDR = (1 << 8) | (1 << 9);
+    PIOB->PIO_PUDR = (1 << 8) | (1 << 9);
+    PIOB->PIO_PPDDR = (1 << 8) | (1 << 9);
     PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | BOARD_OSCOUNT | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTEN | CKGR_MOR_MOSCSEL;
     /* wait for Main XTAL oscillator stabilization */
     timeout = 0;

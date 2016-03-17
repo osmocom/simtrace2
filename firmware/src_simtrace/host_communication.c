@@ -1,5 +1,7 @@
 //#define TRACE_LEVEL 6
 
+#include <errno.h>
+
 #include "board.h"
 #include "req_ctx.h"
 #include "linuxlist.h"
@@ -102,7 +104,11 @@ int usb_refill_from_host(struct llist_head *queue, int ep)
 	TRACE_DEBUG("%s (EP=%u)\r\n", __func__, ep);
 
 	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
+	if (!rctx)
+		return -ENOMEM;
+
 	rctx->ep = ep;
+	usbep_in_progress[ep] = (uint32_t) queue;
 
 	rc = USBD_Read(ep, rctx->data, rctx->size,
 			(TransferCallback) &usb_read_cb, rctx);
@@ -110,10 +116,9 @@ int usb_refill_from_host(struct llist_head *queue, int ep)
 	if (rc != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error %x\n", __func__, rc);
 		req_ctx_put(rctx);
+		usbep_in_progress[ep] = 0;
 		return 0;
 	}
-
-	usbep_in_progress[ep] = (uint32_t) queue;
 
 	return 1;
 }

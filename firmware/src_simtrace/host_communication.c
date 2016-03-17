@@ -86,6 +86,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 		req_ctx_put(rctx);
 		return;
 	}
+	rctx->tot_len = transferred;
 	req_ctx_set_state(rctx, RCTX_S_MAIN_PROCESSING);
 	llist_add_tail(&rctx->list, queue);
 }

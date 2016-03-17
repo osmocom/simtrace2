@@ -145,7 +145,7 @@ void usart_irq_rx(uint8_t uart)
 	if (uart == 1)
 		ci = &cardem_inst[1];
 #endif
-	csr = usart->US_CSR;
+	csr = usart->US_CSR & usart->US_IMR;
 
 	if (csr & US_CSR_RXRDY) {
         	byte = (usart->US_RHR) & 0xFF;

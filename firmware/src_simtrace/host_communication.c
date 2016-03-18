@@ -5,6 +5,7 @@
 #include "board.h"
 #include "req_ctx.h"
 #include "linuxlist.h"
+#include "llist_irqsafe.h"
 
 static volatile uint32_t usbep_in_progress[BOARD_USB_NUMENDPOINTS];
 
@@ -90,7 +91,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	}
 	rctx->tot_len = transferred;
 	req_ctx_set_state(rctx, RCTX_S_MAIN_PROCESSING);
-	llist_add_tail(&rctx->list, queue);
+	llist_add_tail_irqsafe(&rctx->list, queue);
 }
 
 int usb_refill_from_host(struct llist_head *queue, int ep)

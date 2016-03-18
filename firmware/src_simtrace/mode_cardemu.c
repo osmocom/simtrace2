@@ -7,6 +7,7 @@
 #include "iso7816_fidi.h"
 #include "utils.h"
 #include "linuxlist.h"
+#include "llist_irqsafe.h"
 #include "req_ctx.h"
 #include "cardemu_prot.h"
 
@@ -326,12 +327,22 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 
 /* iterate over the queue of incoming USB commands and dispatch/execute
  * them */
-static void process_any_usb_commands(struct llist_head *main_q, struct cardem_inst *ci)
+static void process_any_usb_commands(struct llist_head *main_q,
+				     struct cardem_inst *ci)
 {
-	struct req_ctx *rctx, *tmp;
+	struct llist_head *lh;
+	struct req_ctx *rctx;
+	int i;
 
-	llist_for_each_entry_safe(rctx, tmp, main_q, list) {
-		llist_del(&rctx->list);
+	/* limit the number of iterations to 10, to ensure we don't get
+	 * stuck here without returning to main loop processing */
+	for (i = 0; i < 10; i++) {
+		/* de-queue the list head in an irq-safe way */
+		lh = llist_head_dequeue_irqsafe(main_q);
+		if (!lh)
+			break;
+		rctx = llist_entry(lh, struct req_ctx, list);
+		/* dispatch the command with interrupts enabled */
 		dispatch_usb_command(rctx, ci);
 	}
 }

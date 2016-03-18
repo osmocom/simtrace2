@@ -140,7 +140,7 @@ static void dump_rctx(struct req_ctx *rctx)
 	case CEMU_USB_MSGT_DO_RX_DATA:
 		rxd = (struct cardemu_usb_msg_rx_data *)mh;
 		printf("    flags=%x, data=", rxd->flags);
-		for (i = 0; i < mh->data_len; i++)
+		for (i = 0; i < rxd->data_len; i++)
 			printf(" %02x", rxd->data[i]);
 		printf("\n");
 		break;
@@ -162,13 +162,13 @@ static void get_and_verify_rctx(int state, const uint8_t *data, unsigned int len
 	case RCTX_S_USB_TX_PENDING:
 		td = (struct cardemu_usb_msg_tx_data *) rctx->data;
 		assert(td->hdr.msg_type == CEMU_USB_MSGT_DO_RX_DATA);
-		assert(td->hdr.data_len == len);
+		assert(td->data_len == len);
 		assert(!memcmp(td->data, data, len));
 		break;
 #if 0
 	case RCTX_S_UART_RX_PENDING:
 		rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
-		assert(rd->hdr.data_len == len);
+		assert(rd->data_len == len);
 		assert(!memcmp(rd->data, data, len));
 		break;
 #endif
@@ -229,8 +229,9 @@ static void host_to_device_data(const uint8_t *data, uint16_t len, unsigned int 
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
 	rd->flags = flags;
 	/* copy data and set length */
-	rd->hdr.data_len = len;
+	rd->data_len = len;
 	memcpy(rd->data, data, len);
+	rd->hdr.msg_len = sizeof(*rd) + len;
 
 	/* hand the req_ctx to the UART transmit code */
 	req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);

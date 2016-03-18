@@ -174,7 +174,8 @@ static void flush_rx_buffer(struct card_handle *ch)
 
 	/* store length of data payload fild in header */
 	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
-	rd->hdr.data_len = rctx->idx;
+	rd->data_len = rctx->idx;
+	rd->hdr.msg_len = sizeof(*rd) + rd->data_len;
 
 	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
@@ -229,7 +230,8 @@ static void flush_pts(struct card_handle *ch)
 
 	ptsi = (struct cardemu_usb_msg_pts_info *) rctx->data;
 	ptsi->hdr.msg_type = CEMU_USB_MSGT_DO_PTS;
-	ptsi->hdr.data_len = serialize_pts(ptsi->req, ch->pts.req);
+	ptsi->hdr.msg_len = sizeof(*ptsi);
+	ptsi->pts_len = serialize_pts(ptsi->req, ch->pts.req);
 	serialize_pts(ptsi->resp, ch->pts.resp);
 
 	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
@@ -701,7 +703,7 @@ static int tx_byte_tpdu(struct card_handle *ch)
 	}
 
 	/* check if the buffer has now been fully transmitted */
-	if ((rctx->idx >= td->hdr.data_len) ||
+	if ((rctx->idx >= td->data_len) ||
 	    (td->data + rctx->idx >= rctx->data + rctx->tot_len)) {
 		if (td->flags & CEMU_DATA_F_PB_AND_RX) {
 			/* we have just sent the procedure byte and now

@@ -305,7 +305,7 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 		break;
 	case CEMU_USB_MSGT_DT_SET_ATR:
 		atr = (struct cardemu_usb_msg_set_atr *) hdr;
-		card_emu_set_atr(ci->ch, atr->atr, hdr->data_len);
+		card_emu_set_atr(ci->ch, atr->atr, atr->atr_len);
 		req_ctx_put(rctx);
 		break;
 	case CEMU_USB_MSGT_DT_CARDINSERT:

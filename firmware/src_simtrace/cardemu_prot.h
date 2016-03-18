@@ -43,7 +43,8 @@ enum cardemu_usb_msg_type {
 struct cardemu_usb_msg_hdr {
 	uint8_t msg_type;	/* enum cardemu_usb_msg_type */
 	uint8_t seq_nr;		/* sequence number */
-	uint16_t data_len;	/* length of optional data field */
+	uint16_t msg_len;	/* length of message including hdr */
+	uint8_t data[0];
 } __attribute__ ((packed));
 
 /* indicates a TPDU header is present in this message */
@@ -64,7 +65,8 @@ struct cardemu_usb_msg_cardinsert {
 /* CEMU_USB_MSGT_DT_SET_ATR */
 struct cardemu_usb_msg_set_atr {
 	struct cardemu_usb_msg_hdr hdr;
-	/* variable-length ATR data (hdr.data_len) */
+	uint8_t atr_len;
+	/* variable-length ATR data */
 	uint8_t atr[0];
 } __attribute__ ((packed));
 
@@ -72,7 +74,8 @@ struct cardemu_usb_msg_set_atr {
 struct cardemu_usb_msg_tx_data {
 	struct cardemu_usb_msg_hdr hdr;
 	uint32_t flags;
-	/* variable-length TPDU data (hdr.data_len) */
+	uint16_t data_len;
+	/* variable-length TPDU data */
 	uint8_t data[0];
 } __attribute__ ((packed));
 
@@ -80,7 +83,8 @@ struct cardemu_usb_msg_tx_data {
 struct cardemu_usb_msg_rx_data {
 	struct cardemu_usb_msg_hdr hdr;
 	uint32_t flags;
-	/* variable-length TPDU data (hdr.data_len) */
+	uint16_t data_len;
+	/* variable-length TPDU data */
 	uint8_t data[0];
 } __attribute__ ((packed));
 
@@ -105,6 +109,7 @@ struct cardemu_usb_msg_status {
 /* CEMU_USB_MSGT_DO_PTS */
 struct cardemu_usb_msg_pts_info {
 	struct cardemu_usb_msg_hdr hdr;
+	uint8_t pts_len;
 	/* PTS request as sent from reader */
 	uint8_t req[6];
 	/* PTS response as sent by card */
@@ -117,6 +122,7 @@ struct cardemu_usb_msg_error {
 	uint8_t severity;
 	uint8_t subsystem;
 	uint16_t code;
+	uint8_t msg_len;
 	/* human-readable error message */
 	uint8_t msg[0];
 } __attribute__ ((packed));

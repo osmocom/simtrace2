@@ -325,6 +325,48 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 	}
 }
 
+static void dispatch_received_rctx(struct req_ctx *rctx, struct cardem_inst *ci)
+{
+	struct req_ctx *segm;
+	struct cardemu_usb_msg_hdr *mh;
+	int i = 0;
+
+	/* check if we have multiple concatenated commands in
+	 * one message.  USB endpoints are streams that don't
+	 * preserve the message boundaries */
+	mh = (struct cardemu_usb_msg_hdr *) rctx->data;
+	TRACE_DEBUG("rctx->tot_len=%d, mh->msg_len=%d\r\n",
+			rctx->tot_len, mh->msg_len);
+	if (mh->msg_len == rctx->tot_len) {
+		/* fast path: only one message in buffer */
+		dispatch_usb_command(rctx, ci);
+		return;
+	}
+
+	/* slow path: iterate over list of messages, allocating one new
+	 * reqe_ctx per segment */
+	for (mh = (struct cardemu_usb_msg_hdr *) rctx->data;
+	     (uint8_t *)mh < rctx->data + rctx->tot_len;
+	     mh = (struct cardemu_usb_msg_hdr * ) ((uint8_t *)mh + mh->msg_len)) {
+		TRACE_DEBUG("Segment %d, offs=%d, len=%d\r\n", i,
+				(uint8_t *)mh - rctx->data, mh->msg_len);
+		segm = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_MAIN_PROCESSING);
+		if (!segm) {
+			TRACE_ERROR("ENOMEM during rctx segmentation\r\n");
+			break;
+		}
+		segm->idx = 0;
+		segm->tot_len = mh->msg_len;
+		memcpy(segm->data, mh, segm->tot_len);
+		dispatch_usb_command(segm, ci);
+		i++;
+	}
+
+	/* release the master req_ctx, as all segments have been
+	 * processed now */
+	req_ctx_put(rctx);
+}
+
 /* iterate over the queue of incoming USB commands and dispatch/execute
  * them */
 static void process_any_usb_commands(struct llist_head *main_q,
@@ -342,8 +384,7 @@ static void process_any_usb_commands(struct llist_head *main_q,
 		if (!lh)
 			break;
 		rctx = llist_entry(lh, struct req_ctx, list);
-		/* dispatch the command with interrupts enabled */
-		dispatch_usb_command(rctx, ci);
+		dispatch_received_rctx(rctx, ci);
 	}
 }
 

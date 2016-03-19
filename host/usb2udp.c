@@ -38,6 +38,7 @@
 #include "simtrace.h"
 #include "cardemu_prot.h"
 #include "apdu_dispatch.h"
+#include "simtrace2-discovery.h"
 
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
@@ -56,6 +57,7 @@ static void print_welcome(void)
 static void print_help(void)
 {
 	printf( "\t-h\t--help\n"
+		"\t-i\t--interface <0-255>\n"
 		"\n"
 		);
 }
@@ -76,8 +78,7 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 		xfer->endpoint, xfer->status, xfer->flags, xfer->type, xfer->length, xfer->actual_length);
 	switch (xfer->status) {
 	case LIBUSB_TRANSFER_COMPLETED:
-		switch (xfer->endpoint) {
-		case SIMTRACE_IN_EP:
+		if (xfer->endpoint == g_buf_in.ep) {
 			/* process the data */
 			printf("read %d bytes from SIMTRACE, forwarding to UDP\n", xfer->actual_length);
 			rc = sendto(g_udp_ofd.fd, xfer->buffer, xfer->actual_length, 0, (struct sockaddr *)&g_sa_remote, sizeof(g_sa_remote));
@@ -86,11 +87,9 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 			}
 			/* and re-submit the URB */
 			libusb_submit_transfer(xfer);
-			break;
-		case SIMTRACE_OUT_EP:
+		} else if (xfer->endpoint == g_buf_out.ep) {
 			/* re-enable reading from the UDP side */
 			g_udp_ofd.when |= BSC_FD_READ;
-			break;
 		}
 		break;
 	default:
@@ -99,9 +98,8 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 	}
 }
 
-static void init_ep_buf(int ep, struct ep_buf *epb)
+static void init_ep_buf(struct ep_buf *epb)
 {
-	epb->ep = ep;
 	if (!epb->xfer)
 		epb->xfer = libusb_alloc_transfer(0);
 
@@ -208,6 +206,7 @@ int main(int argc, char **argv)
 	int c, ret = 1;
 	char *remote_host = NULL;
 	int local_udp_port = 52342;
+	unsigned int if_num = 0;
 
 	print_welcome();
 
@@ -215,16 +214,20 @@ int main(int argc, char **argv)
 		int option_index = 0;
 		static const struct option opts[] = {
 			{ "udp-port", 1, 0, 'u' },
+			{ "interface", 1, 0, 'I' },
 			{ "help", 0, 0, 'h' },
 			{ NULL, 0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "u:p:h", opts, &option_index);
+		c = getopt_long(argc, argv, "u:I:h", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
 		case 'u':
 			local_udp_port = atoi(optarg);
+			break;
+		case 'I':
+			if_num = atoi(optarg);
 			break;
 		case 'h':
 			print_help();
@@ -247,20 +250,25 @@ int main(int argc, char **argv)
 		goto close_exit;
 	}
 
-	rc = libusb_claim_interface(g_devh, 0);
+	rc = libusb_claim_interface(g_devh, if_num);
 	if (rc < 0) {
-		fprintf(stderr, "can't claim interface; rc=%d\n", rc);
+		fprintf(stderr, "can't claim interface %u; rc=%d\n", if_num, rc);
 		goto close_exit;
 	}
 
 	/* open UDP socket, register with select handling and mark it
 	 * readable */
 	g_udp_ofd.cb = ofd_udp_cb;
-	osmo_sock_init_ofd(&g_udp_ofd, AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, local_udp_port, OSMO_SOCK_F_BIND);
+	osmo_sock_init_ofd(&g_udp_ofd, AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, local_udp_port + if_num, OSMO_SOCK_F_BIND);
 
+	rc = get_usb_ep_addrs(g_devh, if_num, &g_buf_out.ep, &g_buf_in.ep, NULL);
+	if (rc < 0) {
+		fprintf(stderr, "couldn't find enpdoint addresses; rc=%d\n", rc);
+		goto close_exit;
+	}
 	/* initialize USB buffers / transfers */
-	init_ep_buf(SIMTRACE_OUT_EP, &g_buf_out);
-	init_ep_buf(SIMTRACE_IN_EP, &g_buf_in);
+	init_ep_buf(&g_buf_out);
+	init_ep_buf(&g_buf_in);
 
 	/* submit the first transfer for the IN endpoint */
 	libusb_submit_transfer(g_buf_in.xfer);

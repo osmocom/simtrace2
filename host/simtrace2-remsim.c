@@ -37,6 +37,7 @@
 #include "simtrace.h"
 #include "cardemu_prot.h"
 #include "apdu_dispatch.h"
+#include "simtrace2-discovery.h"
 
 #include <osmocom/core/gsmtap.h>
 #include <osmocom/core/gsmtap_util.h>
@@ -48,6 +49,8 @@
 static struct gsmtap_inst *g_gti;
 struct libusb_device_handle *g_devh;
 const struct osim_cla_ins_card_profile *g_prof;
+static uint8_t g_in_ep;
+static uint8_t g_out_ep;
 static int g_udp_fd = -1;
 static struct osim_chan_hdl *g_chan;
 
@@ -99,7 +102,7 @@ static int tx_to_dev(uint8_t *buf, unsigned int len)
 	printf("<- %s\n", osmo_hexdump(buf, len));
 
 	if (g_udp_fd < 0) {
-		return libusb_bulk_transfer(g_devh, SIMTRACE_OUT_EP, buf, len,
+		return libusb_bulk_transfer(g_devh, g_out_ep, buf, len,
 					    &xfer_len, 100000);
 	} else {
 		return write(g_udp_fd, buf, len);
@@ -331,7 +334,7 @@ static void run_mainloop(void)
 	while (1) {
 		/* read data from SIMtrace2 device (local or via USB) */
 		if (g_udp_fd < 0) {
-			rc = libusb_bulk_transfer(g_devh, SIMTRACE_IN_EP, buf, sizeof(buf), &xfer_len, 100000);
+			rc = libusb_bulk_transfer(g_devh, g_in_ep, buf, sizeof(buf), &xfer_len, 100000);
 			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT) {
 				fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
 				return;
@@ -362,6 +365,7 @@ int main(int argc, char **argv)
 	int skip_atr = 0;
 	int keep_running = 0;
 	int remote_udp_port = 52342;
+	int if_num = 0;
 	char *remote_udp_host = NULL;
 	struct osim_reader_hdl *reader;
 	struct osim_card_hdl *card;
@@ -371,7 +375,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:ak", opts, &option_index);
+		c = getopt_long(argc, argv, "r:p:hi:I:ak", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -387,6 +391,9 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			gsmtap_host = optarg;
+			break;
+		case 'I':
+			if_num = atoi(optarg);
 			break;
 		case 'a':
 			skip_atr = 1;
@@ -407,7 +414,7 @@ int main(int argc, char **argv)
 		}
 	} else {
 		g_udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP, remote_udp_host,
-					  remote_udp_port, OSMO_SOCK_F_CONNECT);
+					  remote_udp_port+if_num, OSMO_SOCK_F_CONNECT);
 		if (g_udp_fd < 0) {
 			fprintf(stderr, "error binding UDP port\n");
 			goto do_exit;
@@ -447,9 +454,15 @@ int main(int argc, char **argv)
 				goto close_exit;
 			}
 
-			rc = libusb_claim_interface(g_devh, 0);
+			rc = libusb_claim_interface(g_devh, if_num);
 			if (rc < 0) {
-				fprintf(stderr, "can't claim interface; rc=%d\n", rc);
+				fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
+				goto close_exit;
+			}
+
+			rc = get_usb_ep_addrs(g_devh, if_num, &g_out_ep, &g_in_ep, NULL);
+			if (rc < 0) {
+				fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
 				goto close_exit;
 			}
 		}

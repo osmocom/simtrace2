@@ -87,6 +87,9 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 GDB = $(CROSS_COMPILE)gdb
 NM = $(CROSS_COMPILE)nm
 
+TOP=..
+GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
+
 # Flags
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 
@@ -126,6 +129,7 @@ CFLAGS += -Dprintf=iprintf
 CFLAGS += -D__ARM
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF)
+CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats

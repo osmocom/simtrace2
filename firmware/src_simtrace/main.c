@@ -104,6 +104,11 @@ extern int main(void)
 
 	SIMtrace_USB_Initialize();
 
+        printf("\r\n\r\n"
+		"=============================================================================\r\n"
+		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\r\n"
+		"=============================================================================\r\n");
+
 	TRACE_INFO("USB init...\n\r");
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
 		if (i >= MAX_USB_ITER * 3) {

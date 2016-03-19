@@ -12,3 +12,6 @@ Baselibc
 venv
 tags
 *.hobj
+*.o
+host/simtrace2-remsim
+host/simtrace2-remsim-usb2udp

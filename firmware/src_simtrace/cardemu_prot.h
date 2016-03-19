@@ -92,6 +92,7 @@ struct cardemu_usb_msg_rx_data {
 #define CEMU_STATUS_F_CLK_ACTIVE	0x00000002
 #define CEMU_STATUS_F_RCEMU_ACTIVE	0x00000004
 #define CEMU_STATUS_F_CARD_INSERT	0x00000008
+#define CEMU_STATUS_F_RESET_ACTIVE	0x00000010
 
 /* CEMU_USB_MSGT_DO_STATUS */
 struct cardemu_usb_msg_status {

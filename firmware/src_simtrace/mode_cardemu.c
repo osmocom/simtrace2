@@ -316,8 +316,10 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 			PIO_Clear(&ci->pin_insert);
 		req_ctx_put(rctx);
 		break;
-	case CEMU_USB_MSGT_DT_GET_STATS:
 	case CEMU_USB_MSGT_DT_GET_STATUS:
+		card_emu_report_status(ci->ch);
+		break;
+	case CEMU_USB_MSGT_DT_GET_STATS:
 	default:
 		/* FIXME */
 		req_ctx_put(rctx);

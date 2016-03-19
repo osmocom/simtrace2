@@ -822,6 +822,36 @@ void card_emu_have_new_uart_tx(struct card_handle *ch)
 	}
 }
 
+void card_emu_report_status(struct card_handle *ch)
+{
+	struct req_ctx *rctx;
+	struct cardemu_usb_msg_status *sts;
+
+	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
+	if (!rctx)
+		return;
+	
+	rctx->tot_len = sizeof(*sts);
+	sts = (struct cardemu_usb_msg_status *)rctx->data;
+	sts->hdr.msg_type = CEMU_USB_MSGT_DO_STATUS;
+	sts->hdr.msg_len = sizeof(*sts);
+	sts->flags = 0;
+	if (ch->vcc_active)
+		sts->flags |= CEMU_STATUS_F_VCC_PRESENT;
+	if (ch->clocked)
+		sts->flags |= CEMU_STATUS_F_CLK_ACTIVE;
+	if (ch->in_reset)
+		sts->flags |= CEMU_STATUS_F_RESET_ACTIVE;
+	/* FIXME: voltage + card insert */
+	sts->fi = ch->fi;
+	sts->di = ch->di;
+	sts->wi = ch->wi;
+	sts->waiting_time = ch->waiting_time;
+
+	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
+	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+}
+
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 {

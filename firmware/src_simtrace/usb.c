@@ -511,7 +511,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 	{
 		sizeof(USBInterfaceDescriptor),
 		USBGenericDescriptor_INTERFACE,
-		1,	/* This is interface #0 */
+		1,	/* This is interface #1 */
 		0,	/* This is alternate setting #0 for this interface */
 		3,	/* Number of endpoints */
 		0xff,	/* Descriptor Class: Vendor specific */

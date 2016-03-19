@@ -21,7 +21,7 @@ static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
 
 #ifdef CARDEMU_SECOND_UART
-static const Pin pins_usim2[]    = {PINS_USIM1};
+static const Pin pins_usim2[]    = {PINS_USIM2};
 static const Pin pin_usim2_rst	= PIN_USIM2_nRST;
 static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
 #endif

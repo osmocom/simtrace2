@@ -44,4 +44,6 @@
 #define USB_VENDOR_ID               SIMTRACE_VENDOR_ID
 #define USB_PRODUCT_ID              SIMTRACE_PRODUCT_ID
 
+#define CARDEMU_SECOND_UART
+
 #define HAVE_CARDEM

@@ -1,0 +1,1 @@
+../firmware/src_simtrace/cardemu_prot.h

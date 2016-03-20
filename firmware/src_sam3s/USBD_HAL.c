@@ -45,6 +45,11 @@
  *      Headers
  *---------------------------------------------------------------------------*/
 
+#ifdef TRACE_LEVEL
+#undef TRACE_LEVEL
+#endif
+#define TRACE_LEVEL TRACE_LEVEL_WARNING
+
 #include "chip.h"
 #include "USBD_HAL.h"
 

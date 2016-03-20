@@ -36,6 +36,7 @@ struct cardem_inst {
 	uint8_t ep_in;
 	uint8_t ep_int;
 	const Pin pin_insert;
+	uint16_t vcc_adc;
 };
 
 static struct cardem_inst cardem_inst[] = {
@@ -175,6 +176,43 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	usart->US_FIDI = fidi & 0x3ff;
 	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
 	return 0;
+}
+
+/***********************************************************************
+ * ADC for VCC voltage detection
+ ***********************************************************************/
+
+static int card_vcc_adc_init(void)
+{
+	 /* Initialize ADC for AD7 / AD6 */
+	ADC->ADC_CR |= ADC_CR_SWRST;
+	ADC->ADC_MR = ADC_MR_TRGEN_DIS | ADC_MR_LOWRES_BITS_12 |
+		      ADC_MR_SLEEP_NORMAL | ADC_MR_FWUP_OFF |
+		      ADC_MR_FREERUN_ON | ADC_MR_PRESCAL(255) |
+		      ADC_MR_STARTUP_SUT8 | ADC_MR_SETTLING(0) |
+		      ADC_MR_ANACH_NONE | ADC_MR_TRACKTIM(0) |
+		      ADC_MR_TRANSFER(1) | ADC_MR_USEQ_NUM_ORDER;
+	/* enable AD6 + AD7 channels */
+	ADC->ADC_CHER = ADC_CHER_CH6 | ADC_CHER_CH7;
+	/* start conversion */
+	ADC->ADC_CR |= ADC_CR_START;
+}
+
+static int card_vcc_adc_process(void)
+{
+	/* if ADC is triggered, wait for results */
+	/* if both results have arrived, trigger again */
+	/* convert results to voltage in milli-volts */
+	/* report status changes */
+	if (ADC->ADC_ISR & ADC_ISR_EOC6) {
+		cardem_inst[1].vcc_adc = ADC->ADC_CDR[6] & 0xFFF;
+		//printf("AD6=%u\n", cardem_inst[1].vcc_adc);
+	}
+
+	if (ADC->ADC_ISR & ADC_ISR_EOC7) {
+		cardem_inst[0].vcc_adc = ADC->ADC_CDR[7] & 0xFFF;
+		printf("AD7=%u\n", cardem_inst[0].vcc_adc);
+	}
 }
 
 /***********************************************************************
@@ -412,6 +450,8 @@ void mode_cardemu_run(void)
 			TRACE_ERROR("Rx%02x\r\n", byte);
 		}
 
+		card_vcc_adc_process();
+
 		queue = card_emu_get_usb_tx_queue(ci->ch);
 		int usb_pending = llist_count(queue);
 		if (usb_pending != ci->usb_pending_old) {
@@ -426,5 +466,6 @@ void mode_cardemu_run(void)
 		usb_refill_from_host(queue, ci->ep_out);
 		process_any_usb_commands(queue, ci);
 	}
+
 
 }

@@ -364,7 +364,7 @@ from_pts3:
 }
 
 
-static enum iso7816_3_card_state
+static int
 process_byte_pts(struct card_handle *ch, uint8_t byte)
 {
 	switch (ch->pts.state) {
@@ -406,6 +406,7 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		flush_pts(ch);
 		/* activate UART TX to transmit PTS response */
 		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+		return -1;
 	}
 
 	return ISO_S_IN_PTS;

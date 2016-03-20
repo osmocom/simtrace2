@@ -454,6 +454,7 @@ static int tx_byte_pts(struct card_handle *ch)
 
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_RESP_PCK:
+		card_emu_uart_wait_tx_idle(ch->uart_chan);
 		/* update baud rate generator with Fi/Di */
 		emu_update_fidi(ch);
 		/* Wait for the next TPDU */

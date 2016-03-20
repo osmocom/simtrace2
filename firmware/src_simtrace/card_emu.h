@@ -35,3 +35,4 @@ void card_emu_report_status(struct card_handle *ch);
 int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi);
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte);
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx);
+void card_emu_uart_wait_tx_idle(uint8_t uart_chan);

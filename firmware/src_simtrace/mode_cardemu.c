@@ -97,6 +97,12 @@ static void wait_tx_idle(Usart *usart)
 	}
 }
 
+void card_emu_uart_wait_tx_idle(uint8_t uart_chan)
+{
+	Usart *usart = get_usart_by_chan(uart_chan);
+	wait_tx_idle(usart);
+}
+
 /* call-back from card_emu.c to enable/disable transmit and/or receive */
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 {

@@ -261,6 +261,12 @@ static void emu_update_fidi(struct card_handle *ch)
 static void card_set_state(struct card_handle *ch,
 			   enum iso7816_3_card_state new_state)
 {
+	if (ch->state == new_state)
+		return;
+
+	TRACE_DEBUG("7816 card state %u -> %u\r\n", ch->state, new_state);
+	ch->state = new_state;
+
 	switch (new_state) {
 	case ISO_S_WAIT_POWER:
 	case ISO_S_WAIT_CLK:
@@ -300,12 +306,6 @@ static void card_set_state(struct card_handle *ch,
 		/* do nothing */
 		break;
 	}
-
-	if (ch->state == new_state)
-		return;
-
-	TRACE_DEBUG("7816 card state %u -> %u\r\n", ch->state, new_state);
-	ch->state = new_state;
 }
 
 
@@ -532,6 +532,8 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 
 	TRACE_DEBUG("7816 TPDU state %u -> %u\r\n", ch->tpdu.state, new_ts);
 
+	ch->tpdu.state = new_ts;
+
 	switch (new_ts) {
 	case TPDU_S_WAIT_CLA:
 	case TPDU_S_WAIT_RX:
@@ -546,8 +548,6 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 	default:
 		break;
 	}
-
-	ch->tpdu.state = new_ts;
 }
 
 static enum tpdu_state next_tpdu_state(struct card_handle *ch)

@@ -11,7 +11,7 @@
 #include "req_ctx.h"
 #include "cardemu_prot.h"
 
-#define TRACE_ENTRY()	TRACE_DEBUG("%s entering\n", __func__)
+#define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 

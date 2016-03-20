@@ -212,14 +212,26 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 #ifdef DETECT_VCC_BY_ADC
 
 static int adc_triggered = 0;
+static int adc_sam3s_reva_errata = 0;
 
 static int card_vcc_adc_init(void)
 {
+	uint32_t chip_arch = CHIPID->CIDR & CHIPID_CIDR_ARCH_Msk;
+	uint32_t chip_ver = CHIPID->CIDR & CHIPID_CIDR_VERSION_Msk;
+
 	PMC_EnablePeripheral(ID_ADC);
 
 	ADC->ADC_CR |= ADC_CR_SWRST;
-	/* Errata Work-Around to clear EOCx flags */
-	{
+	if (chip_ver == 0 &&
+	    (chip_arch == CHIPID_CIDR_ARCH_SAM3SxA ||
+	     chip_arch == CHIPID_CIDR_ARCH_SAM3SxB ||
+	     chip_arch == CHIPID_CIDR_ARCH_SAM3SxC)) {
+		TRACE_INFO("Enabling Rev.A ADC Errata work-around\r\n");
+		adc_sam3s_reva_errata = 1;
+	}
+
+	if (adc_sam3s_reva_errata) {
+		/* Errata Work-Around to clear EOCx flags */
 		volatile uint32_t foo;
 		int i;
 		for (i = 0; i < 16; i++)
@@ -278,7 +290,11 @@ void ADC_IrqHandler(void)
 		uint16_t val = ADC->ADC_CDR[6] & 0xFFF;
 		cardem_inst[1].vcc_uv = adc2uv(val);
 		process_vcc_adc(&cardem_inst[1]);
-		ADC->ADC_CR |= ADC_CR_START;
+		if (adc_sam3s_reva_errata) {
+			/* Errata: START doesn't start a conversion
+			 * sequence, but only a single conversion */
+			ADC->ADC_CR |= ADC_CR_START;
+		}
 	}
 #endif
 

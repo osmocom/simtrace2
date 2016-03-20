@@ -179,6 +179,33 @@ static int request_sw_tx(const uint8_t *sw)
 	return tx_to_dev((uint8_t *)txd, sizeof(*txd)+txd->data_len);
 }
 
+static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
+{
+	uint8_t csum = 0;
+	int i;
+
+	for (i = 1; i < atr_len - 1; i++)
+		csum = csum ^ atr[i];
+
+	atr[atr_len-1] = csum;
+}
+
+static int request_set_atr(const uint8_t *atr, unsigned int atr_len)
+{
+	struct cardemu_usb_msg_set_atr *satr;
+	uint8_t buf[sizeof(*satr) + atr_len];
+	satr = (struct cardemu_usb_msg_set_atr *) buf;
+
+	printf("<= request_set_atr(%s)\n", osmo_hexdump(atr, atr_len));
+
+	memset(satr, 0, sizeof(*satr));
+	satr->hdr.msg_type = CEMU_USB_MSGT_DT_SET_ATR;
+	satr->atr_len = atr_len;
+	memcpy(satr->atr, atr, atr_len);
+
+	return tx_to_dev((uint8_t *)satr, sizeof(buf));
+}
+
 /*! \brief Process a STATUS message from the SIMtrace2 */
 static int process_do_status(uint8_t *buf, int len)
 {
@@ -468,6 +495,11 @@ int main(int argc, char **argv)
 		}
 
 		request_card_insert(true);
+		uint8_t real_atr[] = { 0x3B, 0x9F, 0x96, 0x80, 0x1F, 0xC7, 0x80, 0x31,
+					     0xA0, 0x73, 0xBE, 0x21, 0x13, 0x67, 0x43, 0x20,
+					     0x07, 0x18, 0x00, 0x00, 0x01, 0xA5 };
+		atr_update_csum(real_atr, sizeof(real_atr));
+		request_set_atr(real_atr, sizeof(real_atr));
 
 		run_mainloop();
 		ret = 0;

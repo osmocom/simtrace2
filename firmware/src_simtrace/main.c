@@ -3,8 +3,6 @@
  *          Headers
  *------------------------------------------------------------------------------*/
 
-#define TRACE_LEVEL 5
-
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
@@ -109,28 +107,28 @@ extern int main(void)
 		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\r\n"
 		"=============================================================================\r\n");
 
-	TRACE_INFO("USB init...\n\r");
+	TRACE_INFO("USB init...\r\n");
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
-				    "not be configured)\n");
+				    "not be configured)\r\n");
 			NVIC_SystemReset();
 		}
 		i++;
 	}
 
-	TRACE_DEBUG("calling configure of all configurations...\n\r");
+	TRACE_INFO("calling configure of all configurations...\r\n");
 	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]);
 	     ++i) {
 		if (config_func_ptrs[i].configure)
 			config_func_ptrs[i].configure();
 	}
 
-	TRACE_DEBUG("calling init of config %u...\n\r", simtrace_config);
+	TRACE_INFO("calling init of config %u...\r\n", simtrace_config);
 	config_func_ptrs[simtrace_config].init();
 	last_simtrace_config = simtrace_config;
 
-	TRACE_DEBUG("entering main loop...\n\r");
+	TRACE_INFO("entering main loop...\r\n");
 	while (1) {
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
@@ -144,7 +142,7 @@ extern int main(void)
 				isUsbConnected = 0;
 			}
 		} else if (isUsbConnected == 0) {
-			TRACE_INFO("USB is now configured\n\r");
+			TRACE_INFO("USB is now configured\r\n");
 			LED_Set(LED_NUM_GREEN);
 			LED_Clear(LED_NUM_RED);
 

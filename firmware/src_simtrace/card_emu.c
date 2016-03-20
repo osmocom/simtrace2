@@ -440,8 +440,6 @@ static int tx_byte_pts(struct card_handle *ch)
 		break;
 	case PTS_S_WAIT_RESP_PCK:
 		byte = ch->pts.resp[_PCK];
-		/* update baud rate generator with Fi/Di */
-		emu_update_fidi(ch);
 		break;
 	default:
 		TRACE_ERROR("get_byte_pts() in invalid state %u\r\n",
@@ -456,6 +454,8 @@ static int tx_byte_pts(struct card_handle *ch)
 
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_RESP_PCK:
+		/* update baud rate generator with Fi/Di */
+		emu_update_fidi(ch);
 		/* Wait for the next TPDU */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);

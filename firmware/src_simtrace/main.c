@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "req_ctx.h"
 
+uint32_t g_unique_id[4];
+
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
@@ -102,10 +104,16 @@ extern int main(void)
 
 	SIMtrace_USB_Initialize();
 
+	EEFC_ReadUniqueID(g_unique_id);
+
         printf("\r\n\r\n"
 		"=============================================================================\r\n"
 		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\r\n"
 		"=============================================================================\r\n");
+
+	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
+		   g_unique_id[0], g_unique_id[1],
+		   g_unique_id[2], g_unique_id[3]);
 
 	TRACE_INFO("USB init...\r\n");
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {

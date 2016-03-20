@@ -146,7 +146,7 @@ VPATH += src_board src_sam3s cmsis $(USB_PATHS) src_simtrace
 # Objects built from C source files
 C_CMSIS    = core_cm3.o
 C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o tc.o
+C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o led.o tc.o unique_id.o
 C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
 C_SIMTRACE = simtrace_iso7816.o usb.o ccid.o sniffer.o mitm.o ringbuffer.o host_communication.o iso7816_fidi.o tc_etu.o req_ctx.o card_emu.o mode_cardemu.o
 C_APPLEVEL = main.o

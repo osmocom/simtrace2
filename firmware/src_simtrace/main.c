@@ -132,9 +132,11 @@ extern int main(void)
 
 	TRACE_DEBUG("entering main loop...\n\r");
 	while (1) {
+#if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
 		putchar('\b');
 		putchar(rotor[i++ % ARRAY_SIZE(rotor)]);
+#endif
 
 		if (USBD_GetState() < USBD_STATE_CONFIGURED) {
 

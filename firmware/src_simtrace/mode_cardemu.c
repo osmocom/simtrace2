@@ -228,8 +228,8 @@ static int adc_sam3s_reva_errata = 0;
 
 static int card_vcc_adc_init(void)
 {
-	uint32_t chip_arch = CHIPID->CIDR & CHIPID_CIDR_ARCH_Msk;
-	uint32_t chip_ver = CHIPID->CIDR & CHIPID_CIDR_VERSION_Msk;
+	uint32_t chip_arch = CHIPID->CHIPID_CIDR & CHIPID_CIDR_ARCH_Msk;
+	uint32_t chip_ver = CHIPID->CHIPID_CIDR & CHIPID_CIDR_VERSION_Msk;
 
 	PMC_EnablePeripheral(ID_ADC);
 
@@ -293,6 +293,7 @@ static void process_vcc_adc(struct cardem_inst *ci)
 static uint32_t adc2uv(uint16_t adc)
 {
 	uint32_t uv = (uint32_t) adc * UV_PER_LSB;
+	return uv;
 }
 
 void ADC_IrqHandler(void)

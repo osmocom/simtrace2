@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <signal.h>
 #include <time.h>
 #define _GNU_SOURCE
 #include <getopt.h>
@@ -384,6 +385,18 @@ static void run_mainloop(void)
 	}
 }
 
+static void signal_handler(int signal)
+{
+	switch (signal) {
+	case SIGINT:
+		request_card_insert(false);
+		exit(0);
+		break;
+	default:
+		break;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	char *gsmtap_host = "127.0.0.1";
@@ -472,6 +485,8 @@ int main(int argc, char **argv)
 		perror("SIM card has no channel?!?");
 		goto close_exit;
 	}
+
+	signal(SIGINT, &signal_handler);
 
 	do {
 		if (g_udp_fd < 0) {

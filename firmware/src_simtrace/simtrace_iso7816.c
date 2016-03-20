@@ -78,14 +78,12 @@ void ISR_PhoneRST(const Pin * pPin)
 	PIO_DisableIt(&pinPhoneRST);
 }
 
-extern void usart_irq_rx(uint8_t num);
 /*
  *  char_stat is zero if no error occured.
  *  Otherwise it is filled with the content of the status register.
  */
-void USART1_IrqHandler(void)
+void mode_trace_usart1_irq(void)
 {
-#if 0
 	uint32_t stat;
 	char_stat = 0;
 	// Rcv buf full
@@ -115,9 +113,6 @@ void USART1_IrqHandler(void)
 
 		char_stat = stat;
 	}
-#else
-	usart_irq_rx(0);
-#endif
 }
 
 /*  FIDI update functions   */

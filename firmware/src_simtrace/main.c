@@ -22,6 +22,10 @@ typedef struct {
 	void (*exit) (void);
 	/* main loop content for given configuration */
 	void (*run) (void);
+	/* Interrupt handler for USART1 */
+	void (*usart0_irq) (void);
+	/* Interrupt handler for USART1 */
+	void (*usart1_irq) (void);
 } conf_func;
 
 static const conf_func config_func_ptrs[] = {
@@ -48,6 +52,8 @@ static const conf_func config_func_ptrs[] = {
 		.init = mode_cardemu_init,
 		.exit = mode_cardemu_exit,
 		.run = mode_cardemu_run,
+		.usart0_irq = mode_cardemu_usart0_irq,
+		.usart1_irq = mode_cardemu_usart1_irq,
 	},
 #endif
 #ifdef HAVE_MITM
@@ -79,6 +85,16 @@ void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 {
 	TRACE_INFO_WP("cfgChanged%d ", cfgnum);
 	simtrace_config = cfgnum;
+}
+
+void USART1_IrqHandler(void)
+{
+	config_func_ptrs[simtrace_config].usart1_irq();
+}
+
+void USART0_IrqHandler(void)
+{
+	config_func_ptrs[simtrace_config].usart0_irq();
 }
 
 /*------------------------------------------------------------------------------

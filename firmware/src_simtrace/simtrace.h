@@ -106,6 +106,9 @@ extern void CCID_run( void );
 extern void mode_cardemu_run(void);
 extern void MITM_run( void );
 
+extern void mode_cardemu_usart0_irq(void);
+extern void mode_cardemu_usart1_irq(void);
+
 /*  Timer helper function */
 void Timer_Init( void );
 void TC0_Counter_Reset( void );

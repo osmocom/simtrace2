@@ -167,17 +167,13 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 
 
 /* FIXME: integrate this with actual irq handler */
-void usart_irq_rx(uint8_t uart)
+static void usart_irq_rx(uint8_t inst_num)
 {
-	Usart *usart = get_usart_by_chan(uart);
-	struct cardem_inst *ci = &cardem_inst[0];
+	Usart *usart = get_usart_by_chan(inst_num);
+	struct cardem_inst *ci = &cardem_inst[inst_num];
 	uint32_t csr;
 	uint8_t byte = 0;
 
-#ifdef CARDEMU_SECOND_UART
-	if (uart == 1)
-		ci = &cardem_inst[1];
-#endif
 	csr = usart->US_CSR & usart->US_IMR;
 
 	if (csr & US_CSR_RXRDY) {
@@ -195,6 +191,18 @@ void usart_irq_rx(uint8_t uart)
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		TRACE_ERROR("%u e 0x%x st: 0x%x\n", ci->num, byte, csr);
 	}
+}
+
+void mode_cardemu_usart0_irq(void)
+{
+	/* USART0 == Instance 1 == USIM 2 */
+	usart_irq_rx(1);
+}
+
+void mode_cardemu_usart1_irq(void)
+{
+	/* USART1 == Instance 0 == USIM 1 */
+	usart_irq_rx(0);
 }
 
 /* call-back from card_emu.c to change UART baud rate */

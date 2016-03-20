@@ -68,10 +68,43 @@ WEAK void NMI_Handler( void )
 /**
  * \brief Default HardFault interrupt handler.
  */
-WEAK void HardFault_Handler( void )
+struct hardfault_args {
+	unsigned long r0;
+	unsigned long r1;
+	unsigned long r2;
+	unsigned long r3;
+	unsigned long r12;
+	unsigned long lr;
+	unsigned long pc;
+	unsigned long psr;
+};
+
+void hard_fault_handler_c(struct hardfault_args *args)
 {
     printf("HardFault\r\n");
+    printf("R0=%08x, R1=%08x, R2=%08x, R3=%08x, R12=%08x\r\n",
+	   args->r0, args->r1, args->r2, args->r3, args->r12);
+    printf("LR[R14]=%08x, PC[R15]=%08x, PSR=%08x\r\n",
+	   args->lr, args->pc, args->psr);
+    printf("BFAR=%08x, CFSR=%08x, HFSR=%08x\r\n",
+	   SCB->BFAR, SCB->CFSR, SCB->HFSR);
+    printf("DFSR=%08x, AFSR=%08x, SHCSR=%08x\r\n",
+	   SCB->DFSR, SCB->CFSR, SCB->SHCSR);
     while ( 1 ) ;
+}
+
+__attribute__((naked))
+WEAK void HardFault_Handler( void )
+{
+	__asm volatile(
+		".syntax unified	\n"
+		" tst lr, #4		\n"
+		" ite eq		\n"
+		" mrseq r0, msp		\n"
+		" mrsne r0, psp		\n"
+		//" ldr r1, [r0, #24] 	\n"
+		" b hard_fault_handler_c\n"
+		".syntax divided	\n");
 }
 
 /**

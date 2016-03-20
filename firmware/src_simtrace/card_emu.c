@@ -17,7 +17,7 @@
  *
  */
 
-#define TRACE_LEVEL 6
+//#define TRACE_LEVEL 6
 
 #include <assert.h>
 #include <errno.h>
@@ -177,11 +177,10 @@ static void flush_rx_buffer(struct card_handle *ch)
 	rd->data_len = rctx->idx;
 	rd->hdr.msg_len = sizeof(*rd) + rd->data_len;
 
-	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-
-	/* FIXME: call into USB code to see if this buffer can
-	 * be transmitted now */
+	/* no need for irqsafe operation, as the usb_tx_queue is
+	 * processed only by the main loop context */
+	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 }
 
 /* convert a non-contiguous PTS request/responsei into a contiguous
@@ -234,11 +233,10 @@ static void flush_pts(struct card_handle *ch)
 	ptsi->pts_len = serialize_pts(ptsi->req, ch->pts.req);
 	serialize_pts(ptsi->resp, ch->pts.resp);
 
-	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-
-	/* FIXME: call into USB code to see if this buffer can
-	 * be transmitted now */
+	/* no need for irqsafe operation, as the usb_tx_queue is
+	 * processed only by the main loop context */
+	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
 }
 
 static void emu_update_fidi(struct card_handle *ch)
@@ -406,6 +404,9 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		flush_pts(ch);
 		/* activate UART TX to transmit PTS response */
 		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+		/* don't fall-through to the 'return ISO_S_IN_PTS'
+		 * below, rather keep ISO7816 state as-is, it will be
+		 * further updated by the tx-completion handler */
 		return -1;
 	}
 
@@ -669,6 +670,8 @@ static int tx_byte_tpdu(struct card_handle *ch)
 	/* ensure we are aware of any data that might be pending for
 	 * transmit */
 	if (!ch->uart_tx_ctx) {
+		/* uart_tx_queue is filled from main loop, so no need
+		 * for irq-safe operations */
 		if (llist_empty(&ch->uart_tx_queue))
 			return 0;
 
@@ -715,12 +718,8 @@ static int tx_byte_tpdu(struct card_handle *ch)
 			/* we have transmitted all bytes */
 			if (td->flags & CEMU_DATA_F_FINAL) {
 				/* this was the final part of the APDU, go
-				 * back to state one*/
+				 * back to state one */
 				card_set_state(ch, ISO_S_WAIT_TPDU);
-			} else {
-				/* FIXME: call into USB code to chec if we need
-				 * to submit a free buffer to accept
-				 * further data on bulk out endpoint */
 			}
 		}
 		req_ctx_set_state(rctx, RCTX_S_FREE);
@@ -746,7 +745,7 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 	case ISO_S_WAIT_CLK:
 	case ISO_S_WAIT_RST:
 	case ISO_S_WAIT_ATR:
-		TRACE_DEBUG("Received UART char in 7816 state %u\r\n",
+		TRACE_ERROR("Received UART char in invalid 7816 state %u\r\n",
 				ch->state);
 		/* we shouldn't receive any data from the reader yet! */
 		break;

@@ -1,4 +1,4 @@
-#define TRACE_LEVEL 6
+//#define TRACE_LEVEL 6
 
 #include "board.h"
 #include "simtrace.h"
@@ -145,16 +145,18 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 	Usart_info *ui = &usart_info[uart_chan];
 	ISO7816_SendChar(byte, ui);
 #else
-	int i = 0;
+	int i = 1;
 	while ((usart->US_CSR & (US_CSR_TXRDY)) == 0) {
 		if (!(i%1000000)) {
-			printf("s: %x %02X", usart->US_CSR, usart->US_RHR & 0xFF);
+			TRACE_ERROR("s: %x %02X\r\n",
+				usart->US_CSR, usart->US_RHR & 0xFF);
 			usart->US_CR = US_CR_RSTTX;
 			usart->US_CR = US_CR_RSTRX;
 		}
+		i++;
 	}
 	usart->US_THR = byte;
-	TRACE_ERROR("Sx%02x\r\n", byte);
+	//TRACE_ERROR("Sx%02x\r\n", byte);
 #endif
 	return 1;
 }
@@ -460,8 +462,6 @@ static void dispatch_received_rctx(struct req_ctx *rctx, struct cardem_inst *ci)
 	 * one message.  USB endpoints are streams that don't
 	 * preserve the message boundaries */
 	mh = (struct cardemu_usb_msg_hdr *) rctx->data;
-	TRACE_DEBUG("rctx->tot_len=%d, mh->msg_len=%d\r\n",
-			rctx->tot_len, mh->msg_len);
 	if (mh->msg_len == rctx->tot_len) {
 		/* fast path: only one message in buffer */
 		dispatch_usb_command(rctx, ci);
@@ -473,8 +473,6 @@ static void dispatch_received_rctx(struct req_ctx *rctx, struct cardem_inst *ci)
 	for (mh = (struct cardemu_usb_msg_hdr *) rctx->data;
 	     (uint8_t *)mh < rctx->data + rctx->tot_len;
 	     mh = (struct cardemu_usb_msg_hdr * ) ((uint8_t *)mh + mh->msg_len)) {
-		TRACE_DEBUG("Segment %d, offs=%d, len=%d\r\n", i,
-				(uint8_t *)mh - rctx->data, mh->msg_len);
 		segm = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_MAIN_PROCESSING);
 		if (!segm) {
 			TRACE_ERROR("ENOMEM during rctx segmentation\r\n");
@@ -532,13 +530,13 @@ void mode_cardemu_run(void)
 			uint8_t byte = rbuf_read(&ci->rb);
 			__enable_irq();
 			card_emu_process_rx_byte(ci->ch, byte);
-			TRACE_ERROR("Rx%02x\r\n", byte);
+			//TRACE_ERROR("Rx%02x\r\n", byte);
 		}
 
 		queue = card_emu_get_usb_tx_queue(ci->ch);
 		int usb_pending = llist_count(queue);
 		if (usb_pending != ci->usb_pending_old) {
-//			printf("usb_pending=%d\r\n", usb_pending);
+			TRACE_DEBUG("usb_pending=%d\r\n", usb_pending);
 			ci->usb_pending_old = usb_pending;
 		}
 		usb_refill_to_host(queue, ci->ep_in);

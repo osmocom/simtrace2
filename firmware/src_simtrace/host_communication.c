@@ -79,7 +79,8 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	struct req_ctx *rctx = (struct req_ctx *) arg;
 	struct llist_head *queue = (struct llist_head *) usbep_in_progress[rctx->ep];
 
-	TRACE_DEBUG("%s (EP=%u)\r\n", __func__, rctx->ep);
+	TRACE_DEBUG("%s (EP=%u, len=%u, q=%p)\r\n", __func__,
+			rctx->ep, transferred, queue);
 
 	usbep_in_progress[rctx->ep] = 0;
 

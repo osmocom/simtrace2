@@ -45,5 +45,7 @@
 #define USB_PRODUCT_ID              SIMTRACE_PRODUCT_ID
 
 #define CARDEMU_SECOND_UART
+/* Disable VCC/ADC detection, as OWHWv2 has no ADCVREF */
+//#define DETECT_VCC_BY_ADC
 
 #define HAVE_CARDEM

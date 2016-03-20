@@ -36,7 +36,8 @@ struct cardem_inst {
 	uint8_t ep_in;
 	uint8_t ep_int;
 	const Pin pin_insert;
-	uint16_t vcc_adc;
+	uint32_t vcc_uv;
+	uint32_t vcc_uv_last;
 };
 
 static struct cardem_inst cardem_inst[] = {
@@ -182,38 +183,87 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
  * ADC for VCC voltage detection
  ***********************************************************************/
 
+#ifdef DETECT_VCC_BY_ADC
+
+static int adc_triggered = 0;
+
 static int card_vcc_adc_init(void)
 {
-	 /* Initialize ADC for AD7 / AD6 */
+	PMC_EnablePeripheral(ID_ADC);
+
 	ADC->ADC_CR |= ADC_CR_SWRST;
+	/* Errata Work-Around to clear EOCx flags */
+	{
+		volatile uint32_t foo;
+		int i;
+		for (i = 0; i < 16; i++)
+			foo = ADC->ADC_CDR[i];
+	}
+
+	/* Initialize ADC for AD7 / AD6, fADC=48/24=2MHz */
 	ADC->ADC_MR = ADC_MR_TRGEN_DIS | ADC_MR_LOWRES_BITS_12 |
 		      ADC_MR_SLEEP_NORMAL | ADC_MR_FWUP_OFF |
-		      ADC_MR_FREERUN_ON | ADC_MR_PRESCAL(255) |
-		      ADC_MR_STARTUP_SUT8 | ADC_MR_SETTLING(0) |
-		      ADC_MR_ANACH_NONE | ADC_MR_TRACKTIM(0) |
+		      ADC_MR_FREERUN_OFF | ADC_MR_PRESCAL(23) |
+		      ADC_MR_STARTUP_SUT8 | ADC_MR_SETTLING(3) |
+		      ADC_MR_ANACH_NONE | ADC_MR_TRACKTIM(4) |
 		      ADC_MR_TRANSFER(1) | ADC_MR_USEQ_NUM_ORDER;
 	/* enable AD6 + AD7 channels */
-	ADC->ADC_CHER = ADC_CHER_CH6 | ADC_CHER_CH7;
-	/* start conversion */
+	ADC->ADC_CHER = ADC_CHER_CH7;
+	ADC->ADC_IER = ADC_IER_EOC7;
+#ifdef CARDEMU_SECOND_UART
+	ADC->ADC_CHER |= ADC_CHER_CH6;
+	ADC->ADC_IER |= ADC_IER_EOC6;
+#endif
+	NVIC_EnableIRQ(ADC_IRQn);
 	ADC->ADC_CR |= ADC_CR_START;
+
+	return 0;
 }
 
-static int card_vcc_adc_process(void)
+#define UV_PER_LSB	((3300 * 1000) / 4096)
+#define VCC_UV_THRESH_1V8	1500000
+#define VCC_UV_THRESH_3V	2800000
+
+static void process_vcc_adc(struct cardem_inst *ci)
 {
-	/* if ADC is triggered, wait for results */
-	/* if both results have arrived, trigger again */
-	/* convert results to voltage in milli-volts */
-	/* report status changes */
-	if (ADC->ADC_ISR & ADC_ISR_EOC6) {
-		cardem_inst[1].vcc_adc = ADC->ADC_CDR[6] & 0xFFF;
-		//printf("AD6=%u\n", cardem_inst[1].vcc_adc);
+	if (ci->vcc_uv >= VCC_UV_THRESH_3V &&
+	    ci->vcc_uv_last < VCC_UV_THRESH_3V) {
+		card_emu_io_statechg(ci->ch, CARD_IO_VCC, 1);
+		/* FIXME do this for real */
+		card_emu_io_statechg(ci->ch, CARD_IO_CLK, 1);
+	} else if (ci->vcc_uv < VCC_UV_THRESH_3V &&
+		 ci->vcc_uv_last >= VCC_UV_THRESH_3V) {
+		/* FIXME do this for real */
+		card_emu_io_statechg(ci->ch, CARD_IO_CLK, 0);
+		card_emu_io_statechg(ci->ch, CARD_IO_VCC, 0);
 	}
+	ci->vcc_uv_last = ci->vcc_uv;
+}
+
+static uint32_t adc2uv(uint16_t adc)
+{
+	uint32_t uv = (uint32_t) adc * UV_PER_LSB;
+}
+
+void ADC_IrqHandler(void)
+{
+#ifdef CARDEMU_SECOND_UART
+	if (ADC->ADC_ISR & ADC_ISR_EOC6) {
+		uint16_t val = ADC->ADC_CDR[6] & 0xFFF;
+		cardem_inst[1].vcc_uv = adc2uv(val);
+		process_vcc_adc(&cardem_inst[1]);
+		ADC->ADC_CR |= ADC_CR_START;
+	}
+#endif
 
 	if (ADC->ADC_ISR & ADC_ISR_EOC7) {
-		cardem_inst[0].vcc_adc = ADC->ADC_CDR[7] & 0xFFF;
-		printf("AD7=%u\n", cardem_inst[0].vcc_adc);
+		uint16_t val = ADC->ADC_CDR[7] & 0xFFF;
+		cardem_inst[0].vcc_uv = adc2uv(val);
+		process_vcc_adc(&cardem_inst[0]);
+		ADC->ADC_CR |= ADC_CR_START;
 	}
 }
+#endif /* DETECT_VCC_BY_ADC */
 
 /***********************************************************************
  * Core USB  / mainloop integration
@@ -225,6 +275,7 @@ static void usim1_rst_irqhandler(const Pin *pPin)
 	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_RST, active);
 }
 
+#ifndef DETECT_VCC_BY_ADC
 static void usim1_vcc_irqhandler(const Pin *pPin)
 {
 	int active = PIO_Get(&pin_usim1_vcc) ? 1 : 0;
@@ -232,6 +283,7 @@ static void usim1_vcc_irqhandler(const Pin *pPin)
 	/* FIXME do this for real */
 	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_CLK, active);
 }
+#endif /* !DETECT_VCC_BY_ADC */
 
 #ifdef CARDEMU_SECOND_UART
 static void usim2_rst_irqhandler(const Pin *pPin)
@@ -240,6 +292,7 @@ static void usim2_rst_irqhandler(const Pin *pPin)
 	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_RST, active);
 }
 
+#ifndef DETECT_VCC_BY_ADC
 static void usim2_vcc_irqhandler(const Pin *pPin)
 {
 	int active = PIO_Get(&pin_usim2_vcc) ? 1 : 0;
@@ -247,7 +300,8 @@ static void usim2_vcc_irqhandler(const Pin *pPin)
 	/* FIXME do this for real */
 	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_CLK, active);
 }
-#endif
+#endif /* !DETECT_VCC_BY_ADC */
+#endif /* CARDEMU_SECOND_UART */
 
 /* executed once at system boot for each config */
 void mode_cardemu_configure(void)
@@ -263,6 +317,9 @@ void mode_cardemu_init(void)
 	TRACE_ENTRY();
 
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
+#ifdef DETECT_VCC_BY_ADC
+	card_vcc_adc_init();
+#endif /* DETECT_VCC_BY_ADC */
 
 	INIT_LLIST_HEAD(&cardem_inst[0].usb_out_queue);
 	rbuf_reset(&cardem_inst[0].rb);
@@ -271,8 +328,10 @@ void mode_cardemu_init(void)
 	NVIC_EnableIRQ(USART1_IRQn);
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
+#ifndef DETECT_VCC_BY_ADC
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
+#endif /* DETECT_VCC_BY_ADC */
 	cardem_inst[0].ch = card_emu_init(0, 2, 0);
 
 #ifdef CARDEMU_SECOND_UART
@@ -283,10 +342,12 @@ void mode_cardemu_init(void)
 	NVIC_EnableIRQ(USART0_IRQn);
 	PIO_ConfigureIt(&pin_usim2_rst, usim2_rst_irqhandler);
 	PIO_EnableIt(&pin_usim2_rst);
+#ifndef DETECT_VCC_BY_ADC
 	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim2_vcc);
+#endif /* DETECT_VCC_BY_ADC */
 	cardem_inst[1].ch = card_emu_init(1, 0, 1);
-#endif
+#endif /* CARDEMU_SECOND_UART */
 }
 
 /* called if config is deactivated */
@@ -450,8 +511,6 @@ void mode_cardemu_run(void)
 			TRACE_ERROR("Rx%02x\r\n", byte);
 		}
 
-		card_vcc_adc_process();
-
 		queue = card_emu_get_usb_tx_queue(ci->ch);
 		int usb_pending = llist_count(queue);
 		if (usb_pending != ci->usb_pending_old) {
@@ -466,6 +525,4 @@ void mode_cardemu_run(void)
 		usb_refill_from_host(queue, ci->ep_out);
 		process_any_usb_commands(queue, ci);
 	}
-
-
 }

@@ -27,6 +27,7 @@ static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
 #endif
 
 struct cardem_inst {
+	uint32_t num;
 	struct card_handle *ch;
 	struct llist_head usb_out_queue;
 	struct ringbuf rb;
@@ -42,6 +43,7 @@ struct cardem_inst {
 
 static struct cardem_inst cardem_inst[] = {
 	{
+		.num = 0,
 		.usart_info = 	{
 			.base = USART1,
 			.id = ID_USART1,
@@ -54,6 +56,7 @@ static struct cardem_inst cardem_inst[] = {
 	},
 #ifdef CARDEMU_SECOND_UART
 	{
+		.num = 1,
 		.usart_info = {
 			.base = USART0,
 			.id = ID_USART0,
@@ -148,8 +151,9 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 	int i = 1;
 	while ((usart->US_CSR & (US_CSR_TXRDY)) == 0) {
 		if (!(i%1000000)) {
-			TRACE_ERROR("s: %x %02X\r\n",
-				usart->US_CSR, usart->US_RHR & 0xFF);
+			TRACE_ERROR("%u: s: %x %02X\r\n",
+				uart_chan, usart->US_CSR,
+				usart->US_RHR & 0xFF);
 			usart->US_CR = US_CR_RSTTX;
 			usart->US_CR = US_CR_RSTRX;
 		}
@@ -189,7 +193,7 @@ void usart_irq_rx(uint8_t uart)
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|
 		   US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) {
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-		TRACE_ERROR("e 0x%x st: 0x%x\n", byte, csr);
+		TRACE_ERROR("%u e 0x%x st: 0x%x\n", ci->num, byte, csr);
 	}
 }
 
@@ -451,6 +455,8 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 		break;
 	case CEMU_USB_MSGT_DT_CARDINSERT:
 		cardins = (struct cardemu_usb_msg_cardinsert *) hdr;
+		TRACE_INFO("%u: set card_insert to %s\r\n", ci->num,
+			   cardins->card_insert ? "INSERTED" : "REMOVED");
 		if (cardins->card_insert)
 			PIO_Set(&ci->pin_insert);
 		else
@@ -491,7 +497,8 @@ static void dispatch_received_rctx(struct req_ctx *rctx, struct cardem_inst *ci)
 	     mh = (struct cardemu_usb_msg_hdr * ) ((uint8_t *)mh + mh->msg_len)) {
 		segm = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_MAIN_PROCESSING);
 		if (!segm) {
-			TRACE_ERROR("ENOMEM during rctx segmentation\r\n");
+			TRACE_ERROR("%u: ENOMEM during rctx segmentation\r\n",
+				    ci->num);
 			break;
 		}
 		segm->idx = 0;
@@ -546,13 +553,14 @@ void mode_cardemu_run(void)
 			uint8_t byte = rbuf_read(&ci->rb);
 			__enable_irq();
 			card_emu_process_rx_byte(ci->ch, byte);
-			//TRACE_ERROR("Rx%02x\r\n", byte);
+			//TRACE_ERROR("%uRx%02x\r\n", i, byte);
 		}
 
 		queue = card_emu_get_usb_tx_queue(ci->ch);
 		int usb_pending = llist_count(queue);
 		if (usb_pending != ci->usb_pending_old) {
-			TRACE_DEBUG("usb_pending=%d\r\n", usb_pending);
+			TRACE_DEBUG("%u usb_pending=%d\r\n",
+				    i, usb_pending);
 			ci->usb_pending_old = usb_pending;
 		}
 		usb_refill_to_host(queue, ci->ep_in);

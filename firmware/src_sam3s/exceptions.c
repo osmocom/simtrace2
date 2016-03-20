@@ -52,6 +52,7 @@
  */
 void IrqHandlerNotUsed( void )
 {
+    printf("NotUsed\r\n");
     while ( 1 ) ;
 }
 
@@ -60,6 +61,7 @@ void IrqHandlerNotUsed( void )
  */
 WEAK void NMI_Handler( void )
 {
+    printf("NMI\r\n");
     while ( 1 ) ;
 }
 
@@ -68,6 +70,7 @@ WEAK void NMI_Handler( void )
  */
 WEAK void HardFault_Handler( void )
 {
+    printf("HardFault\r\n");
     while ( 1 ) ;
 }
 
@@ -76,6 +79,7 @@ WEAK void HardFault_Handler( void )
  */
 WEAK void MemManage_Handler( void )
 {
+    printf("MemManage\r\n");
     while ( 1 ) ;
 }
 
@@ -84,6 +88,7 @@ WEAK void MemManage_Handler( void )
  */
 WEAK void BusFault_Handler( void )
 {
+    printf("BusFault\r\n");
     while ( 1 ) ;
 }
 
@@ -92,6 +97,7 @@ WEAK void BusFault_Handler( void )
  */
 WEAK void UsageFault_Handler( void )
 {
+    printf("UsageFault\r\n");
     while ( 1 ) ;
 }
 
@@ -100,6 +106,7 @@ WEAK void UsageFault_Handler( void )
  */
 WEAK void SVC_Handler( void )
 {
+    printf("SVC\r\n");
     while ( 1 ) ;
 }
 
@@ -108,6 +115,7 @@ WEAK void SVC_Handler( void )
  */
 WEAK void DebugMon_Handler( void )
 {
+    printf("DebugMon\r\n");
     while ( 1 ) ;
 }
 
@@ -116,6 +124,7 @@ WEAK void DebugMon_Handler( void )
  */
 WEAK void PendSV_Handler( void )
 {
+    printf("PendSV\r\n");
     while ( 1 ) ;
 }
 
@@ -124,6 +133,7 @@ WEAK void PendSV_Handler( void )
  */
 WEAK void SysTick_Handler( void )
 {
+    printf("SysTick\r\n");
     while ( 1 ) ;
 }
 
@@ -132,6 +142,7 @@ WEAK void SysTick_Handler( void )
  */
 WEAK void SUPC_IrqHandler( void )
 {
+    printf("SUPC\r\n");
     while ( 1 ) ;
 }
 
@@ -140,6 +151,7 @@ WEAK void SUPC_IrqHandler( void )
  */
 WEAK void RSTC_IrqHandler( void )
 {
+    printf("RSTC\r\n");
     while ( 1 ) ;
 }
 
@@ -148,6 +160,7 @@ WEAK void RSTC_IrqHandler( void )
  */
 WEAK void RTC_IrqHandler( void )
 {
+    printf("RTC\r\n");
     while ( 1 ) ;
 }
 
@@ -156,6 +169,7 @@ WEAK void RTC_IrqHandler( void )
  */
 WEAK void RTT_IrqHandler( void )
 {
+    printf("RTT\r\n");
     while ( 1 ) ;
 }
 
@@ -164,6 +178,7 @@ WEAK void RTT_IrqHandler( void )
  */
 WEAK void WDT_IrqHandler( void )
 {
+    printf("WDT\r\n");
     while ( 1 ) ;
 }
 
@@ -172,6 +187,7 @@ WEAK void WDT_IrqHandler( void )
  */
 WEAK void PMC_IrqHandler( void )
 {
+    printf("PMC\r\n");
     while ( 1 ) ;
 }
 
@@ -180,6 +196,7 @@ WEAK void PMC_IrqHandler( void )
  */
 WEAK void EEFC_IrqHandler( void )
 {
+    printf("EEFC\r\n");
     while ( 1 ) ;
 }
 
@@ -188,6 +205,7 @@ WEAK void EEFC_IrqHandler( void )
  */
 WEAK void UART0_IrqHandler( void )
 {
+    printf("UART0\r\n");
     while ( 1 ) ;
 }
 
@@ -196,6 +214,7 @@ WEAK void UART0_IrqHandler( void )
  */
 WEAK void UART1_IrqHandler( void )
 {
+    printf("UART1\r\n");
     while ( 1 ) ;
 }
 
@@ -204,6 +223,7 @@ WEAK void UART1_IrqHandler( void )
  */
 WEAK void SMC_IrqHandler( void )
 {
+    printf("SMC\r\n");
     while ( 1 ) ;
 }
 
@@ -212,6 +232,7 @@ WEAK void SMC_IrqHandler( void )
  */
 WEAK void PIOA_IrqHandler( void )
 {
+    printf("PIOA\r\n");
     while ( 1 ) ;
 }
 
@@ -220,6 +241,7 @@ WEAK void PIOA_IrqHandler( void )
  */
 WEAK void PIOB_IrqHandler( void )
 {
+    printf("PIOB\r\n");
     while ( 1 ) ;
 }
 
@@ -228,6 +250,7 @@ WEAK void PIOB_IrqHandler( void )
  */
 WEAK void PIOC_IrqHandler( void )
 {
+    printf("PIOC\r\n");
     while ( 1 ) ;
 }
 
@@ -236,6 +259,7 @@ WEAK void PIOC_IrqHandler( void )
  */
 WEAK void USART0_IrqHandler( void )
 {
+    printf("USART0\r\n");
     while ( 1 ) ;
 }
 
@@ -244,6 +268,7 @@ WEAK void USART0_IrqHandler( void )
  */
 WEAK void USART1_IrqHandler( void )
 {
+    printf("USART1\r\n");
     while ( 1 ) ;
 }
 
@@ -252,6 +277,7 @@ WEAK void USART1_IrqHandler( void )
  */
 WEAK void MCI_IrqHandler( void )
 {
+    printf("MCI\r\n");
     while ( 1 ) ;
 }
 
@@ -260,6 +286,7 @@ WEAK void MCI_IrqHandler( void )
  */
 WEAK void TWI0_IrqHandler( void )
 {
+    printf("TWI0\r\n");
     while ( 1 ) ;
 }
 
@@ -268,6 +295,7 @@ WEAK void TWI0_IrqHandler( void )
  */
 WEAK void TWI1_IrqHandler( void )
 {
+    printf("TWI1\r\n");
     while ( 1 ) ;
 }
 
@@ -276,6 +304,7 @@ WEAK void TWI1_IrqHandler( void )
  */
 WEAK void SPI_IrqHandler( void )
 {
+    printf("SPI\r\n");
     while ( 1 ) ;
 }
 
@@ -284,6 +313,7 @@ WEAK void SPI_IrqHandler( void )
  */
 WEAK void SSC_IrqHandler( void )
 {
+    printf("SSC\r\n");
     while ( 1 ) ;
 }
 
@@ -292,6 +322,7 @@ WEAK void SSC_IrqHandler( void )
  */
 WEAK void TC0_IrqHandler( void )
 {
+    printf("TC0\r\n");
     while ( 1 ) ;
 }
 
@@ -300,6 +331,7 @@ WEAK void TC0_IrqHandler( void )
  */
 WEAK void TC1_IrqHandler( void )
 {
+    printf("TC1\r\n");
     while ( 1 ) ;
 }
 
@@ -308,6 +340,7 @@ WEAK void TC1_IrqHandler( void )
  */
 WEAK void TC2_IrqHandler( void )
 {
+    printf("TC2\r\n");
     while ( 1 ) ;
 }
 
@@ -316,6 +349,7 @@ WEAK void TC2_IrqHandler( void )
  */
 WEAK void TC3_IrqHandler( void )
 {
+    printf("TC3\r\n");
     while ( 1 ) ;
 }
 
@@ -324,6 +358,7 @@ WEAK void TC3_IrqHandler( void )
  */
 WEAK void TC4_IrqHandler( void )
 {
+    printf("TC4\r\n");
     while ( 1 ) ;
 }
 
@@ -332,6 +367,7 @@ WEAK void TC4_IrqHandler( void )
  */
 WEAK void TC5_IrqHandler( void )
 {
+    printf("TC5\r\n");
     while ( 1 ) ;
 }
 
@@ -340,6 +376,7 @@ WEAK void TC5_IrqHandler( void )
  */
 WEAK void ADC_IrqHandler( void )
 {
+    printf("ADC\r\n");
     while ( 1 ) ;
 }
 
@@ -348,6 +385,7 @@ WEAK void ADC_IrqHandler( void )
  */
 WEAK void DAC_IrqHandler( void )
 {
+    printf("DAC\r\n");
     while ( 1 ) ;
 }
 
@@ -356,6 +394,7 @@ WEAK void DAC_IrqHandler( void )
  */
 WEAK void PWM_IrqHandler( void )
 {
+    printf("PWM\r\n");
     while ( 1 ) ;
 }
 
@@ -364,6 +403,7 @@ WEAK void PWM_IrqHandler( void )
  */
 WEAK void CRCCU_IrqHandler( void )
 {
+    printf("CRCCU\r\n");
     while ( 1 ) ;
 }
 
@@ -372,6 +412,7 @@ WEAK void CRCCU_IrqHandler( void )
  */
 WEAK void ACC_IrqHandler( void )
 {
+    printf("ACC\r\n");
     while ( 1 ) ;
 }
 
@@ -380,5 +421,6 @@ WEAK void ACC_IrqHandler( void )
  */
 WEAK void USBD_IrqHandler( void )
 {
+    printf("USBD\r\n");
     while ( 1 ) ;
 }

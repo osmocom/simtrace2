@@ -247,14 +247,14 @@ static void emu_update_fidi(struct card_handle *ch)
 
 	rc = compute_fidi_ratio(ch->fi, ch->di);
 	if (rc > 0 && rc < 0x400) {
-		TRACE_DEBUG("computed Fi(%u) Di(%u) ratio: %d\r\n",
+		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d\r\n",
 			    ch->fi, ch->di, rc);
 		/* make sure UART uses new F/D ratio */
 		card_emu_uart_update_fidi(ch->uart_chan, rc);
 		/* notify ETU timer about this */
 		tc_etu_set_etu(ch->tc_chan, rc);
 	} else
-		TRACE_DEBUG("computed FiDi ration %d unsupported\r\n", rc);
+		TRACE_INFO("computed FiDi ration %d unsupported\r\n", rc);
 }
 
 /* Update the ISO 7816-3 TPDU receiver state */
@@ -386,7 +386,7 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 	case PTS_S_WAIT_REQ_PCK:
 		ch->pts.req[_PCK] = byte;
 		if (ch->pts.req[_PCK] != csum_pts(ch->pts.req)) {
-			TRACE_DEBUG("Error in PTS Checksum!\r\n");
+			TRACE_ERROR("Error in PTS Checksum!\r\n");
 			/* Wait for the next TPDU */
 			set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 			return ISO_S_WAIT_TPDU;
@@ -395,7 +395,7 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		memcpy(ch->pts.resp, ch->pts.req, sizeof(ch->pts.resp));
 		break;
 	default:
-		TRACE_DEBUG("process_byte_pts() in invalid state %u\r\n",
+		TRACE_ERROR("process_byte_pts() in invalid state %u\r\n",
 			ch->pts.state);
 		break;
 	}
@@ -443,7 +443,7 @@ static int tx_byte_pts(struct card_handle *ch)
 		emu_update_fidi(ch);
 		break;
 	default:
-		TRACE_DEBUG("get_byte_pts() in invalid state %u\r\n",
+		TRACE_ERROR("get_byte_pts() in invalid state %u\r\n",
 			ch->pts.state);
 		return 0;
 	}
@@ -580,7 +580,7 @@ static void send_tpdu_header(struct card_handle *ch)
 	struct req_ctx *rctx;
 	struct cardemu_usb_msg_rx_data *rd;
 
-	TRACE_DEBUG("%s: %02x %02x %02x %02x %02x\r\n", __func__,
+	TRACE_INFO("%s: %02x %02x %02x %02x %02x\r\n", __func__,
 			ch->tpdu.hdr[0], ch->tpdu.hdr[1],
 			ch->tpdu.hdr[2], ch->tpdu.hdr[3],
 			ch->tpdu.hdr[4]);
@@ -649,7 +649,7 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 		add_tpdu_byte(ch, byte);
 		break;
 	default:
-		TRACE_DEBUG("process_byte_tpdu() in invalid state %u\r\n",
+		TRACE_ERROR("process_byte_tpdu() in invalid state %u\r\n",
 			    ch->tpdu.state);
 	}
 
@@ -858,22 +858,22 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	switch (io) {
 	case CARD_IO_VCC:
 		if (active == 0 && ch->vcc_active == 1) {
-			TRACE_DEBUG("VCC deactivated\r\n");
+			TRACE_INFO("VCC deactivated\r\n");
 			tc_etu_disable(ch->tc_chan);
 			card_set_state(ch, ISO_S_WAIT_POWER);
 		} else if (active == 1 && ch->vcc_active == 0) {
-			TRACE_DEBUG("VCC activated\r\n");
+			TRACE_INFO("VCC activated\r\n");
 			card_set_state(ch, ISO_S_WAIT_CLK);
 		}
 		ch->vcc_active = active;
 		break;
 	case CARD_IO_CLK:
 		if (active == 1 && ch->clocked == 0) {
-			TRACE_DEBUG("CLK activated\r\n");
+			TRACE_INFO("CLK activated\r\n");
 			if (ch->state == ISO_S_WAIT_CLK)
 				card_set_state(ch, ISO_S_WAIT_RST);
 		} else if (active == 0 && ch->clocked == 1) {
-			TRACE_DEBUG("CLK deactivated\r\n");
+			TRACE_INFO("CLK deactivated\r\n");
 		}
 		ch->clocked = active;
 		break;

@@ -84,6 +84,19 @@ static Usart *get_usart_by_chan(uint8_t uart_chan)
  * Call-Backs from card_emu.c
  ***********************************************************************/
 
+static void wait_tx_idle(Usart *usart)
+{
+	int i = 1;
+
+	/* wait until last char has been fully transmitted */
+	while ((usart->US_CSR & (US_CSR_TXEMPTY)) == 0) {
+		if (!(i%1000000)) {
+			TRACE_ERROR("s: %x \r\n", usart->US_CSR);
+		}
+		i++;
+	}
+}
+
 /* call-back from card_emu.c to enable/disable transmit and/or receive */
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 {
@@ -91,14 +104,19 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	switch (rxtx) {
 	case ENABLE_TX:
 		USART_DisableIt(usart, ~US_IER_TXRDY);
-		USART_SetReceiverEnabled(usart, 0);
+		/* as irritating as it is, we actually want to keep the
+		 * receiver enabled during transmit */
+		USART_SetReceiverEnabled(usart, 1);
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		USART_EnableIt(usart, US_IER_TXRDY);
 		USART_SetTransmitterEnabled(usart, 1);
 		break;
 	case ENABLE_RX:
 		USART_DisableIt(usart, ~US_IER_RXRDY);
-		USART_SetTransmitterEnabled(usart, 0);
+		/* as irritating as it is, we actually want to keep the
+		 * transmitter enabled during receive */
+		USART_SetTransmitterEnabled(usart, 1);
+		wait_tx_idle(usart);
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		USART_EnableIt(usart, US_IER_RXRDY);
 		USART_SetReceiverEnabled(usart, 1);

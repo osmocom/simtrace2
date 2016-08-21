@@ -36,7 +36,6 @@
 /** Core definition */
 #define cortexm3
 
-#define BOARD_MAINOSC 18432000 
 #define BOARD_MCK     48000000
 
 #define LED_RED PIO_PA17

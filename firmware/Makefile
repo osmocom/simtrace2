@@ -96,8 +96,7 @@ INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isrc_simtrace
 
 # FIXME: This must be made configurable!
-#INCLUDES += -Iinclude_board/simtrace
-INCLUDES += -Iinclude_board/owhw
+INCLUDES += -Iinclude_board/$(BOARD)
 
 INCLUDES += -Icmsis
 INCLUDES += $(INCLUDES_USB)

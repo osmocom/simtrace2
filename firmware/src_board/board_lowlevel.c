@@ -43,15 +43,23 @@
  *        Local definitions
  *----------------------------------------------------------------------------*/
 
-/* Clock settings at 48MHz  for 18 MHz crystal */
 #if (BOARD_MCK == 48000000)
+#ifndef qmod
+/* Clock settings at 48MHz  for 18 MHz crystal */
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
                        | CKGR_PLLAR_MULA(0xc) \
                        | CKGR_PLLAR_PLLACOUNT(0x1) \
                        | CKGR_PLLAR_DIVA(0x5))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
-
+#else /* qmod */
+/* QMod has 12 MHz clock, so multply by 4 and divide by 1 */
+#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
+                       | CKGR_PLLAR_MULA(4-1) \
+                       | CKGR_PLLAR_PLLACOUNT(0x1) \
+                       | CKGR_PLLAR_DIVA(1))
+#define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
+#endif
 /* Clock settings at 64MHz  for 18 MHz crystal */
 #elif (BOARD_MCK == 64000000)
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
@@ -98,6 +106,7 @@ extern WEAK void LowLevelInit( void )
     }
 */
 
+#ifndef qmod
     /* Initialize main oscillator */
     if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
     {
@@ -114,6 +123,13 @@ extern WEAK void LowLevelInit( void )
     /* wait for Main XTAL oscillator stabilization */
     timeout = 0;
     while (!(PMC->PMC_SR & PMC_SR_MOSCSELS) && (timeout++ < CLOCK_TIMEOUT));
+#else
+    /* QMOD has external 12MHz clock source */
+    PIOB->PIO_PDR = (1 << 9);
+    PIOB->PIO_PUDR = (1 << 9);
+    PIOB->PIO_PPDDR = (1 << 9);
+    PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTBY| CKGR_MOR_MOSCSEL;
+#endif
 
     /* disable the red LED after main clock initialization */
     PIOA->PIO_SODR = LED_RED;

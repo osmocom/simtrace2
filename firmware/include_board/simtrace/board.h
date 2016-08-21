@@ -6,6 +6,8 @@
 /** Board definition */
 #define simtrace
 
+#define BOARD_MAINOSC 18432000
+
 /** Phone (SIM card emulator)/CCID Reader/MITM configuration    **/
 /*  Normally the communication lines between phone and SIM card are disconnected    */
 // Disconnect SIM card I/O, VPP line from the phone lines

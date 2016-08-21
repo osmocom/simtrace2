@@ -2,11 +2,11 @@
 #include "board_common.h"
 
 /** Name of the board */
-#define BOARD_NAME "OWHW"
+#define BOARD_NAME "QMOD"
 /** Board definition */
-#define owhw
+#define qmod
 
-#define BOARD_MAINOSC 18432000
+#define BOARD_MAINOSC 12000000
 
 /* USIM 2 interface (USART) */
 #define PIN_USIM2_CLK		{PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
@@ -47,7 +47,6 @@
 #define USB_PRODUCT_ID              SIMTRACE_PRODUCT_ID
 
 #define CARDEMU_SECOND_UART
-/* Disable VCC/ADC detection, as OWHWv2 has no ADCVREF */
-//#define DETECT_VCC_BY_ADC
+#define DETECT_VCC_BY_ADC
 
 #define HAVE_CARDEM

@@ -97,6 +97,7 @@ void USART0_IrqHandler(void)
 	config_func_ptrs[simtrace_config].usart0_irq();
 }
 
+#include "i2c.h"
 /*------------------------------------------------------------------------------
  *        Main
  *------------------------------------------------------------------------------*/
@@ -130,6 +131,18 @@ extern int main(void)
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
+
+#if 1
+	static const Pin pin_hub_rst = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+	PIO_Configure(&pin_hub_rst, 1);
+	i2c_pin_init();
+	while (1) {
+		for (i = 0; i < 256; i ++) {
+			int byte = eeprom_read_byte(0x50, i);
+			TRACE_INFO("0x%02x: %02x\r\n", i, byte);
+		}
+	}
+#endif
 
 	TRACE_INFO("USB init...\r\n");
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {

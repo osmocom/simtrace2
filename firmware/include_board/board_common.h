@@ -63,7 +63,7 @@
 
 /** UART0 */
 /** Console baudrate always using 115200. */
-#define CONSOLE_BAUDRATE    230400
+#define CONSOLE_BAUDRATE    115200
 /** Usart Hw interface used by the console (UART0). */
 #define CONSOLE_USART       UART0
 /** Usart Hw ID used by the console (UART0). */

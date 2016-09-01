@@ -7,6 +7,16 @@ static const Pin pin_sda = {PIO_PA30, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_OPENDRAIN
 static const Pin pin_sda_in = {PIO_PA30, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT };
 static const Pin pin_scl = {PIO_PA31, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_OPENDRAIN };
 
+static void i2c_delay()
+{
+	volatile int v;
+	int i;
+
+	for (i = 0; i < 100; i++) {
+		v = 0;
+	}
+}
+
 void i2c_pin_init(void)
 {
 	PIO_Configure(&pin_scl, PIO_LISTSIZE(pin_scl));
@@ -16,21 +26,25 @@ void i2c_pin_init(void)
 static void set_scl(void)
 {
 	PIO_Set(&pin_scl);
+	i2c_delay();
 }
 
 static void set_sda(void)
 {
 	PIO_Set(&pin_sda);
+	i2c_delay();
 }
 
 static void clear_scl(void)
 {
 	PIO_Clear(&pin_scl);
+	i2c_delay();
 }
 
 static void clear_sda(void)
 {
 	PIO_Clear(&pin_sda);
+	i2c_delay();
 }
 
 static bool read_sda(void)
@@ -51,26 +65,13 @@ static bool read_sda(void)
 
 static bool i2c_started = false;
 
-static void i2c_delay()
-{
-	volatile int v;
-	int i;
-
-	for (i = 0; i < 100; i++) {
-		v = 0;
-	}
-}
-
 static void i2c_start_cond(void)
 {
 	if (i2c_started) {
 		set_sda();
-		i2c_delay();
 		set_scl();
-		i2c_delay();
 	}
 
-	i2c_delay();
 	clear_sda();
 	i2c_delay();
 	clear_scl();
@@ -80,9 +81,7 @@ static void i2c_start_cond(void)
 static void i2c_stop_cond(void)
 {
 	clear_sda();
-	i2c_delay();
 	set_scl();
-	i2c_delay();
 	set_sda();
 	i2c_delay();
 	i2c_started = false;
@@ -94,11 +93,9 @@ static void i2c_write_bit(bool bit)
 		set_sda();
 	else
 		clear_sda();
-	i2c_delay();
+	i2c_delay(); // ?
 	set_scl();
-	i2c_delay();
 	clear_scl();
-	i2c_delay();
 }
 
 static bool i2c_read_bit(void)
@@ -106,9 +103,7 @@ static bool i2c_read_bit(void)
 	bool bit;
 
 	set_sda();
-	i2c_delay();
 	set_scl();
-	i2c_delay();
 	bit = read_sda();
 	clear_scl();
 

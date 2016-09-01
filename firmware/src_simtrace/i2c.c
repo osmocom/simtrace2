@@ -12,7 +12,9 @@ static void i2c_delay()
 	volatile int v;
 	int i;
 
-	for (i = 0; i < 100; i++) {
+	/* 100 cycles results in SCL peak length of 44us, so it's about
+	 * 440ns per cycle here */
+	for (i = 0; i < 14; i++) {
 		v = 0;
 	}
 }

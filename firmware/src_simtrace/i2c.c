@@ -52,7 +52,7 @@ static bool read_sda(void)
 	bool ret;
 
 	PIO_Configure(&pin_sda_in, PIO_LISTSIZE(pin_sda_in));
-	if (PIO_Get(&pin_sda))
+	if (PIO_Get(&pin_sda_in))
 		ret = true;
 	else
 		ret = false;

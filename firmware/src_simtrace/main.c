@@ -164,6 +164,11 @@ static const unsigned int __eeprom_bin_len = 256;
 	PIO_Configure(&pin_hub_rst, 1);
 	i2c_pin_init();
 
+	/* set PIN_PRTPWR_OVERRIDE to output-low to avoid the internal
+	 * pull-up on the input to keep SIMTRACE12 alive */
+	static const Pin pin_hubpwr_override = PIN_PRTPWR_OVERRIDE;
+	PIO_Configure(&pin_hubpwr_override, 1);
+
 	/* wait */
 	volatile int v;
 	/* 440ns per cycle here */

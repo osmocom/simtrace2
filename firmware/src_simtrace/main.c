@@ -197,56 +197,67 @@ static void check_exec_dbg_cmd(void)
 		printf("\tr\tRead single byte from EEPROM\r\n");
 		printf("\tX\tRelease peer SAM3 from reset\r\n");
 		printf("\tx\tAssert peer SAM3 reset\r\n");
-		printf("\tY\tRelease peer SAM3 ERASE signal\n");
+		printf("\tY\tRelease peer SAM3 ERASE signal\r\n");
 		printf("\ty\tAssert peer SAM3 ERASE signal\r\n");
 		break;
 	case 'E':
 		write_hub_eeprom();
 		break;
 	case 'R':
+		printf("Asking NVIC to reset us\r\n");
 		NVIC_SystemReset();
 		break;
 	case 'O':
+		printf("Setting PRTPWR_OVERRIDE\r\n");
 		PIO_Set(&pin_hubpwr_override);
 		break;
 	case 'o':
+		printf("Clearing PRTPWR_OVERRIDE\r\n");
 		PIO_Clear(&pin_hubpwr_override);
 		break;
 	case 'H':
+		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\r\n");
 		PIO_Clear(&pin_hub_rst);
 		break;
 	case 'h':
 		/* high level drives transistor -> HUB_RESET low */
+		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\r\n");
 		PIO_Set(&pin_hub_rst);
 		break;
 	case 'w':
 		if (PIO_GetOutputDataStatus(&pin_hub_rst) == 0)
 			printf("WARNING: attempting EEPROM access while HUB not in reset\r\n");
-		printf("Please enter EEPROM offset: ");
+		printf("Please enter EEPROM offset:\r\n");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("Please enter EEPROM value: ");
+		printf("Please enter EEPROM value:\r\n");
 		UART_GetIntegerMinMax(&val, 0, 255);
 		printf("Writing value 0x%02x to EEPROM offset 0x%02x\r\n", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
 	case 'r':
-		printf("Please enter EEPROM offset: ");
+		printf("Please enter EEPROM offset:\r\n");
 		UART_GetIntegerMinMax(&addr, 0, 255);
 		printf("EEPROM[0x%02x] = 0x%02x\r\n", addr, eeprom_read_byte(0x50, addr));
 		break;
 	case 'X':
+		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\r\n");
 		PIO_Clear(&pin_peer_rst);
 		break;
 	case 'x':
+		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\r\n");
 		PIO_Set(&pin_peer_rst);
 		break;
 	case 'Y':
+		printf("Clearing SIMTRACExx_ERASE (inactive)\r\n");
 		PIO_Clear(&pin_peer_erase);
 		break;
 	case 'y':
+		printf("Seetting SIMTRACExx_ERASE (active)\r\n");
 		PIO_Set(&pin_peer_erase);
 		break;
-
+	default:
+		printf("Unknown command '%c'\r\n", ch);
+		break;
 	}
 }
 

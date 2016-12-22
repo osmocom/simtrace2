@@ -199,6 +199,7 @@ static void check_exec_dbg_cmd(void)
 		printf("\tx\tAssert peer SAM3 reset\r\n");
 		printf("\tY\tRelease peer SAM3 ERASE signal\r\n");
 		printf("\ty\tAssert peer SAM3 ERASE signal\r\n");
+		printf("\tU\tProceed to USB Initialization\r\n");
 		break;
 	case 'E':
 		write_hub_eeprom();
@@ -255,6 +256,9 @@ static void check_exec_dbg_cmd(void)
 		printf("Seetting SIMTRACExx_ERASE (active)\r\n");
 		PIO_Set(&pin_peer_erase);
 		break;
+	case 'U':
+		printf("Proceeding to USB init\r\n");
+		return;
 	default:
 		printf("Unknown command '%c'\r\n", ch);
 		break;
@@ -281,8 +285,6 @@ extern int main(void)
 	req_ctx_init();
 
 	PIO_InitializeInterrupts(0);
-
-	SIMtrace_USB_Initialize();
 
 	EEFC_ReadUniqueID(g_unique_id);
 
@@ -315,6 +317,8 @@ extern int main(void)
 	}
 
 	TRACE_INFO("USB init...\r\n");
+	SIMtrace_USB_Initialize();
+
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
 		check_exec_dbg_cmd();
 #if 0

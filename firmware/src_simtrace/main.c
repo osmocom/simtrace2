@@ -175,7 +175,8 @@ static int write_hub_eeprom(void)
 	return 0;
 }
 
-static void check_exec_dbg_cmd(void)
+/* returns '1' in case we should break any endless loop */
+static int check_exec_dbg_cmd(void)
 {
 	uint32_t addr, val;
 
@@ -257,11 +258,12 @@ static void check_exec_dbg_cmd(void)
 		break;
 	case 'U':
 		printf("Proceeding to USB init\r\n");
-		return;
+		return 1;
 	default:
 		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
+	return 0;
 }
 
 /*------------------------------------------------------------------------------
@@ -312,7 +314,8 @@ extern int main(void)
 	}
 
 	while (1) {
-		check_exec_dbg_cmd();
+		if (check_exec_dbg_cmd() == 1)
+			break;
 	}
 
 	TRACE_INFO("USB init...\r\n");

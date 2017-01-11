@@ -168,7 +168,6 @@ static int write_hub_eeprom(void)
 			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\r\n",
 					i, __eeprom_bin[i], byte);
 	}
-	PIO_Clear(&pin_hub_rst);
 
 	/* FIXME: Release PIN_PRTPWR_OVERRIDE after we know the hub is
 	 * again powering us up */

@@ -769,6 +769,14 @@ static const USBDDriverDescriptors driverDescriptors = {
 	STRING_DESC_CNT		/* cnt string descriptors in list */
 };
 
+#if (BOARD_MAINOSC == 12000000)
+#define PLLB_CFG (CKGR_PLLBR_DIVB(2)|CKGR_PLLBR_MULB(8-1)|CKGR_PLLBR_PLLBCOUNT_Msk)
+#elif (BOARD_MAINOSC == 18432000)
+#define PLLB_CFG (CKGR_PLLBR_DIVB(5)|CKGR_PLLBR_MULB(13-1)|CKGR_PLLBR_PLLBCOUNT_Msk)
+#else
+#error "Please configure PLLB for your MAINOSC freq"
+#endif
+
 /*----------------------------------------------------------------------------
  *        Functions
  *----------------------------------------------------------------------------*/
@@ -779,9 +787,7 @@ static const USBDDriverDescriptors driverDescriptors = {
 static void _ConfigureUsbClock(void)
 {
 	/* Enable PLLB for USB */
-	PMC->CKGR_PLLBR = CKGR_PLLBR_DIVB(5)
-			    | CKGR_PLLBR_MULB(0xc)	/* MULT+1=0xd */
-			    | CKGR_PLLBR_PLLBCOUNT_Msk;
+	PMC->CKGR_PLLBR = PLLB_CFG;
 	while ((PMC->PMC_SR & PMC_SR_LOCKB) == 0) ;
 
 	/* USB Clock uses PLLB */

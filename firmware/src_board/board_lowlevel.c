@@ -43,34 +43,42 @@
  *        Local definitions
  *----------------------------------------------------------------------------*/
 
-#if (BOARD_MCK == 48000000)
-#ifndef qmod
-/* Clock settings at 48MHz  for 18 MHz crystal */
 #define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
-#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
-                       | CKGR_PLLAR_MULA(0xc) \
-                       | CKGR_PLLAR_PLLACOUNT(0x1) \
-                       | CKGR_PLLAR_DIVA(0x5))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
-#else /* qmod */
+
+#if (BOARD_MCK == 48000000)
+#if (BOARD_MAINOSC == 18432000)
+/* Clock settings at 48MHz  for 18 MHz crystal */
+#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
+                       | CKGR_PLLAR_MULA(13-1) \
+                       | CKGR_PLLAR_PLLACOUNT(0x1) \
+                       | CKGR_PLLAR_DIVA(5))
+#elif (BOARD_MAINOSC == 12000000)
 /* QMod has 12 MHz clock, so multply by 8 (96 MHz) and divide by 2 */
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
                        | CKGR_PLLAR_MULA(8-1) \
                        | CKGR_PLLAR_PLLACOUNT(0x1) \
                        | CKGR_PLLAR_DIVA(2))
-#define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
-#endif
-/* Clock settings at 64MHz  for 18 MHz crystal */
-#elif (BOARD_MCK == 64000000)
-#define BOARD_OSCOUNT   (CKGR_MOR_MOSCXTST(0x8))
-#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
-                       | CKGR_PLLAR_MULA(0x06) \
-                       | CKGR_PLLAR_PLLACOUNT(0x1) \
-                       | CKGR_PLLAR_DIVA(0x2))
-#define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
-
 #else
-    #error "No settings for current BOARD_MCK."
+#error "Please define PLLA config for your MAINOSC frequency"
+#endif /* MAINOSC */
+#elif (BOARD_MCK == 64000000)
+#if (BOARD_MAINOSC == 18432000)
+/* Clock settings at 64MHz  for 18 MHz crystal: 64.512 MHz */
+#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
+                       | CKGR_PLLAR_MULA(7-1) \
+                       | CKGR_PLLAR_PLLACOUNT(0x1) \
+                       | CKGR_PLLAR_DIVA(2))
+#elif (BOARD_MAINOSC == 12000000)
+/* QMod has 12 MHz clock, so multply by 10 / div by 2: 60 MHz */
+#define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
+                       | CKGR_PLLAR_MULA(10-1) \
+                       | CKGR_PLLAR_PLLACOUNT(0x1) \
+                       | CKGR_PLLAR_DIVA(2))
+#error "Please define PLLA config for your MAINOSC frequency"
+#endif /* MAINOSC */
+#else
+    #error "No PLL settings for current BOARD_MCK."
 #endif
 
 /* Define clock timeout */

@@ -171,7 +171,7 @@ static int write_hub_eeprom(void)
 }
 
 /* returns '1' in case we should break any endless loop */
-static int check_exec_dbg_cmd(void)
+static void check_exec_dbg_cmd(void)
 {
 	uint32_t addr, val;
 
@@ -251,14 +251,10 @@ static int check_exec_dbg_cmd(void)
 		printf("Seetting SIMTRACExx_ERASE (active)\r\n");
 		PIO_Set(&pin_peer_erase);
 		break;
-	case 'U':
-		printf("Proceeding to USB init\r\n");
-		return 1;
 	default:
 		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
-	return 0;
 }
 
 /*------------------------------------------------------------------------------
@@ -306,11 +302,6 @@ extern int main(void)
 		TRACE_INFO("Detected Quad-Modem ST12\r\n");
 	} else {
 		TRACE_INFO("Detected Quad-Modem ST34\r\n");
-	}
-
-	while (1) {
-		if (check_exec_dbg_cmd() == 1)
-			break;
 	}
 
 	TRACE_INFO("USB init...\r\n");

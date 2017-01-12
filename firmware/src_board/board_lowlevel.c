@@ -53,11 +53,11 @@
                        | CKGR_PLLAR_DIVA(0x5))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
 #else /* qmod */
-/* QMod has 12 MHz clock, so multply by 4 and divide by 1 */
+/* QMod has 12 MHz clock, so multply by 8 (96 MHz) and divide by 2 */
 #define BOARD_PLLAR     (CKGR_PLLAR_STUCKTO1 \
-                       | CKGR_PLLAR_MULA(4-1) \
+                       | CKGR_PLLAR_MULA(8-1) \
                        | CKGR_PLLAR_PLLACOUNT(0x1) \
-                       | CKGR_PLLAR_DIVA(1))
+                       | CKGR_PLLAR_DIVA(2))
 #define BOARD_MCKR      (PMC_MCKR_PRES_CLK | PMC_MCKR_CSS_PLLA_CLK)
 #endif
 /* Clock settings at 64MHz  for 18 MHz crystal */

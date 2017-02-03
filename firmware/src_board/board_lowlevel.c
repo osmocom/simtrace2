@@ -162,4 +162,24 @@ extern WEAK void LowLevelInit( void )
     PMC->PMC_MCKR = BOARD_MCKR ;
     /* wait for master clock to be ready */
     for ( timeout = 0; !(PMC->PMC_SR & PMC_SR_MCKRDY) && (timeout++ < CLOCK_TIMEOUT) ; );
+
+    /* Configure SysTick for 1ms */
+    SysTick_Config(BOARD_MCK/1000);
+}
+
+/* SysTick based delay function */
+
+volatile uint32_t jiffies;
+
+/* Interrupt handler for SysTick interrupt */
+void SysTick_Handler(void)
+{
+	jiffies++;
+}
+
+void mdelay(unsigned int msecs)
+{
+	uint32_t jiffies_start = jiffies;
+	do {
+	} while ((jiffies - jiffies_start) < msecs);
 }

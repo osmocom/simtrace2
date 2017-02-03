@@ -50,8 +50,6 @@
 
 extern caddr_t _sbrk ( int incr ) ;
 
-extern int link( char *old, char *new ) ;
-
 extern int _close( int file ) ;
 
 extern int _fstat( int file, struct stat *st ) ;
@@ -63,3 +61,5 @@ extern int _lseek( int file, int ptr, int dir ) ;
 extern int _read(int file, char *ptr, int len) ;
 
 extern int _write( int file, char *ptr, int len ) ;
+
+extern void mdelay(unsigned int msecs);

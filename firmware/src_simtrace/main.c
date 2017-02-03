@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "req_ctx.h"
 #include "wwan_led.h"
+#include "wwan_perst.h"
 
 uint32_t g_unique_id[4];
 
@@ -196,6 +197,8 @@ static void check_exec_dbg_cmd(void)
 		printf("\tY\tRelease peer SAM3 ERASE signal\r\n");
 		printf("\ty\tAssert peer SAM3 ERASE signal\r\n");
 		printf("\tU\tProceed to USB Initialization\r\n");
+		printf("\t1\tGenerate 1ms reset pulse on WWAN1\r\n");
+		printf("\t2\tGenerate 1ms reset pulse on WWAN2\r\n");
 		break;
 	case 'E':
 		write_hub_eeprom();
@@ -252,6 +255,14 @@ static void check_exec_dbg_cmd(void)
 		printf("Seetting SIMTRACExx_ERASE (active)\r\n");
 		PIO_Set(&pin_peer_erase);
 		break;
+	case '1':
+		printf("Resetting Modem 1 (of this SAM3)\r\n");
+		wwan_perst_do_reset(1);
+		break;
+	case '2':
+		printf("Resetting Modem 2 (of this SAM3)\r\n");
+		wwan_perst_do_reset(2);
+		break;
 	default:
 		printf("Unknown command '%c'\r\n", ch);
 		break;
@@ -280,6 +291,7 @@ extern int main(void)
 	PIO_InitializeInterrupts(0);
 
 	wwan_led_init();
+	wwan_perst_init();
 
 	EEFC_ReadUniqueID(g_unique_id);
 

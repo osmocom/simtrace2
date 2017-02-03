@@ -7,6 +7,7 @@
 #include "simtrace.h"
 #include "utils.h"
 #include "req_ctx.h"
+#include "wwan_led.h"
 
 uint32_t g_unique_id[4];
 
@@ -277,6 +278,8 @@ extern int main(void)
 	req_ctx_init();
 
 	PIO_InitializeInterrupts(0);
+
+	wwan_led_init();
 
 	EEFC_ReadUniqueID(g_unique_id);
 

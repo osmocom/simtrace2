@@ -357,6 +357,8 @@ extern int main(void)
 		putchar(rotor[i++ % ARRAY_SIZE(rotor)]);
 #endif
 		check_exec_dbg_cmd();
+		osmo_timers_prepare();
+		osmo_timers_update();
 
 		if (USBD_GetState() < USBD_STATE_CONFIGURED) {
 

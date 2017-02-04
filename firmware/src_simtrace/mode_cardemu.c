@@ -6,7 +6,7 @@
 #include "card_emu.h"
 #include "iso7816_fidi.h"
 #include "utils.h"
-#include "linuxlist.h"
+#include "osmocom/core/linuxlist.h"
 #include "llist_irqsafe.h"
 #include "req_ctx.h"
 #include "cardemu_prot.h"
@@ -428,17 +428,6 @@ void mode_cardemu_exit(void)
 	USART_SetTransmitterEnabled(USART0, 0);
 	USART_SetReceiverEnabled(USART0, 0);
 #endif
-}
-
-static int llist_count(struct llist_head *head)
-{
-	struct llist_head *list;
-	int i = 0;
-
-	llist_for_each(list, head)
-		i++;
-
-	return i;
 }
 
 /* handle a single USB command as received from the USB host */

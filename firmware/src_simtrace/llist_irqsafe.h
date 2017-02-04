@@ -1,6 +1,6 @@
 #pragma once
 
-#include "linuxlist.h"
+#include "osmocom/core/linuxlist.h"
 
 static inline void llist_add_tail_irqsafe(struct llist_head *_new,
 					  struct llist_head *head)

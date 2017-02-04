@@ -4,7 +4,7 @@
 
 #include "board.h"
 #include "req_ctx.h"
-#include "linuxlist.h"
+#include "osmocom/core/linuxlist.h"
 #include "llist_irqsafe.h"
 
 static volatile uint32_t usbep_in_progress[BOARD_USB_NUMENDPOINTS];

@@ -93,7 +93,7 @@ GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 # Flags
 INCLUDES_USB = -Iatmel_softpack_libraries/usb/include
 
-INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isrc_simtrace
+INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isrc_simtrace -Iinclude_libosmocore
 
 # FIXME: This must be made configurable!
 INCLUDES += -Iinclude_board/$(BOARD)

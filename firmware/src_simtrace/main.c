@@ -9,6 +9,7 @@
 #include "req_ctx.h"
 #include "wwan_led.h"
 #include "wwan_perst.h"
+#include "osmocom/core/timer.h"
 
 uint32_t g_unique_id[4];
 

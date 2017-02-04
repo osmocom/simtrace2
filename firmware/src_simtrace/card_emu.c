@@ -32,7 +32,7 @@
 #include "card_emu.h"
 #include "req_ctx.h"
 #include "cardemu_prot.h"
-#include "linuxlist.h"
+#include "osmocom/core/linuxlist.h"
 
 
 #define NUM_SLOTS		2

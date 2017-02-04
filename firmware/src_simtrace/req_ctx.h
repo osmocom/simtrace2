@@ -5,7 +5,7 @@
 #define MAX_HDRSIZE	sizeof(struct openpcd_hdr)
 
 #include <stdint.h>
-#include "linuxlist.h"
+#include "osmocom/core/linuxlist.h"
 
 #define __ramfunc
 

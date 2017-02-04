@@ -9,6 +9,7 @@
 #include "req_ctx.h"
 #include "wwan_led.h"
 #include "wwan_perst.h"
+#include "boardver_adc.h"
 #include "osmocom/core/timer.h"
 
 uint32_t g_unique_id[4];
@@ -319,6 +320,9 @@ extern int main(void)
 	} else {
 		TRACE_INFO("Detected Quad-Modem ST34\r\n");
 	}
+
+	/* Obtain the circuit board version (currently just prints voltage */
+	get_board_version_adc();
 
 	TRACE_INFO("USB init...\r\n");
 	SIMtrace_USB_Initialize();

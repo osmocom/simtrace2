@@ -10,7 +10,7 @@
 #include "wwan_perst.h"
 #include "osmocom/core/timer.h"
 
-#define PERST_DURATION_MS 1
+#define PERST_DURATION_MS 300
 
 #ifdef PIN_PERST1
 static const Pin pin_perst1 = PIN_PERST1;

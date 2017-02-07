@@ -26,7 +26,7 @@ static void perst_tmr_cb(void *data)
 {
 	const Pin *pin = data;
 	/* release the (low-active) reset */
-	PIO_Set(pin);
+	PIO_Clear(pin);
 }
 
 int wwan_perst_do_reset(int modem_nr)
@@ -50,7 +50,7 @@ int wwan_perst_do_reset(int modem_nr)
 	default:
 		return -1;
 	}
-	PIO_Clear(pin);
+	PIO_Set(pin);
 	osmo_timer_schedule(tmr, PERST_DURATION_MS/1000, (PERST_DURATION_MS%1000)*1000);
 
 	return 0;

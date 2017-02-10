@@ -107,4 +107,7 @@
 #define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
 //#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_SELFPOWERED_RWAKEUP
 
+
+extern void board_exec_dbg_cmd(int ch);
+extern void board_main_top(void);
 #endif

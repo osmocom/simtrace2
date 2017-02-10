@@ -149,7 +149,7 @@ C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso
 C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
 C_SIMTRACE = simtrace_iso7816.o usb.o ccid.o sniffer.o mitm.o ringbuffer.o host_communication.o iso7816_fidi.o tc_etu.o req_ctx.o card_emu.o mode_cardemu.o i2c.o wwan_led.o wwan_perst.o
 C_OSMOCORE = timer.o rbtree.o
-C_APPLEVEL = main.o
+C_APPLEVEL = main.o board_$(BOARD).o
 C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID) $(C_SIMTRACE) $(C_OSMOCORE)
 
 # Append OBJ and BIN directories to output filename

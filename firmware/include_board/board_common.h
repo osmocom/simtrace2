@@ -107,6 +107,14 @@
 #define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
 //#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_SELFPOWERED_RWAKEUP
 
+#define BOARD_USB_VENDOR	SIMTRACE_VENDOR_ID
+#define BOARD_USB_PRODUCT	SIMTRACE_PRODUCT_ID
+#define BOARD_USB_RELEASE	0
+
+#define BOARD_USB_DFU
+#define BOARD_DFU_BOOT_SIZE	(16 * 1024)
+#define BOARD_DFU_PAGE_SIZE	512
+#define BOARD_DFU_NUM_IF	2
 
 extern void board_exec_dbg_cmd(int ch);
 extern void board_main_top(void);

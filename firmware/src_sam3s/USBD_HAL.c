@@ -52,6 +52,7 @@
 
 #include "chip.h"
 #include "USBD_HAL.h"
+#include <usb/device/dfu/dfu.h>
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -1161,6 +1162,12 @@ void USBD_IrqHandler(void)
     else if ((status & UDP_ISR_ENDBUSRES) != 0) {
 
         TRACE_INFO_WP("EoBRes ");
+
+#if defined(BOARD_USB_DFU) && defined(dfu)
+	if (g_dfu.past_manifest)
+		USBDFU_SwitchToApp();
+#endif
+
         /* Flush and enable the Suspend interrupt */
         UDP->UDP_ICR = UDP_ICR_WAKEUP | UDP_ICR_RXRSM | UDP_ICR_RXSUSP;
         UDP->UDP_IER = UDP_IER_RXSUSP;

@@ -36,6 +36,8 @@
 #include "utils.h"
 
 #include <cciddriverdescriptors.h>
+#include <usb/common/dfu/usb_dfu.h>
+#include <usb/device/dfu/dfu.h>
 
 /*------------------------------------------------------------------------------
  *       USB String descriptors 
@@ -260,7 +262,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
 	USBEndpointDescriptor sniffer_dataOut;
 	USBEndpointDescriptor sniffer_dataIn;
 	USBEndpointDescriptor sniffer_interruptIn;
-
+	DFURT_IF_DESCRIPTOR_STRUCT;
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorSniffer;
 
 static const SIMTraceDriverConfigurationDescriptorSniffer
@@ -270,7 +272,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.bLength 		= sizeof(USBConfigurationDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
 		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
-		.bNumInterfaces		= 1,
+		.bNumInterfaces		= 1+DFURT_NUM_IF,
 		.bConfigurationValue	= CFG_NUM_SNIFF,
 		.iConfiguration		= SNIFFER_CONF_STR,
 		.bmAttributes		= USBD_BMATTRIBUTES,
@@ -326,7 +328,8 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 								PHONE_INT),
 				      USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
 		.bInterval = 0x10,
-	}
+	},
+	DFURT_IF_DESCRIPTOR(1, 0),
 };
 #endif /* HAVE_SNIFFER */
 
@@ -337,7 +340,7 @@ static const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
 		.bLength		= sizeof(USBConfigurationDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
 		.wTotalLength		= sizeof(CCIDDriverConfigurationDescriptors),
-		.bNumInterfaces		= 1,
+		.bNumInterfaces		= 1+DFURT_NUM_IF,
 		.bConfigurationValue	= CFG_NUM_CCID,
 		.iConfiguration		= CCID_CONF_STR,
 		.bmAttributes		= BOARD_USB_BMATTRIBUTES,
@@ -424,6 +427,7 @@ static const CCIDDriverConfigurationDescriptors configurationDescriptorCCID = {
 					USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
 		.bInterval = 0x10,
 	},
+	DFURT_IF_DESCRIPTOR(1, 0),
 };
 #endif /* HAVE_CCID */
 
@@ -442,6 +446,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
 	USBEndpointDescriptor usim2_dataIn;
 	USBEndpointDescriptor usim2_interruptIn;
 #endif
+	DFURT_IF_DESCRIPTOR_STRUCT;
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorPhone;
 
 static const SIMTraceDriverConfigurationDescriptorPhone
@@ -452,9 +457,9 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 		USBGenericDescriptor_CONFIGURATION,
 		sizeof(SIMTraceDriverConfigurationDescriptorPhone),
 #ifdef CARDEMU_SECOND_UART
-		2,
+		2+DFURT_NUM_IF,
 #else
-		1,	/* There is one interface in this configuration */
+		1+DFURT_NUM_IF,	/* There is one interface in this configuration */
 #endif
 		CFG_NUM_PHONE,		/* configuration number */
 		PHONE_CONF_STR,	/* string descriptor for this configuration */
@@ -553,6 +558,9 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 		    USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
 		0x10
 	},
+	DFURT_IF_DESCRIPTOR(2, 0),
+#else
+	DFURT_IF_DESCRIPTOR(1, 0),
 #endif
 };
 #endif /* HAVE_CARDEM */
@@ -576,6 +584,8 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 	USBEndpointDescriptor phone_dataIn;
 	USBEndpointDescriptor phone_interruptIn;
 
+	DFURT_IF_DESCRIPTOR_STRUCT;
+
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorMITM;
 
 static const SIMTraceDriverConfigurationDescriptorMITM
@@ -585,7 +595,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		sizeof(USBConfigurationDescriptor),
 		USBGenericDescriptor_CONFIGURATION,
 		sizeof(SIMTraceDriverConfigurationDescriptorMITM),
-		2,		/* There are two interfaces in this configuration */
+		2+DFURT_NUM_IF,	/* There are two interfaces in this configuration */
 		CFG_NUM_MITM,	/* configuration number */
 		MITM_CONF_STR,	/* string descriptor for this configuration */
 		USBD_BMATTRIBUTES,
@@ -718,7 +728,8 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 	 USBEndpointDescriptor_INTERRUPT,
 	 MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
 	     USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
-	 0x10}
+	 0x10},
+	DFURT_IF_DESCRIPTOR(2, 0),
 };
 #endif /* HAVE_CARDEM */
 
@@ -809,4 +820,10 @@ void SIMtrace_USB_Initialize(void)
 	USBD_Connect();
 
 	NVIC_EnableIRQ(UDP_IRQn);
+}
+
+void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
+{
+	/* FIXME: integration with CCID control point reqeusts */
+	USBDFU_Runtime_RequestHandler(request);
 }

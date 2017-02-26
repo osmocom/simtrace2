@@ -125,6 +125,19 @@ IntFunc exception_table[] = {
     IrqHandlerNotUsed   /* 35 not used */
 };
 
+#if defined (BOARD_USB_DFU) && !defined(dfu)
+static void BootIntoApp(void)
+{
+	unsigned int *pSrc;
+	void (*appReset)(void);
+
+	pSrc = (unsigned int *) ((unsigned char *)IFLASH_ADDR + BOARD_DFU_BOOT_SIZE);
+	SCB->VTOR = ((unsigned int)(pSrc)) | (0x0 << 7);
+	appReset = pSrc[1];
+	appReset();
+}
+#endif
+
 /**
  * \brief This is the code that gets called on processor reset.
  * To initialize the device, and call the main() routine.
@@ -135,6 +148,11 @@ void ResetException( void )
 
     /* Low level Initialize */
     LowLevelInit() ;
+
+#if defined (BOARD_USB_DFU) && !defined(dfu)
+    if (*(unsigned long *)IRAM_ADDR != 0xDFDFDFDF)
+        BootIntoApp();
+#endif
 
     /* Initialize the relocate segment */
     pSrc = &_etext ;
@@ -168,6 +186,9 @@ void ResetException( void )
 
     /* Branch to main function */
     main() ;
+
+    /* App should have disabled interrupts during the transition */
+    __enable_irq();
 
     /* Infinite loop */
     while ( 1 ) ;

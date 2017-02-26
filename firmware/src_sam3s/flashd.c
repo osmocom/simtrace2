@@ -74,6 +74,8 @@
  *        Headers
  *----------------------------------------------------------------------------*/
 #include "chip.h"
+#include "flashd.h"
+#include "efc.h"
 
 #include <string.h>
 #include <assert.h>

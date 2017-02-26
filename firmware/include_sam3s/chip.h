@@ -53,5 +53,7 @@
 #include "trace.h"
 #include "wdt.h"
 #include "unique_id.h"
+#include "efc.h"
+#include "flashd.h"
 
 #endif /* _LIB_SAM3S_ */

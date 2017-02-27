@@ -87,7 +87,7 @@ VPATH += $(USB_PATHS)
 VPATH += $(AT91LIB)/libchip_sam3s/source/ $(AT91LIB)/libchip_sam3s/cmsis
 VPATH += libboard/common/source libboard/$(BOARD)/source
 VPATH += libcommon/source
-VPATH += libosmocore/source src_board src_simtrace
+VPATH += libosmocore/source 
 VPATH += apps/$(APP)
 
 # Objects built from C source files
@@ -138,7 +138,6 @@ INCLUDES += -I$(AT91LIB)/libchip_sam3s/cmsis
 INCLUDES += -Ilibboard/common/include -Ilibboard/$(BOARD)/include
 INCLUDES += -Ilibcommon/include
 INCLUDES += -Ilibosmocore/include
-INCLUDES += -Iinclude_board
 INCLUDES += -Isrc_simtrace -Iinclude
 
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2

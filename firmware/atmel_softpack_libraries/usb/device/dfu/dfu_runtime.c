@@ -187,3 +187,9 @@ void DFURT_SwitchToDFU(void)
 
 	toDFU();
 }
+
+void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
+{
+	/* FIXME: integration with CCID control point reqeusts */
+	USBDFU_Runtime_RequestHandler(request);
+}

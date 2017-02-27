@@ -113,6 +113,7 @@
 
 #define BOARD_USB_DFU
 #define BOARD_DFU_BOOT_SIZE	(16 * 1024)
+#define BOARD_DFU_RAM_SIZE	(2 * 1024)
 #define BOARD_DFU_PAGE_SIZE	512
 #define BOARD_DFU_NUM_IF	2
 

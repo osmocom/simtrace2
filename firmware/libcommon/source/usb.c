@@ -821,9 +821,3 @@ void SIMtrace_USB_Initialize(void)
 
 	NVIC_EnableIRQ(UDP_IRQn);
 }
-
-void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
-{
-	/* FIXME: integration with CCID control point reqeusts */
-	USBDFU_Runtime_RequestHandler(request);
-}

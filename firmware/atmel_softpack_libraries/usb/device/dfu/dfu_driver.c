@@ -438,15 +438,18 @@ out:
 	}
 }
 
+/* we assume the caller has enabled the required clock/PLL for USB */
 void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors)
 {
 	/* We already start in DFU idle mode */
 	g_dfu.state = DFU_STATE_dfuIDLE;
 
 	USBDDriver_Initialize(&usbdDriver, pDescriptors, if_altsettings);
-
 	USBD_Init();
+	USBD_Connect();
 	//USBD_ConfigureSpeed(1);
+
+	NVIC_EnableIRQ(UDP_IRQn);
 }
 
 void USBDFU_SwitchToApp(void)
@@ -463,4 +466,9 @@ void USBDFU_SwitchToApp(void)
 	/* Tell the hybrid to execute FTL JUMP! */
 	//BootIntoApp();
 	NVIC_SystemReset();
+}
+
+void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
+{
+	USBDFU_DFU_RequestHandler(request);
 }

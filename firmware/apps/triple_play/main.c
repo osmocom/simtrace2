@@ -9,7 +9,7 @@
 #include "req_ctx.h"
 #include "osmocom/core/timer.h"
 
-uint32_t g_unique_id[4];
+unsigned int g_unique_id[4];
 
 /*------------------------------------------------------------------------------
  *         Internal variables

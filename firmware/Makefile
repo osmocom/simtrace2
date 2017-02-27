@@ -70,9 +70,11 @@ OBJ = obj
 #		Tools
 #-------------------------------------------------------------------------------
 
-AT91LIB_USB_COMMON_CORE_PATH = atmel_softpack_libraries/usb/common/core
-AT91LIB_USB_CORE_PATH = atmel_softpack_libraries/usb/device/core
-AT91LIB_USB_DFU_PATH = atmel_softpack_libraries/usb/device/dfu
+AT91LIB = ./atmel_softpack_libraries
+
+AT91LIB_USB_COMMON_CORE_PATH = $(AT91LIB)/usb/common/core
+AT91LIB_USB_CORE_PATH = $(AT91LIB)/usb/device/core
+AT91LIB_USB_DFU_PATH = $(AT91LIB)/usb/device/dfu
 
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
@@ -92,15 +94,16 @@ TOP=..
 GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 
 # Flags
-INCLUDES_USB = -Iatmel_softpack_libraries/usb/include -Iatmel_softpack_libraries
+INCLUDES_USB = -I$(AT91LIB)/usb/include -I$(AT91LIB)
 
-INCLUDES  = -Iinclude_board -Iinclude_sam3s -Iinclude -Isrc_simtrace -Iinclude_libosmocore
-
-# FIXME: This must be made configurable!
-INCLUDES += -Iinclude_board/$(BOARD)
-
-INCLUDES += -Icmsis
-INCLUDES += $(INCLUDES_USB)
+INCLUDES = $(INCLUDES_USB)
+INCLUDES += -I$(AT91LIB)/libchip_sam3s -I$(AT91LIB)/libchip_sam3s/include
+INCLUDES += -I$(AT91LIB)/libchip_sam3s/cmsis
+INCLUDES += -Ilibboard/common/include -Ilibboard/$(BOARD)/include
+INCLUDES += -Ilibcommon/include
+INCLUDES += -Ilibosmocore/include
+INCLUDES += -Iinclude_board
+INCLUDES += -Isrc_simtrace -Iinclude
 
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
@@ -141,7 +144,12 @@ LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-secti
 # Directories where source files can be found
 
 USB_PATHS = $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_DFU_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
-VPATH += src_board src_sam3s cmsis $(USB_PATHS) src_simtrace src_libosmocore
+
+VPATH += $(USB_PATHS)
+VPATH += $(AT91LIB)/libchip_sam3s/source/ $(AT91LIB)/libchip_sam3s/cmsis
+VPATH += libboard/common/source libboard/$(BOARD)/source
+VPATH += libcommon/source
+VPATH += libosmocore/source src_board src_simtrace
 
 # Objects built from C source files
 C_CMSIS    = core_cm3.o

@@ -34,11 +34,11 @@
 
 # Chip & board used for compilation
 # (can be overriden by adding CHIP=chip and BOARD=board to the command-line)
-CHIP  = sam3s2
-BOARD = simtrace
+CHIP  ?= sam3s4
+BOARD ?= qmod
 
 # Defines which are the available memory targets for the SAM3S-EK board.
-MEMORIES = flash
+MEMORIES ?= flash dfu
 
 # Trace level used for compilation
 # (can be overriden by adding TRACE_LEVEL=#number to the command-line)
@@ -48,9 +48,7 @@ MEMORIES = flash
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 4
-#FIXME: Remove this variable
-NOAUTOCALLBACK=no
+TRACE_LEVEL ?= 4
 
 DEBUG_PHONE_SNIFF=0
 
@@ -60,11 +58,12 @@ DEBUG_PHONE_SNIFF=0
 OPTIMIZATION = -O0
 
 # Output file basename
-OUTPUT = project
+APP = dfu
 
 # Output directories
+OUTPUT = $(BOARD)-$(APP)
 BIN = bin
-OBJ = obj
+OBJ = obj/$(BOARD)
 
 #-------------------------------------------------------------------------------
 #		Tools
@@ -132,7 +131,7 @@ CFLAGS += -Dprintf=iprintf
 CFLAGS += -D__ARM
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF)
-CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\" -DBOARD=\"$(BOARD)\" -DAPPLICATION=\"$(APP)\"
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
@@ -150,16 +149,27 @@ VPATH += $(AT91LIB)/libchip_sam3s/source/ $(AT91LIB)/libchip_sam3s/cmsis
 VPATH += libboard/common/source libboard/$(BOARD)/source
 VPATH += libcommon/source
 VPATH += libosmocore/source src_board src_simtrace
+VPATH += apps/$(APP)
 
 # Objects built from C source files
-C_CMSIS    = core_cm3.o
-C_LOWLEVEL = board_cstartup_gnu.o board_lowlevel.o syscalls.o exceptions.o
-C_LIBLEVEL = spi.o pio.o pmc.o usart.o pio_it.o pio_capture.o uart_console.o iso7816_4.o wdt.o efc.o flashd.o led.o tc.o unique_id.o boardver_adc.o dfu_desc.o dfu_runtime.o
-C_CCID = cciddriver.o USBD.o USBDDriver.o USBD_HAL.o USBRequests.o USBDCallbacks.o USBDescriptors.o USBDDriverCallbacks.o
-C_SIMTRACE = simtrace_iso7816.o usb.o ccid.o sniffer.o mitm.o ringbuffer.o host_communication.o iso7816_fidi.o tc_etu.o req_ctx.o card_emu.o mode_cardemu.o i2c.o wwan_led.o wwan_perst.o
-C_OSMOCORE = timer.o rbtree.o
-C_APPLEVEL = main.o board_$(BOARD).o
-C_OBJECTS  = $(C_CMSIS) $(C_LOWLEVEL) $(C_LIBLEVEL) $(C_APPLEVEL) $(C_CCID) $(C_SIMTRACE) $(C_OSMOCORE)
+C_OSMOCORE = $(notdir $(wildcard libosmocore/source/*.c))
+C_LIBCHIP  = $(notdir $(wildcard $(AT91LIB)/libchip_sam3s/source/*.c) $(wildcard $(AT91LIB)/libchip_sam3s/cmsis/*.c))
+
+C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.c USBDDriverCallbacks.c
+C_LIBUSB_RT  = dfu.c dfu_desc.c dfu_runtime.c
+C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
+C_LIBCOMMON  = syscalls.c req_ctx.c ringbuffer.c
+
+C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
+C_BOARD	    += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))
+
+C_APPLEVEL = $(notdir $(wildcard apps/$(APP)/*.c))
+
+C_FILES  = $(C_OSMOCORE) $(C_LIBCHIP) $(C_LIBUSB) $(C_LIBCOMMON) $(C_BOARD) $(C_APPLEVEL)
+
+-include apps/$(APP)/Makefile
+
+C_OBJECTS  = $(C_FILES:%.c=%.o)
 
 # Append OBJ and BIN directories to output filename
 OUTPUT := $(BIN)/$(OUTPUT)
@@ -178,18 +188,18 @@ C_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(C_OBJECTS))
 ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
 
 $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
-	@$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
+	@$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
 	@$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
 	@$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
 	@$(SIZE) $$^ $(OUTPUT)-$$@.elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
-	@$(CC) $(CFLAGS) -D$(1) -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$< 
+	@$(CC) $(CFLAGS) -D$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$< 
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]
-	@$(CC) $(ASFLAGS) -D$(1) -c -o $$@ $$<
+	@$(CC) $(ASFLAGS) -D$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
 debug_$(1): $(1)
 	$(GDB) -x "$(BOARD_LIB)/resources/gcc/$(BOARD)_$(1).gdb" -ex "reset" -readnow -se $(OUTPUT)-$(1).elf
@@ -207,6 +217,3 @@ log:
 
 clean:
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst
-
-rmbak: 
-	-rm *~ $(BIN)/*~

@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "chip.h"
 #include "utils.h"
 #include "trace.h"
 #include "req_ctx.h"

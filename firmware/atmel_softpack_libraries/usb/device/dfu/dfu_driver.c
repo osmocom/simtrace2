@@ -48,7 +48,7 @@ __dfudata struct dfudata g_dfu = {
 	.total_bytes = 0,
 };
 
-WEAK void dfu_drv_updatatus(void)
+WEAK void dfu_drv_updstatus(void)
 {
 	TRACE_INFO("DFU: updstatus()\n\r");
 
@@ -446,7 +446,7 @@ void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors)
 	USBDDriver_Initialize(&usbdDriver, pDescriptors, if_altsettings);
 
 	USBD_Init();
-	USBD_ConfigureSpeed(1);
+	//USBD_ConfigureSpeed(1);
 }
 
 void USBDFU_SwitchToApp(void)

@@ -19,6 +19,7 @@
 
 #include "chip.h"
 #include "board.h"
+#include "utils.h"
 
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 

@@ -40,25 +40,8 @@ BOARD ?= qmod
 # Defines which are the available memory targets for the SAM3S-EK board.
 MEMORIES ?= flash dfu
 
-# Trace level used for compilation
-# (can be overriden by adding TRACE_LEVEL=#number to the command-line)
-# TRACE_LEVEL_DEBUG      5
-# TRACE_LEVEL_INFO       4
-# TRACE_LEVEL_WARNING    3
-# TRACE_LEVEL_ERROR      2
-# TRACE_LEVEL_FATAL      1
-# TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL ?= 4
-
-DEBUG_PHONE_SNIFF=0
-
-#CFLAGS+=-DUSB_NO_DEBUG=1
-
-# Optimization level, put in comment for debugging
-OPTIMIZATION = -O0
-
 # Output file basename
-APP = dfu
+APP ?= dfu
 
 # Output directories
 OUTPUT = $(BOARD)-$(APP)
@@ -78,7 +61,7 @@ AT91LIB_USB_DFU_PATH = $(AT91LIB)/usb/device/dfu
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
 
-LIBS = -Wl,--start-group -lgcc -lc -Wl,--end-group
+LIBS = -Wl,--start-group -lgcc -Wl,--end-group -nostdlib
 
 # Compilation tools
 CC = $(CROSS_COMPILE)gcc
@@ -91,6 +74,60 @@ NM = $(CROSS_COMPILE)nm
 
 TOP=..
 GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
+
+#-------------------------------------------------------------------------------
+#		Files
+#-------------------------------------------------------------------------------
+
+# Directories where source files can be found
+
+USB_PATHS = $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_DFU_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
+
+VPATH += $(USB_PATHS)
+VPATH += $(AT91LIB)/libchip_sam3s/source/ $(AT91LIB)/libchip_sam3s/cmsis
+VPATH += libboard/common/source libboard/$(BOARD)/source
+VPATH += libcommon/source
+VPATH += libosmocore/source src_board src_simtrace
+VPATH += apps/$(APP)
+
+# Objects built from C source files
+C_OSMOCORE = $(notdir $(wildcard libosmocore/source/*.c))
+C_LIBCHIP  = $(notdir $(wildcard $(AT91LIB)/libchip_sam3s/source/*.c) $(wildcard $(AT91LIB)/libchip_sam3s/cmsis/*.c))
+
+C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.c USBDDriverCallbacks.c
+C_LIBUSB_RT  = dfu.c dfu_desc.c dfu_runtime.c
+C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
+C_LIBCOMMON  = string.c stdio.c fputs.c req_ctx.c ringbuffer.c
+
+C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
+C_BOARD	    += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))
+
+C_APPLEVEL = $(notdir $(wildcard apps/$(APP)/*.c))
+
+C_FILES  = $(C_OSMOCORE) $(C_LIBCHIP) $(C_LIBUSB) $(C_LIBCOMMON) $(C_BOARD) $(C_APPLEVEL)
+
+-include apps/$(APP)/Makefile
+
+C_OBJECTS  = $(C_FILES:%.c=%.o)
+
+# Trace level used for compilation
+# (can be overriden by adding TRACE_LEVEL=#number to the command-line)
+# TRACE_LEVEL_DEBUG      5
+# TRACE_LEVEL_INFO       4
+# TRACE_LEVEL_WARNING    3
+# TRACE_LEVEL_ERROR      2
+# TRACE_LEVEL_FATAL      1
+# TRACE_LEVEL_NO_TRACE   0
+TRACE_LEVEL ?= 4
+
+DEBUG_PHONE_SNIFF?=0
+
+#CFLAGS+=-DUSB_NO_DEBUG=1
+
+# Optimization level, put in comment for debugging
+OPTIMIZATION ?= -O0
+
+
 
 # Flags
 INCLUDES_USB = -I$(AT91LIB)/usb/include -I$(AT91LIB)
@@ -122,9 +159,6 @@ CFLAGS += -Wmissing-noreturn
 CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
 CFLAGS += -Wno-suggest-attribute=noreturn
 
-# To reduce application size use only integer printf function.
-CFLAGS += -Dprintf=iprintf
-
 # -mlong-calls  -Wall
 #CFLAGS += -save-temps -fverbose-asm
 #CFLAGS += -Wa,-a,-ad
@@ -136,40 +170,6 @@ ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP)
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
 
-#-------------------------------------------------------------------------------
-#		Files
-#-------------------------------------------------------------------------------
-
-# Directories where source files can be found
-
-USB_PATHS = $(AT91LIB_USB_CORE_PATH) $(AT91LIB_USB_DFU_PATH) $(AT91LIB_USB_COMMON_CORE_PATH)
-
-VPATH += $(USB_PATHS)
-VPATH += $(AT91LIB)/libchip_sam3s/source/ $(AT91LIB)/libchip_sam3s/cmsis
-VPATH += libboard/common/source libboard/$(BOARD)/source
-VPATH += libcommon/source
-VPATH += libosmocore/source src_board src_simtrace
-VPATH += apps/$(APP)
-
-# Objects built from C source files
-C_OSMOCORE = $(notdir $(wildcard libosmocore/source/*.c))
-C_LIBCHIP  = $(notdir $(wildcard $(AT91LIB)/libchip_sam3s/source/*.c) $(wildcard $(AT91LIB)/libchip_sam3s/cmsis/*.c))
-
-C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.c USBDDriverCallbacks.c
-C_LIBUSB_RT  = dfu.c dfu_desc.c dfu_runtime.c
-C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
-C_LIBCOMMON  = syscalls.c req_ctx.c ringbuffer.c
-
-C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
-C_BOARD	    += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))
-
-C_APPLEVEL = $(notdir $(wildcard apps/$(APP)/*.c))
-
-C_FILES  = $(C_OSMOCORE) $(C_LIBCHIP) $(C_LIBUSB) $(C_LIBCOMMON) $(C_BOARD) $(C_APPLEVEL)
-
--include apps/$(APP)/Makefile
-
-C_OBJECTS  = $(C_FILES:%.c=%.o)
 
 # Append OBJ and BIN directories to output filename
 OUTPUT := $(BIN)/$(OUTPUT)

@@ -61,7 +61,6 @@ extern uint32_t _ezero;
 extern int main( void ) ;
 /** \endcond */
 void ResetException( void ) ;
-extern void __libc_init_array( void ) ;
 
 /*------------------------------------------------------------------------------
  *         Exception Table
@@ -180,9 +179,6 @@ void ResetException( void )
     {
 	    SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
     }
-
-    /* Initialize the C library */
-    __libc_init_array() ;
 
     /* Branch to main function */
     main() ;

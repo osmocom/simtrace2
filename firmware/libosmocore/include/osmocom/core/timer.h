@@ -32,10 +32,29 @@
 struct osmo_timeval {
 	unsigned long expires;
 };
+#ifdef timerisset
+#undef timerisset
+#endif
 #define timerisset(tvp)		((tvp)->expires)
+
+#ifdef timerclear
+#undef timerclear
+#endif
 #define timerclear(tvp)		(tvp)->expires = 0
+
+#ifdef timercmp
+#undef timercmp
+#endif
 #define timercmp(a, b, CMP)	(a)->expires CMP (b)->expires
+
+#ifdef timersub
+#undef timersub
+#endif
 #define timersub(a, b, result)	(result)->expires = (a)->expires - (b)->expires
+
+#ifdef timeradd
+#undef timeradd
+#endif
 #define timeradd(a, b, result)	(result)->expires = (a)->expires + (b)->expires
 struct timezone;
 

@@ -125,7 +125,7 @@ DEBUG_PHONE_SNIFF?=0
 #CFLAGS+=-DUSB_NO_DEBUG=1
 
 # Optimization level, put in comment for debugging
-OPTIMIZATION ?= -O0
+OPTIMIZATION ?= -Os
 
 
 

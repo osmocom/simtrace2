@@ -11,6 +11,10 @@
 
 /* stub functions required by card_emu.c */
 
+void card_emu_uart_wait_tx_idle(uint8_t uart_chan)
+{
+}
+
 int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 {
 	printf("uart_update_fidi(uart_chan=%u, fidi=%u)\n", uart_chan, fidi);
@@ -133,8 +137,8 @@ static void dump_rctx(struct req_ctx *rctx)
 
 	printf("req_ctx(%p): state=%u, size=%u, tot_len=%u, idx=%u, data=%p\n",
 		rctx, rctx->state, rctx->size, rctx->tot_len, rctx->idx, rctx->data);
-	printf("  msg_type=%u, seq_nr=%u, data_len=%u\n",
-		mh->msg_type, mh->seq_nr, mh->data_len);
+	printf("  msg_type=%u, seq_nr=%u, msg_len=%u\n",
+		mh->msg_type, mh->seq_nr, mh->msg_len);
 
 	switch (mh->msg_type) {
 	case CEMU_USB_MSGT_DO_RX_DATA:

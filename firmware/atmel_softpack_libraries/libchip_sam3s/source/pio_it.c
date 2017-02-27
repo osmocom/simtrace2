@@ -83,9 +83,9 @@ static uint32_t _dwNumSources = 0;
  * \brief Stub, to handling all PIO Capture interrupts, if not defined.
  */
 /*----------------------------------------------------------------------------*/
-//extern WEAK void PIO_CaptureHandler( void )
-//{
-//}
+extern WEAK void PIO_CaptureHandler( void )
+{
+}
 
 /**
  * \brief Handles all interrupts on the given PIO controller.

@@ -109,6 +109,8 @@ SECTIONS
     {
         . = ALIGN(4);
         _srelocate = .;
+        /* we must make sure the .dfudata is linked to start of RAM */
+        *(.dfudata .dfudata.*);
         *(.ramfunc .ramfunc.*);
         *(.data .data.*);
         . = ALIGN(4);

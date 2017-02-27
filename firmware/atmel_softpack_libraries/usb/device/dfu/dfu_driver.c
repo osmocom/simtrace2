@@ -35,7 +35,7 @@
 
 /* FIXME: this was used for a special ELF section which then got called
  * by DFU code and Application code, across flash partitions */
-#define __dfudata
+#define __dfudata __attribute__ ((section (".dfudata")))
 #define __dfufunc
 
 /// Standard device driver instance.

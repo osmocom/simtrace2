@@ -81,8 +81,30 @@
     #error "No PLL settings for current BOARD_MCK."
 #endif
 
+#if (BOARD_MAINOSC == 12000000)
+#define PLLB_CFG (CKGR_PLLBR_DIVB(2)|CKGR_PLLBR_MULB(8-1)|CKGR_PLLBR_PLLBCOUNT_Msk)
+#elif (BOARD_MAINOSC == 18432000)
+#define PLLB_CFG (CKGR_PLLBR_DIVB(5)|CKGR_PLLBR_MULB(13-1)|CKGR_PLLBR_PLLBCOUNT_Msk)
+#else
+#error "Please configure PLLB for your MAINOSC freq"
+#endif
+
 /* Define clock timeout */
 #define CLOCK_TIMEOUT    0xFFFFFFFF
+
+/**
+ * \brief Configure 48MHz Clock for USB
+ */
+static void _ConfigureUsbClock(void)
+{
+	/* Enable PLLB for USB */
+	PMC->CKGR_PLLBR = PLLB_CFG;
+	while ((PMC->PMC_SR & PMC_SR_LOCKB) == 0) ;
+
+	/* USB Clock uses PLLB */
+	PMC->PMC_USB = PMC_USB_USBDIV(0)	/* /1 (no divider)  */
+			    | PMC_USB_USBS;	/* PLLB */
+}
 
 /*----------------------------------------------------------------------------
  *        Exported functions
@@ -165,6 +187,8 @@ extern WEAK void LowLevelInit( void )
 
     /* Configure SysTick for 1ms */
     SysTick_Config(BOARD_MCK/1000);
+
+    _ConfigureUsbClock();
 }
 
 /* SysTick based delay function */

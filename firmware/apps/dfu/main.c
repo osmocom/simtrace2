@@ -35,8 +35,8 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	case ALTIF_RAM:
 		addr = RAM_ADDR(offset);
 		if (addr > IRAM_ADDR + IRAM_SIZE) {
-			g_dfu.state = DFU_STATE_dfuERROR;
-			g_dfu.status = DFU_STATUS_errADDRESS;
+			g_dfu->state = DFU_STATE_dfuERROR;
+			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;
 		}
 		memcpy((void *)addr, data, len);
@@ -44,8 +44,8 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
 		if (addr > IFLASH_ADDR + IFLASH_SIZE) {
-			g_dfu.state = DFU_STATE_dfuERROR;
-			g_dfu.status = DFU_STATUS_errADDRESS;
+			g_dfu->state = DFU_STATE_dfuERROR;
+			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;
 		}
 		rc = FLASHD_Write(addr, data, len);
@@ -75,8 +75,8 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 	case ALTIF_RAM:
 		addr = RAM_ADDR(offset);
 		if (addr > IRAM_ADDR + IRAM_SIZE) {
-			g_dfu.state = DFU_STATE_dfuERROR;
-			g_dfu.status = DFU_STATUS_errADDRESS;
+			g_dfu->state = DFU_STATE_dfuERROR;
+			g_dfu->status = DFU_STATUS_errADDRESS;
 			return -1;
 		}
 		if ((uint8_t *)addr + req_len > IRAM_END)
@@ -86,8 +86,8 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
 		if (addr > IFLASH_ADDR + IFLASH_SIZE) {
-			g_dfu.state = DFU_STATE_dfuERROR;
-			g_dfu.status = DFU_STATUS_errADDRESS;
+			g_dfu->state = DFU_STATE_dfuERROR;
+			g_dfu->status = DFU_STATUS_errADDRESS;
 			return -1;
 		}
 		if ((uint8_t *)addr + req_len > IFLASH_END)

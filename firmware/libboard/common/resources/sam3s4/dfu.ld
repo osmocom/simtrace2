@@ -38,8 +38,10 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
+	/* reserve the first 16k (= 0x4000) for the DFU bootloader */
 	rom (rx)  : ORIGIN = 0x00404000, LENGTH = 0x0003c000 /* flash, 256K */
-	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x0000c000 /* sram, 48K */
+	/* reserve the first 32 (= 0x20) bytes for the _g_dfu struct */
+	ram (rwx) : ORIGIN = 0x20000020, LENGTH = 0x0000bfe0 /* sram, 48K */
 }
 
 /* Section Definitions */ 

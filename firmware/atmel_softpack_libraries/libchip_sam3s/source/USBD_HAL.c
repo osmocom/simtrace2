@@ -1164,7 +1164,7 @@ void USBD_IrqHandler(void)
         TRACE_INFO_WP("EoBRes ");
 
 #if defined(BOARD_USB_DFU) && defined(dfu)
-	if (g_dfu.past_manifest)
+	if (g_dfu->past_manifest)
 		USBDFU_SwitchToApp();
 #endif
 

@@ -98,7 +98,7 @@ struct dfudata {
 	unsigned int total_bytes;
 };
 
-extern struct dfudata g_dfu;
+extern struct dfudata *g_dfu;
 
 void set_usb_serial_str(const uint8_t *serial_usbstr);
 

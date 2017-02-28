@@ -35,9 +35,10 @@
 #include <usb/common/dfu/usb_dfu.h>
 #include <usb/device/dfu/dfu.h>
 
+struct dfudata *g_dfu = (struct dfudata *) IRAM_ADDR;
+
 /* FIXME: this was used for a special ELF section which then got called
  * by DFU code and Application code, across flash partitions */
-#define __dfudata
 #define __dfufunc
 
 static __dfufunc void handle_getstatus(void)
@@ -46,8 +47,8 @@ static __dfufunc void handle_getstatus(void)
 	static struct dfu_status dstat;
 
 	/* send status response */
-	dstat.bStatus = g_dfu.status;
-	dstat.bState = g_dfu.state;
+	dstat.bStatus = g_dfu->status;
+	dstat.bState = g_dfu->state;
 	dstat.iString = 0;
 	/* FIXME: set dstat.bwPollTimeout */
 
@@ -58,9 +59,9 @@ static __dfufunc void handle_getstatus(void)
 
 static void __dfufunc handle_getstate(void)
 {
-	uint8_t u8 = g_dfu.state;
+	uint8_t u8 = g_dfu->state;
 
-	TRACE_DEBUG("handle_getstate(%u)\n\r", g_dfu.state);
+	TRACE_DEBUG("handle_getstate(%u)\n\r", g_dfu->state);
 
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }
@@ -118,7 +119,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 		USBDDriver_RequestHandler(usbdDriver, request);
 	}
 
-	switch (g_dfu.state) {
+	switch (g_dfu->state) {
 	case DFU_STATE_appIDLE:
 		switch (req) {
 		case USB_REQ_DFU_GETSTATUS:
@@ -132,7 +133,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 			 * return.  The next USB reset in this state
 			 * will then trigger DFURT_SwitchToDFU() below */
 			TRACE_DEBUG("\r\n====dfu_detach\n\r");
-			g_dfu.state = DFU_STATE_appDETACH;
+			g_dfu->state = DFU_STATE_appDETACH;
 			ret = DFU_RET_ZLP;
 			goto out;
 			break;
@@ -149,7 +150,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_appIDLE;
+			g_dfu->state = DFU_STATE_appIDLE;
 			ret = DFU_RET_STALL;
 			goto out;
 			break;

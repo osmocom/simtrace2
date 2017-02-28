@@ -42,11 +42,12 @@
 static USBDDriver usbdDriver;
 static unsigned char if_altsettings[1];
 
-__dfudata struct dfudata g_dfu = {
+__dfudata struct dfudata _g_dfu = {
   	.state = DFU_STATE_appIDLE,
 	.past_manifest = 0,
 	.total_bytes = 0,
 };
+struct dfudata *g_dfu = &_g_dfu;
 
 WEAK void dfu_drv_updstatus(void)
 {
@@ -55,8 +56,8 @@ WEAK void dfu_drv_updstatus(void)
 	/* we transition immediately from MANIFEST_SYNC to MANIFEST,
 	 * as the flash-writing is not asynchronous in this
 	 * implementation */
-	if (g_dfu.state == DFU_STATE_dfuMANIFEST_SYNC)
-		g_dfu.state = DFU_STATE_dfuMANIFEST;
+	if (g_dfu->state == DFU_STATE_dfuMANIFEST_SYNC)
+		g_dfu->state = DFU_STATE_dfuMANIFEST;
 }
 
 static __dfufunc void handle_getstatus(void)
@@ -67,8 +68,8 @@ static __dfufunc void handle_getstatus(void)
 	dfu_drv_updstatus();
 
 	/* send status response */
-	dstat.bStatus = g_dfu.status;
-	dstat.bState = g_dfu.state;
+	dstat.bStatus = g_dfu->status;
+	dstat.bState = g_dfu->state;
 	dstat.iString = 0;
 	/* FIXME: set dstat.bwPollTimeout */
 
@@ -79,9 +80,9 @@ static __dfufunc void handle_getstatus(void)
 
 static void __dfufunc handle_getstate(void)
 {
-	uint8_t u8 = g_dfu.state;
+	uint8_t u8 = g_dfu->state;
 
-	TRACE_DEBUG("handle_getstate(%u)\n\r", g_dfu.state);
+	TRACE_DEBUG("handle_getstate(%u)\n\r", g_dfu->state);
 
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }
@@ -114,15 +115,15 @@ static void dnload_cb(void *arg, unsigned char status, unsigned long int transfe
 		return;
 	}
 
-	rc = USBDFU_handle_dnload(if_altsettings[0], g_dfu.total_bytes, dfu_buf, transferred);
+	rc = USBDFU_handle_dnload(if_altsettings[0], g_dfu->total_bytes, dfu_buf, transferred);
 	switch (rc) {
 	case DFU_RET_ZLP:
-		g_dfu.total_bytes += transferred;
-		g_dfu.state = DFU_STATE_dfuDNLOAD_IDLE;
+		g_dfu->total_bytes += transferred;
+		g_dfu->state = DFU_STATE_dfuDNLOAD_IDLE;
 		TerminateCtrlInWithNull(0,0,0,0);
 		break;
 	case DFU_RET_STALL:
-		g_dfu.state = DFU_STATE_dfuERROR;
+		g_dfu->state = DFU_STATE_dfuERROR;
 		USBD_Stall(0);
 		break;
 	case DFU_RET_NOTHING:
@@ -137,24 +138,24 @@ static int handle_dnload(uint16_t val, uint16_t len, int first)
 
 	if (len > BOARD_DFU_PAGE_SIZE) {
 		TRACE_ERROR("DFU length exceeds flash page size\n\r");
-		g_dfu.state = DFU_STATE_dfuERROR;
-		g_dfu.status = DFU_STATUS_errADDRESS;
+		g_dfu->state = DFU_STATE_dfuERROR;
+		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
 	}
 
 	if (len & 0x03) {
 		TRACE_ERROR("DFU length not four-byte-aligned\n\r");
-		g_dfu.state = DFU_STATE_dfuERROR;
-		g_dfu.status = DFU_STATUS_errADDRESS;
+		g_dfu->state = DFU_STATE_dfuERROR;
+		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
 	}
 
 	if (first)
-		g_dfu.total_bytes = 0;
+		g_dfu->total_bytes = 0;
 
 	if (len == 0) {
 		TRACE_DEBUG("zero-size write -> MANIFEST_SYNC\n\r");
-		g_dfu.state = DFU_STATE_dfuMANIFEST_SYNC;
+		g_dfu->state = DFU_STATE_dfuMANIFEST_SYNC;
 		return DFU_RET_ZLP;
 	}
 
@@ -180,7 +181,7 @@ static void upload_cb(void *arg, unsigned char status, unsigned long int transfe
 		return;
 	}
 
-	g_dfu.total_bytes += transferred;
+	g_dfu->total_bytes += transferred;
 }
 
 static int handle_upload(uint16_t val, uint16_t len, int first)
@@ -188,16 +189,16 @@ static int handle_upload(uint16_t val, uint16_t len, int first)
 	int rc;
 
 	if (first)
-		g_dfu.total_bytes = 0;
+		g_dfu->total_bytes = 0;
 
 	if (len > BOARD_DFU_PAGE_SIZE) {
 		TRACE_ERROR("DFU length exceeds flash page size\n\r");
-		g_dfu.state = DFU_STATE_dfuERROR;
-		g_dfu.status = DFU_STATUS_errADDRESS;
+		g_dfu->state = DFU_STATE_dfuERROR;
+		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
 	}
 
-	rc = USBDFU_handle_upload(if_altsettings[0], g_dfu.total_bytes, dfu_buf, len);
+	rc = USBDFU_handle_upload(if_altsettings[0], g_dfu->total_bytes, dfu_buf, len);
 	if (rc < 0) {
 		TRACE_ERROR("application handle_upload() returned %d\n\r", rc);
 		return DFU_RET_STALL;
@@ -249,7 +250,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 		USBDDriver_RequestHandler(&usbdDriver, request);
 	}
 
-	switch (g_dfu.state) {
+	switch (g_dfu->state) {
 	case DFU_STATE_appIDLE:
 	case DFU_STATE_appDETACH:
 		TRACE_ERROR("Invalid DFU State reached in DFU mode\r\n");
@@ -259,15 +260,15 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 		switch (req) {
 		case USB_REQ_DFU_DNLOAD:
 			if (len == 0) {
-				g_dfu.state = DFU_STATE_dfuERROR;
+				g_dfu->state = DFU_STATE_dfuERROR;
 				ret = DFU_RET_STALL;
 				goto out;
 			}
-			g_dfu.state = DFU_STATE_dfuDNLOAD_SYNC;
+			g_dfu->state = DFU_STATE_dfuDNLOAD_SYNC;
 			ret = handle_dnload(val, len, 1);
 			break;
 		case USB_REQ_DFU_UPLOAD:
-			g_dfu.state = DFU_STATE_dfuUPLOAD_IDLE;
+			g_dfu->state = DFU_STATE_dfuUPLOAD_IDLE;
 			handle_upload(val, len, 1);
 			break;
 		case USB_REQ_DFU_ABORT:
@@ -281,7 +282,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			goto out;
 			break;
@@ -297,7 +298,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			goto out;
 		}
@@ -310,7 +311,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstatus();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			goto out;
 		}
@@ -318,11 +319,11 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 	case DFU_STATE_dfuDNLOAD_IDLE:
 		switch (req) {
 		case USB_REQ_DFU_DNLOAD:
-			g_dfu.state = DFU_STATE_dfuDNLOAD_SYNC;
+			g_dfu->state = DFU_STATE_dfuDNLOAD_SYNC;
 			ret = handle_dnload(val, len, 0);
 			break;
 		case USB_REQ_DFU_ABORT:
-			g_dfu.state = DFU_STATE_dfuIDLE;
+			g_dfu->state = DFU_STATE_dfuIDLE;
 			ret = DFU_RET_ZLP;
 			break;
 		case USB_REQ_DFU_GETSTATUS:
@@ -332,7 +333,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			break;
 		}
@@ -346,7 +347,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			break;
 		}
@@ -361,16 +362,16 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			 * that we've already been through MANIFST in
 			 * the global variable 'past_manifest'.
 			 */
-			//g_dfu.state = DFU_STATE_dfuMANIFEST_WAIT_RST;
-			g_dfu.state = DFU_STATE_dfuIDLE;
-			g_dfu.past_manifest = 1;
+			//g_dfu->state = DFU_STATE_dfuMANIFEST_WAIT_RST;
+			g_dfu->state = DFU_STATE_dfuIDLE;
+			g_dfu->past_manifest = 1;
 			handle_getstatus();
 			break;
 		case USB_REQ_DFU_GETSTATE:
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			break;
 		}
@@ -384,10 +385,10 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			/* state transition if less data then requested */
 			rc = handle_upload(val, len, 0);
 			if (rc >= 0 && rc < len)
-				g_dfu.state = DFU_STATE_dfuIDLE;
+				g_dfu->state = DFU_STATE_dfuIDLE;
 			break;
 		case USB_REQ_DFU_ABORT:
-			g_dfu.state = DFU_STATE_dfuIDLE;
+			g_dfu->state = DFU_STATE_dfuIDLE;
 			/* no zlp? */
 			ret = DFU_RET_ZLP;
 			break;
@@ -398,7 +399,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			break;
 		}
@@ -412,13 +413,13 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 			handle_getstate();
 			break;
 		case USB_REQ_DFU_CLRSTATUS:
-			g_dfu.state = DFU_STATE_dfuIDLE;
-			g_dfu.status = DFU_STATUS_OK;
+			g_dfu->state = DFU_STATE_dfuIDLE;
+			g_dfu->status = DFU_STATUS_OK;
 			/* no zlp? */
 			ret = DFU_RET_ZLP;
 			break;
 		default:
-			g_dfu.state = DFU_STATE_dfuERROR;
+			g_dfu->state = DFU_STATE_dfuERROR;
 			ret = DFU_RET_STALL;
 			break;
 		}
@@ -442,7 +443,7 @@ out:
 void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors)
 {
 	/* We already start in DFU idle mode */
-	g_dfu.state = DFU_STATE_dfuIDLE;
+	g_dfu->state = DFU_STATE_dfuIDLE;
 
 	USBDDriver_Initialize(&usbdDriver, pDescriptors, if_altsettings);
 	USBD_Init();

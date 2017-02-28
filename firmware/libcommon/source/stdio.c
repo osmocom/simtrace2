@@ -59,10 +59,11 @@
 //------------------------------------------------------------------------------
 //         Global Variables
 //------------------------------------------------------------------------------
+//
+FILE* const stdin = NULL;
+FILE* const stdout = NULL;
+FILE* const stderr = NULL;
 
-// Required for proper compilation.
-struct _reent r = {0, (FILE *) 0, (FILE *) 1, (FILE *) 0};
-struct _reent *_impure_ptr = &r;
 
 //------------------------------------------------------------------------------
 //         Local Functions

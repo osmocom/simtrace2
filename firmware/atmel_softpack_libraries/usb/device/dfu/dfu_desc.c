@@ -106,17 +106,13 @@ void set_usb_serial_str(const uint8_t *serial_usbstr)
 const USBDDriverDescriptors dfu_descriptors = {
 	.pFsDevice = &fsDevice,
 	.pFsConfiguration = &dfu_cfg_descriptor.ucfg,
-//#if defined (CHIP_USB_UDPHS) || defined(CHIP_USB_OTGHS)
-#if 0 // DFU only supports FS for now
-	.pFsQualifier = ,
-	.pFsOtherSpeed = ,
-	.pHsDevice = ,
-	.pHsConfiguration = ,
-	.pHsQualifier = ,
-	.pHsOtherSpeed = ,
-#else
-	0, 0, 0, 0, 0, 0,
-#endif
+	/* DFU only supports FS for now */
+	.pFsQualifier = NULL,
+	.pFsOtherSpeed = NULL,
+	.pHsDevice = NULL,
+	.pHsConfiguration = NULL,
+	.pHsQualifier = NULL,
+	.pHsOtherSpeed = NULL,
 #if 0
 	.pStrings = usb_strings,
 	.numStrings = ARRAY_SIZE(usb_strings),

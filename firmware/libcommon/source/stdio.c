@@ -54,7 +54,7 @@
 //------------------------------------------------------------------------------
 
 // Maximum string size allowed (in bytes).
-#define MAX_STRING_SIZE         100
+#define MAX_STRING_SIZE         512
 
 //------------------------------------------------------------------------------
 //         Global Variables
@@ -429,7 +429,6 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
     if (vsprintf(pStr, pFormat, ap) >= MAX_STRING_SIZE) {
 
         fputs(pError, stderr);
-        while (1); // Increase MAX_STRING_SIZE
     }
 
     // Display string

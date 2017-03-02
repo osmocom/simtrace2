@@ -167,6 +167,7 @@ extern int main(void)
 		i++;
 	}
 
+	FLASHD_Initialize(BOARD_MCK, 1);
 	TRACE_INFO("entering main loop...\r\n");
 	while (1) {
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG

@@ -29,7 +29,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	uint32_t addr;
 	int rc;
 
-	printf("dnload(altif=%u, offset=%u, len=%u\n\r", altif, offset, len);
+	printf("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
 
 	switch (altif) {
 	case ALTIF_RAM:

@@ -145,6 +145,7 @@ extern int main(void)
 		"=============================================================================\r\n",
 		manifest_revision, manifest_board);
 
+	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\r\n", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);

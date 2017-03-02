@@ -124,7 +124,7 @@ IntFunc exception_table[] = {
     IrqHandlerNotUsed   /* 35 not used */
 };
 
-#if defined (BOARD_USB_DFU) && !defined(dfu)
+#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
 static void BootIntoApp(void)
 {
 	unsigned int *pSrc;
@@ -151,7 +151,8 @@ void ResetException( void )
     /* Low level Initialize */
     LowLevelInit() ;
 
-#if defined (BOARD_USB_DFU) && !defined(dfu)
+
+#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
     if (*(unsigned long *)IRAM_ADDR != 0xDFDFDFDF)
         BootIntoApp();
 #endif

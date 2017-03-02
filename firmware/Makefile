@@ -164,7 +164,9 @@ CFLAGS += -Wno-suggest-attribute=noreturn
 CFLAGS += -D__ARM
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF)
-CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\" -DBOARD=\"$(BOARD)\" -DAPPLICATION=\"$(APP)\"
+CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
+CFLAGS += -DAPPLICATION=\"$(APP)\" -DAPPLICATION_$(APP)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
 LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
@@ -194,11 +196,11 @@ $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
-	@$(CC) $(CFLAGS) -D$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$< 
+	@$(CC) $(CFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]
-	@$(CC) $(ASFLAGS) -D$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
+	@$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
 debug_$(1): $(1)
 	$(GDB) -x "$(BOARD_LIB)/resources/gcc/$(BOARD)_$(1).gdb" -ex "reset" -readnow -se $(OUTPUT)-$(1).elf

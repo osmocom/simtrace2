@@ -178,15 +178,17 @@ out:
 
 void DFURT_SwitchToDFU(void)
 {
-	unsigned int *dfu_except_tbl = (unsigned int *)IFLASH_ADDR;
-	void (*toDFU)(void) = (void *)dfu_except_tbl[1];
+	/* store the magic value that the DFU loader can detect and
+	 * activate itself, rather than boot into the application */
+	g_dfu->magic = USB_DFU_MAGIC;
 
-	*(unsigned int *)USB_DFU_MAGIC_ADDR = USB_DFU_MAGIC;
-
+	/* Disconnect the USB by remoting the pull-up */
 	USBD_Disconnect();
 	__disable_irq();
 
-	toDFU();
+	/* reset the processor, we will start execution with the
+	 * ResetVector of the bootloader */
+	NVIC_SystemReset();
 }
 
 void USBDCallbacks_RequestReceived(const USBGenericRequest *request)

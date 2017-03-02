@@ -1163,10 +1163,20 @@ void USBD_IrqHandler(void)
 
         TRACE_INFO_WP("EoBRes ");
 
-#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
+#if defined(BOARD_USB_DFU)
+#if defined(APPLICATION_dfu)
+	/* if we are currently in the DFU bootloader, and we are beyond
+	 * the MANIFEST stage, we shall switch to the normal
+	 * application */
 	if (g_dfu->past_manifest)
 		USBDFU_SwitchToApp();
-#endif
+#else
+	/* if we are currently in the main application, and we are in
+	 * appDETACH state, switch into the DFU bootloader */
+	if (g_dfu->state == DFU_STATE_appDETACH)
+		DFURT_SwitchToDFU();
+#endif /* APPLICATION_dfu */
+#endif /* BOARD_USB_DFU */
 
         /* Flush and enable the Suspend interrupt */
         UDP->UDP_ICR = UDP_ICR_WAKEUP | UDP_ICR_RXRSM | UDP_ICR_RXSUSP;

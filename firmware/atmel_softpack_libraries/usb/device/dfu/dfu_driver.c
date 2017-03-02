@@ -457,7 +457,7 @@ void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors)
 void USBDFU_SwitchToApp(void)
 {
 	/* make sure the MAGIC is not set to enter DFU again */
-	*(unsigned int *)USB_DFU_MAGIC_ADDR = 0;
+	g_dfu->magic = 0;
 
 	printf("switching to app\r\n");
 
@@ -468,7 +468,6 @@ void USBDFU_SwitchToApp(void)
 	__disable_irq();
 
 	/* Tell the hybrid to execute FTL JUMP! */
-	//BootIntoApp();
 	NVIC_SystemReset();
 }
 

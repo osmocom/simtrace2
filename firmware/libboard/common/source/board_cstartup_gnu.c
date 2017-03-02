@@ -125,6 +125,7 @@ IntFunc exception_table[] = {
 };
 
 #if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
+#include "usb/device/dfu/dfu.h"
 static void BootIntoApp(void)
 {
 	unsigned int *pSrc;
@@ -134,7 +135,7 @@ static void BootIntoApp(void)
 	SCB->VTOR = ((unsigned int)(pSrc)) | (0x0 << 7);
 	appReset = pSrc[1];
 
-	printf("Booting into App from %p, PC=%p\r\n", pSrc, appReset);
+	g_dfu->state = DFU_STATE_appIDLE;
 
 	appReset();
 }
@@ -153,8 +154,11 @@ void ResetException( void )
 
 
 #if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
-    if (*(unsigned long *)IRAM_ADDR != 0xDFDFDFDF)
+    if (g_dfu->magic != USB_DFU_MAGIC) {
         BootIntoApp();
+        /* Infinite loop */
+        while ( 1 ) ;
+    }
 #endif
 
     /* Initialize the relocate segment */

@@ -86,12 +86,11 @@ extern const USBDDriverDescriptors dfu_descriptors;
 /* magic value we use during boot to detect if we should start in DFU
  * mode or runtime mode */
 #define USB_DFU_MAGIC	0xDFDFDFDF
-/* RAM address for this magic value above */
-#define USB_DFU_MAGIC_ADDR	IRAM_ADDR
 
 /* The API between the core DFU handler and the board/soc specific code */
 
 struct dfudata {
+	uint32_t magic;
 	uint8_t status;
 	uint32_t state;
 	int past_manifest;

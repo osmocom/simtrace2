@@ -184,11 +184,11 @@ void ResetException( void )
 	    SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
     }
 
-    /* Branch to main function */
-    main() ;
-
     /* App should have disabled interrupts during the transition */
     __enable_irq();
+
+    /* Branch to main function */
+    main() ;
 
     /* Infinite loop */
     while ( 1 ) ;

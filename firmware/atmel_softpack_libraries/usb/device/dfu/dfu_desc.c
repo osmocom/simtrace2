@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "board.h"
+#include "utils.h"
 
 #include <usb/include/USBDescriptors.h>
 
@@ -17,7 +18,7 @@ enum {
 	STR_PROD,
 	STR_CONFIG,
 	_STR_FIRST_ALT,
-	STR_SERIAL 	= (_STR_FIRST_ALT+BOARD_DFU_NUM_IF),
+	STR_SERIAL	= (_STR_FIRST_ALT+BOARD_DFU_NUM_IF),
 };
 
 static const USBDeviceDescriptor fsDevice = {
@@ -61,9 +62,7 @@ const struct dfu_desc dfu_cfg_descriptor = {
 	.ucfg = {
 		.bLength =	   sizeof(USBConfigurationDescriptor),
 		.bDescriptorType = USBGenericDescriptor_CONFIGURATION,
-		.wTotalLength =	   sizeof(USBConfigurationDescriptor) +
-				   BOARD_DFU_NUM_IF * sizeof(USBInterfaceDescriptor) +
-				   sizeof(struct usb_dfu_func_descriptor),
+		.wTotalLength =	   sizeof(struct dfu_desc),
 		.bNumInterfaces =  1,
 		.bConfigurationValue = 1,
 		.iConfiguration =  STR_CONFIG,
@@ -101,11 +100,82 @@ void set_usb_serial_str(const uint8_t *serial_usbstr)
 {
 	usb_strings[STR_SERIAL] = serial_usbstr;
 }
+#else
+static const unsigned char langDesc[] = {
+	USBStringDescriptor_LENGTH(1),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_ENGLISH_US
+};
+
+static const unsigned char manufStringDescriptor[] = {
+	USBStringDescriptor_LENGTH(24),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('y'),
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE('o'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('o'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('-'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('.'),
+	USBStringDescriptor_UNICODE('f'),
+	USBStringDescriptor_UNICODE('.'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE('.'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('.'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('G'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('H'),
+};
+
+static const unsigned char productStringDescriptor[] = {
+	USBStringDescriptor_LENGTH(10),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('S'),
+	USBStringDescriptor_UNICODE('I'),
+	USBStringDescriptor_UNICODE('M'),
+	USBStringDescriptor_UNICODE('t'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('2'),
+};
+
+
+static const unsigned char configStringDescriptor[] = {
+	USBStringDescriptor_LENGTH(3),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('D'),
+	USBStringDescriptor_UNICODE('F'),
+	USBStringDescriptor_UNICODE('U'),
+};
+
+/** List of string descriptors used by the device */
+static const unsigned char *usb_strings[] = {
+	langDesc,
+	[STR_MANUF] = manufStringDescriptor,
+	[STR_PROD] = productStringDescriptor,
+	[STR_CONFIG] = configStringDescriptor,
+};
 #endif
+
+static const USBConfigurationDescriptor *conf_desc_arr[] = {
+	&dfu_cfg_descriptor.ucfg,
+};
 
 const USBDDriverDescriptors dfu_descriptors = {
 	.pFsDevice = &fsDevice,
-	.pFsConfiguration = &dfu_cfg_descriptor.ucfg,
+	.pFsConfiguration = (const USBConfigurationDescriptor **)&conf_desc_arr,
 	/* DFU only supports FS for now */
 	.pFsQualifier = NULL,
 	.pFsOtherSpeed = NULL,
@@ -113,8 +183,6 @@ const USBDDriverDescriptors dfu_descriptors = {
 	.pHsConfiguration = NULL,
 	.pHsQualifier = NULL,
 	.pHsOtherSpeed = NULL,
-#if 0
 	.pStrings = usb_strings,
 	.numStrings = ARRAY_SIZE(usb_strings),
-#endif
 };

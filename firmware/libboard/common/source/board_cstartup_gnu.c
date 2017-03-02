@@ -133,6 +133,9 @@ static void BootIntoApp(void)
 	pSrc = (unsigned int *) ((unsigned char *)IFLASH_ADDR + BOARD_DFU_BOOT_SIZE);
 	SCB->VTOR = ((unsigned int)(pSrc)) | (0x0 << 7);
 	appReset = pSrc[1];
+
+	printf("Booting into App from %p, PC=%p\r\n", pSrc, appReset);
+
 	appReset();
 }
 #endif

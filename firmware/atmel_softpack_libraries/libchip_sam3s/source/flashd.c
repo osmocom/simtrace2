@@ -151,7 +151,10 @@ static void ComputeLockRange( uint32_t dwStart, uint32_t dwEnd, uint32_t *pdwAct
 extern void FLASHD_Initialize( uint32_t dwMCk, uint32_t dwUseIAP )
 {
     EFC_DisableFrdyIt( EFC ) ;
-	
+#if 1
+    /* See Revision A errata 46.1.1.3 */
+    EFC_SetWaitState(EFC, 6);
+#else
     if ( (dwMCk/1000000) >= 64 )
 	{
         EFC_SetWaitState( EFC, 2 ) ;
@@ -167,7 +170,7 @@ extern void FLASHD_Initialize( uint32_t dwMCk, uint32_t dwUseIAP )
             EFC_SetWaitState( EFC, 0 ) ;
         }
 	}
-
+#endif
     _dwUseIAP=dwUseIAP ;
 }
 

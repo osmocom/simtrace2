@@ -459,6 +459,8 @@ void USBDFU_SwitchToApp(void)
 	/* make sure the MAGIC is not set to enter DFU again */
 	*(unsigned int *)USB_DFU_MAGIC_ADDR = 0;
 
+	printf("switching to app\r\n");
+
 	/* disconnect from USB to ensure re-enumeration */
 	USBD_Disconnect();
 

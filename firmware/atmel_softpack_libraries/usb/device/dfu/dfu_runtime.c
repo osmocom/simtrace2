@@ -117,6 +117,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 	    USBGenericRequest_GetRecipient(request) != USBGenericRequest_INTERFACE) {
 		TRACE_DEBUG("std_ho_usbd ");
 		USBDDriver_RequestHandler(usbdDriver, request);
+		return;
 	}
 
 	switch (g_dfu->state) {

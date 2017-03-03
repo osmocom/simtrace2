@@ -102,11 +102,6 @@
 #define BOARD_USB_ENDPOINTS_MAXPACKETSIZE(i)    (((i == 4) || (i == 5))? 512 : 64)
 #define BOARD_USB_ENDPOINTS_BANKS(i)            (((i == 0) || (i == 3)) ? 1 : 2)
 
-/// USB attributes configuration descriptor (bus or self powered, remote wakeup)
-//#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_SELFPOWERED_NORWAKEUP
-#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
-//#define BOARD_USB_BMATTRIBUTES                  USBConfigurationDescriptor_SELFPOWERED_RWAKEUP
-
 #define BOARD_USB_VENDOR	SIMTRACE_VENDOR_ID
 #define BOARD_USB_PRODUCT	SIMTRACE_PRODUCT_ID
 #define BOARD_USB_RELEASE	0

@@ -74,6 +74,8 @@
 /// SPI chip select 0 pin definition (PA11).
 #define PIN_SPI_NPCS0  {1 << 11, PIOA, PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 
+#define BOARD_USB_BMATTRIBUTES	USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
+
 #define SIMTRACE_VENDOR_ID          0x1d50
 #define SIMTRACE_PRODUCT_ID         0x60e3
 #define USB_VENDOR_ID               SIMTRACE_VENDOR_ID

@@ -150,7 +150,7 @@ extern int main(void)
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 
-	//board_main_top();
+	board_main_top();
 
 	TRACE_INFO("USB init...\n\r");
 	USBDFU_Initialize(&dfu_descriptors);

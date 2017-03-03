@@ -99,7 +99,7 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 		/* FIXME: set error codes */
 		return -1;
 	}
-	printf("=%u\r\n", req_len);
+	printf("=%u\n\r", req_len);
 	return req_len;
 }
 
@@ -139,20 +139,20 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-        printf("\r\n\r\n"
-		"=============================================================================\r\n"
-		"DFU bootloader %s for board %s (C) 2010-2017 by Harald Welte\r\n"
-		"=============================================================================\r\n",
+        printf("\n\r\n\r"
+		"=============================================================================\n\r"
+		"DFU bootloader %s for board %s (C) 2010-2017 by Harald Welte\n\r"
+		"=============================================================================\n\r",
 		manifest_revision, manifest_board);
 
-	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\r\n", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
+	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
+	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 
 	//board_main_top();
 
-	TRACE_INFO("USB init...\r\n");
+	TRACE_INFO("USB init...\n\r");
 	USBDFU_Initialize(&dfu_descriptors);
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
@@ -160,7 +160,7 @@ extern int main(void)
 #if 1
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
-				    "not be configured)\r\n");
+				    "not be configured)\n\r");
 			NVIC_SystemReset();
 		}
 #endif
@@ -168,7 +168,7 @@ extern int main(void)
 	}
 
 	FLASHD_Initialize(BOARD_MCK, 1);
-	TRACE_INFO("entering main loop...\r\n");
+	TRACE_INFO("entering main loop...\n\r");
 	while (1) {
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
@@ -185,7 +185,7 @@ extern int main(void)
 				isUsbConnected = 0;
 			}
 		} else if (isUsbConnected == 0) {
-			TRACE_INFO("USB is now configured\r\n");
+			TRACE_INFO("USB is now configured\n\r");
 			LED_Set(LED_NUM_GREEN);
 			LED_Clear(LED_NUM_RED);
 

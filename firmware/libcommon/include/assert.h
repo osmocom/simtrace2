@@ -89,7 +89,7 @@
         /// \param condition  Condition to verify.
         #define ASSERT(condition)  { \
             if (!(condition)) { \
-                printf("-F- ASSERT: %s %s:%d\r\n", #condition, __BASE_FILE__, __LINE__); \
+                printf("-F- ASSERT: %s %s:%d\n\r", #condition, __BASE_FILE__, __LINE__); \
                 while (1); \
             } \
         }

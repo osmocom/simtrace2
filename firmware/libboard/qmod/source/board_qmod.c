@@ -58,7 +58,7 @@ static int write_hub_eeprom(void)
 		v = 0;
 	}
 
-	TRACE_INFO("Writing EEPROM...\r\n");
+	TRACE_INFO("Writing EEPROM...\n\r");
 	/* write the EEPROM once */
 	for (i = 0; i < 256; i++) {
 		int rc = eeprom_write_byte(0x50, i, __eeprom_bin[i]);
@@ -68,12 +68,12 @@ static int write_hub_eeprom(void)
 	}
 
 	/* then pursue re-reading it again and again */
-	TRACE_INFO("Verifying EEPROM...\r\n");
+	TRACE_INFO("Verifying EEPROM...\n\r");
 	for (i = 0; i < 256; i++) {
 		int byte = eeprom_read_byte(0x50, i);
-		TRACE_INFO("0x%02x: %02x\r\n", i, byte);
+		TRACE_INFO("0x%02x: %02x\n\r", i, byte);
 		if (byte != __eeprom_bin[i])
-			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\r\n",
+			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\n\r",
 					i, __eeprom_bin[i], byte);
 	}
 
@@ -90,88 +90,88 @@ void board_exec_dbg_cmd(int ch)
 
 	switch (ch) {
 	case '?':
-		printf("\t?\thelp\r\n");
-		printf("\tE\tprogram EEPROM\r\n");
-		printf("\tR\treset SAM3\r\n");
-		printf("\tO\tEnable PRTPWR_OVERRIDE\r\n");
-		printf("\to\tDisable PRTPWR_OVERRIDE\r\n");
-		printf("\tH\tRelease HUB RESET (high)\r\n");
-		printf("\th\tAssert HUB RESET (low)\r\n");
-		printf("\tw\tWrite single byte in EEPROM\r\n");
-		printf("\tr\tRead single byte from EEPROM\r\n");
-		printf("\tX\tRelease peer SAM3 from reset\r\n");
-		printf("\tx\tAssert peer SAM3 reset\r\n");
-		printf("\tY\tRelease peer SAM3 ERASE signal\r\n");
-		printf("\ty\tAssert peer SAM3 ERASE signal\r\n");
-		printf("\tU\tProceed to USB Initialization\r\n");
-		printf("\t1\tGenerate 1ms reset pulse on WWAN1\r\n");
-		printf("\t2\tGenerate 1ms reset pulse on WWAN2\r\n");
+		printf("\t?\thelp\n\r");
+		printf("\tE\tprogram EEPROM\n\r");
+		printf("\tR\treset SAM3\n\r");
+		printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
+		printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
+		printf("\tH\tRelease HUB RESET (high)\n\r");
+		printf("\th\tAssert HUB RESET (low)\n\r");
+		printf("\tw\tWrite single byte in EEPROM\n\r");
+		printf("\tr\tRead single byte from EEPROM\n\r");
+		printf("\tX\tRelease peer SAM3 from reset\n\r");
+		printf("\tx\tAssert peer SAM3 reset\n\r");
+		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
+		printf("\ty\tAssert peer SAM3 ERASE signal\n\r");
+		printf("\tU\tProceed to USB Initialization\n\r");
+		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
+		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
 		break;
 	case 'E':
 		write_hub_eeprom();
 		break;
 	case 'R':
-		printf("Asking NVIC to reset us\r\n");
+		printf("Asking NVIC to reset us\n\r");
 		NVIC_SystemReset();
 		break;
 	case 'O':
-		printf("Setting PRTPWR_OVERRIDE\r\n");
+		printf("Setting PRTPWR_OVERRIDE\n\r");
 		PIO_Set(&pin_hubpwr_override);
 		break;
 	case 'o':
-		printf("Clearing PRTPWR_OVERRIDE\r\n");
+		printf("Clearing PRTPWR_OVERRIDE\n\r");
 		PIO_Clear(&pin_hubpwr_override);
 		break;
 	case 'H':
-		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\r\n");
+		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\n\r");
 		PIO_Clear(&pin_hub_rst);
 		break;
 	case 'h':
 		/* high level drives transistor -> HUB_RESET low */
-		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\r\n");
+		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\n\r");
 		PIO_Set(&pin_hub_rst);
 		break;
 	case 'w':
 		if (PIO_GetOutputDataStatus(&pin_hub_rst) == 0)
-			printf("WARNING: attempting EEPROM access while HUB not in reset\r\n");
-		printf("Please enter EEPROM offset:\r\n");
+			printf("WARNING: attempting EEPROM access while HUB not in reset\n\r");
+		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("Please enter EEPROM value:\r\n");
+		printf("Please enter EEPROM value:\n\r");
 		UART_GetIntegerMinMax(&val, 0, 255);
-		printf("Writing value 0x%02x to EEPROM offset 0x%02x\r\n", val, addr);
+		printf("Writing value 0x%02x to EEPROM offset 0x%02x\n\r", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
 	case 'r':
-		printf("Please enter EEPROM offset:\r\n");
+		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("EEPROM[0x%02x] = 0x%02x\r\n", addr, eeprom_read_byte(0x50, addr));
+		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
 		break;
 	case 'X':
-		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\r\n");
+		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\n\r");
 		PIO_Clear(&pin_peer_rst);
 		break;
 	case 'x':
-		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\r\n");
+		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\n\r");
 		PIO_Set(&pin_peer_rst);
 		break;
 	case 'Y':
-		printf("Clearing SIMTRACExx_ERASE (inactive)\r\n");
+		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
 		PIO_Clear(&pin_peer_erase);
 		break;
 	case 'y':
-		printf("Seetting SIMTRACExx_ERASE (active)\r\n");
+		printf("Seetting SIMTRACExx_ERASE (active)\n\r");
 		PIO_Set(&pin_peer_erase);
 		break;
 	case '1':
-		printf("Resetting Modem 1 (of this SAM3)\r\n");
+		printf("Resetting Modem 1 (of this SAM3)\n\r");
 		wwan_perst_do_reset(1);
 		break;
 	case '2':
-		printf("Resetting Modem 2 (of this SAM3)\r\n");
+		printf("Resetting Modem 2 (of this SAM3)\n\r");
 		wwan_perst_do_reset(2);
 		break;
 	default:
-		printf("Unknown command '%c'\r\n", ch);
+		printf("Unknown command '%c'\n\r", ch);
 		break;
 	}
 }
@@ -191,9 +191,9 @@ void board_main_top(void)
 	i2c_pin_init();
 
 	if (qmod_sam3_is_12()) {
-		TRACE_INFO("Detected Quad-Modem ST12\r\n");
+		TRACE_INFO("Detected Quad-Modem ST12\n\r");
 	} else {
-		TRACE_INFO("Detected Quad-Modem ST34\r\n");
+		TRACE_INFO("Detected Quad-Modem ST34\n\r");
 	}
 
 	/* Obtain the circuit board version (currently just prints voltage */

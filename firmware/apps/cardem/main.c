@@ -134,18 +134,18 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-        printf("\r\n\r\n"
-		"=============================================================================\r\n"
-		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\r\n"
-		"=============================================================================\r\n");
+        printf("\n\r\n\r"
+		"=============================================================================\n\r"
+		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\n\r"
+		"=============================================================================\n\r");
 
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
+	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 
 	board_main_top();
 
-	TRACE_INFO("USB init...\r\n");
+	TRACE_INFO("USB init...\n\r");
 	SIMtrace_USB_Initialize();
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
@@ -153,25 +153,25 @@ extern int main(void)
 #if 0
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
-				    "not be configured)\r\n");
+				    "not be configured)\n\r");
 			NVIC_SystemReset();
 		}
 #endif
 		i++;
 	}
 
-	TRACE_INFO("calling configure of all configurations...\r\n");
+	TRACE_INFO("calling configure of all configurations...\n\r");
 	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]);
 	     ++i) {
 		if (config_func_ptrs[i].configure)
 			config_func_ptrs[i].configure();
 	}
 
-	TRACE_INFO("calling init of config %u...\r\n", simtrace_config);
+	TRACE_INFO("calling init of config %u...\n\r", simtrace_config);
 	config_func_ptrs[simtrace_config].init();
 	last_simtrace_config = simtrace_config;
 
-	TRACE_INFO("entering main loop...\r\n");
+	TRACE_INFO("entering main loop...\n\r");
 	while (1) {
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
@@ -188,14 +188,14 @@ extern int main(void)
 				isUsbConnected = 0;
 			}
 		} else if (isUsbConnected == 0) {
-			TRACE_INFO("USB is now configured\r\n");
+			TRACE_INFO("USB is now configured\n\r");
 			LED_Set(LED_NUM_GREEN);
 			LED_Clear(LED_NUM_RED);
 
 			isUsbConnected = 1;
 		}
 		if (last_simtrace_config != simtrace_config) {
-			TRACE_INFO("USB config chg %u -> %u\r\n",
+			TRACE_INFO("USB config chg %u -> %u\n\r",
 				   last_simtrace_config, simtrace_config);
 			config_func_ptrs[last_simtrace_config].exit();
 			config_func_ptrs[simtrace_config].init();

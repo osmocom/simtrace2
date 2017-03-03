@@ -154,6 +154,9 @@ void ResetException( void )
 
 
 #if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
+    /* we are before the text segment has been relocated, so g_dfu is
+     * not initialized yet */
+    g_dfu = &_g_dfu;
     if (g_dfu->magic != USB_DFU_MAGIC) {
         BootIntoApp();
         /* Infinite loop */

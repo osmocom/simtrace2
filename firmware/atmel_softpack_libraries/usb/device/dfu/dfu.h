@@ -97,6 +97,8 @@ struct dfudata {
 	unsigned int total_bytes;
 };
 
+/* RAM address for this magic value above */
+extern struct dfudata _g_dfu;
 extern struct dfudata *g_dfu;
 
 void set_usb_serial_str(const uint8_t *serial_usbstr);

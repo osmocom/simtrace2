@@ -130,8 +130,10 @@ extern int main(void)
 	LED_Configure(LED_NUM_GREEN);
 	LED_Set(LED_NUM_RED);
 
-	/* Disable watchdog */
-	WDT_Disable(WDT);
+
+	/* Enable watchdog for 500ms, with no window */
+	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
+		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
 
 	//req_ctx_init();
 
@@ -156,6 +158,7 @@ extern int main(void)
 	USBDFU_Initialize(&dfu_descriptors);
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
+		WDT_Restart(WDT);
 		check_exec_dbg_cmd();
 #if 1
 		if (i >= MAX_USB_ITER * 3) {
@@ -171,6 +174,7 @@ extern int main(void)
 	FLASHD_Initialize(BOARD_MCK, 1);
 	TRACE_INFO("entering main loop...\n\r");
 	while (1) {
+		WDT_Restart(WDT);
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
 		putchar('\b');

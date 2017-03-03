@@ -119,6 +119,13 @@ extern WEAK void LowLevelInit( void )
 {
     uint32_t timeout = 0;
 
+    /* Configure the Supply Monitor to reset the CPU in case VDDIO is
+     * lower than 3.0V.  As we run the board on 3.3V, any lower voltage
+     * might be some kind of leakage that creeps in some way, but is not
+     * the "official" power supply */
+    SUPC->SUPC_SMMR = SUPC_SMMR_SMTH_3_0V | SUPC_SMMR_SMSMPL_CSM |
+	    	      SUPC_SMMR_SMRSTEN_ENABLE;
+
     /* enable both LED and green LED */
     PIOA->PIO_PER |= LED_RED | LED_GREEN;
     PIOA->PIO_OER |= LED_RED | LED_GREEN;

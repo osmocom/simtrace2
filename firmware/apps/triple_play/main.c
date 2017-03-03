@@ -154,6 +154,7 @@ extern int main(void)
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
 				    "not be configured)\r\n");
+			USBD_Disconnect();
 			NVIC_SystemReset();
 		}
 #endif

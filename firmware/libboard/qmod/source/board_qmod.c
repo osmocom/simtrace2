@@ -112,6 +112,7 @@ void board_exec_dbg_cmd(int ch)
 		break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");
+		USBD_Disconnect();
 		NVIC_SystemReset();
 		break;
 	case 'O':

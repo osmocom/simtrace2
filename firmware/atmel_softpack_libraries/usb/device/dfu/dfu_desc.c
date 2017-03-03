@@ -160,12 +160,38 @@ static const unsigned char configStringDescriptor[] = {
 	USBStringDescriptor_UNICODE('U'),
 };
 
+static const unsigned char altRamStringDescriptor[] = {
+	USBStringDescriptor_LENGTH(3),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('R'),
+	USBStringDescriptor_UNICODE('A'),
+	USBStringDescriptor_UNICODE('M'),
+};
+
+static const unsigned char altAppStringDescriptor[] = {
+	USBStringDescriptor_LENGTH(11),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('F'),
+	USBStringDescriptor_UNICODE('l'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('h'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('('),
+	USBStringDescriptor_UNICODE('A'),
+	USBStringDescriptor_UNICODE('p'),
+	USBStringDescriptor_UNICODE('p'),
+	USBStringDescriptor_UNICODE(')'),
+};
+
 /** List of string descriptors used by the device */
 static const unsigned char *usb_strings[] = {
 	langDesc,
 	[STR_MANUF] = manufStringDescriptor,
 	[STR_PROD] = productStringDescriptor,
 	[STR_CONFIG] = configStringDescriptor,
+	[_STR_FIRST_ALT] = altRamStringDescriptor,
+	[_STR_FIRST_ALT+1] = altAppStringDescriptor,
 };
 #endif
 

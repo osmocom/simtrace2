@@ -64,6 +64,7 @@ static __dfufunc void handle_getstatus(void)
 {
 	/* has to be static as USBD_Write is async ? */
 	static struct dfu_status dstat;
+	static const uint8_t poll_timeout_10ms[] = { 10, 0, 0 };
 
 	dfu_drv_updstatus();
 
@@ -71,7 +72,7 @@ static __dfufunc void handle_getstatus(void)
 	dstat.bStatus = g_dfu->status;
 	dstat.bState = g_dfu->state;
 	dstat.iString = 0;
-	/* FIXME: set dstat.bwPollTimeout */
+	memcpy(&dstat.bwPollTimeout, poll_timeout_10ms, sizeof(dstat.bwPollTimeout));
 
 	TRACE_DEBUG("handle_getstatus(%u, %u)\n\r", dstat.bStatus, dstat.bState);
 

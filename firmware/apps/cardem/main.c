@@ -140,9 +140,11 @@ extern int main(void)
 		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\n\r"
 		"=============================================================================\n\r");
 
+	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
+	TRACE_INFO("Reset Cause: 0x%x\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
 
 	board_main_top();
 

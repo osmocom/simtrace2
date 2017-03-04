@@ -472,6 +472,14 @@ void USBDFU_SwitchToApp(void)
 	NVIC_SystemReset();
 }
 
+/* A board can provide a function overriding this, enabling a
+ * board-specific 'boot into DFU' override, like a specific GPIO that
+ * needs to be pulled a certain way. */
+WEAK int USBDFU_OverrideEnterDFU(void)
+{
+	return 0;
+}
+
 void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 {
 	USBDFU_DFU_RequestHandler(request);

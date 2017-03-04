@@ -110,6 +110,7 @@ extern int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 				uint8_t *data, unsigned int len);
 extern int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 				uint8_t *data, unsigned int req_len);
+extern int USBDFU_OverrideEnterDFU(void);
 
 /* function to be called at end of EP0 handler during runtime */
 void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request);

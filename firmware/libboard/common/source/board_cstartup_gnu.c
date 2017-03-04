@@ -157,7 +157,7 @@ void ResetException( void )
     /* we are before the text segment has been relocated, so g_dfu is
      * not initialized yet */
     g_dfu = &_g_dfu;
-    if (g_dfu->magic != USB_DFU_MAGIC) {
+    if ((g_dfu->magic != USB_DFU_MAGIC) && !USBDFU_OverrideEnterDFU()) {
         BootIntoApp();
         /* Infinite loop */
         while ( 1 ) ;

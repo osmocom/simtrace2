@@ -103,6 +103,57 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 	return req_len;
 }
 
+static int uart_has_loopback_jumper(void)
+{
+	unsigned int i;
+	const Pin uart_loopback_pins[] = {
+		{PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT},
+		{PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+	};
+
+	/* Configure UART pins as I/O */
+	PIO_Configure(uart_loopback_pins, PIO_LISTSIZE(uart_loopback_pins));
+
+	for (i = 0; i < 10; i++) {
+		/* Set TxD high; abort if RxD doesn't go high either */
+		PIO_Set(&uart_loopback_pins[1]);
+		if (!PIO_Get(&uart_loopback_pins[0]))
+			return 0;
+		/* Set TxD low, abort if RxD doesn't go low either */
+		PIO_Clear(&uart_loopback_pins[1]);
+		if (PIO_Get(&uart_loopback_pins[0]))
+			return 0;
+	}
+	/* if we reached here, RxD always follows TxD and thus a
+	 * loopback jumper has been placed on RxD/TxD, and we will boot
+	 * into DFU unconditionally */
+	return 1;
+}
+
+/* using this function we can determine if we should enter DFU mode
+ * during boot, or if we should proceed towards the application/runtime */
+int USBDFU_OverrideEnterDFU(void)
+{
+	uint32_t *app_part = (uint32_t *)FLASH_ADDR(0);
+
+	/* If the loopback jumper is set, we enter DFU mode */
+	if (uart_has_loopback_jumper())
+		return 1;
+
+	/* if the first word of the application partition doesn't look
+	 * like a stack pointer (i.e. point to RAM), enter DFU mode */
+	if ((app_part[0] < IRAM_ADDR) ||
+	    ((uint8_t *)app_part[0] > IRAM_END))
+		return 1;
+
+	/* if the second word of the application partition doesn't look
+	 * like a function from flash (reset vector), enter DFU mode */
+	if (((uint32_t *)app_part[1] < app_part) ||
+	    ((uint8_t *)app_part[1] > IFLASH_END))
+		return 1;
+
+	return 0;
+}
 
 /* returns '1' in case we should break any endless loop */
 static void check_exec_dbg_cmd(void)

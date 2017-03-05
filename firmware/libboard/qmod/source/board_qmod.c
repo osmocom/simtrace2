@@ -56,11 +56,7 @@ static int write_hub_eeprom(void)
 	int i;
 
 	/* wait */
-	volatile int v;
-	/* 440ns per cycle here */
-	for (i = 0; i < 1000000; i++) {
-		v = 0;
-	}
+	mdelay(100);
 
 	TRACE_INFO("Writing EEPROM...\n\r");
 	/* write the EEPROM once */

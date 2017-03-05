@@ -1,1 +1,1 @@
-../firmware/src_simtrace/cardemu_prot.h
+../firmware/libcommon/include/cardemu_prot.h

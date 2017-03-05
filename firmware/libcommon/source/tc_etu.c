@@ -25,17 +25,17 @@
 
 #include "chip.h"
 
-/* pins for Channel 0 of TC-block 0 */
+/* pins for Channel 0 of TC-block 0, we only use TCLK + TIOB */
 #define PIN_TCLK0	{PIO_PA4, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT }
 #define PIN_TIOA0	{PIO_PA0, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_TIOB0	{PIO_PA1, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
-static const Pin pins_tc0[] = { PIN_TCLK0, PIN_TIOA0, PIN_TIOB0 };
+static const Pin pins_tc0[] = { PIN_TCLK0, PIN_TIOB0 };
 
-/* pins for Channel 2 of TC-block 0 */
+/* pins for Channel 2 of TC-block 0, we only use TCLK + TIOB */
 #define PIN_TCLK2	{PIO_PA29, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_TIOA2	{PIO_PA26, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_TIOB2	{PIO_PA27, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
-static const Pin pins_tc2[] = { PIN_TCLK2, PIN_TIOA2, PIN_TIOB2 };
+static const Pin pins_tc2[] = { PIN_TCLK2, PIN_TIOB2 };
 
 struct tc_etu_state {
 	/* total negotiated waiting time (default = 9600) */
@@ -158,7 +158,7 @@ void tc_etu_init(uint8_t chan_nr, void *handle)
 
 	switch (chan_nr) {
 	case 0:
-		/* Configure PA4(TCLK0), PA0(TIOA0), PA1(TIB0) */
+		/* Configure PA4(TCLK0), PA1(TIB0) */
 		PIO_Configure(pins_tc0, ARRAY_SIZE(pins_tc0));
 		PMC_EnablePeripheral(ID_TC0);
 		/* route TCLK0 to XC2 */
@@ -171,7 +171,7 @@ void tc_etu_init(uint8_t chan_nr, void *handle)
 		te->chan = &TC0->TC_CHANNEL[0];
 		break;
 	case 2:
-		/* Configure PA29(TCLK2), PA26(TIOA2), PA27(TIOB2) */
+		/* Configure PA29(TCLK2), PA27(TIOB2) */
 		PIO_Configure(pins_tc2, ARRAY_SIZE(pins_tc2));
 		PMC_EnablePeripheral(ID_TC2);
 		/* route TCLK2 to XC2. TC0 really means TCA in this case */

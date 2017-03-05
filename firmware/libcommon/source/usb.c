@@ -42,188 +42,7 @@
 /*------------------------------------------------------------------------------
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
-
-static const unsigned char langDesc[] = {
-
-	USBStringDescriptor_LENGTH(1),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_ENGLISH_US
-};
-
-const unsigned char manufStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(24),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('y'),
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('-'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('f'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('G'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('b'),
-	USBStringDescriptor_UNICODE('H'),
-};
-
-const unsigned char productStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(10),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('2'),
-};
-
-const unsigned char snifferConfigStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(16),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('n'),
-	USBStringDescriptor_UNICODE('i'),
-	USBStringDescriptor_UNICODE('f'),
-	USBStringDescriptor_UNICODE('f'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE('r'),
-};
-
-const unsigned char CCIDConfigStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(13),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('C'),
-	USBStringDescriptor_UNICODE('C'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('D'),
-};
-
-const unsigned char phoneConfigStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(14),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('P'),
-	USBStringDescriptor_UNICODE('h'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('n'),
-	USBStringDescriptor_UNICODE('e'),
-};
-
-const unsigned char MITMConfigStringDescriptor[] = {
-
-	USBStringDescriptor_LENGTH(13),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('T'),
-	USBStringDescriptor_UNICODE('M'),
-};
-
-const unsigned char cardem_usim1_intf_str[] = {
-
-	USBStringDescriptor_LENGTH(18),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('C'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('d'),
-	USBStringDescriptor_UNICODE('E'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('u'),
-	USBStringDescriptor_UNICODE('l'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('U'),
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('1'),
-};
-
-const unsigned char cardem_usim2_intf_str[] = {
-
-	USBStringDescriptor_LENGTH(18),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('C'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('d'),
-	USBStringDescriptor_UNICODE('E'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('u'),
-	USBStringDescriptor_UNICODE('l'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('U'),
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('2'),
-};
-
+#include "usb_strings_generated.h"
 enum strDescNum {
 	PRODUCT_STRING = 1,
 	MANUF_STR,
@@ -234,19 +53,6 @@ enum strDescNum {
 	CARDEM_USIM1_INTF_STR,
 	CARDEM_USIM2_INTF_STR,
 	STRING_DESC_CNT
-};
-
-/** List of string descriptors used by the device */
-static const unsigned char *stringDescriptors[] = {
-	langDesc,
-	[PRODUCT_STRING] = productStringDescriptor,
-	[MANUF_STR] = manufStringDescriptor,
-	[SNIFFER_CONF_STR] = snifferConfigStringDescriptor,
-	[CCID_CONF_STR] = CCIDConfigStringDescriptor,
-	[PHONE_CONF_STR] = phoneConfigStringDescriptor,
-	[MITM_CONF_STR] = MITMConfigStringDescriptor,
-	[CARDEM_USIM1_INTF_STR] = cardem_usim1_intf_str,
-	[CARDEM_USIM2_INTF_STR] = cardem_usim2_intf_str,
 };
 
 /*------------------------------------------------------------------------------
@@ -776,8 +582,8 @@ static const USBDDriverDescriptors driverDescriptors = {
 	0,			/* No high-speed configuration descriptor */
 	0,			/* No high-speed device qualifier descriptor */
 	0,			/* No high-speed other speed configuration descriptor */
-	stringDescriptors,
-	STRING_DESC_CNT		/* cnt string descriptors in list */
+	usb_strings,
+	ARRAY_SIZE(usb_strings),/* cnt string descriptors in list */
 };
 
 /*----------------------------------------------------------------------------

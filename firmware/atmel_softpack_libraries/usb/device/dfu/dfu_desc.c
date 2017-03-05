@@ -85,114 +85,13 @@ const struct dfu_desc dfu_cfg_descriptor = {
 	.func_dfu = DFU_FUNC_DESC
 };
 
+#include "usb_strings_generated.h"
+
 #if 0
-#include "usb_strings.h"
-
-
-static const unsigned char *usb_strings[] = {
-	USB_STRINGS_GENERATED
-#ifdef BOARD_USB_SERIAL
-	NULL
-#endif
-};
-
 void set_usb_serial_str(const uint8_t *serial_usbstr)
 {
 	usb_strings[STR_SERIAL] = serial_usbstr;
 }
-#else
-static const unsigned char langDesc[] = {
-	USBStringDescriptor_LENGTH(1),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_ENGLISH_US
-};
-
-static const unsigned char manufStringDescriptor[] = {
-	USBStringDescriptor_LENGTH(24),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('y'),
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('o'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('-'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('f'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('.'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('G'),
-	USBStringDescriptor_UNICODE('m'),
-	USBStringDescriptor_UNICODE('b'),
-	USBStringDescriptor_UNICODE('H'),
-};
-
-static const unsigned char productStringDescriptor[] = {
-	USBStringDescriptor_LENGTH(10),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('S'),
-	USBStringDescriptor_UNICODE('I'),
-	USBStringDescriptor_UNICODE('M'),
-	USBStringDescriptor_UNICODE('t'),
-	USBStringDescriptor_UNICODE('r'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('c'),
-	USBStringDescriptor_UNICODE('e'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('2'),
-};
-
-
-static const unsigned char configStringDescriptor[] = {
-	USBStringDescriptor_LENGTH(3),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('D'),
-	USBStringDescriptor_UNICODE('F'),
-	USBStringDescriptor_UNICODE('U'),
-};
-
-static const unsigned char altRamStringDescriptor[] = {
-	USBStringDescriptor_LENGTH(3),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('R'),
-	USBStringDescriptor_UNICODE('A'),
-	USBStringDescriptor_UNICODE('M'),
-};
-
-static const unsigned char altAppStringDescriptor[] = {
-	USBStringDescriptor_LENGTH(11),
-	USBGenericDescriptor_STRING,
-	USBStringDescriptor_UNICODE('F'),
-	USBStringDescriptor_UNICODE('l'),
-	USBStringDescriptor_UNICODE('a'),
-	USBStringDescriptor_UNICODE('s'),
-	USBStringDescriptor_UNICODE('h'),
-	USBStringDescriptor_UNICODE(' '),
-	USBStringDescriptor_UNICODE('('),
-	USBStringDescriptor_UNICODE('A'),
-	USBStringDescriptor_UNICODE('p'),
-	USBStringDescriptor_UNICODE('p'),
-	USBStringDescriptor_UNICODE(')'),
-};
-
-/** List of string descriptors used by the device */
-static const unsigned char *usb_strings[] = {
-	langDesc,
-	[STR_MANUF] = manufStringDescriptor,
-	[STR_PROD] = productStringDescriptor,
-	[STR_CONFIG] = configStringDescriptor,
-	[_STR_FIRST_ALT] = altRamStringDescriptor,
-	[_STR_FIRST_ALT+1] = altAppStringDescriptor,
-};
 #endif
 
 static const USBConfigurationDescriptor *conf_desc_arr[] = {

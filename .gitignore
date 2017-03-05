@@ -19,3 +19,4 @@ tags
 *.p
 host/simtrace2-remsim
 host/simtrace2-remsim-usb2udp
+usb_strings_generated.h

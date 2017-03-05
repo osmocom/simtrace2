@@ -139,6 +139,7 @@ INCLUDES += -Ilibboard/common/include -Ilibboard/$(BOARD)/include
 INCLUDES += -Ilibcommon/include
 INCLUDES += -Ilibosmocore/include
 INCLUDES += -Isrc_simtrace -Iinclude
+INCLUDES += -Iapps/$(APP)
 
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
@@ -179,10 +180,16 @@ OUTPUT := $(BIN)/$(OUTPUT)
 #		Rules
 #-------------------------------------------------------------------------------
 
-all: $(BIN) $(OBJ) $(MEMORIES)
+all: apps/$(APP)/usb_strings_generated.h $(BIN) $(OBJ) $(MEMORIES)
 
 $(BIN) $(OBJ):
 	mkdir $@
+
+usbstring/usbstring: usbstring/usbstring.c
+	gcc $^ -o $@
+
+apps/$(APP)/usb_strings_generated.h: apps/$(APP)/usb_strings.txt usbstring/usbstring
+	cat $< | usbstring/usbstring > $@
 
 define RULES
 C_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(C_OBJECTS))

@@ -1,0 +1,5 @@
+sysmocom - s.f.m.c. GmbH
+SIMtrace 2 compatible device
+DFU (Device Firmare Upgrade)
+RAM
+Flash (Application Partition)

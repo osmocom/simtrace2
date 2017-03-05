@@ -157,6 +157,8 @@ int eeprom_write_byte(uint8_t slave, uint8_t addr, uint8_t byte)
 {
 	bool nack;
 
+	WDT_Restart(WDT);
+
 	/* Write slave address */
 	nack = i2c_write_byte(true, false, slave << 1);
 	if (nack)
@@ -179,6 +181,8 @@ out_stop:
 int eeprom_read_byte(uint8_t slave, uint8_t addr)
 {
 	bool nack;
+
+	WDT_Restart(WDT);
 
 	/* dummy write cycle */
 	nack = i2c_write_byte(true, false, slave << 1);

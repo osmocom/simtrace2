@@ -151,7 +151,6 @@ static int request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
 static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *data, uint8_t data_len_in)
 {
-	uint32_t data_len = data_len_in;
 	struct cardemu_usb_msg_tx_data *txd;
 	uint8_t buf[sizeof(*txd) + 1 + data_len_in];
 	txd = (struct cardemu_usb_msg_tx_data *) buf;
@@ -246,7 +245,7 @@ static int process_do_error(struct cardem_inst *ci, uint8_t *buf, int len)
 
 	printf("=> ERROR: %u/%u/%u: %s\n",
 		err->severity, err->subsystem, err->code,
-		err->msg_len ? err->msg : "");
+		err->msg_len ? (char *)err->msg : "");
 
 	return 0;
 }
@@ -256,7 +255,6 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	static struct apdu_context ac;
 	struct cardemu_usb_msg_rx_data *data;
-	const uint8_t sw_success[] = { 0x90, 0x00 };
 	int rc;
 
 	data = (struct cardemu_usb_msg_rx_data *) buf;
@@ -305,8 +303,6 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_hdr *sh = (struct cardemu_usb_msg_hdr *)buf;
-	uint8_t *payload;
-	int payload_len;
 	int rc;
 
 	printf("-> %s\n", osmo_hexdump(buf, len));
@@ -336,7 +332,7 @@ static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)
 static void print_welcome(void)
 {
 	printf("simtrace2-remsim - Remote SIM card forwarding\n"
-	       "(C) 2010-2016 by Harald Welte <laforge@gnumonks.org>\n\n");
+	       "(C) 2010-2017 by Harald Welte <laforge@gnumonks.org>\n\n");
 }
 
 static void print_help(void)
@@ -360,7 +356,7 @@ static const struct option opts[] = {
 static void run_mainloop(struct cardem_inst *ci)
 {
 	unsigned int msg_count, byte_count = 0;
-	char buf[16*265];
+	uint8_t buf[16*265];
 	int xfer_len;
 	int rc;
 

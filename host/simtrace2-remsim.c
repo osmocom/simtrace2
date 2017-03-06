@@ -337,15 +337,19 @@ static void print_welcome(void)
 
 static void print_help(void)
 {
-	printf( "\t-i\t--gsmtap-ip\tA.B.C.D\n"
-		"\t-a\t--skip-atr\n"
+	printf( "\t-r\t--remote-udp-host HOST\n"
+		"\t-p\t--remote-udp-port PORT\n"
 		"\t-h\t--help\n"
+		"\t-i\t--gsmtap-ip\tA.B.C.D\n"
+		"\t-a\t--skip-atr\n"
 		"\t-k\t--keep-running\n"
 		"\n"
 		);
 }
 
 static const struct option opts[] = {
+	{ "remote-udp-host", 1, 0, 'r' },
+	{ "remote-udp-port", 1, 0, 'p' },
 	{ "gsmtap-ip", 1, 0, 'i' },
 	{ "skip-atr", 0, 0, 'a' },
 	{ "help", 0, 0, 'h' },

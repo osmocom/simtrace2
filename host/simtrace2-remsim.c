@@ -1,6 +1,6 @@
 /* simtrace2-remsim - main program for the host PC
  *
- * (C) 2010-2016 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2010-2017 by Harald Welte <hwelte@hmw-consulting.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2 
@@ -48,12 +48,19 @@
 #include <osmocom/sim/sim.h>
 
 static struct gsmtap_inst *g_gti;
-struct libusb_device_handle *g_devh;
-const struct osim_cla_ins_card_profile *g_prof;
-static uint8_t g_in_ep;
-static uint8_t g_out_ep;
-static int g_udp_fd = -1;
-static struct osim_chan_hdl *g_chan;
+
+struct cardem_inst {
+	struct libusb_device_handle *usb_devh;
+	struct {
+		uint8_t in;
+		uint8_t out;
+		uint8_t irq_in;
+	} usb_ep;
+	const struct osim_cla_ins_card_profile *card_prof;
+
+	int udp_fd;
+	struct osim_chan_hdl *chan;
+};
 
 static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 {
@@ -93,7 +100,7 @@ static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
 #endif
 
 /*! \brief Transmit a given command to the SIMtrace2 device */
-static int tx_to_dev(uint8_t *buf, unsigned int len)
+static int tx_to_dev(struct cardem_inst *ci, uint8_t *buf, unsigned int len)
 {
 	struct cardemu_usb_msg_hdr *mh = (struct cardemu_usb_msg_hdr *) buf;
 	int xfer_len;
@@ -102,16 +109,16 @@ static int tx_to_dev(uint8_t *buf, unsigned int len)
 
 	printf("<- %s\n", osmo_hexdump(buf, len));
 
-	if (g_udp_fd < 0) {
-		return libusb_bulk_transfer(g_devh, g_out_ep, buf, len,
+	if (ci->udp_fd < 0) {
+		return libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.out, buf, len,
 					    &xfer_len, 100000);
 	} else {
-		return write(g_udp_fd, buf, len);
+		return write(ci->udp_fd, buf, len);
 	}
 }
 
 /*! \brief Request the SIMtrace2 to generate a card-insert signal */
-static int request_card_insert(bool inserted)
+static int request_card_insert(struct cardem_inst *ci, bool inserted)
 {
 	struct cardemu_usb_msg_cardinsert cins;
 
@@ -120,11 +127,11 @@ static int request_card_insert(bool inserted)
 	if (inserted)
 		cins.card_insert = 1;
 
-	return tx_to_dev((uint8_t *)&cins, sizeof(cins));
+	return tx_to_dev(ci, (uint8_t *)&cins, sizeof(cins));
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Rx */
-static int request_pb_and_rx(uint8_t pb, uint8_t le)
+static int request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
 {
 	struct cardemu_usb_msg_tx_data *txd;
 	uint8_t buf[sizeof(*txd) + 1];
@@ -138,11 +145,11 @@ static int request_pb_and_rx(uint8_t pb, uint8_t le)
 	txd->flags = CEMU_DATA_F_PB_AND_RX;
 	txd->data[0] = pb;
 
-	return tx_to_dev((uint8_t *)txd, sizeof(*txd)+txd->data_len);
+	return tx_to_dev(ci, (uint8_t *)txd, sizeof(*txd)+txd->data_len);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
-static int request_pb_and_tx(uint8_t pb, const uint8_t *data, uint8_t data_len_in)
+static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *data, uint8_t data_len_in)
 {
 	uint32_t data_len = data_len_in;
 	struct cardemu_usb_msg_tx_data *txd;
@@ -158,11 +165,11 @@ static int request_pb_and_tx(uint8_t pb, const uint8_t *data, uint8_t data_len_i
 	txd->data[0] = pb;
 	memcpy(txd->data+1, data, data_len_in);
 
-	return tx_to_dev(buf, sizeof(*txd)+txd->data_len);
+	return tx_to_dev(ci, buf, sizeof(*txd)+txd->data_len);
 }
 
 /*! \brief Request the SIMtrace2 to send a Status Word */
-static int request_sw_tx(const uint8_t *sw)
+static int request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 {
 	struct cardemu_usb_msg_tx_data *txd;
 	uint8_t buf[sizeof(*txd) + 2];
@@ -177,7 +184,7 @@ static int request_sw_tx(const uint8_t *sw)
 	txd->data[0] = sw[0];
 	txd->data[1] = sw[1];
 
-	return tx_to_dev((uint8_t *)txd, sizeof(*txd)+txd->data_len);
+	return tx_to_dev(ci, (uint8_t *)txd, sizeof(*txd)+txd->data_len);
 }
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
@@ -191,7 +198,7 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 	atr[atr_len-1] = csum;
 }
 
-static int request_set_atr(const uint8_t *atr, unsigned int atr_len)
+static int request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned int atr_len)
 {
 	struct cardemu_usb_msg_set_atr *satr;
 	uint8_t buf[sizeof(*satr) + atr_len];
@@ -204,11 +211,11 @@ static int request_set_atr(const uint8_t *atr, unsigned int atr_len)
 	satr->atr_len = atr_len;
 	memcpy(satr->atr, atr, atr_len);
 
-	return tx_to_dev((uint8_t *)satr, sizeof(buf));
+	return tx_to_dev(ci, (uint8_t *)satr, sizeof(buf));
 }
 
 /*! \brief Process a STATUS message from the SIMtrace2 */
-static int process_do_status(uint8_t *buf, int len)
+static int process_do_status(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_status *status;
 	status = (struct cardemu_usb_msg_status *) buf;
@@ -221,7 +228,7 @@ static int process_do_status(uint8_t *buf, int len)
 }
 
 /*! \brief Process a PTS indication message from the SIMtrace2 */
-static int process_do_pts(uint8_t *buf, int len)
+static int process_do_pts(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_pts_info *pts;
 	pts = (struct cardemu_usb_msg_pts_info *) buf;
@@ -232,7 +239,7 @@ static int process_do_pts(uint8_t *buf, int len)
 }
 
 /*! \brief Process a ERROR indication message from the SIMtrace2 */
-static int process_do_error(uint8_t *buf, int len)
+static int process_do_error(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_error *err;
 	err = (struct cardemu_usb_msg_error *) buf;
@@ -245,7 +252,7 @@ static int process_do_error(uint8_t *buf, int len)
 }
 
 /*! \brief Process a RX-DATA indication message from the SIMtrace2 */
-static int process_do_rx_da(uint8_t *buf, int len)
+static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	static struct apdu_context ac;
 	struct cardemu_usb_msg_rx_data *data;
@@ -262,7 +269,7 @@ static int process_do_rx_da(uint8_t *buf, int len)
 
 	if (rc & APDU_ACT_TX_CAPDU_TO_CARD) {
 		struct msgb *tmsg = msgb_alloc(1024, "TPDU");
-		struct osim_reader_hdl *rh = g_chan->card->reader;
+		struct osim_reader_hdl *rh = ci->chan->card->reader;
 		uint8_t *cur;
 
 		/* Copy TPDU header */
@@ -286,16 +293,16 @@ static int process_do_rx_da(uint8_t *buf, int len)
 		ac.sw[1] = msgb_apdu_sw(tmsg) & 0xff;
 		printf("SW=0x%04x, len_rx=%d\n", msgb_apdu_sw(tmsg), msgb_l3len(tmsg));
 		if (msgb_l3len(tmsg))
-			request_pb_and_tx(ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
-		request_sw_tx(ac.sw);
+			request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
+		request_sw_tx(ci, ac.sw);
 	} else if (ac.lc.tot > ac.lc.cur) {
-		request_pb_and_rx(ac.hdr.ins, ac.lc.tot - ac.lc.cur);
+		request_pb_and_rx(ci, ac.hdr.ins, ac.lc.tot - ac.lc.cur);
 	}
 	return 0;
 }
 
 /*! \brief Process an incoming message from the SIMtrace2 */
-static int process_usb_msg(uint8_t *buf, int len)
+static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_hdr *sh = (struct cardemu_usb_msg_hdr *)buf;
 	uint8_t *payload;
@@ -306,16 +313,16 @@ static int process_usb_msg(uint8_t *buf, int len)
 
 	switch (sh->msg_type) {
 	case CEMU_USB_MSGT_DO_STATUS:
-		rc = process_do_status(buf, len);
+		rc = process_do_status(ci, buf, len);
 		break;
 	case CEMU_USB_MSGT_DO_PTS:
-		rc = process_do_pts(buf, len);
+		rc = process_do_pts(ci, buf, len);
 		break;
 	case CEMU_USB_MSGT_DO_ERROR:
-		rc = process_do_error(buf, len);
+		rc = process_do_error(ci, buf, len);
 		break;
 	case CEMU_USB_MSGT_DO_RX_DATA:
-		rc = process_do_rx_da(buf, len);
+		rc = process_do_rx_da(ci, buf, len);
 		break;
 	default:
 		printf("unknown simtrace msg type 0x%02x\n", sh->msg_type);
@@ -350,7 +357,7 @@ static const struct option opts[] = {
 	{ NULL, 0, 0, 0 }
 };
 
-static void run_mainloop(void)
+static void run_mainloop(struct cardem_inst *ci)
 {
 	unsigned int msg_count, byte_count = 0;
 	char buf[16*265];
@@ -361,14 +368,15 @@ static void run_mainloop(void)
 
 	while (1) {
 		/* read data from SIMtrace2 device (local or via USB) */
-		if (g_udp_fd < 0) {
-			rc = libusb_bulk_transfer(g_devh, g_in_ep, buf, sizeof(buf), &xfer_len, 100000);
+		if (ci->udp_fd < 0) {
+			rc = libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.in,
+						  buf, sizeof(buf), &xfer_len, 100000);
 			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT) {
 				fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
 				return;
 			}
 		} else {
-			rc = read(g_udp_fd, buf, sizeof(buf));
+			rc = read(ci->udp_fd, buf, sizeof(buf));
 			if (rc <= 0) {
 				fprintf(stderr, "shor read from UDP\n");
 				return;
@@ -378,18 +386,20 @@ static void run_mainloop(void)
 		/* dispatch any incoming data */
 		if (xfer_len > 0) {
 			//printf("URB: %s\n", osmo_hexdump(buf, rc));
-			process_usb_msg(buf, xfer_len);
+			process_usb_msg(ci, buf, xfer_len);
 			msg_count++;
 			byte_count += xfer_len;
 		}
 	}
 }
 
+struct cardem_inst _ci, *ci = &_ci;
+
 static void signal_handler(int signal)
 {
 	switch (signal) {
 	case SIGINT:
-		request_card_insert(false);
+		request_card_insert(ci, false);
 		exit(0);
 		break;
 	default:
@@ -444,7 +454,10 @@ int main(int argc, char **argv)
 		}
 	}
 
-	g_prof = &osim_uicc_sim_cic_profile;
+	memset(ci, 0, sizeof(*ci));
+	ci->udp_fd = -1;
+
+	ci->card_prof = &osim_uicc_sim_cic_profile;
 
 	if (!remote_udp_host) {
 		rc = libusb_init(NULL);
@@ -453,9 +466,9 @@ int main(int argc, char **argv)
 			goto do_exit;
 		}
 	} else {
-		g_udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP, remote_udp_host,
-					  remote_udp_port+if_num, OSMO_SOCK_F_CONNECT);
-		if (g_udp_fd < 0) {
+		ci->udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP, remote_udp_host,
+					   remote_udp_port+if_num, OSMO_SOCK_F_CONNECT);
+		if (ci->udp_fd < 0) {
 			fprintf(stderr, "error binding UDP port\n");
 			goto do_exit;
 		}
@@ -480,8 +493,8 @@ int main(int argc, char **argv)
 		goto close_exit;
 	}
 
-	g_chan = llist_entry(card->channels.next, struct osim_chan_hdl, list);
-	if (!g_chan) {
+	ci->chan = llist_entry(card->channels.next, struct osim_chan_hdl, list);
+	if (!ci->chan) {
 		perror("SIM card has no channel?!?");
 		goto close_exit;
 	}
@@ -489,47 +502,48 @@ int main(int argc, char **argv)
 	signal(SIGINT, &signal_handler);
 
 	do {
-		if (g_udp_fd < 0) {
-			g_devh = libusb_open_device_with_vid_pid(NULL, SIMTRACE_USB_VENDOR, SIMTRACE_USB_PRODUCT);
-			if (!g_devh) {
+		if (ci->udp_fd < 0) {
+			ci->usb_devh = libusb_open_device_with_vid_pid(NULL, SIMTRACE_USB_VENDOR, 0x4004);
+			if (!ci->usb_devh) {
 				fprintf(stderr, "can't open USB device\n");
 				goto close_exit;
 			}
 
-			rc = libusb_claim_interface(g_devh, if_num);
+			rc = libusb_claim_interface(ci->usb_devh, if_num);
 			if (rc < 0) {
 				fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
 				goto close_exit;
 			}
 
-			rc = get_usb_ep_addrs(g_devh, if_num, &g_out_ep, &g_in_ep, NULL);
+			rc = get_usb_ep_addrs(ci->usb_devh, if_num, &ci->usb_ep.out,
+					      &ci->usb_ep.in, &ci->usb_ep.irq_in);
 			if (rc < 0) {
 				fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
 				goto close_exit;
 			}
 		}
 
-		request_card_insert(true);
+		request_card_insert(ci, true);
 		uint8_t real_atr[] = { 0x3B, 0x9F, 0x96, 0x80, 0x1F, 0xC7, 0x80, 0x31,
 					     0xA0, 0x73, 0xBE, 0x21, 0x13, 0x67, 0x43, 0x20,
 					     0x07, 0x18, 0x00, 0x00, 0x01, 0xA5 };
 		atr_update_csum(real_atr, sizeof(real_atr));
-		request_set_atr(real_atr, sizeof(real_atr));
+		request_set_atr(ci, real_atr, sizeof(real_atr));
 
-		run_mainloop();
+		run_mainloop(ci);
 		ret = 0;
 
-		if (g_udp_fd < 0)
-			libusb_release_interface(g_devh, 0);
+		if (ci->udp_fd < 0)
+			libusb_release_interface(ci->usb_devh, 0);
 close_exit:
-		if (g_devh)
-			libusb_close(g_devh);
+		if (ci->usb_devh)
+			libusb_close(ci->usb_devh);
 		if (keep_running)
 			sleep(1);
 	} while (keep_running);
 
 release_exit:
-	if (g_udp_fd < 0)
+	if (ci->udp_fd < 0)
 		libusb_exit(NULL);
 do_exit:
 	return ret;

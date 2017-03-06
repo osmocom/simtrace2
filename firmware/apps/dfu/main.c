@@ -177,10 +177,9 @@ extern int main(void)
 	uint8_t isUsbConnected = 0;
 	unsigned int i = 0;
 
-	LED_Configure(LED_NUM_RED);
-	LED_Configure(LED_NUM_GREEN);
-	LED_Set(LED_NUM_RED);
-
+	led_init();
+	led_blink(LED_GREEN, BLINK_3O_30F);
+	led_blink(LED_RED, BLINK_3O_30F);
 
 	/* Enable watchdog for 500ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
@@ -243,8 +242,6 @@ extern int main(void)
 			}
 		} else if (isUsbConnected == 0) {
 			TRACE_INFO("USB is now configured\n\r");
-			LED_Set(LED_NUM_GREEN);
-			LED_Clear(LED_NUM_RED);
 
 			isUsbConnected = 1;
 		}

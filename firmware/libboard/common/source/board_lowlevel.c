@@ -127,9 +127,9 @@ extern WEAK void LowLevelInit( void )
 	    	      SUPC_SMMR_SMRSTEN_ENABLE;
 
     /* enable both LED and green LED */
-    PIOA->PIO_PER |= LED_RED | LED_GREEN;
-    PIOA->PIO_OER |= LED_RED | LED_GREEN;
-    PIOA->PIO_CODR |= LED_RED | LED_GREEN;
+    PIOA->PIO_PER |= PIO_LED_RED | PIO_LED_GREEN;
+    PIOA->PIO_OER |= PIO_LED_RED | PIO_LED_GREEN;
+    PIOA->PIO_CODR |= PIO_LED_RED | PIO_LED_GREEN;
 
     /* Set 3 FWS for Embedded Flash Access */
     EFC->EEFC_FMR = EEFC_FMR_FWS(3);
@@ -169,7 +169,7 @@ extern WEAK void LowLevelInit( void )
 #endif
 
     /* disable the red LED after main clock initialization */
-    PIOA->PIO_SODR = LED_RED;
+    PIOA->PIO_SODR = PIO_LED_RED;
 
     /* "switch" to main clock as master clock source (should already be the case */
     PMC->PMC_MCKR = (PMC->PMC_MCKR & ~(uint32_t)PMC_MCKR_CSS_Msk) | PMC_MCKR_CSS_MAIN_CLK;

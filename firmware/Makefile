@@ -95,7 +95,7 @@ C_OSMOCORE = $(notdir $(wildcard libosmocore/source/*.c))
 C_LIBCHIP  = $(notdir $(wildcard $(AT91LIB)/libchip_sam3s/source/*.c) $(wildcard $(AT91LIB)/libchip_sam3s/cmsis/*.c))
 
 C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.c USBDDriverCallbacks.c
-C_LIBUSB_RT  = dfu.c dfu_desc.c dfu_runtime.c
+C_LIBUSB_RT  = dfu.c dfu_runtime.c
 C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
 C_LIBCOMMON  = string.c stdio.c fputs.c req_ctx.c ringbuffer.c
 

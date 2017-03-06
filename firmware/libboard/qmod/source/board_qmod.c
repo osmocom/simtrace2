@@ -19,6 +19,9 @@ static const Pin pin_peer_erase = {PIO_PA11, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DE
 static const Pin pin_conn_usim1 = {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 static const Pin pin_conn_usim2 = {PIO_PA28, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 
+/* array of generated USB Strings */
+extern unsigned char *usb_strings[];
+
 static void qmod_use_physical_sim(unsigned int nr, int physical)
 {
 	const Pin *pin;
@@ -230,6 +233,11 @@ void board_main_top(void)
 		TRACE_INFO("Detected Quad-Modem ST12\n\r");
 	} else {
 		TRACE_INFO("Detected Quad-Modem ST34\n\r");
+		/* make sure we use the second set of USB Strings
+		 * calling the interfaces "Modem 3" and "Modem 4" rather
+		 * than 1+2 */
+		usb_strings[7] = usb_strings[9];
+		usb_strings[8] = usb_strings[10];
 	}
 
 	/* Obtain the circuit board version (currently just prints voltage */

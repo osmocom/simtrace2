@@ -4,5 +4,7 @@ SIMtrace Sniffer
 SIMtrace CCID
 SIMtrace Phone
 SIMtrace MITM
-CardEmulator USIM1
-CardEmulator USIM2
+CardEmulator Modem 1
+CardEmulator Modem 2
+CardEmulator Modem 3
+CardEmulator Modem 4

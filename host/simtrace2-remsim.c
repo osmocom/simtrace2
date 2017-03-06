@@ -35,6 +35,7 @@
 
 #include <libusb.h>
 
+#include "libusb_util.h"
 #include "simtrace.h"
 #include "cardemu_prot.h"
 #include "apdu_dispatch.h"
@@ -343,6 +344,12 @@ static void print_help(void)
 		"\t-i\t--gsmtap-ip\tA.B.C.D\n"
 		"\t-a\t--skip-atr\n"
 		"\t-k\t--keep-running\n"
+		"\t-V\t--usb-vendor\tVENDOR_ID\n"
+		"\t-P\t--usb-product\tPRODUCT_ID\n"
+		"\t-C\t--usb-config\tCONFIG_ID\n"
+		"\t-I\t--usb-interface\tINTERFACE_ID\n"
+		"\t-S\t--usb-altsetting ALTSETTING_ID\n"
+		"\t-A\t--usb-address\tADDRESS\n"
 		"\n"
 		);
 }
@@ -354,6 +361,12 @@ static const struct option opts[] = {
 	{ "skip-atr", 0, 0, 'a' },
 	{ "help", 0, 0, 'h' },
 	{ "keep-running", 0, 0, 'k' },
+	{ "usb-vendor", 1, 0, 'V' },
+	{ "usb-product", 1, 0, 'P' },
+	{ "usb-config", 1, 0, 'C' },
+	{ "usb-interface", 1, 0, 'I' },
+	{ "usb-altsetting", 1, 0, 'S' },
+	{ "usb-address", 1, 0, 'A' },
 	{ NULL, 0, 0, 0 }
 };
 
@@ -415,7 +428,8 @@ int main(int argc, char **argv)
 	int skip_atr = 0;
 	int keep_running = 0;
 	int remote_udp_port = 52342;
-	int if_num = 0;
+	int if_num = 0, vendor_id = -1, product_id = -1;
+	int config_id = -1, altsetting = 0, addr = -1;
 	char *remote_udp_host = NULL;
 	struct osim_reader_hdl *reader;
 	struct osim_card_hdl *card;
@@ -425,7 +439,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:I:ak", opts, &option_index);
+		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:ak", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -442,16 +456,36 @@ int main(int argc, char **argv)
 		case 'i':
 			gsmtap_host = optarg;
 			break;
-		case 'I':
-			if_num = atoi(optarg);
-			break;
 		case 'a':
 			skip_atr = 1;
 			break;
 		case 'k':
 			keep_running = 1;
 			break;
+		case 'V':
+			vendor_id = strtol(optarg, NULL, 16);
+			break;
+		case 'P':
+			product_id = strtol(optarg, NULL, 16);
+			break;
+		case 'C':
+			config_id = atoi(optarg);
+			break;
+		case 'I':
+			if_num = atoi(optarg);
+			break;
+		case 'S':
+			altsetting = atoi(optarg);
+			break;
+		case 'A':
+			addr = atoi(optarg);
+			break;
 		}
+	}
+
+	if (!remote_udp_host && (vendor_id < 0 || product_id < 0)) {
+		fprintf(stderr, "You have to specify the vendor and product ID\n");
+		goto do_exit;
 	}
 
 	memset(ci, 0, sizeof(*ci));
@@ -503,7 +537,14 @@ int main(int argc, char **argv)
 
 	do {
 		if (ci->udp_fd < 0) {
-			ci->usb_devh = libusb_open_device_with_vid_pid(NULL, SIMTRACE_USB_VENDOR, 0x4004);
+			struct usb_interface_match _ifm, *ifm = &_ifm;
+			ifm->vendor = vendor_id;
+			ifm->product = product_id;
+			ifm->configuration = config_id;
+			ifm->interface = if_num;
+			ifm->altsetting = altsetting;
+			ifm->addr = addr;
+			ci->usb_devh = usb_open_claim_interface(NULL, ifm);
 			if (!ci->usb_devh) {
 				fprintf(stderr, "can't open USB device\n");
 				goto close_exit;

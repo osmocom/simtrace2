@@ -1,4 +1,5 @@
 LDFLAGS=`pkg-config --libs libusb-1.0 libosmocore` -losmocore
+CFLAGS=-Wall -g
 
 all: simtrace2-remsim simtrace2-remsim-usb2udp
 

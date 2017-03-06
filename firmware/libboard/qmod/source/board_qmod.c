@@ -16,6 +16,33 @@ static const Pin pin_1234_detect = {PIO_PA14, PIOA, ID_PIOA, PIO_INPUT, PIO_PULL
 static const Pin pin_peer_rst = {PIO_PA0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 static const Pin pin_peer_erase = {PIO_PA11, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
+static const Pin pin_conn_usim1 = {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+static const Pin pin_conn_usim2 = {PIO_PA28, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+
+static void qmod_use_physical_sim(unsigned int nr, int physical)
+{
+	const Pin *pin;
+
+	TRACE_INFO("Modem %d: %s SIM\n\r", nr,
+		   physical ? "physical" : "virtual");
+
+	switch (nr) {
+	case 1:
+		pin = &pin_conn_usim1;
+		break;
+	case 2:
+		pin = &pin_conn_usim2;
+		break;
+	default:
+		TRACE_ERROR("Invalid SIM%u\n\r", nr);
+		return;
+	}
+
+	if (physical)
+		PIO_Set(pin);
+	else
+		PIO_Clear(pin);
+}
 
 static int qmod_sam3_is_12(void)
 {
@@ -171,6 +198,12 @@ void board_exec_dbg_cmd(int ch)
 		printf("Resetting Modem 2 (of this SAM3)\n\r");
 		wwan_perst_do_reset(2);
 		break;
+	case '!':
+		qmod_use_physical_sim(1, 0);
+		break;
+	case '@':
+		qmod_use_physical_sim(2, 0);
+		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);
 		break;
@@ -189,6 +222,8 @@ void board_main_top(void)
 	PIO_Configure(&pin_1234_detect, 1);
 	PIO_Configure(&pin_peer_rst, 1);
 	PIO_Configure(&pin_peer_erase, 1);
+	PIO_Configure(&pin_conn_usim1, 1);
+	PIO_Configure(&pin_conn_usim2, 1);
 	i2c_pin_init();
 
 	if (qmod_sam3_is_12()) {

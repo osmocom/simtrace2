@@ -17,6 +17,7 @@ tags
 *.size
 *.bin
 *.p
+host/simtrace2-list
 host/simtrace2-remsim
 host/simtrace2-remsim-usb2udp
 usb_strings_generated.h

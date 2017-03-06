@@ -4,6 +4,8 @@
 #include "usb/common/dfu/usb_dfu.h"
 #include "manifest.h"
 
+#include <osmocom/core/timer.h>
+
 #define ALTIF_RAM 0
 #define ALTIF_FLASH 1
 
@@ -178,9 +180,11 @@ extern int main(void)
 	unsigned int i = 0;
 	uint32_t reset_cause = (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos;
 
+#if 0
 	led_init();
 	led_blink(LED_GREEN, BLINK_3O_30F);
 	led_blink(LED_RED, BLINK_3O_30F);
+#endif
 
 	/* Enable watchdog for 500ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
@@ -237,8 +241,10 @@ extern int main(void)
 		putchar(rotor[i++ % ARRAY_SIZE(rotor)]);
 #endif
 		check_exec_dbg_cmd();
-		//osmo_timers_prepare();
-		//osmo_timers_update();
+#if 0
+		osmo_timers_prepare();
+		osmo_timers_update();
+#endif
 
 		if (USBD_GetState() < USBD_STATE_CONFIGURED) {
 

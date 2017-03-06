@@ -22,6 +22,7 @@
  */
 
 #include <board.h>
+#include <assert.h>
 #include <core_cm3.h>
 
 #include <usb/include/USBD.h>
@@ -67,6 +68,26 @@ static void __dfufunc handle_getstate(void)
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }
 
+static const uint8_t *get_dfu_func_desc(void)
+{
+	USBDDriver *usbdDriver = USBD_GetDriver();
+	const USBConfigurationDescriptor *cfg_desc;
+	const USBGenericDescriptor *gen_desc;
+
+	if (USBD_IsHighSpeed())
+		cfg_desc = &usbdDriver->pDescriptors->pHsConfiguration[usbdDriver->cfgnum];
+	else
+		cfg_desc = usbdDriver->pDescriptors->pFsConfiguration[usbdDriver->cfgnum];
+
+	for (gen_desc = (const USBGenericDescriptor *) cfg_desc;
+	     (const uint8_t *) gen_desc < (const uint8_t *) cfg_desc + cfg_desc->wTotalLength;
+	     gen_desc = (const USBGenericDescriptor *) ((const uint8_t *)gen_desc + gen_desc->bLength)) {
+		if (gen_desc->bDescriptorType == USB_DT_DFU)
+			return (const uint8_t *) gen_desc;
+	}
+	return NULL;
+}
+
 static void TerminateCtrlInWithNull(void *pArg,
                                     unsigned char status,
                                     unsigned long int transferred,
@@ -100,7 +121,10 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 	    USBGetDescriptorRequest_GetDescriptorType(request) == USB_DT_DFU) {
 		uint16_t length = sizeof(struct usb_dfu_func_descriptor);
 		const USBDeviceDescriptor *pDevice;
+		const uint8_t *dfu_func_desc = get_dfu_func_desc();
 		int terminateWithNull;
+
+		ASSERT(dfu_func_desc);
 
 		if (USBD_IsHighSpeed())
 			pDevice = usbdDriver->pDescriptors->pHsDevice;
@@ -108,7 +132,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 			pDevice = usbdDriver->pDescriptors->pFsDevice;
 
 		terminateWithNull = ((length % pDevice->bMaxPacketSize0) == 0);
-		USBD_Write(0, &dfu_cfg_descriptor.func_dfu, length,
+		USBD_Write(0, dfu_func_desc, length,
 			   terminateWithNull ? TerminateCtrlInWithNull : 0, 0);
 		return;
 	}

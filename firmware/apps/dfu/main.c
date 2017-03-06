@@ -176,6 +176,7 @@ extern int main(void)
 {
 	uint8_t isUsbConnected = 0;
 	unsigned int i = 0;
+	uint32_t reset_cause = (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos;
 
 	led_init();
 	led_blink(LED_GREEN, BLINK_3O_30F);
@@ -201,7 +202,11 @@ extern int main(void)
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
-	TRACE_INFO("Reset Cause: 0x%x\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+	TRACE_INFO("Reset Cause: 0x%x\n\r", reset_cause);
+
+	/* clear g_dfu on power-up reset */
+	if (reset_cause == 0)
+		memset(g_dfu, 0, sizeof(*g_dfu));
 
 	board_main_top();
 

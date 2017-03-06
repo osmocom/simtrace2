@@ -74,7 +74,7 @@ typedef struct _SIMTraceDriverConfigurationDescriptorSniffer {
 static const SIMTraceDriverConfigurationDescriptorSniffer
 				configurationDescriptorSniffer = {
 	/* Standard configuration descriptor */
-	{
+	.configuration = {
 		.bLength 		= sizeof(USBConfigurationDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
 		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorSniffer),
@@ -85,7 +85,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.bMaxPower		= USBConfigurationDescriptor_POWER(100),
 	},
 	/* Communication class interface standard descriptor */
-	{
+	.sniffer = {
 		.bLength = sizeof(USBInterfaceDescriptor),
 		.bDescriptorType 	= USBGenericDescriptor_INTERFACE,
 		.bInterfaceNumber	= 0,
@@ -97,7 +97,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.iInterface		= SNIFFER_CONF_STR,
 	},
 	/* Bulk-OUT endpoint standard descriptor */
-	{
+	.sniffer_dataOut = {
 		.bLength 		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
@@ -110,7 +110,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.bInterval		= 0,
 	},
 	/* Bulk-IN endpoint descriptor */
-	{
+	.sniffer_dataIn = {
 		.bLength		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
@@ -123,7 +123,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.bInterval		= 0,
 	},
 	// Notification endpoint descriptor
-	{
+	.sniffer_interruptIn = {
 		.bLength		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
@@ -258,111 +258,117 @@ typedef struct _SIMTraceDriverConfigurationDescriptorPhone {
 static const SIMTraceDriverConfigurationDescriptorPhone
 				configurationDescriptorPhone = {
 	/* Standard configuration descriptor */
-	{
-		sizeof(USBConfigurationDescriptor),
-		USBGenericDescriptor_CONFIGURATION,
-		sizeof(SIMTraceDriverConfigurationDescriptorPhone),
+	.configuration = {
+		.bLength		= sizeof(USBConfigurationDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
+		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorPhone),
 #ifdef CARDEMU_SECOND_UART
-		2+DFURT_NUM_IF,
+		.bNumInterfaces		= 2+DFURT_NUM_IF,
 #else
-		1+DFURT_NUM_IF,	/* There is one interface in this configuration */
+		.bNumInterefaces	= 1+DFURT_NUM_IF,
 #endif
-		CFG_NUM_PHONE,		/* configuration number */
-		PHONE_CONF_STR,	/* string descriptor for this configuration */
-		USBD_BMATTRIBUTES,
-		USBConfigurationDescriptor_POWER(100)
+		.bConfigurationValue	= CFG_NUM_PHONE,
+		.iConfiguration		= PHONE_CONF_STR,
+		.bmAttributes		= USBD_BMATTRIBUTES,
+		.bMaxPower		= USBConfigurationDescriptor_POWER(100)
 	},
 	/* Communication class interface standard descriptor */
-	{
-		sizeof(USBInterfaceDescriptor),
-		USBGenericDescriptor_INTERFACE,
-		0,	/* This is interface #0 */
-		0,	/* This is alternate setting #0 for this interface */
-		3,	/* Number of endpoints */
-		0xff,	/* Descriptor Class: Vendor specific */
-		0,	/* No subclass */
-		0,	/* No l */
-		CARDEM_USIM1_INTF_STR
+	.phone = {
+		.bLength		= sizeof(USBInterfaceDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_INTERFACE,
+		.bInterfaceNumber	= 0,
+		.bAlternateSetting	= 0,
+		.bNumEndpoints		= 3,
+		.bInterfaceClass	= 0xff,
+		.bInterfaceSubClass	= 0,
+		.bInterfaceProtocol	= 0,
+		.iInterface		= CARDEM_USIM1_INTF_STR,
 	},
 	/* Bulk-OUT endpoint standard descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-					      PHONE_DATAOUT),
-		USBEndpointDescriptor_BULK,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
-		    USBEndpointDescriptor_MAXBULKSIZE_FS),
-		0	/* Must be 0 for full-speed bulk endpoints */
+	.phone_dataOut = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_OUT,
+						PHONE_DATAOUT),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0	/* Must be 0 for full-speed bulk endpoints */
 	},
 	/* Bulk-IN endpoint descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-					      PHONE_DATAIN),
-		USBEndpointDescriptor_BULK,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
-		USBEndpointDescriptor_MAXBULKSIZE_FS),
-		0	/* Must be 0 for full-speed bulk endpoints */
+	.phone_dataIn = {
+		.bLength 		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						PHONE_DATAIN),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0	/* Must be 0 for full-speed bulk endpoints */
 	},
 	/* Notification endpoint descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-					      PHONE_INT),
-		USBEndpointDescriptor_INTERRUPT,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
-		USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
-		0x10
+	.phone_interruptIn = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						PHONE_INT),
+		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
+					      USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+		.bInterval		= 0x10
 	},
 #ifdef CARDEMU_SECOND_UART
 	/* Communication class interface standard descriptor */
-	{
-		sizeof(USBInterfaceDescriptor),
-		USBGenericDescriptor_INTERFACE,
-		1,	/* This is interface #1 */
-		0,	/* This is alternate setting #0 for this interface */
-		3,	/* Number of endpoints */
-		0xff,	/* Descriptor Class: Vendor specific */
-		0,	/* No subclass */
-		0,	/* No l */
-		CARDEM_USIM2_INTF_STR
+	.usim2 = {
+		.bLength		= sizeof(USBInterfaceDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_INTERFACE,
+		.bInterfaceNumber	= 1,
+		.bAlternateSetting	= 0,
+		.bNumEndpoints		= 3,
+		.bInterfaceClass	= 0xff,
+		.bInterfaceSubClass	= 0,
+		.bInterfaceProtocol	= 0,
+		.iInterface		= CARDEM_USIM2_INTF_STR,
 	},
 	/* Bulk-OUT endpoint standard descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-					      CARDEM_USIM2_DATAOUT),
-		USBEndpointDescriptor_BULK,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAOUT),
-		    USBEndpointDescriptor_MAXBULKSIZE_FS),
-		0	/* Must be 0 for full-speed bulk endpoints */
+	.usim2_dataOut = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_OUT,
+						CARDEM_USIM2_DATAOUT),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAOUT),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0	/* Must be 0 for full-speed bulk endpoints */
 	}
 	,
 	/* Bulk-IN endpoint descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-					      CARDEM_USIM2_DATAIN),
-		USBEndpointDescriptor_BULK,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAIN),
-		    USBEndpointDescriptor_MAXBULKSIZE_FS),
-		0	/* Must be 0 for full-speed bulk endpoints */
+	.usim2_dataIn = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						CARDEM_USIM2_DATAIN),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_DATAIN),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0	/* Must be 0 for full-speed bulk endpoints */
 	},
 	/* Notification endpoint descriptor */
-	{
-		sizeof(USBEndpointDescriptor),
-		USBGenericDescriptor_ENDPOINT,
-		USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-					      CARDEM_USIM2_INT),
-		USBEndpointDescriptor_INTERRUPT,
-		MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_INT),
-		    USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
-		0x10
+	.usim2_interruptIn = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						CARDEM_USIM2_INT),
+		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(CARDEM_USIM2_INT),
+					      USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+		.bInterval		= 0x10,
 	},
 	DFURT_IF_DESCRIPTOR(2, 0),
 #else
@@ -397,20 +403,20 @@ typedef struct _SIMTraceDriverConfigurationDescriptorMITM {
 static const SIMTraceDriverConfigurationDescriptorMITM
 				configurationDescriptorMITM = {
 	/* Standard configuration descriptor */
-	{
-		sizeof(USBConfigurationDescriptor),
-		USBGenericDescriptor_CONFIGURATION,
-		sizeof(SIMTraceDriverConfigurationDescriptorMITM),
-		2+DFURT_NUM_IF,	/* There are two interfaces in this configuration */
-		CFG_NUM_MITM,	/* configuration number */
-		MITM_CONF_STR,	/* string descriptor for this configuration */
-		USBD_BMATTRIBUTES,
-		USBConfigurationDescriptor_POWER(100)
+	.configuration = {
+		.bLength		= sizeof(USBConfigurationDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
+		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorMITM),
+		.bNumInterfaces		= 2+DFURT_NUM_IF,
+		.bConfigurationValue	= CFG_NUM_MITM,
+		.iConfiguration		= MITM_CONF_STR,
+		.bmAttributes		= USBD_BMATTRIBUTES,
+		.bMaxPower		= USBConfigurationDescriptor_POWER(100),
 	},
 	// CCID interface descriptor
 	// Table 4.3-1 Interface Descriptor
 	// Interface descriptor
-	{
+	.simcard = {
 		.bLength		= sizeof(USBInterfaceDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_INTERFACE,
 		.bInterfaceNumber	= 0,
@@ -421,7 +427,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bInterfaceProtocol	= 0,
 		.iInterface		= CCID_CONF_STR,
 	},
-	{
+	.ccid = {
 		.bLength		= sizeof(CCIDDescriptor),
 		.bDescriptorType	= CCID_DECRIPTOR_TYPE,
 		.bcdCCID		= CCID1_10,	// CCID version
@@ -450,7 +456,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bMaxCCIDBusySlots	= 1,
 	},
 	// Bulk-OUT endpoint descriptor
-	{
+	.simcard_dataOut = {
 		.bLength		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	=
@@ -463,7 +469,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bInterval		= 0x00,
 	},
 	// Bulk-IN endpoint descriptor
-	{
+	.simcard_dataIn = {
 		.bLength		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	=
@@ -476,7 +482,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bInterval		= 0x00,
 	},
 	// Notification endpoint descriptor
-	{
+	.simcard_interruptIn = {
 		.bLength		= sizeof(USBEndpointDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
 		.bEndpointAddress	=
@@ -490,51 +496,53 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 	},
 
 	/* Communication class interface standard descriptor */
-	{
-	 sizeof(USBInterfaceDescriptor),
-	 USBGenericDescriptor_INTERFACE,
-	 1,			/* This is interface #1 */
-	 0,			/* This is alternate setting #0 for this interface */
-	 3,			/* Number of endpoints */
-	 0xff,
-	 0,
-	 0,
-	 PHONE_CONF_STR,	/* string descriptor for this interface */
-	 }
-	,
+	.phone = {
+		.bLength		= sizeof(USBInterfaceDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_INTERFACE,
+		.bInterfaceNumber	= 1,
+		.bAlternateSetting	= 0,
+		.bNumEndpoints		= 3,
+		.bInterfaceClass	= 0xff,
+		.bInterfaceSubClass	= 0,
+		.bInterfaceProtocol	= 0,
+		.iInterface		= PHONE_CONF_STR,
+	},
 	/* Bulk-OUT endpoint standard descriptor */
-	{
-	 sizeof(USBEndpointDescriptor),
-	 USBGenericDescriptor_ENDPOINT,
-	 USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_OUT,
-				       PHONE_DATAOUT),
-	 USBEndpointDescriptor_BULK,
-	 MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
-	     USBEndpointDescriptor_MAXBULKSIZE_FS),
-	 0			/* Must be 0 for full-speed bulk endpoints */
-	 }
-	,
+	.phone_dataOut = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_OUT,
+						PHONE_DATAOUT),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAOUT),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0, /* Must be 0 for full-speed bulk endpoints */
+	},
 	/* Bulk-IN endpoint descriptor */
-	{
-	 sizeof(USBEndpointDescriptor),
-	 USBGenericDescriptor_ENDPOINT,
-	 USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN,
-				       PHONE_DATAIN),
-	 USBEndpointDescriptor_BULK,
-	 MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
-	     USBEndpointDescriptor_MAXBULKSIZE_FS),
-	 0			/* Must be 0 for full-speed bulk endpoints */
-	 }
-	,
+	.phone_dataIn = {
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						PHONE_DATAIN),
+		.bmAttributes		= USBEndpointDescriptor_BULK,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_DATAIN),
+					      USBEndpointDescriptor_MAXBULKSIZE_FS),
+		.bInterval		= 0, /* Must be 0 for full-speed bulk endpoints */
+	},
 	/* Notification endpoint descriptor */
 	{
-	 sizeof(USBEndpointDescriptor),
-	 USBGenericDescriptor_ENDPOINT,
-	 USBEndpointDescriptor_ADDRESS(USBEndpointDescriptor_IN, PHONE_INT),
-	 USBEndpointDescriptor_INTERRUPT,
-	 MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
-	     USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
-	 0x10},
+		.bLength		= sizeof(USBEndpointDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_ENDPOINT,
+		.bEndpointAddress	= USBEndpointDescriptor_ADDRESS(
+						USBEndpointDescriptor_IN,
+						PHONE_INT),
+		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
+		.wMaxPacketSize		= MIN(BOARD_USB_ENDPOINTS_MAXPACKETSIZE(PHONE_INT),
+					      USBEndpointDescriptor_MAXINTERRUPTSIZE_FS),
+		.bInterval		= 0x10
+	},
 	DFURT_IF_DESCRIPTOR(2, 0),
 };
 #endif /* HAVE_CARDEM */

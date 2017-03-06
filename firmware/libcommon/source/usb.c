@@ -39,6 +39,9 @@
 #include <usb/common/dfu/usb_dfu.h>
 #include <usb/device/dfu/dfu.h>
 
+#define SIMTRACE_SUBCLASS_SNIFFER	1
+#define SIMTRACE_SUBCLASS_CARDEM	2
+
 /*------------------------------------------------------------------------------
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
@@ -92,7 +95,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 		.bAlternateSetting	= 0,
 		.bNumEndpoints		= 3,
 		.bInterfaceClass	= 0xff,
-		.bInterfaceSubClass	= 0,
+		.bInterfaceSubClass	= SIMTRACE_SUBCLASS_SNIFFER,
 		.bInterfaceProtocol	= 0,
 		.iInterface		= SNIFFER_CONF_STR,
 	},
@@ -280,7 +283,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 		.bAlternateSetting	= 0,
 		.bNumEndpoints		= 3,
 		.bInterfaceClass	= 0xff,
-		.bInterfaceSubClass	= 0,
+		.bInterfaceSubClass	= SIMTRACE_SUBCLASS_CARDEM,
 		.bInterfaceProtocol	= 0,
 		.iInterface		= CARDEM_USIM1_INTF_STR,
 	},
@@ -329,7 +332,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 		.bAlternateSetting	= 0,
 		.bNumEndpoints		= 3,
 		.bInterfaceClass	= 0xff,
-		.bInterfaceSubClass	= 0,
+		.bInterfaceSubClass	= SIMTRACE_SUBCLASS_CARDEM,
 		.bInterfaceProtocol	= 0,
 		.iInterface		= CARDEM_USIM2_INTF_STR,
 	},
@@ -503,7 +506,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bAlternateSetting	= 0,
 		.bNumEndpoints		= 3,
 		.bInterfaceClass	= 0xff,
-		.bInterfaceSubClass	= 0,
+		.bInterfaceSubClass	= SIMTRAC_SUBCLASS_CARDEM,
 		.bInterfaceProtocol	= 0,
 		.iInterface		= PHONE_CONF_STR,
 	},

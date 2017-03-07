@@ -16,8 +16,8 @@ static const Pin pin_1234_detect = {PIO_PA14, PIOA, ID_PIOA, PIO_INPUT, PIO_PULL
 static const Pin pin_peer_rst = {PIO_PA0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 static const Pin pin_peer_erase = {PIO_PA11, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
-static const Pin pin_conn_usim1 = {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
-static const Pin pin_conn_usim2 = {PIO_PA28, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+static const Pin pin_conn_usim1 = {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
+static const Pin pin_conn_usim2 = {PIO_PA28, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
 /* array of generated USB Strings */
 extern unsigned char *usb_strings[];
@@ -42,9 +42,9 @@ static void qmod_use_physical_sim(unsigned int nr, int physical)
 	}
 
 	if (physical)
-		PIO_Set(pin);
-	else
 		PIO_Clear(pin);
+	else
+		PIO_Set(pin);
 }
 
 static int qmod_sam3_is_12(void)

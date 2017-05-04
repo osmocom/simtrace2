@@ -1,3 +1,0 @@
-[submodule "usb_application/pysim"]
-	path = usb_application/pysim
-	url = git://git.osmocom.org/pysim

@@ -25,7 +25,7 @@
   </gnm:Attributes>
   <office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:ooo="http://openoffice.org/2004/office" office:version="1.2">
     <office:meta>
-      <dc:date>2017-03-05T21:17:04Z</dc:date>
+      <dc:date>2017-05-05T14:31:27Z</dc:date>
       <meta:creation-date>2017-03-05T18:42:38Z</meta:creation-date>
     </office:meta>
   </office:document-meta>
@@ -35,7 +35,7 @@
     <gnm:SheetName gnm:Cols="256" gnm:Rows="65536">Sheet2</gnm:SheetName>
     <gnm:SheetName gnm:Cols="256" gnm:Rows="65536">Sheet3</gnm:SheetName>
   </gnm:SheetNameIndex>
-  <gnm:Geometry Width="1280" Height="911"/>
+  <gnm:Geometry Width="1304" Height="896"/>
   <gnm:Sheets>
     <gnm:Sheet DisplayFormulas="0" HideZero="0" HideGrid="0" HideColHeader="0" HideRowHeader="0" DisplayOutlines="1" OutlineSymbolsBelow="1" OutlineSymbolsRight="1" Visibility="GNM_SHEET_VISIBILITY_VISIBLE" GridColor="0:0:0">
       <gnm:Name>Sheet1</gnm:Name>
@@ -1191,8 +1191,8 @@
         <gnm:ColInfo No="7" Unit="161.2" HardSize="1"/>
       </gnm:Cols>
       <gnm:Rows DefaultSizePts="12.75"/>
-      <gnm:Selections CursorCol="6" CursorRow="40">
-        <gnm:Selection startCol="6" startRow="40" endCol="6" endRow="40"/>
+      <gnm:Selections CursorCol="5" CursorRow="34">
+        <gnm:Selection startCol="5" startRow="34" endCol="5" endRow="34"/>
       </gnm:Selections>
       <gnm:Cells>
         <gnm:Cell Row="0" Col="0" ValueType="60">Pins / Ios of SAM3 based devices</gnm:Cell>
@@ -1356,7 +1356,7 @@
         <gnm:Cell Row="30" Col="2" ValueType="60">MISO</gnm:Cell>
         <gnm:Cell Row="30" Col="3" ValueType="60">MISO</gnm:Cell>
         <gnm:Cell Row="30" Col="4" ValueType="60">NC</gnm:Cell>
-        <gnm:Cell Row="30" Col="5" ValueType="60">NC</gnm:Cell>
+        <gnm:Cell Row="30" Col="5" ValueType="60">SIMPRES1</gnm:Cell>
         <gnm:Cell Row="30" Col="6" ValueType="60">PA12</gnm:Cell>
         <gnm:Cell Row="30" Col="7" ValueType="60">SET_USIM1_PRES</gnm:Cell>
         <gnm:Cell Row="31" Col="0" ValueType="40">28</gnm:Cell>
@@ -1387,7 +1387,7 @@
         <gnm:Cell Row="34" Col="2" ValueType="60">PA8</gnm:Cell>
         <gnm:Cell Row="34" Col="3" ValueType="60">SW_SIM</gnm:Cell>
         <gnm:Cell Row="34" Col="4" ValueType="60">PA8</gnm:Cell>
-        <gnm:Cell Row="34" Col="5" ValueType="60">ST12_PRTPWR-OVERRIDE</gnm:Cell>
+        <gnm:Cell Row="34" Col="5" ValueType="60">SIMPRES2 / ST12_PRTPWR-OVERRIDE</gnm:Cell>
         <gnm:Cell Row="34" Col="7" ValueType="60">NC</gnm:Cell>
         <gnm:Cell Row="35" Col="0" ValueType="40">32</gnm:Cell>
         <gnm:Cell Row="35" Col="1" ValueType="60">PA7/RTS0/PWM3</gnm:Cell>
@@ -1565,13 +1565,13 @@
         <gnm:Cell Row="67" Col="0" ValueType="40">64</gnm:Cell>
         <gnm:Cell Row="67" Col="1" ValueType="60">VDDPLL</gnm:Cell>
       </gnm:Cells>
-      <gnm:SheetLayout TopLeft="A5"/>
+      <gnm:SheetLayout TopLeft="A13"/>
       <gnm:Solver ModelType="0" ProblemType="0" MaxTime="60" MaxIter="1000" NonNeg="1" Discr="0" AutoScale="0" ProgramR="0" SensitivityR="0"/>
     </gnm:Sheet>
     <gnm:Sheet DisplayFormulas="0" HideZero="0" HideGrid="0" HideColHeader="0" HideRowHeader="0" DisplayOutlines="1" OutlineSymbolsBelow="1" OutlineSymbolsRight="1" Visibility="GNM_SHEET_VISIBILITY_VISIBLE" GridColor="0:0:0">
       <gnm:Name>Sheet2</gnm:Name>
-      <gnm:MaxCol>-1</gnm:MaxCol>
-      <gnm:MaxRow>-1</gnm:MaxRow>
+      <gnm:MaxCol>0</gnm:MaxCol>
+      <gnm:MaxRow>0</gnm:MaxRow>
       <gnm:Zoom>1</gnm:Zoom>
       <gnm:Names>
         <gnm:Name>
@@ -1630,8 +1630,8 @@
     </gnm:Sheet>
     <gnm:Sheet DisplayFormulas="0" HideZero="0" HideGrid="0" HideColHeader="0" HideRowHeader="0" DisplayOutlines="1" OutlineSymbolsBelow="1" OutlineSymbolsRight="1" Visibility="GNM_SHEET_VISIBILITY_VISIBLE" GridColor="0:0:0">
       <gnm:Name>Sheet3</gnm:Name>
-      <gnm:MaxCol>-1</gnm:MaxCol>
-      <gnm:MaxRow>-1</gnm:MaxRow>
+      <gnm:MaxCol>0</gnm:MaxCol>
+      <gnm:MaxRow>0</gnm:MaxRow>
       <gnm:Zoom>1</gnm:Zoom>
       <gnm:Names>
         <gnm:Name>

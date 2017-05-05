@@ -182,6 +182,15 @@ OUTPUT := $(BIN)/$(OUTPUT)
 
 all: apps/$(APP)/usb_strings_generated.h $(BIN) $(OBJ) $(MEMORIES)
 
+combined: $(OUTPUT)-combined.bin
+
+$(BIN)/$(BOARD)-dfu-flash-padded.bin: $(BIN)/$(BOARD)-dfu-flash.bin
+	dd if=/dev/zero bs=16384 count=1 of=$@
+	dd if=$< conv=notrunc of=$@
+
+$(OUTPUT)-combined.bin: $(BIN)/$(BOARD)-dfu-flash-padded.bin $(OUTPUT)-dfu.bin
+	cat $^ > $@
+
 $(BIN) $(OBJ):
 	mkdir $@
 

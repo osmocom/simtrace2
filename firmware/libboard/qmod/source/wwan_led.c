@@ -55,7 +55,7 @@ int wwan_led_active(int wwan)
 		return -1;
 	}
 
-	active = PIO_Get(&pin_wwan1) ? 0 : 1;
+	active = PIO_Get(pin) ? 0 : 1;
 	return active;
 }
 

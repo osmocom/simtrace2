@@ -8,6 +8,7 @@
 #include "wwan_led.h"
 #include "wwan_perst.h"
 #include "boardver_adc.h"
+#include "card_pres.h"
 #include "osmocom/core/timer.h"
 
 static const Pin pin_hubpwr_override = PIN_PRTPWR_OVERRIDE;
@@ -257,4 +258,6 @@ void board_main_top(void)
 
 	/* Obtain the circuit board version (currently just prints voltage */
 	get_board_version_adc();
+	/* Initialize checking for card insert/remove events */
+	card_present_init();
 }

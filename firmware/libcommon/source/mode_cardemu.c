@@ -13,7 +13,9 @@
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
+#ifdef PINS_CARDSIM
 static const Pin pins_cardsim[] = PINS_CARDSIM;
+#endif
 
 /* UART pins */
 static const Pin pins_usim1[]	= {PINS_USIM1};
@@ -52,7 +54,9 @@ static struct cardem_inst cardem_inst[] = {
 		.ep_out = PHONE_DATAOUT,
 		.ep_in = PHONE_DATAIN,
 		.ep_int = PHONE_INT,
+#ifdef PIN_SET_USIM1_PRES
 		.pin_insert = PIN_SET_USIM1_PRES,
+#endif
 	},
 #ifdef CARDEMU_SECOND_UART
 	{
@@ -65,7 +69,9 @@ static struct cardem_inst cardem_inst[] = {
 		.ep_out = CARDEM_USIM2_DATAOUT,
 		.ep_in = CARDEM_USIM2_DATAIN,
 		.ep_int = CARDEM_USIM2_INT,
+#ifdef PIN_SET_USIM2_PRES
 		.pin_insert = PIN_SET_USIM2_PRES,
+#endif
 	},
 #endif
 };
@@ -371,7 +377,9 @@ void mode_cardemu_init(void)
 
 	TRACE_ENTRY();
 
+#ifdef PINS_CARDSIM
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
+#endif
 #ifdef DETECT_VCC_BY_ADC
 	card_vcc_adc_init();
 #endif /* DETECT_VCC_BY_ADC */

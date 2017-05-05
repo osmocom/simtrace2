@@ -121,14 +121,16 @@ void board_exec_dbg_cmd(int ch)
 	switch (ch) {
 	case '?':
 		printf("\t?\thelp\n\r");
-		printf("\tE\tprogram EEPROM\n\r");
 		printf("\tR\treset SAM3\n\r");
-		printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
-		printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
-		printf("\tH\tRelease HUB RESET (high)\n\r");
-		printf("\th\tAssert HUB RESET (low)\n\r");
-		printf("\tw\tWrite single byte in EEPROM\n\r");
-		printf("\tr\tRead single byte from EEPROM\n\r");
+		if (qmod_sam3_is_12()) {
+			printf("\tE\tprogram EEPROM\n\r");
+			printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
+			printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
+			printf("\tH\tRelease HUB RESET (high)\n\r");
+			printf("\th\tAssert HUB RESET (low)\n\r");
+			printf("\tw\tWrite single byte in EEPROM\n\r");
+			printf("\tr\tRead single byte from EEPROM\n\r");
+		}
 		printf("\tX\tRelease peer SAM3 from reset\n\r");
 		printf("\tx\tAssert peer SAM3 reset\n\r");
 		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
@@ -137,13 +139,56 @@ void board_exec_dbg_cmd(int ch)
 		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
 		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
 		break;
-	case 'E':
-		write_hub_eeprom();
-		break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");
 		USBD_Disconnect();
 		NVIC_SystemReset();
+		break;
+	case 'X':
+		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\n\r");
+		PIO_Clear(&pin_peer_rst);
+		break;
+	case 'x':
+		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\n\r");
+		PIO_Set(&pin_peer_rst);
+		break;
+	case 'Y':
+		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
+		PIO_Clear(&pin_peer_erase);
+		break;
+	case 'y':
+		printf("Seetting SIMTRACExx_ERASE (active)\n\r");
+		PIO_Set(&pin_peer_erase);
+		break;
+	case '1':
+		printf("Resetting Modem 1 (of this SAM3)\n\r");
+		wwan_perst_do_reset(1);
+		break;
+	case '2':
+		printf("Resetting Modem 2 (of this SAM3)\n\r");
+		wwan_perst_do_reset(2);
+		break;
+	case '!':
+		qmod_use_physical_sim(1, 0);
+		break;
+	case '@':
+		qmod_use_physical_sim(2, 0);
+		break;
+	default:
+		if (!qmod_sam3_is_12()) {
+			printf("Unknown command '%c'\n\r", ch);
+			return;
+		}
+		break;
+	}
+
+	/* functions below only work on primary (ST12) */
+	if (!qmod_sam3_is_12())
+		return;
+
+	switch (ch) {
+	case 'E':
+		write_hub_eeprom();
 		break;
 	case 'O':
 		printf("Setting PRTPWR_OVERRIDE\n\r");
@@ -176,36 +221,6 @@ void board_exec_dbg_cmd(int ch)
 		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);
 		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
-		break;
-	case 'X':
-		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\n\r");
-		PIO_Clear(&pin_peer_rst);
-		break;
-	case 'x':
-		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\n\r");
-		PIO_Set(&pin_peer_rst);
-		break;
-	case 'Y':
-		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
-		PIO_Clear(&pin_peer_erase);
-		break;
-	case 'y':
-		printf("Seetting SIMTRACExx_ERASE (active)\n\r");
-		PIO_Set(&pin_peer_erase);
-		break;
-	case '1':
-		printf("Resetting Modem 1 (of this SAM3)\n\r");
-		wwan_perst_do_reset(1);
-		break;
-	case '2':
-		printf("Resetting Modem 2 (of this SAM3)\n\r");
-		wwan_perst_do_reset(2);
-		break;
-	case '!':
-		qmod_use_physical_sim(1, 0);
-		break;
-	case '@':
-		qmod_use_physical_sim(2, 0);
 		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);

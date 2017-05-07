@@ -150,7 +150,7 @@ CFLAGS += -Wsign-compare -Waggregate-return
 CFLAGS += -Wformat=0
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked
-CFLAGS += -Wredundant-decls -Wnested-externs -Winline #-Wlong-long
+CFLAGS += -Wredundant-decls -Wnested-externs #-Winline -Wlong-long
 CFLAGS += -Wunreachable-code
 #CFLAGS += -Wcast-align
 #CFLAGS += -std=c11

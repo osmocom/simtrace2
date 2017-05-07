@@ -233,4 +233,4 @@ log:
 	lsof $(SERIAL) && echo "log is already opened" || ( sed -u "s/\r//" $(SERIAL) | ts )
 
 clean:
-	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst
+	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst `find . -name \*.p`

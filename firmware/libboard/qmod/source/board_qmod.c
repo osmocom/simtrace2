@@ -114,11 +114,59 @@ static int write_hub_eeprom(void)
 	return 0;
 }
 
-/* returns '1' in case we should break any endless loop */
-void board_exec_dbg_cmd(int ch)
+static void board_exec_dbg_cmd_st12only(int ch)
 {
 	uint32_t addr, val;
 
+	/* functions below only work on primary (ST12) */
+	if (!qmod_sam3_is_12())
+		return;
+
+	switch (ch) {
+	case 'E':
+		write_hub_eeprom();
+		break;
+	case 'O':
+		printf("Setting PRTPWR_OVERRIDE\n\r");
+		PIO_Set(&pin_hubpwr_override);
+		break;
+	case 'o':
+		printf("Clearing PRTPWR_OVERRIDE\n\r");
+		PIO_Clear(&pin_hubpwr_override);
+		break;
+	case 'H':
+		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\n\r");
+		PIO_Clear(&pin_hub_rst);
+		break;
+	case 'h':
+		/* high level drives transistor -> HUB_RESET low */
+		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\n\r");
+		PIO_Set(&pin_hub_rst);
+		break;
+	case 'w':
+		if (PIO_GetOutputDataStatus(&pin_hub_rst) == 0)
+			printf("WARNING: attempting EEPROM access while HUB not in reset\n\r");
+		printf("Please enter EEPROM offset:\n\r");
+		UART_GetIntegerMinMax(&addr, 0, 255);
+		printf("Please enter EEPROM value:\n\r");
+		UART_GetIntegerMinMax(&val, 0, 255);
+		printf("Writing value 0x%02x to EEPROM offset 0x%02x\n\r", val, addr);
+		eeprom_write_byte(0x50, addr, val);
+		break;
+	case 'r':
+		printf("Please enter EEPROM offset:\n\r");
+		UART_GetIntegerMinMax(&addr, 0, 255);
+		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
+		break;
+	default:
+		printf("Unknown command '%c'\n\r", ch);
+		break;
+	}
+}
+
+/* returns '1' in case we should break any endless loop */
+void board_exec_dbg_cmd(int ch)
+{
 	switch (ch) {
 	case '?':
 		printf("\t?\thelp\n\r");
@@ -176,55 +224,10 @@ void board_exec_dbg_cmd(int ch)
 		qmod_use_physical_sim(2, 0);
 		break;
 	default:
-		if (!qmod_sam3_is_12()) {
+		if (!qmod_sam3_is_12())
 			printf("Unknown command '%c'\n\r", ch);
-			return;
-		}
-		break;
-	}
-
-	/* functions below only work on primary (ST12) */
-	if (!qmod_sam3_is_12())
-		return;
-
-	switch (ch) {
-	case 'E':
-		write_hub_eeprom();
-		break;
-	case 'O':
-		printf("Setting PRTPWR_OVERRIDE\n\r");
-		PIO_Set(&pin_hubpwr_override);
-		break;
-	case 'o':
-		printf("Clearing PRTPWR_OVERRIDE\n\r");
-		PIO_Clear(&pin_hubpwr_override);
-		break;
-	case 'H':
-		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\n\r");
-		PIO_Clear(&pin_hub_rst);
-		break;
-	case 'h':
-		/* high level drives transistor -> HUB_RESET low */
-		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\n\r");
-		PIO_Set(&pin_hub_rst);
-		break;
-	case 'w':
-		if (PIO_GetOutputDataStatus(&pin_hub_rst) == 0)
-			printf("WARNING: attempting EEPROM access while HUB not in reset\n\r");
-		printf("Please enter EEPROM offset:\n\r");
-		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("Please enter EEPROM value:\n\r");
-		UART_GetIntegerMinMax(&val, 0, 255);
-		printf("Writing value 0x%02x to EEPROM offset 0x%02x\n\r", val, addr);
-		eeprom_write_byte(0x50, addr, val);
-		break;
-	case 'r':
-		printf("Please enter EEPROM offset:\n\r");
-		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
-		break;
-	default:
-		printf("Unknown command '%c'\n\r", ch);
+		else
+			board_exec_dbg_cmd_st12only(ch);
 		break;
 	}
 }

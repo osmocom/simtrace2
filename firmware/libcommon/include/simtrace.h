@@ -113,8 +113,4 @@ extern void mode_cardemu_usart1_irq(void);
 void Timer_Init( void );
 void TC0_Counter_Reset( void );
 
-struct llist_head;
-int usb_refill_to_host(struct llist_head *queue, uint32_t ep);
-int usb_refill_from_host(struct llist_head *queue, int ep);
-
 #endif  /*  SIMTRACE_H  */

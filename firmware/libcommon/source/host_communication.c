@@ -1,126 +1,168 @@
-//#define TRACE_LEVEL 6
+#include "board.h"
+#include "llist_irqsafe.h"
+#include "usb_buf.h"
 
+#include "osmocom/core/linuxlist.h"
+#include "osmocom/core/msgb.h"
 #include <errno.h>
 
-#include "board.h"
-#include "req_ctx.h"
-#include "osmocom/core/linuxlist.h"
-#include "llist_irqsafe.h"
-
-static volatile uint32_t usbep_in_progress[BOARD_USB_NUMENDPOINTS];
+/***********************************************************************
+ * USBD Integration API
+ ***********************************************************************/
 
 /* call-back after (successful?) transfer of a buffer */
 static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			 uint32_t remaining)
 {
-	struct req_ctx *rctx = (struct req_ctx *) arg;
+	struct msgb *msg = (struct msgb *) arg;
+	struct usb_buffered_ep *bep = msg->dst;
 
-	TRACE_DEBUG("%s (EP=%u)\r\n", __func__, rctx->ep);
+	TRACE_DEBUG("%s (EP=0x%02x)\r\n", __func__, bep->ep);
 
 	__disable_irq();
-	usbep_in_progress[rctx->ep]--;
+	bep->in_progress--;
 	__enable_irq();
-	TRACE_DEBUG("%u: in_progress=%d\n", rctx->ep, usbep_in_progress[rctx->ep]);
+	TRACE_DEBUG("%u: in_progress=%d\n", bep->ep, bep->in_progress);
 
 	if (status != USBD_STATUS_SUCCESS)
 		TRACE_ERROR("%s error, status=%d\n", __func__, status);
 
-	/* release request contxt to pool */
-	req_ctx_set_state(rctx, RCTX_S_FREE);
+	usb_buf_free(msg);
 }
 
-int usb_refill_to_host(struct llist_head *queue, uint32_t ep)
+int usb_refill_to_host(uint8_t ep)
 {
-	struct req_ctx *rctx;
+	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
+	struct msgb *msg;
 	int rc;
 
+#if 0
+	if (bep->out_from_host) {
+		TRACE_ERROR("EP 0x%02x is not IN\r\n", bep->ep);
+		return -EINVAL;
+	}
+#endif
+
 	__disable_irq();
-	if (usbep_in_progress[ep]) {
+	if (bep->in_progress) {
 		__enable_irq();
 		return 0;
 	}
 
-	if (llist_empty(queue)) {
+	if (llist_empty(&bep->queue)) {
 		__enable_irq();
 		return 0;
 	}
 
-	usbep_in_progress[ep]++;
+	bep->in_progress++;
 
-	rctx = llist_entry(queue->next, struct req_ctx, list);
-	llist_del(&rctx->list);
+	msg = msgb_dequeue(&bep->queue);
 
 	__enable_irq();
 
-	TRACE_DEBUG("%u: in_progress=%d\n", ep, usbep_in_progress[ep]);
-	TRACE_DEBUG("%s (EP=%u)\r\n", __func__, ep);
+	TRACE_DEBUG("%s (EP=0x%02x), in_progress=%d\r\n", __func__, ep, bep->in_progress);
 
-	req_ctx_set_state(rctx, RCTX_S_USB_TX_BUSY);
-	rctx->ep = ep;
+	msg->dst = bep;
 
-	rc = USBD_Write(ep, rctx->data, rctx->tot_len,
-			(TransferCallback) &usb_write_cb, rctx);
+	rc = USBD_Write(ep, msgb_data(msg), msgb_length(msg),
+			(TransferCallback) &usb_write_cb, msg);
 	if (rc != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error %x\n", __func__, rc);
-		req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+		/* re-insert to head of queue */
+		llist_add_irqsafe(&msg->list, &bep->queue);
 		__disable_irq();
-		usbep_in_progress[ep]--;
+		bep->in_progress--;
 		__enable_irq();
-		TRACE_DEBUG("%u: in_progress=%d\n", ep, usbep_in_progress[ep]);
+		TRACE_DEBUG("%02x: in_progress=%d\n", bep->ep, bep->in_progress);
 		return 0;
 	}
 
 	return 1;
 }
 
+/* call-back after (successful?) transfer of a buffer */
 static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			uint32_t remaining)
 {
-	struct req_ctx *rctx = (struct req_ctx *) arg;
-	struct llist_head *queue = (struct llist_head *) usbep_in_progress[rctx->ep];
+	struct msgb *msg = (struct msgb *) arg;
+	struct usb_buffered_ep *bep = msg->dst;
 
 	TRACE_DEBUG("%s (EP=%u, len=%u, q=%p)\r\n", __func__,
-			rctx->ep, transferred, queue);
+			bep->ep, transferred, &bep->queue);
 
-	usbep_in_progress[rctx->ep] = 0;
+	bep->in_progress = 0;
 
 	if (status != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("%s error, status=%d\n", __func__, status);
-		/* release request contxt to pool */
-		req_ctx_put(rctx);
+		usb_buf_free(msg);
 		return;
 	}
-	rctx->tot_len = transferred;
-	req_ctx_set_state(rctx, RCTX_S_MAIN_PROCESSING);
-	llist_add_tail_irqsafe(&rctx->list, queue);
+	msgb_put(msg, transferred);
+	llist_add_tail_irqsafe(&msg->list, &bep->queue);
 }
 
-int usb_refill_from_host(struct llist_head *queue, int ep)
+int usb_refill_from_host(uint8_t ep)
 {
-	struct req_ctx *rctx;
+	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
+	struct msgb *msg;
 	int rc;
 
-	if (usbep_in_progress[ep])
+#if 0
+	if (!bep->out_from_host) {
+		TRACE_ERROR("EP 0x%02x is not OUT\r\n", bep->ep);
+		return -EINVAL;
+	}
+#endif
+
+	if (bep->in_progress)
 		return 0;
 
-	TRACE_DEBUG("%s (EP=%u)\r\n", __func__, ep);
+	TRACE_DEBUG("%s (EP=0x%02x)\r\n", __func__, bep->ep);
 
-	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
-	if (!rctx)
+	msg = usb_buf_alloc(bep->ep);
+	if (!msg)
 		return -ENOMEM;
+	msg->dst = bep;
+	msg->l1h = msg->head;
 
-	rctx->ep = ep;
-	usbep_in_progress[ep] = (uint32_t) queue;
+	bep->in_progress = 1;
 
-	rc = USBD_Read(ep, rctx->data, rctx->size,
-			(TransferCallback) &usb_read_cb, rctx);
-
+	rc = USBD_Read(ep, msg->head, msgb_tailroom(msg),
+			(TransferCallback) &usb_read_cb, msg);
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %x\n", __func__, rc);
-		req_ctx_put(rctx);
-		usbep_in_progress[ep] = 0;
-		return 0;
+		TRACE_ERROR("%s error %s\n", __func__, rc);
+		usb_buf_free(msg);
+		bep->in_progress = 0;
 	}
 
 	return 1;
+}
+
+int usb_drain_queue(uint8_t ep)
+{
+	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
+	struct msgb *msg;
+	int ret = 0;
+
+	/* wait until no transfers are in progress anymore and block
+	 * further interrupts */
+	while (1) {
+		__disable_irq();
+		if (!bep->in_progress) {
+			break;
+		}
+		__enable_irq();
+		/* retry */
+	}
+
+	/* free all queued msgbs */
+	while ((msg = msgb_dequeue(&bep->queue))) {
+		usb_buf_free(msg);
+		ret++;
+	}
+
+	/* re-enable interrupts and return number of free'd msgbs */
+	__enable_irq();
+
+	return ret;
 }

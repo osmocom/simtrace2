@@ -1,5 +1,5 @@
 /* ISO7816-3 state machine for the card side */
-/* (C) 2010-2015 by Harald Welte <hwelte@hmw-consulting.de>
+/* (C) 2010-2017 by Harald Welte <hwelte@hmw-consulting.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,9 +31,10 @@
 #include "iso7816_fidi.h"
 #include "tc_etu.h"
 #include "card_emu.h"
-#include "req_ctx.h"
 #include "cardemu_prot.h"
+#include "usb_buf.h"
 #include "osmocom/core/linuxlist.h"
+#include "osmocom/core/msgb.h"
 
 
 #define NUM_SLOTS		2
@@ -114,6 +115,9 @@ struct card_handle {
 	uint8_t tc_chan;	/* TC channel number */
 	uint8_t uart_chan;	/* UART channel */
 
+	uint8_t in_ep;		/* USB IN EP */
+	uint8_t irq_ep;		/* USB IN EP */
+
 	uint32_t waiting_time;	/* in clocks */
 
 	/* ATR state machine */
@@ -138,10 +142,9 @@ struct card_handle {
 		uint8_t hdr[5];		/* CLA INS P1 P2 P3 */
 	} tpdu;
 
-	struct req_ctx *uart_rx_ctx;	/* UART RX -> USB TX */
-	struct req_ctx *uart_tx_ctx;	/* USB RX -> UART TX */
+	struct msgb *uart_rx_msg;	/* UART RX -> USB TX */
+	struct msgb *uart_tx_msg;	/* USB RX -> UART TX */
 
-	struct llist_head usb_tx_queue;
 	struct llist_head uart_tx_queue;
 
 	struct {
@@ -150,11 +153,6 @@ struct card_handle {
 		uint32_t pps;
 	} stats;
 };
-
-struct llist_head *card_emu_get_usb_tx_queue(struct card_handle *ch)
-{
-	return &ch->usb_tx_queue;
-}
 
 struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch)
 {
@@ -166,24 +164,23 @@ static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
 
 static void flush_rx_buffer(struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_rx_data *rd;
+	uint32_t data_len;
 
-	rctx = ch->uart_rx_ctx;
-	if (!rctx)
+	msg = ch->uart_rx_msg;
+	if (!msg)
 		return;
 
-	ch->uart_rx_ctx = NULL;
+	ch->uart_rx_msg = NULL;
 
 	/* store length of data payload fild in header */
-	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
-	rd->data_len = rctx->idx;
-	rd->hdr.msg_len = sizeof(*rd) + rd->data_len;
+	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+	msg->l2h = &rd->data;
+	rd->data_len = msgb_l2len(msg);
+	rd->hdr.msg_len = msgb_length(msg);
 
-	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-	/* no need for irqsafe operation, as the usb_tx_queue is
-	 * processed only by the main loop context */
-	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
+	usb_buf_submit(msg);
 }
 
 /* convert a non-contiguous PTS request/responsei into a contiguous
@@ -223,23 +220,22 @@ static uint8_t csum_pts(const uint8_t *in)
 
 static void flush_pts(struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_pts_info *ptsi;
 
-	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-	if (!rctx)
+	msg = usb_buf_alloc(ch->in_ep);
+	if (!msg)
 		return;
 
-	ptsi = (struct cardemu_usb_msg_pts_info *) rctx->data;
+	msg->l1h = msgb_put(msg, sizeof(*ptsi));
+	msg->l2h = msg->l1h + sizeof(ptsi->hdr);
+	ptsi = (struct cardemu_usb_msg_pts_info *) msg->l1h;
 	ptsi->hdr.msg_type = CEMU_USB_MSGT_DO_PTS;
 	ptsi->hdr.msg_len = sizeof(*ptsi);
 	ptsi->pts_len = serialize_pts(ptsi->req, ch->pts.req);
 	serialize_pts(ptsi->resp, ch->pts.resp);
 
-	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
-	/* no need for irqsafe operation, as the usb_tx_queue is
-	 * processed only by the main loop context */
-	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
+	usb_buf_submit(msg);
 }
 
 static void emu_update_fidi(struct card_handle *ch)
@@ -502,37 +498,35 @@ static unsigned int t0_num_data_bytes(uint8_t p3, int reader_to_card)
 /* add a just-received TPDU byte (from reader) to USB buffer */
 static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_rx_data *rd;
 	unsigned int num_data_bytes = t0_num_data_bytes(ch->tpdu.hdr[_P3], 0);
 
 	/* ensure we have a buffer */
-	if (!ch->uart_rx_ctx) {
-		rctx = ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-		if (!ch->uart_rx_ctx) {
+	if (!ch->uart_rx_msg) {
+		msg = ch->uart_rx_msg = usb_buf_alloc(ch->in_ep);
+		if (!ch->uart_rx_msg) {
 			TRACE_ERROR("%u: Received UART byte but ENOMEM\r\n",
 				    ch->num);
 			return;
 		}
-		rd = (struct cardemu_usb_msg_rx_data *) ch->uart_rx_ctx->data;
+		msg->l1h = msgb_put(msg, sizeof(*rd));
+		rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+		msg->l2h = msg->l1h + sizeof(rd->hdr);
 		cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
-		rctx->tot_len = sizeof(*rd);
-		rctx->idx = 0;
 	} else
-		rctx = ch->uart_rx_ctx;
+		msg = ch->uart_rx_msg;
 
-	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
-
-	rd->data[rctx->idx++] = byte;
-	rctx->tot_len++;
+	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+	msgb_put_u8(msg, byte);
 
 	/* check if the buffer is full. If so, send it */
-	if (rctx->tot_len >= sizeof(*rd) + num_data_bytes) {
+	if (msgb_length(msg) >= sizeof(*rd) + num_data_bytes) {
 		rd->flags |= CEMU_DATA_F_FINAL;
 		flush_rx_buffer(ch);
 		/* We need to transmit the SW now, */
 		set_tpdu_state(ch, TPDU_S_WAIT_TX);
-	} else if (rctx->tot_len >= rctx->size)
+	} else if (msgb_tailroom(msg) <= 0)
 		flush_rx_buffer(ch);
 }
 
@@ -590,8 +584,9 @@ static enum tpdu_state next_tpdu_state(struct card_handle *ch)
 
 static void send_tpdu_header(struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_rx_data *rd;
+	uint8_t *cur;
 
 	TRACE_INFO("%u: %s: %02x %02x %02x %02x %02x\r\n",
 			ch->num, __func__,
@@ -600,32 +595,32 @@ static void send_tpdu_header(struct card_handle *ch)
 			ch->tpdu.hdr[4]);
 
 	/* if we already/still have a context, send it off */
-	if (ch->uart_rx_ctx) {
+	if (ch->uart_rx_msg) {
 		TRACE_DEBUG("%u: have old buffer\r\n", ch->num);
-		if (ch->uart_rx_ctx->idx) {
+		if (msgb_l2len(ch->uart_rx_msg)) {
 			TRACE_DEBUG("%u: flushing old buffer\r\n", ch->num);
 			flush_rx_buffer(ch);
 		}
-	} else {
-		TRACE_DEBUG("%u: allocating new buffer\r\n", ch->num);
-		/* ensure we have a new buffer */
-		ch->uart_rx_ctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-		if (!ch->uart_rx_ctx) {
-			TRACE_ERROR("%u: %s: ENOMEM\r\n", ch->num, __func__);
-			return;
-		}
 	}
-	rctx = ch->uart_rx_ctx;
-	rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
+	TRACE_DEBUG("%u: allocating new buffer\r\n", ch->num);
+	/* ensure we have a new buffer */
+	ch->uart_rx_msg = usb_buf_alloc(ch->in_ep);
+	if (!ch->uart_rx_msg) {
+		TRACE_ERROR("%u: %s: ENOMEM\r\n", ch->num, __func__);
+		return;
+	}
+	msg = ch->uart_rx_msg;
+	msg->l1h = msgb_put(msg, sizeof(*rd));
+	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
 
-	/* initializ header */
+	/* initialize header */
+	msg->l2h = msg->l1h + sizeof(rd->hdr);
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
 	rd->flags = CEMU_DATA_F_TPDU_HDR;
-	rctx->tot_len = sizeof(*rd) + sizeof(ch->tpdu.hdr);
-	rctx->idx = sizeof(ch->tpdu.hdr);
 
 	/* copy TPDU header to data field */
-	memcpy(rd->data, ch->tpdu.hdr, sizeof(ch->tpdu.hdr));
+	cur = msgb_put(msg, sizeof(ch->tpdu.hdr));
+	memcpy(cur, ch->tpdu.hdr, sizeof(ch->tpdu.hdr));
 	/* rd->data_len is set in flush_rx_buffer() */
 
 	flush_rx_buffer(ch);
@@ -674,33 +669,29 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 /* tx a single byte to be transmitted to the reader */
 static int tx_byte_tpdu(struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_tx_data *td;
 	uint8_t byte;
 
 	/* ensure we are aware of any data that might be pending for
 	 * transmit */
-	if (!ch->uart_tx_ctx) {
+	if (!ch->uart_tx_msg) {
 		/* uart_tx_queue is filled from main loop, so no need
 		 * for irq-safe operations */
 		if (llist_empty(&ch->uart_tx_queue))
 			return 0;
 
 		/* dequeue first at head */
-		ch->uart_tx_ctx = llist_entry(ch->uart_tx_queue.next,
-					      struct req_ctx, list);
-		llist_del(&ch->uart_tx_ctx->list);
-		req_ctx_set_state(ch->uart_tx_ctx, RCTX_S_UART_TX_BUSY);
-
-		/* start with index zero */
-		ch->uart_tx_ctx->idx = 0;
-
+		ch->uart_tx_msg = msgb_dequeue(&ch->uart_tx_queue);
+		ch->uart_tx_msg->l1h = ch->uart_tx_msg->data;
+		msg = ch->uart_tx_msg;
+		msgb_pull(msg, sizeof(*td));
 	}
-	rctx = ch->uart_tx_ctx;
-	td = (struct cardemu_usb_msg_tx_data *) rctx->data;
+	msg = ch->uart_tx_msg;
+	td = (struct cardemu_usb_msg_tx_data *) msg->l1h;
 
-	/* take the next pending byte out of the rctx */
-	byte = td->data[rctx->idx++];
+	/* take the next pending byte out of the msgb */
+	byte = msgb_pull_u8(msg);
 
 	card_emu_uart_tx(ch->uart_chan, byte);
 
@@ -719,8 +710,7 @@ static int tx_byte_tpdu(struct card_handle *ch)
 	}
 
 	/* check if the buffer has now been fully transmitted */
-	if ((rctx->idx >= td->data_len) ||
-	    (td->data + rctx->idx >= rctx->data + rctx->tot_len)) {
+	if (msgb_length(msg) == 0) {
 		if (td->flags & CEMU_DATA_F_PB_AND_RX) {
 			/* we have just sent the procedure byte and now
 			 * need to continue receiving */
@@ -733,8 +723,8 @@ static int tx_byte_tpdu(struct card_handle *ch)
 				card_set_state(ch, ISO_S_WAIT_TPDU);
 			}
 		}
-		req_ctx_set_state(rctx, RCTX_S_FREE);
-		ch->uart_tx_ctx = NULL;
+		usb_buf_free(msg);
+		ch->uart_tx_msg = NULL;
 	}
 
 	return 1;
@@ -836,15 +826,16 @@ void card_emu_have_new_uart_tx(struct card_handle *ch)
 
 void card_emu_report_status(struct card_handle *ch)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_status *sts;
 
-	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_UART_RX_BUSY);
-	if (!rctx)
+	msg = usb_buf_alloc(ch->in_ep);
+	if (!msg)
 		return;
-	
-	rctx->tot_len = sizeof(*sts);
-	sts = (struct cardemu_usb_msg_status *)rctx->data;
+
+	msg->l1h = msgb_put(msg, sizeof(*sts));
+	msg->l2h = msg->l1h + sizeof(sts->hdr);
+	sts = (struct cardemu_usb_msg_status *) msg->l1h;
 	sts->hdr.msg_type = CEMU_USB_MSGT_DO_STATUS;
 	sts->hdr.msg_len = sizeof(*sts);
 	sts->flags = 0;
@@ -860,8 +851,7 @@ void card_emu_report_status(struct card_handle *ch)
 	sts->wi = ch->wi;
 	sts->waiting_time = ch->waiting_time;
 
-	llist_add_tail(&rctx->list, &ch->usb_tx_queue);
-	req_ctx_set_state(rctx, RCTX_S_USB_TX_PENDING);
+	usb_buf_submit(msg);
 }
 
 /* hardware driver informs us that a card I/O signal has changed */
@@ -957,7 +947,8 @@ static const uint8_t default_atr[] = { 0x3B, 0x02, 0x14, 0x50 };
 
 static struct card_handle card_handles[NUM_SLOTS];
 
-struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan)
+struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan,
+				  uint8_t in_ep, uint8_t irq_ep)
 {
 	struct card_handle *ch;
 
@@ -968,11 +959,12 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 
 	memset(ch, 0, sizeof(*ch));
 
-	INIT_LLIST_HEAD(&ch->usb_tx_queue);
 	INIT_LLIST_HEAD(&ch->uart_tx_queue);
 
 	/* initialize the card_handle with reasonabe defaults */
 	ch->num = slot_num;
+	ch->irq_ep = irq_ep;
+	ch->in_ep = in_ep;
 	ch->state = ISO_S_WAIT_POWER;
 	ch->vcc_active = 0;
 	ch->in_reset = 1;

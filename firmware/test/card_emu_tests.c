@@ -7,7 +7,11 @@
 #include "card_emu.h"
 #include "cardemu_prot.h"
 #include "tc_etu.h"
-#include "req_ctx.h"
+#include "usb_buf.h"
+
+#define PHONE_DATAIN	1
+#define PHONE_INT	2
+#define PHONE_DATAOUT	3
 
 /* stub functions required by card_emu.c */
 
@@ -128,17 +132,20 @@ static void reader_send_bytes(struct card_handle *ch, const uint8_t *bytes, unsi
 	}
 }
 
-static void dump_rctx(struct req_ctx *rctx)
+static void dump_rctx(struct msgb *msg)
 {
 	struct cardemu_usb_msg_hdr *mh =
-		(struct cardemu_usb_msg_hdr *) rctx->data;
+		(struct cardemu_usb_msg_hdr *) msg->l1h;
 	struct cardemu_usb_msg_rx_data *rxd;
 	int i;
+#if 0
 
 	printf("req_ctx(%p): state=%u, size=%u, tot_len=%u, idx=%u, data=%p\n",
 		rctx, rctx->state, rctx->size, rctx->tot_len, rctx->idx, rctx->data);
 	printf("  msg_type=%u, seq_nr=%u, msg_len=%u\n",
 		mh->msg_type, mh->seq_nr, mh->msg_len);
+#endif
+	printf("%s\n", msgb_hexdump(msg));
 
 	switch (mh->msg_type) {
 	case CEMU_USB_MSGT_DO_RX_DATA:
@@ -151,23 +158,28 @@ static void dump_rctx(struct req_ctx *rctx)
 	}
 }
 
-static void get_and_verify_rctx(int state, const uint8_t *data, unsigned int len)
+static void get_and_verify_rctx(uint8_t ep, const uint8_t *data, unsigned int len)
 {
-	struct req_ctx *rctx;
+	struct llist_head *queue = usb_get_queue(ep);
+	struct msgb *msg;
 	struct cardemu_usb_msg_tx_data *td;
 	struct cardemu_usb_msg_rx_data *rd;
+	struct cardemu_usb_msg_hdr *mh;
 
-	rctx = req_ctx_find_get(0, state, RCTX_S_USB_TX_BUSY);
-	assert(rctx);
-	dump_rctx(rctx);
+	assert(queue);
+	msg = msgb_dequeue(queue);
+	assert(msg);
+	dump_rctx(msg);
+	assert(msg->l1h);
+	mh = (struct cardemu_usb_msg_hdr *) msg->l1h;
 
 	/* verify the contents of the rctx */
-	switch (state) {
-	case RCTX_S_USB_TX_PENDING:
-		td = (struct cardemu_usb_msg_tx_data *) rctx->data;
-		assert(td->hdr.msg_type == CEMU_USB_MSGT_DO_RX_DATA);
-		assert(td->data_len == len);
-		assert(!memcmp(td->data, data, len));
+	switch (mh->msg_type) {
+	case CEMU_USB_MSGT_DO_RX_DATA:
+		rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+		assert(rd->hdr.msg_type == CEMU_USB_MSGT_DO_RX_DATA);
+		assert(rd->data_len == len);
+		assert(!memcmp(rd->data, data, len));
 		break;
 #if 0
 	case RCTX_S_UART_RX_PENDING:
@@ -181,55 +193,62 @@ static void get_and_verify_rctx(int state, const uint8_t *data, unsigned int len
 	}
 
 	/* free the req_ctx, indicating it has fully arrived on the host */
-	req_ctx_set_state(rctx, RCTX_S_FREE);
+	usb_buf_free(msg);
 }
 
 static void get_and_verify_rctx_pps(const uint8_t *data, unsigned int len)
 {
-	struct req_ctx *rctx;
+	struct llist_head *queue = usb_get_queue(PHONE_DATAIN);
+	struct msgb *msg;
 	struct cardemu_usb_msg_pts_info *ptsi;
 
-	rctx = req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY);
-	assert(rctx);
-	dump_rctx(rctx);
+	assert(queue);
+	msg = msgb_dequeue(queue);
+	assert(msg);
+	dump_rctx(msg);
+	assert(msg->l1h);
 
-	ptsi = (struct cardemu_usb_msg_pts_info *) rctx->data;
+	ptsi = (struct cardemu_usb_msg_pts_info *) msg->l1h;
 	/* FIXME: verify */
 	assert(ptsi->hdr.msg_type == CEMU_USB_MSGT_DO_PTS);
 	assert(!memcmp(ptsi->req, data, len));
 	assert(!memcmp(ptsi->resp, data, len));
 
 	/* free the req_ctx, indicating it has fully arrived on the host */
-	req_ctx_set_state(rctx, RCTX_S_FREE);
+	usb_buf_free(msg);
 }
 
 /* emulate a TPDU header being sent by the reader/phone */
 static void rdr_send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 {
+	struct llist_head *queue = usb_get_queue(PHONE_DATAIN);
+
 	/* we don't want a receive context to become available during
 	 * the first four bytes */
 	reader_send_bytes(ch, tpdu_hdr, 4);
-	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+	assert(llist_empty(queue));
 
 	reader_send_bytes(ch, tpdu_hdr+4, 1);
 	/* but then after the final byte of the TPDU header, we want a
 	 * receive context to be available for USB transmission */
-	get_and_verify_rctx(RCTX_S_USB_TX_PENDING, tpdu_hdr, 5);
+	get_and_verify_rctx(PHONE_DATAIN, tpdu_hdr, 5);
 }
 
 /* emulate a CEMU_USB_MSGT_DT_TX_DATA received from USB */
-static void host_to_device_data(const uint8_t *data, uint16_t len, unsigned int flags)
+static void host_to_device_data(struct card_handle *ch, const uint8_t *data, uint16_t len,
+				unsigned int flags)
 {
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	struct cardemu_usb_msg_tx_data *rd;
+	struct llist_head *queue;
 
 	/* allocate a free req_ctx */
-	rctx = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_USB_RX_BUSY);
-	assert(rctx);
+	msg = usb_buf_alloc(PHONE_DATAOUT);
+	assert(msg);
+	msg->l1h = msg->head;
 
 	/* initialize the header */
-	rd = (struct cardemu_usb_msg_tx_data *) rctx->data;
-	rctx->tot_len = sizeof(*rd) + len;
+	rd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*rd) + len);
 	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
 	rd->flags = flags;
 	/* copy data and set length */
@@ -238,7 +257,9 @@ static void host_to_device_data(const uint8_t *data, uint16_t len, unsigned int 
 	rd->hdr.msg_len = sizeof(*rd) + len;
 
 	/* hand the req_ctx to the UART transmit code */
-	req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
+	queue = card_emu_get_uart_tx_queue(ch);
+	assert(queue);
+	msgb_enqueue(queue, msg);
 }
 
 /* card-transmit any pending characters */
@@ -270,7 +291,7 @@ test_tpdu_reader2card(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	card_tx_verify_chars(ch, NULL, 0);
 
 	/* card emulator PC sends a singly byte PB response via USB */
-	host_to_device_data(hdr+1, 1, CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_RX);
+	host_to_device_data(ch, hdr+1, 1, CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_RX);
 	/* card actually sends that single PB */
 	card_tx_verify_chars(ch, hdr+1, 1);
 
@@ -278,13 +299,13 @@ test_tpdu_reader2card(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	reader_send_bytes(ch, body, body_len);
 
 	/* check if we have received them on the USB side */
-	get_and_verify_rctx(RCTX_S_USB_TX_PENDING, body, body_len);
+	get_and_verify_rctx(PHONE_DATAIN, body, body_len);
 
 	/* ensure there is no extra data received on usb */
-	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+	assert(llist_empty(usb_get_queue(PHONE_DATAOUT)));
 
 	/* card emulator sends SW via USB */
-	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw),
+	host_to_device_data(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw),
 			    CEMU_DATA_F_FINAL | CEMU_DATA_F_PB_AND_TX);
 	/* obtain any pending tx chars */
 	card_tx_verify_chars(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw));
@@ -304,21 +325,21 @@ test_tpdu_card2reader(struct card_handle *ch, const uint8_t *hdr, const uint8_t 
 	card_tx_verify_chars(ch, NULL, 0);
 
 	/* card emulator PC sends a response PB via USB */
-	host_to_device_data(hdr+1, 1, CEMU_DATA_F_PB_AND_TX);
+	host_to_device_data(ch, hdr+1, 1, CEMU_DATA_F_PB_AND_TX);
 
 	/* card actually sends that PB */
 	card_tx_verify_chars(ch, hdr+1, 1);
 
 	/* emulate more characters from card to reader */
-	host_to_device_data(body, body_len, 0);
+	host_to_device_data(ch, body, body_len, 0);
 	/* obtain those bytes as they arrvive on the card */
 	card_tx_verify_chars(ch, body, body_len);
 
 	/* ensure there is no extra data received on usb */
-	assert(!req_ctx_find_get(0, RCTX_S_USB_TX_PENDING, RCTX_S_USB_TX_BUSY));
+	assert(llist_empty(usb_get_queue(PHONE_DATAOUT)));
 
 	/* card emulator sends SW via USB */
-	host_to_device_data(tpdu_pb_sw, sizeof(tpdu_pb_sw), CEMU_DATA_F_FINAL);
+	host_to_device_data(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw), CEMU_DATA_F_FINAL);
 
 	/* obtain any pending tx chars */
 	card_tx_verify_chars(ch, tpdu_pb_sw, sizeof(tpdu_pb_sw));
@@ -363,10 +384,10 @@ int main(int argc, char **argv)
 	struct card_handle *ch;
 	unsigned int i;
 
-	req_ctx_init();
-
-	ch = card_emu_init(0, 23, 42);
+	ch = card_emu_init(0, 23, 42, PHONE_DATAIN, PHONE_INT);
 	assert(ch);
+
+	usb_buf_init();
 
 	/* start up the card (VCC/RST, ATR) */
 	io_start_card(ch);

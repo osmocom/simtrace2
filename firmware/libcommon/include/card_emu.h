@@ -10,7 +10,8 @@ enum card_io {
 	CARD_IO_CLK,
 };
 
-struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan);
+struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan,
+				  uint8_t in_ep, uint8_t irq_ep);
 
 /* process a single byte received from the reader */
 void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte);
@@ -25,7 +26,6 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active);
 int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len);
 
 struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch);
-struct llist_head *card_emu_get_usb_tx_queue(struct card_handle *ch);
 void card_emu_have_new_uart_tx(struct card_handle *ch);
 void card_emu_report_status(struct card_handle *ch);
 

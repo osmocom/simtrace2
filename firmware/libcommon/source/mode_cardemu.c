@@ -7,8 +7,9 @@
 #include "iso7816_fidi.h"
 #include "utils.h"
 #include "osmocom/core/linuxlist.h"
+#include "osmocom/core/msgb.h"
 #include "llist_irqsafe.h"
-#include "req_ctx.h"
+#include "usb_buf.h"
 #include "cardemu_prot.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
@@ -43,7 +44,7 @@ struct cardem_inst {
 	uint32_t vcc_uv_last;
 };
 
-static struct cardem_inst cardem_inst[] = {
+struct cardem_inst cardem_inst[] = {
 	{
 		.num = 0,
 		.usart_info = 	{
@@ -395,7 +396,7 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[0].ch = card_emu_init(0, 2, 0);
+	cardem_inst[0].ch = card_emu_init(0, 2, 0, PHONE_DATAIN, PHONE_INT);
 
 #ifdef CARDEMU_SECOND_UART
 	INIT_LLIST_HEAD(&cardem_inst[1].usb_out_queue);
@@ -409,7 +410,7 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim2_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[1].ch = card_emu_init(1, 0, 1);
+	cardem_inst[1].ch = card_emu_init(1, 0, 1, CARDEM_USIM2_DATAIN, CARDEM_USIM2_INT);
 #endif /* CARDEMU_SECOND_UART */
 }
 
@@ -419,7 +420,7 @@ void mode_cardemu_exit(void)
 	TRACE_ENTRY();
 
 	/* FIXME: stop tc_fdt */
-	/* FIXME: release all rctx, unlink them from any queue */
+	/* FIXME: release all msg, unlink them from any queue */
 
 	PIO_DisableIt(&pin_usim1_rst);
 	PIO_DisableIt(&pin_usim1_vcc);
@@ -439,25 +440,24 @@ void mode_cardemu_exit(void)
 }
 
 /* handle a single USB command as received from the USB host */
-static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
+static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 {
 	struct cardemu_usb_msg_hdr *hdr;
 	struct cardemu_usb_msg_set_atr *atr;
 	struct cardemu_usb_msg_cardinsert *cardins;
 	struct llist_head *queue;
 
-	hdr = (struct cardemu_usb_msg_hdr *) rctx->data;
+	hdr = (struct cardemu_usb_msg_hdr *) msg->l1h;
 	switch (hdr->msg_type) {
 	case CEMU_USB_MSGT_DT_TX_DATA:
 		queue = card_emu_get_uart_tx_queue(ci->ch);
-		req_ctx_set_state(rctx, RCTX_S_UART_TX_PENDING);
-		llist_add_tail(&rctx->list, queue);
+		llist_add_tail(&msg->list, queue);
 		card_emu_have_new_uart_tx(ci->ch);
 		break;
 	case CEMU_USB_MSGT_DT_SET_ATR:
 		atr = (struct cardemu_usb_msg_set_atr *) hdr;
 		card_emu_set_atr(ci->ch, atr->atr, atr->atr_len);
-		req_ctx_put(rctx);
+		usb_buf_free(msg);
 		break;
 	case CEMU_USB_MSGT_DT_CARDINSERT:
 		cardins = (struct cardemu_usb_msg_cardinsert *) hdr;
@@ -467,7 +467,7 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 			PIO_Set(&ci->pin_insert);
 		else
 			PIO_Clear(&ci->pin_insert);
-		req_ctx_put(rctx);
+		usb_buf_free(msg);
 		break;
 	case CEMU_USB_MSGT_DT_GET_STATUS:
 		card_emu_report_status(ci->ch);
@@ -475,48 +475,56 @@ static void dispatch_usb_command(struct req_ctx *rctx, struct cardem_inst *ci)
 	case CEMU_USB_MSGT_DT_GET_STATS:
 	default:
 		/* FIXME */
-		req_ctx_put(rctx);
+		usb_buf_free(msg);
 		break;
 	}
 }
 
-static void dispatch_received_rctx(struct req_ctx *rctx, struct cardem_inst *ci)
+static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 {
-	struct req_ctx *segm;
+	struct msgb *segm;
 	struct cardemu_usb_msg_hdr *mh;
-	int i = 0;
 
 	/* check if we have multiple concatenated commands in
 	 * one message.  USB endpoints are streams that don't
 	 * preserve the message boundaries */
-	mh = (struct cardemu_usb_msg_hdr *) rctx->data;
-	if (mh->msg_len == rctx->tot_len) {
+	mh = (struct cardemu_usb_msg_hdr *) msg->data;
+	if (mh->msg_len == msgb_length(msg)) {
 		/* fast path: only one message in buffer */
-		dispatch_usb_command(rctx, ci);
+		dispatch_usb_command(msg, ci);
 		return;
 	}
 
 	/* slow path: iterate over list of messages, allocating one new
 	 * reqe_ctx per segment */
-	for (mh = (struct cardemu_usb_msg_hdr *) rctx->data;
-	     (uint8_t *)mh < rctx->data + rctx->tot_len;
-	     mh = (struct cardemu_usb_msg_hdr * ) ((uint8_t *)mh + mh->msg_len)) {
-		segm = req_ctx_find_get(0, RCTX_S_FREE, RCTX_S_MAIN_PROCESSING);
+	while (1) {
+		mh = (struct cardemu_usb_msg_hdr *) msg->head;
+
+		segm = usb_buf_alloc(ci->ep_out);
 		if (!segm) {
-			TRACE_ERROR("%u: ENOMEM during rctx segmentation\r\n",
+			TRACE_ERROR("%u: ENOMEM during msg segmentation\r\n",
 				    ci->num);
 			break;
 		}
-		segm->idx = 0;
-		segm->tot_len = mh->msg_len;
-		memcpy(segm->data, mh, segm->tot_len);
-		dispatch_usb_command(segm, ci);
-		i++;
+
+		if (mh->msg_len > msgb_length(msg)) {
+			TRACE_ERROR("%u: Unexpected large message (%u bytes)\n",
+					ci->num, mh->msg_len);
+			usb_buf_free(segm);
+		} else {
+			uint8_t *cur = msgb_put(segm, mh->msg_len);
+			segm->l1h = segm->head;
+			memcpy(cur, mh, mh->msg_len);
+			dispatch_usb_command(segm, ci);
+		}
+		/* pull this message */
+		msgb_pull(msg, mh->msg_len);
+		/* abort if we're done */
+		if (msgb_length(msg) <= 0)
+			break;
 	}
 
-	/* release the master req_ctx, as all segments have been
-	 * processed now */
-	req_ctx_put(rctx);
+	usb_buf_free(msg);
 }
 
 /* iterate over the queue of incoming USB commands and dispatch/execute
@@ -525,7 +533,7 @@ static void process_any_usb_commands(struct llist_head *main_q,
 				     struct cardem_inst *ci)
 {
 	struct llist_head *lh;
-	struct req_ctx *rctx;
+	struct msgb *msg;
 	int i;
 
 	/* limit the number of iterations to 10, to ensure we don't get
@@ -535,8 +543,8 @@ static void process_any_usb_commands(struct llist_head *main_q,
 		lh = llist_head_dequeue_irqsafe(main_q);
 		if (!lh)
 			break;
-		rctx = llist_entry(lh, struct req_ctx, list);
-		dispatch_received_rctx(rctx, ci);
+		msg = llist_entry(lh, struct msgb, list);
+		dispatch_received_msg(msg, ci);
 	}
 }
 
@@ -562,19 +570,16 @@ void mode_cardemu_run(void)
 			//TRACE_ERROR("%uRx%02x\r\n", i, byte);
 		}
 
-		queue = card_emu_get_usb_tx_queue(ci->ch);
-		int usb_pending = llist_count(queue);
-		if (usb_pending != ci->usb_pending_old) {
-			TRACE_DEBUG("%u usb_pending=%d\r\n",
-				    i, usb_pending);
-			ci->usb_pending_old = usb_pending;
-		}
-		usb_refill_to_host(queue, ci->ep_in);
+		/* first try to send any pending messages on IRQ */
+		usb_refill_to_host(ci->ep_int);
+
+		/* then try to send any pending messages on IN */
+		usb_refill_to_host(ci->ep_in);
 
 		/* ensure we can handle incoming USB messages from the
 		 * host */
-		queue = &ci->usb_out_queue;
-		usb_refill_from_host(queue, ci->ep_out);
+		usb_refill_from_host(ci->ep_out);
+		queue = usb_get_queue(ci->ep_out);
 		process_any_usb_commands(queue, ci);
 	}
 }

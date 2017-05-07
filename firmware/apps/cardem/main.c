@@ -6,7 +6,6 @@
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
-#include "req_ctx.h"
 #include "osmocom/core/timer.h"
 
 unsigned int g_unique_id[4];
@@ -127,8 +126,6 @@ extern int main(void)
 	/* Enable watchdog for 500ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
 		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
-
-	req_ctx_init();
 
 	PIO_InitializeInterrupts(0);
 

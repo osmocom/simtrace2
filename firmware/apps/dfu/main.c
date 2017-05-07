@@ -190,8 +190,6 @@ extern int main(void)
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
 		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
 
-	//req_ctx_init();
-
 	PIO_InitializeInterrupts(0);
 
 	EEFC_ReadUniqueID(g_unique_id);

@@ -4,12 +4,12 @@
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
-#include "req_ctx.h"
 #include "wwan_led.h"
 #include "wwan_perst.h"
 #include "boardver_adc.h"
 #include "card_pres.h"
 #include "osmocom/core/timer.h"
+#include "usb_buf.h"
 
 static const Pin pin_hubpwr_override = PIN_PRTPWR_OVERRIDE;
 static const Pin pin_hub_rst = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
@@ -231,6 +231,8 @@ void board_exec_dbg_cmd(int ch)
 
 void board_main_top(void)
 {
+	usb_buf_init();
+
 	wwan_led_init();
 	wwan_perst_init();
 

@@ -97,7 +97,7 @@ C_LIBCHIP  = $(notdir $(wildcard $(AT91LIB)/libchip_sam3s/source/*.c) $(wildcard
 C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.c USBDDriverCallbacks.c
 C_LIBUSB_RT  = dfu.c dfu_runtime.c
 C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
-C_LIBCOMMON  = string.c stdio.c fputs.c req_ctx.c ringbuffer.c
+C_LIBCOMMON  = string.c stdio.c fputs.c usb_buf.c ringbuffer.c pseudo_talloc.c host_communication.c
 
 C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
 C_BOARD	    += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))

@@ -236,11 +236,15 @@ void board_main_top(void)
 	wwan_led_init();
 	wwan_perst_init();
 
-	/* set PIN_PRTPWR_OVERRIDE to output-low to avoid the internal
-	 * pull-up on the input to keep SIMTRACE12 alive */
-	PIO_Configure(&pin_hubpwr_override, 1);
-	PIO_Configure(&pin_hub_rst, 1);
+	/* make sure we can detect whether running in ST12 or ST34 */
 	PIO_Configure(&pin_1234_detect, 1);
+
+	if (qmod_sam3_is_12()) {
+		/* set PIN_PRTPWR_OVERRIDE to output-low to avoid the internal
+		* pull-up on the input to keep SIMTRACE12 alive */
+		PIO_Configure(&pin_hubpwr_override, 1);
+		PIO_Configure(&pin_hub_rst, 1);
+	}
 	PIO_Configure(&pin_peer_rst, 1);
 	PIO_Configure(&pin_peer_erase, 1);
 	PIO_Configure(&pin_conn_usim1, 1);

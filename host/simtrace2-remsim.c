@@ -37,7 +37,7 @@
 
 #include "libusb_util.h"
 #include "simtrace.h"
-#include "cardemu_prot.h"
+#include "simtrace_prot.h"
 #include "apdu_dispatch.h"
 #include "simtrace2-discovery.h"
 
@@ -45,6 +45,7 @@
 #include <osmocom/core/gsmtap_util.h>
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
+#include <osmocom/core/msgb.h>
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
@@ -92,6 +93,11 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 	return 0;
 }
 
+static struct msgb *st_msgb_alloc(void)
+{
+	return msgb_alloc_headroom(1024+32, 32, "SIMtrace");
+}
+
 #if 0
 static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
 {
@@ -101,90 +107,117 @@ static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
 #endif
 
 /*! \brief Transmit a given command to the SIMtrace2 device */
-static int tx_to_dev(struct cardem_inst *ci, uint8_t *buf, unsigned int len)
+static int tx_to_dev_msg(struct cardem_inst *ci, struct msgb *msg)
 {
-	struct cardemu_usb_msg_hdr *mh = (struct cardemu_usb_msg_hdr *) buf;
-	int xfer_len;
+	int rc;
 
-	mh->msg_len = len;
-
-	printf("<- %s\n", osmo_hexdump(buf, len));
+	printf("<- %s\n", msgb_hexdump(msg));
 
 	if (ci->udp_fd < 0) {
-		return libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.out, buf, len,
-					    &xfer_len, 100000);
+		unsigned int xfer_len;
+
+		rc = libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.out, msgb_data(msg),
+					  msgb_length(msg), &xfer_len, 100000);
 	} else {
-		return write(ci->udp_fd, buf, len);
+		rc = write(ci->udp_fd, msgb_data(msg), msgb_length(msg));
 	}
+
+	msgb_free(msg);
+	return rc;
+}
+
+static struct simtrace_msg_hdr *push_simtrace_hdr(struct msgb *msg, uint8_t msg_class, uint8_t msg_type)
+{
+	struct simtrace_msg_hdr *sh = msgb_push(msg, sizeof(*sh));
+
+	memset(sh, 0, sizeof(*sh));
+	sh->msg_class = msg_class;
+	sh->msg_type = msg_type;
+	sh->msg_len = msgb_length(msg);
 }
 
 /*! \brief Request the SIMtrace2 to generate a card-insert signal */
 static int request_card_insert(struct cardem_inst *ci, bool inserted)
 {
-	struct cardemu_usb_msg_cardinsert cins;
+	struct msgb *msg = st_msgb_alloc();
+	struct cardemu_usb_msg_cardinsert *cins;
 
-	memset(&cins, 0, sizeof(cins));
-	cins.hdr.msg_type = CEMU_USB_MSGT_DT_CARDINSERT;
+	cins = (struct cardemu_usb_msg_cardinsert *) msgb_put(msg, sizeof(*cins));
+	memset(cins, 0, sizeof(*cins));
 	if (inserted)
-		cins.card_insert = 1;
+		cins->card_insert = 1;
 
-	return tx_to_dev(ci, (uint8_t *)&cins, sizeof(cins));
+	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_CARDINSERT);
+
+	return tx_to_dev_msg(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Rx */
 static int request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
 {
+	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
-	uint8_t buf[sizeof(*txd) + 1];
-	txd = (struct cardemu_usb_msg_tx_data *) buf;
+	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
 	printf("<= request_pb_and_rx(%02x, %d)\n", pb, le);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 1;
-	txd->hdr.msg_type = CEMU_USB_MSGT_DT_TX_DATA;
 	txd->flags = CEMU_DATA_F_PB_AND_RX;
-	txd->data[0] = pb;
+	/* one data byte */
+	msgb_put_u8(msg, pb);
 
-	return tx_to_dev(ci, (uint8_t *)txd, sizeof(*txd)+txd->data_len);
+	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+
+	return tx_to_dev_msg(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
 static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *data, uint8_t data_len_in)
 {
+	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
-	uint8_t buf[sizeof(*txd) + 1 + data_len_in];
-	txd = (struct cardemu_usb_msg_tx_data *) buf;
+	uint8_t *cur;
+
+	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
 	printf("<= request_pb_and_tx(%02x, %s, %d)\n", pb, osmo_hexdump(data, data_len_in), data_len_in);
 
 	memset(txd, 0, sizeof(*txd));
-	txd->hdr.msg_type = CEMU_USB_MSGT_DT_TX_DATA;
 	txd->data_len = 1 + data_len_in;
 	txd->flags = CEMU_DATA_F_PB_AND_TX;
-	txd->data[0] = pb;
-	memcpy(txd->data+1, data, data_len_in);
+	/* procedure byte */
+	msgb_put_u8(msg, pb);
+	/* data */
+	cur = msgb_put(msg, data_len_in);
+	memcpy(cur, data, data_len_in);
 
-	return tx_to_dev(ci, buf, sizeof(*txd)+txd->data_len);
+	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+
+	return tx_to_dev_msg(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to send a Status Word */
 static int request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 {
+	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
-	uint8_t buf[sizeof(*txd) + 2];
-	txd = (struct cardemu_usb_msg_tx_data *) buf;
+	uint8_t *cur;
+
+	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
 	printf("<= request_sw_tx(%02x %02x)\n", sw[0], sw[1]);
 
 	memset(txd, 0, sizeof(*txd));
-	txd->hdr.msg_type = CEMU_USB_MSGT_DT_TX_DATA;
 	txd->data_len = 2;
 	txd->flags = CEMU_DATA_F_PB_AND_TX | CEMU_DATA_F_FINAL;
-	txd->data[0] = sw[0];
-	txd->data[1] = sw[1];
+	cur = msgb_put(msg, 2);
+	cur[0] = sw[0];
+	cur[1] = sw[1];
 
-	return tx_to_dev(ci, (uint8_t *)txd, sizeof(*txd)+txd->data_len);
+	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+
+	return tx_to_dev_msg(ci, msg);
 }
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
@@ -200,18 +233,22 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 
 static int request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned int atr_len)
 {
+	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_set_atr *satr;
-	uint8_t buf[sizeof(*satr) + atr_len];
-	satr = (struct cardemu_usb_msg_set_atr *) buf;
+	uint8_t *cur;
+
+	satr = (struct cardemu_usb_msg_set_atr *) msgb_put(msg, sizeof(*satr));
 
 	printf("<= request_set_atr(%s)\n", osmo_hexdump(atr, atr_len));
 
 	memset(satr, 0, sizeof(*satr));
-	satr->hdr.msg_type = CEMU_USB_MSGT_DT_SET_ATR;
 	satr->atr_len = atr_len;
-	memcpy(satr->atr, atr, atr_len);
+	cur = msgb_put(msg, atr_len);
+	memcpy(cur, atr, atr_len);
 
-	return tx_to_dev(ci, (uint8_t *)satr, sizeof(buf));
+	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_SET_ATR);
+
+	return tx_to_dev_msg(ci, msg);
 }
 
 /*! \brief Process a STATUS message from the SIMtrace2 */
@@ -300,25 +337,30 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 	return 0;
 }
 
+#if 0
+	case SIMTRACE_CMD_DO_ERROR
+		rc = process_do_error(ci, buf, len);
+		break;
+#endif
+
 /*! \brief Process an incoming message from the SIMtrace2 */
 static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)
 {
-	struct cardemu_usb_msg_hdr *sh = (struct cardemu_usb_msg_hdr *)buf;
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *)buf;
 	int rc;
 
 	printf("-> %s\n", osmo_hexdump(buf, len));
 
+	buf += sizeof(*sh);
+
 	switch (sh->msg_type) {
-	case CEMU_USB_MSGT_DO_STATUS:
+	case SIMTRACE_MSGT_BD_CEMU_STATUS:
 		rc = process_do_status(ci, buf, len);
 		break;
-	case CEMU_USB_MSGT_DO_PTS:
+	case SIMTRACE_MSGT_DO_CEMU_PTS:
 		rc = process_do_pts(ci, buf, len);
 		break;
-	case CEMU_USB_MSGT_DO_ERROR:
-		rc = process_do_error(ci, buf, len);
-		break;
-	case CEMU_USB_MSGT_DO_RX_DATA:
+	case SIMTRACE_MSGT_DO_CEMU_RX_DATA:
 		rc = process_do_rx_da(ci, buf, len);
 		break;
 	default:

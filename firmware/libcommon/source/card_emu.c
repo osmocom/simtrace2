@@ -31,7 +31,7 @@
 #include "iso7816_fidi.h"
 #include "tc_etu.h"
 #include "card_emu.h"
-#include "cardemu_prot.h"
+#include "simtrace_prot.h"
 #include "usb_buf.h"
 #include "osmocom/core/linuxlist.h"
 #include "osmocom/core/msgb.h"
@@ -162,6 +162,37 @@ struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch)
 static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts);
 static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
 
+/* update simtrace header msg_len and submit USB buffer */
+void usb_buf_upd_len_and_submit(struct msgb *msg)
+{
+	struct simtrace_msg_hdr *sh = msg->l1h;
+
+	sh->msg_len = msgb_length(msg);
+
+	usb_buf_submit(msg);
+}
+
+/* Allocate USB buffer and push + initialize simtrace_msg_hdr */
+struct msgb *usb_buf_alloc_st(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
+{
+	struct msgb *msg;
+	struct simtrace_msg_hdr *sh;
+
+	msg = usb_buf_alloc(ep);
+	if (!msg)
+		return NULL;
+
+	msg->l1h = msgb_put(msg, sizeof(*sh));
+	sh = (struct simtrace_msg_hdr *) msg->l1h;
+	memset(sh, 0, sizeof(*sh));
+	sh->msg_class = msg_class;
+	sh->msg_type = msg_type;
+	msg->l2h = msg->l1h + sizeof(*sh);
+
+	return msg;
+}
+
+/* Update cardemu_usb_msg_rx_data length + submit bufffer */
 static void flush_rx_buffer(struct card_handle *ch)
 {
 	struct msgb *msg;
@@ -175,12 +206,10 @@ static void flush_rx_buffer(struct card_handle *ch)
 	ch->uart_rx_msg = NULL;
 
 	/* store length of data payload fild in header */
-	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
-	msg->l2h = &rd->data;
-	rd->data_len = msgb_l2len(msg);
-	rd->hdr.msg_len = msgb_length(msg);
+	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
+	rd->data_len = msgb_l2len(msg) - sizeof(*rd);
 
-	usb_buf_submit(msg);
+	usb_buf_upd_len_and_submit(msg);
 }
 
 /* convert a non-contiguous PTS request/responsei into a contiguous
@@ -223,19 +252,15 @@ static void flush_pts(struct card_handle *ch)
 	struct msgb *msg;
 	struct cardemu_usb_msg_pts_info *ptsi;
 
-	msg = usb_buf_alloc(ch->in_ep);
+	msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DO_CEMU_PTS);
 	if (!msg)
 		return;
 
-	msg->l1h = msgb_put(msg, sizeof(*ptsi));
-	msg->l2h = msg->l1h + sizeof(ptsi->hdr);
-	ptsi = (struct cardemu_usb_msg_pts_info *) msg->l1h;
-	ptsi->hdr.msg_type = CEMU_USB_MSGT_DO_PTS;
-	ptsi->hdr.msg_len = sizeof(*ptsi);
+	ptsi = (struct cardemu_usb_msg_pts_info *) msgb_put(msg, sizeof(*ptsi));
 	ptsi->pts_len = serialize_pts(ptsi->req, ch->pts.req);
 	serialize_pts(ptsi->resp, ch->pts.resp);
 
-	usb_buf_submit(msg);
+	usb_buf_upd_len_and_submit(msg);
 }
 
 static void emu_update_fidi(struct card_handle *ch)
@@ -504,24 +529,22 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 
 	/* ensure we have a buffer */
 	if (!ch->uart_rx_msg) {
-		msg = ch->uart_rx_msg = usb_buf_alloc(ch->in_ep);
+		msg = ch->uart_rx_msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM,
+							 SIMTRACE_MSGT_DO_CEMU_RX_DATA);
 		if (!ch->uart_rx_msg) {
 			TRACE_ERROR("%u: Received UART byte but ENOMEM\r\n",
 				    ch->num);
 			return;
 		}
-		msg->l1h = msgb_put(msg, sizeof(*rd));
-		rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
-		msg->l2h = msg->l1h + sizeof(rd->hdr);
-		cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
+		msgb_put(msg, sizeof(*rd));
 	} else
 		msg = ch->uart_rx_msg;
 
-	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 	msgb_put_u8(msg, byte);
 
 	/* check if the buffer is full. If so, send it */
-	if (msgb_length(msg) >= sizeof(*rd) + num_data_bytes) {
+	if (msgb_l2len(msg) >= sizeof(*rd) + num_data_bytes) {
 		rd->flags |= CEMU_DATA_F_FINAL;
 		flush_rx_buffer(ch);
 		/* We need to transmit the SW now, */
@@ -604,18 +627,16 @@ static void send_tpdu_header(struct card_handle *ch)
 	}
 	TRACE_DEBUG("%u: allocating new buffer\r\n", ch->num);
 	/* ensure we have a new buffer */
-	ch->uart_rx_msg = usb_buf_alloc(ch->in_ep);
+	ch->uart_rx_msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM,
+					   SIMTRACE_MSGT_DO_CEMU_RX_DATA);
 	if (!ch->uart_rx_msg) {
 		TRACE_ERROR("%u: %s: ENOMEM\r\n", ch->num, __func__);
 		return;
 	}
 	msg = ch->uart_rx_msg;
-	msg->l1h = msgb_put(msg, sizeof(*rd));
-	rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
+	rd = (struct cardemu_usb_msg_rx_data *) msgb_put(msg, sizeof(*rd));
 
 	/* initialize header */
-	msg->l2h = msg->l1h + sizeof(rd->hdr);
-	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DO_RX_DATA);
 	rd->flags = CEMU_DATA_F_TPDU_HDR;
 
 	/* copy TPDU header to data field */
@@ -683,12 +704,14 @@ static int tx_byte_tpdu(struct card_handle *ch)
 
 		/* dequeue first at head */
 		ch->uart_tx_msg = msgb_dequeue(&ch->uart_tx_queue);
-		ch->uart_tx_msg->l1h = ch->uart_tx_msg->data;
+		ch->uart_tx_msg->l1h = ch->uart_tx_msg->head;
+		ch->uart_tx_msg->l2h = ch->uart_tx_msg->l1h + sizeof(struct simtrace_msg_hdr);
 		msg = ch->uart_tx_msg;
-		msgb_pull(msg, sizeof(*td));
+		/* remove the header */
+		msgb_pull(msg, sizeof(struct simtrace_msg_hdr) + sizeof(*td));
 	}
 	msg = ch->uart_tx_msg;
-	td = (struct cardemu_usb_msg_tx_data *) msg->l1h;
+	td = (struct cardemu_usb_msg_tx_data *) msg->l2h;
 
 	/* take the next pending byte out of the msgb */
 	byte = msgb_pull_u8(msg);
@@ -829,15 +852,12 @@ void card_emu_report_status(struct card_handle *ch)
 	struct msgb *msg;
 	struct cardemu_usb_msg_status *sts;
 
-	msg = usb_buf_alloc(ch->in_ep);
+	msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM,
+				SIMTRACE_MSGT_BD_CEMU_STATUS);
 	if (!msg)
 		return;
 
-	msg->l1h = msgb_put(msg, sizeof(*sts));
-	msg->l2h = msg->l1h + sizeof(sts->hdr);
-	sts = (struct cardemu_usb_msg_status *) msg->l1h;
-	sts->hdr.msg_type = CEMU_USB_MSGT_DO_STATUS;
-	sts->hdr.msg_len = sizeof(*sts);
+	sts = (struct cardemu_usb_msg_status *) msgb_put(msg, sizeof(*sts));
 	sts->flags = 0;
 	if (ch->vcc_active)
 		sts->flags |= CEMU_STATUS_F_VCC_PRESENT;
@@ -851,7 +871,7 @@ void card_emu_report_status(struct card_handle *ch)
 	sts->wi = ch->wi;
 	sts->waiting_time = ch->waiting_time;
 
-	usb_buf_submit(msg);
+	usb_buf_upd_len_and_submit(msg);
 }
 
 /* hardware driver informs us that a card I/O signal has changed */

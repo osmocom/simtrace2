@@ -36,7 +36,7 @@
 #include <libusb.h>
 
 #include "simtrace.h"
-#include "cardemu_prot.h"
+#include "simtrace_prot.h"
 #include "apdu_dispatch.h"
 #include "simtrace2-discovery.h"
 

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "card_emu.h"
-#include "cardemu_prot.h"
+#include "simtrace_prot.h"
 #include "tc_etu.h"
 #include "usb_buf.h"
 
@@ -134,8 +134,7 @@ static void reader_send_bytes(struct card_handle *ch, const uint8_t *bytes, unsi
 
 static void dump_rctx(struct msgb *msg)
 {
-	struct cardemu_usb_msg_hdr *mh =
-		(struct cardemu_usb_msg_hdr *) msg->l1h;
+	struct simtrace_msg_hdr *mh = (struct simtrace_msg_hdr *) msg->l1h;
 	struct cardemu_usb_msg_rx_data *rxd;
 	int i;
 #if 0
@@ -148,8 +147,8 @@ static void dump_rctx(struct msgb *msg)
 	printf("%s\n", msgb_hexdump(msg));
 
 	switch (mh->msg_type) {
-	case CEMU_USB_MSGT_DO_RX_DATA:
-		rxd = (struct cardemu_usb_msg_rx_data *)mh;
+	case SIMTRACE_MSGT_DO_CEMU_RX_DATA:
+		rxd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 		printf("    flags=%x, data=", rxd->flags);
 		for (i = 0; i < rxd->data_len; i++)
 			printf(" %02x", rxd->data[i]);
@@ -164,26 +163,25 @@ static void get_and_verify_rctx(uint8_t ep, const uint8_t *data, unsigned int le
 	struct msgb *msg;
 	struct cardemu_usb_msg_tx_data *td;
 	struct cardemu_usb_msg_rx_data *rd;
-	struct cardemu_usb_msg_hdr *mh;
+	struct simtrace_msg_hdr *mh;
 
 	assert(queue);
 	msg = msgb_dequeue(queue);
 	assert(msg);
 	dump_rctx(msg);
 	assert(msg->l1h);
-	mh = (struct cardemu_usb_msg_hdr *) msg->l1h;
+	mh = (struct simtrace_msg_hdr *) msg->l1h;
 
 	/* verify the contents of the rctx */
 	switch (mh->msg_type) {
-	case CEMU_USB_MSGT_DO_RX_DATA:
-		rd = (struct cardemu_usb_msg_rx_data *) msg->l1h;
-		assert(rd->hdr.msg_type == CEMU_USB_MSGT_DO_RX_DATA);
+	case SIMTRACE_MSGT_DO_CEMU_RX_DATA:
+		rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 		assert(rd->data_len == len);
 		assert(!memcmp(rd->data, data, len));
 		break;
 #if 0
 	case RCTX_S_UART_RX_PENDING:
-		rd = (struct cardemu_usb_msg_rx_data *) rctx->data;
+		rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 		assert(rd->data_len == len);
 		assert(!memcmp(rd->data, data, len));
 		break;
@@ -200,6 +198,7 @@ static void get_and_verify_rctx_pps(const uint8_t *data, unsigned int len)
 {
 	struct llist_head *queue = usb_get_queue(PHONE_DATAIN);
 	struct msgb *msg;
+	struct simtrace_msg_hdr *mh;
 	struct cardemu_usb_msg_pts_info *ptsi;
 
 	assert(queue);
@@ -207,10 +206,11 @@ static void get_and_verify_rctx_pps(const uint8_t *data, unsigned int len)
 	assert(msg);
 	dump_rctx(msg);
 	assert(msg->l1h);
+	mh = (struct simtrace_msg_hdr *) msg->l1h;
+	ptsi = (struct cardemu_usb_msg_pts_info *) msg->l2h;
 
-	ptsi = (struct cardemu_usb_msg_pts_info *) msg->l1h;
 	/* FIXME: verify */
-	assert(ptsi->hdr.msg_type == CEMU_USB_MSGT_DO_PTS);
+	assert(mh->msg_type == SIMTRACE_MSGT_DO_CEMU_PTS);
 	assert(!memcmp(ptsi->req, data, len));
 	assert(!memcmp(ptsi->resp, data, len));
 
@@ -234,27 +234,33 @@ static void rdr_send_tpdu_hdr(struct card_handle *ch, const uint8_t *tpdu_hdr)
 	get_and_verify_rctx(PHONE_DATAIN, tpdu_hdr, 5);
 }
 
-/* emulate a CEMU_USB_MSGT_DT_TX_DATA received from USB */
+/* emulate a SIMTRACE_MSGT_DT_CEMU_TX_DATA received from USB */
 static void host_to_device_data(struct card_handle *ch, const uint8_t *data, uint16_t len,
 				unsigned int flags)
 {
 	struct msgb *msg;
+	struct simtrace_msg_hdr *mh;
 	struct cardemu_usb_msg_tx_data *rd;
 	struct llist_head *queue;
 
 	/* allocate a free req_ctx */
 	msg = usb_buf_alloc(PHONE_DATAOUT);
 	assert(msg);
+	/* initialize the common header */
 	msg->l1h = msg->head;
+	mh = (struct simtrace_msg_hdr *) msgb_put(msg, sizeof(*mh));
+	mh->msg_class = SIMTRACE_MSGC_CARDEM;
+	mh->msg_type = SIMTRACE_MSGT_DT_CEMU_TX_DATA;
 
-	/* initialize the header */
-	rd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*rd) + len);
-	cardemu_hdr_set(&rd->hdr, CEMU_USB_MSGT_DT_TX_DATA);
+	/* initialize the tx_data message */
+	msg->l2h = msgb_put(msg, sizeof(*rd) + len);
+	rd = (struct cardemu_usb_msg_tx_data *) msg->l2h;
 	rd->flags = flags;
 	/* copy data and set length */
 	rd->data_len = len;
 	memcpy(rd->data, data, len);
-	rd->hdr.msg_len = sizeof(*rd) + len;
+
+	mh->msg_len = sizeof(*mh) + sizeof(*rd) + len;
 
 	/* hand the req_ctx to the UART transmit code */
 	queue = card_emu_get_uart_tx_queue(ch);

@@ -1,1 +1,0 @@
-../firmware/libcommon/include/cardemu_prot.h

@@ -10,7 +10,7 @@
 #include "osmocom/core/msgb.h"
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
-#include "cardemu_prot.h"
+#include "simtrace_prot.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
@@ -440,27 +440,42 @@ void mode_cardemu_exit(void)
 }
 
 /* handle a single USB command as received from the USB host */
-static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
+static void dispatch_usb_command_generic(struct msgb *msg, struct cardem_inst *ci)
 {
-	struct cardemu_usb_msg_hdr *hdr;
+	struct simtrace_msg_hdr *hdr;
+
+	hdr = (struct simtrace_msg_hdr *) msg->l1h;
+	switch (hdr->msg_type) {
+	case SIMTRACE_CMD_BD_BOARD_INFO:
+		break;
+	default:
+		break;
+	}
+	usb_buf_free(msg);
+}
+
+/* handle a single USB command as received from the USB host */
+static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci)
+{
+	struct simtrace_msg_hdr *hdr;
 	struct cardemu_usb_msg_set_atr *atr;
 	struct cardemu_usb_msg_cardinsert *cardins;
 	struct llist_head *queue;
 
-	hdr = (struct cardemu_usb_msg_hdr *) msg->l1h;
+	hdr = (struct simtrace_msg_hdr *) msg->l1h;
 	switch (hdr->msg_type) {
-	case CEMU_USB_MSGT_DT_TX_DATA:
+	case SIMTRACE_MSGT_DT_CEMU_TX_DATA:
 		queue = card_emu_get_uart_tx_queue(ci->ch);
 		llist_add_tail(&msg->list, queue);
 		card_emu_have_new_uart_tx(ci->ch);
 		break;
-	case CEMU_USB_MSGT_DT_SET_ATR:
-		atr = (struct cardemu_usb_msg_set_atr *) hdr;
+	case SIMTRACE_MSGT_DT_CEMU_SET_ATR:
+		atr = (struct cardemu_usb_msg_set_atr *) msg->l2h;
 		card_emu_set_atr(ci->ch, atr->atr, atr->atr_len);
 		usb_buf_free(msg);
 		break;
-	case CEMU_USB_MSGT_DT_CARDINSERT:
-		cardins = (struct cardemu_usb_msg_cardinsert *) hdr;
+	case SIMTRACE_MSGT_DT_CEMU_CARDINSERT:
+		cardins = (struct cardemu_usb_msg_cardinsert *) msg->l2h;
 		TRACE_INFO("%u: set card_insert to %s\r\n", ci->num,
 			   cardins->card_insert ? "INSERTED" : "REMOVED");
 		if (cardins->card_insert)
@@ -469,12 +484,60 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 			PIO_Clear(&ci->pin_insert);
 		usb_buf_free(msg);
 		break;
-	case CEMU_USB_MSGT_DT_GET_STATUS:
+	case SIMTRACE_MSGT_BD_CEMU_STATUS:
 		card_emu_report_status(ci->ch);
+		usb_buf_free(msg);
 		break;
-	case CEMU_USB_MSGT_DT_GET_STATS:
+	case SIMTRACE_MSGT_BD_CEMU_STATS:
 	default:
-		/* FIXME */
+		/* FIXME: Send Error */
+		usb_buf_free(msg);
+		break;
+	}
+}
+
+/* handle a single USB command as received from the USB host */
+static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
+{
+	struct simtrace_msg_hdr *hdr;
+
+	hdr = (struct simtrace_msg_hdr *) msg->l1h;
+	switch (hdr->msg_type) {
+	case SIMTRACE_MSGT_DT_MODEM_RESET:
+		break;
+	case SIMTRACE_MSGT_DT_MODEM_SIM_SELECT:
+		break;
+	case SIMTRACE_MSGT_BD_MODEM_STATUS:
+		break;
+	default:
+		break;
+	}
+	usb_buf_free(msg);
+}
+
+/* handle a single USB command as received from the USB host */
+static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
+{
+	struct simtrace_msg_hdr *sh = msg->l1h;
+
+	if (msgb_length(msg) < sizeof(*sh)) {
+		/* FIXME: Error */
+		usb_buf_free(msg);
+		return;
+	}
+
+	switch (sh->msg_class) {
+	case SIMTRACE_MSGC_GENERIC:
+		dispatch_usb_command_generic(msg, ci);
+		break;
+	case SIMTRACE_MSGC_CARDEM:
+		dispatch_usb_command_cardem(msg, ci);
+		break;
+	case SIMTRACE_MSGC_MODEM:
+		dispatch_usb_command_modem(msg, ci);
+		break;
+	default:
+		/* FIXME: Send Error */
 		usb_buf_free(msg);
 		break;
 	}
@@ -483,12 +546,12 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 {
 	struct msgb *segm;
-	struct cardemu_usb_msg_hdr *mh;
+	struct simtrace_msg_hdr *mh;
 
 	/* check if we have multiple concatenated commands in
 	 * one message.  USB endpoints are streams that don't
 	 * preserve the message boundaries */
-	mh = (struct cardemu_usb_msg_hdr *) msg->data;
+	mh = (struct simtrace_msg_hdr *) msg->data;
 	if (mh->msg_len == msgb_length(msg)) {
 		/* fast path: only one message in buffer */
 		dispatch_usb_command(msg, ci);
@@ -498,7 +561,7 @@ static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 	/* slow path: iterate over list of messages, allocating one new
 	 * reqe_ctx per segment */
 	while (1) {
-		mh = (struct cardemu_usb_msg_hdr *) msg->head;
+		mh = (struct simtrace_msg_hdr *) msg->data;
 
 		segm = usb_buf_alloc(ci->ep_out);
 		if (!segm) {

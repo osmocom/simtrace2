@@ -10,48 +10,69 @@
 #include "wwan_perst.h"
 #include "osmocom/core/timer.h"
 
-#define PERST_DURATION_MS 300
+struct wwan_perst {
+	const Pin pin;
+	struct osmo_timer_list timer;
+};
 
 #ifdef PIN_PERST1
-static const Pin pin_perst1 = PIN_PERST1;
-static struct osmo_timer_list perst1_timer;
+static struct wwan_perst perst1 = {
+	.pin = PIN_PERST1,
+};
 #endif
 
 #ifdef PIN_PERST2
-static const Pin pin_perst2 = PIN_PERST2;
-static struct osmo_timer_list perst2_timer;
+static struct wwan_perst perst2 = {
+	.pin = PIN_PERST2,
+};
 #endif
 
 static void perst_tmr_cb(void *data)
 {
-	const Pin *pin = data;
+	struct wwan_perst *perst = data;
 	/* release the (low-active) reset */
-	PIO_Clear(pin);
+	PIO_Clear(&perst->pin);
 }
 
-int wwan_perst_do_reset(int modem_nr)
+static struct wwan_perst *get_perst_for_modem(int modem_nr)
 {
-	const Pin *pin;
-	struct osmo_timer_list *tmr;
-
 	switch (modem_nr) {
 #ifdef PIN_PERST1
 	case 1:
-		pin = &pin_perst1;
-		tmr = &perst1_timer;
-		break;
+		return &perst1;
 #endif
 #ifdef PIN_PERST2
 	case 2:
-		pin = &pin_perst2;
-		tmr = &perst2_timer;
-		break;
+		return &perst2;
 #endif
 	default:
-		return -1;
+		return NULL;
 	}
-	PIO_Set(pin);
-	osmo_timer_schedule(tmr, PERST_DURATION_MS/1000, (PERST_DURATION_MS%1000)*1000);
+}
+
+int wwan_perst_do_reset_pulse(int modem_nr, unsigned int duration_ms)
+{
+	struct wwan_perst *perst = get_perst_for_modem(modem_nr);
+	if (!perst)
+		return -1;
+
+	PIO_Set(&perst->pin);
+	osmo_timer_schedule(&perst->timer, duration_ms/1000, (duration_ms%1000)*1000);
+
+	return 0;
+}
+
+int wwan_perst_set(int modem_nr, int active)
+{
+	struct wwan_perst *perst = get_perst_for_modem(modem_nr);
+	if (!perst)
+		return -1;
+
+	osmo_timer_del(&perst->timer);
+	if (active)
+		PIO_Set(&perst->pin);
+	else
+		PIO_Clear(&perst->pin);
 
 	return 0;
 }
@@ -60,16 +81,16 @@ int wwan_perst_init(void)
 {
 	int num_perst = 0;
 #ifdef PIN_PERST1
-	PIO_Configure(&pin_perst1, 1);
-	perst1_timer.cb = perst_tmr_cb;
-	perst1_timer.data = (void *) &pin_perst1;
+	PIO_Configure(&perst1.pin, 1);
+	perst1.timer.cb = perst_tmr_cb;
+	perst1.timer.data = (void *) &perst1;
 	num_perst++;
 #endif
 
 #ifdef PIN_PERST2
-	PIO_Configure(&pin_perst2, 1);
-	perst2_timer.cb = perst_tmr_cb;
-	perst2_timer.data = (void *) &pin_perst2;
+	PIO_Configure(&perst2.pin, 1);
+	perst2.timer.cb = perst_tmr_cb;
+	perst2.timer.data = (void *) &perst2;
 	num_perst++;
 #endif
 	return num_perst;

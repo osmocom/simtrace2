@@ -211,11 +211,11 @@ void board_exec_dbg_cmd(int ch)
 		break;
 	case '1':
 		printf("Resetting Modem 1 (of this SAM3)\n\r");
-		wwan_perst_do_reset(1);
+		wwan_perst_do_reset_pulse(1, 300);
 		break;
 	case '2':
 		printf("Resetting Modem 2 (of this SAM3)\n\r");
-		wwan_perst_do_reset(2);
+		wwan_perst_do_reset_pulse(2, 300);
 		break;
 	case '!':
 		qmod_use_physical_sim(1, 0);

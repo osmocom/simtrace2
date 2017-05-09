@@ -51,16 +51,24 @@
 
 static struct gsmtap_inst *g_gti;
 
-struct cardem_inst {
+/* transport to a SIMtrace device */
+static struct st_transport {
+	/* USB */
 	struct libusb_device_handle *usb_devh;
 	struct {
 		uint8_t in;
 		uint8_t out;
 		uint8_t irq_in;
 	} usb_ep;
-	const struct osim_cla_ins_card_profile *card_prof;
 
+	/* UDP */
 	int udp_fd;
+};
+
+/* One istance of card emulation */
+struct cardem_inst {
+	struct st_transport transp;
+	const struct osim_cla_ins_card_profile *card_prof;
 	struct osim_chan_hdl *chan;
 };
 
@@ -111,19 +119,20 @@ static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
 #endif
 
 /*! \brief Transmit a given command to the SIMtrace2 device */
-static int st_tx_msgb_to_dev(struct cardem_inst *ci, struct msgb *msg)
+static int st_transp_tx_msg(struct st_transport *transp, struct msgb *msg)
 {
 	int rc;
 
 	printf("<- %s\n", msgb_hexdump(msg));
 
-	if (ci->udp_fd < 0) {
+	if (transp->udp_fd < 0) {
 		unsigned int xfer_len;
 
-		rc = libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.out, msgb_data(msg),
-					  msgb_length(msg), &xfer_len, 100000);
+		rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.out,
+					  msgb_data(msg), msgb_length(msg),
+					  &xfer_len, 100000);
 	} else {
-		rc = write(ci->udp_fd, msgb_data(msg), msgb_length(msg));
+		rc = write(transp->udp_fd, msgb_data(msg), msgb_length(msg));
 	}
 
 	msgb_free(msg);
@@ -158,7 +167,7 @@ static int cardem_request_card_insert(struct cardem_inst *ci, bool inserted)
 
 	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_CARDINSERT);
 
-	return st_tx_msgb_to_dev(ci, msg);
+	return st_transp_tx_msg(&ci->transp, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Rx */
@@ -178,7 +187,7 @@ static int cardem_request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t 
 
 	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return st_tx_msgb_to_dev(ci, msg);
+	return st_transp_tx_msg(&ci->transp, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
@@ -205,7 +214,7 @@ static int cardem_request_pb_and_tx(struct cardem_inst *ci, uint8_t pb,
 
 	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return st_tx_msgb_to_dev(ci, msg);
+	return st_transp_tx_msg(&ci->transp, msg);
 }
 
 /*! \brief Request the SIMtrace2 to send a Status Word */
@@ -228,7 +237,7 @@ static int cardem_request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 
 	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return st_tx_msgb_to_dev(ci, msg);
+	return st_transp_tx_msg(&ci->transp, msg);
 }
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
@@ -259,7 +268,7 @@ static int cardem_request_set_atr(struct cardem_inst *ci, const uint8_t *atr, un
 
 	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_SET_ATR);
 
-	return st_tx_msgb_to_dev(ci, msg);
+	return st_transp_tx_msg(&ci->transp, msg);
 }
 
 
@@ -430,6 +439,7 @@ static const struct option opts[] = {
 
 static void run_mainloop(struct cardem_inst *ci)
 {
+	struct st_transport *transp = &ci->transp;
 	unsigned int msg_count, byte_count = 0;
 	uint8_t buf[16*265];
 	int xfer_len;
@@ -439,15 +449,15 @@ static void run_mainloop(struct cardem_inst *ci)
 
 	while (1) {
 		/* read data from SIMtrace2 device (local or via USB) */
-		if (ci->udp_fd < 0) {
-			rc = libusb_bulk_transfer(ci->usb_devh, ci->usb_ep.in,
+		if (transp->udp_fd < 0) {
+			rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
 						  buf, sizeof(buf), &xfer_len, 100000);
 			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT) {
 				fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
 				return;
 			}
 		} else {
-			rc = read(ci->udp_fd, buf, sizeof(buf));
+			rc = read(transp->udp_fd, buf, sizeof(buf));
 			if (rc <= 0) {
 				fprintf(stderr, "shor read from UDP\n");
 				return;
@@ -480,6 +490,7 @@ static void signal_handler(int signal)
 
 int main(int argc, char **argv)
 {
+	struct st_transport *transp = &ci->transp;
 	char *gsmtap_host = "127.0.0.1";
 	int rc;
 	int c, ret = 1;
@@ -547,7 +558,7 @@ int main(int argc, char **argv)
 	}
 
 	memset(ci, 0, sizeof(*ci));
-	ci->udp_fd = -1;
+	transp->udp_fd = -1;
 
 	ci->card_prof = &osim_uicc_sim_cic_profile;
 
@@ -558,9 +569,10 @@ int main(int argc, char **argv)
 			goto do_exit;
 		}
 	} else {
-		ci->udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP, remote_udp_host,
-					   remote_udp_port+if_num, OSMO_SOCK_F_CONNECT);
-		if (ci->udp_fd < 0) {
+		transp->udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
+						remote_udp_host, remote_udp_port+if_num,
+						OSMO_SOCK_F_CONNECT);
+		if (transp->udp_fd < 0) {
 			fprintf(stderr, "error binding UDP port\n");
 			goto do_exit;
 		}
@@ -594,7 +606,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, &signal_handler);
 
 	do {
-		if (ci->udp_fd < 0) {
+		if (transp->udp_fd < 0) {
 			struct usb_interface_match _ifm, *ifm = &_ifm;
 			ifm->vendor = vendor_id;
 			ifm->product = product_id;
@@ -602,20 +614,20 @@ int main(int argc, char **argv)
 			ifm->interface = if_num;
 			ifm->altsetting = altsetting;
 			ifm->addr = addr;
-			ci->usb_devh = usb_open_claim_interface(NULL, ifm);
-			if (!ci->usb_devh) {
+			transp->usb_devh = usb_open_claim_interface(NULL, ifm);
+			if (!transp->usb_devh) {
 				fprintf(stderr, "can't open USB device\n");
 				goto close_exit;
 			}
 
-			rc = libusb_claim_interface(ci->usb_devh, if_num);
+			rc = libusb_claim_interface(transp->usb_devh, if_num);
 			if (rc < 0) {
 				fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
 				goto close_exit;
 			}
 
-			rc = get_usb_ep_addrs(ci->usb_devh, if_num, &ci->usb_ep.out,
-					      &ci->usb_ep.in, &ci->usb_ep.irq_in);
+			rc = get_usb_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
+					      &transp->usb_ep.in, &transp->usb_ep.irq_in);
 			if (rc < 0) {
 				fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
 				goto close_exit;
@@ -632,17 +644,17 @@ int main(int argc, char **argv)
 		run_mainloop(ci);
 		ret = 0;
 
-		if (ci->udp_fd < 0)
-			libusb_release_interface(ci->usb_devh, 0);
+		if (transp->udp_fd < 0)
+			libusb_release_interface(transp->usb_devh, 0);
 close_exit:
-		if (ci->usb_devh)
-			libusb_close(ci->usb_devh);
+		if (transp->usb_devh)
+			libusb_close(transp->usb_devh);
 		if (keep_running)
 			sleep(1);
 	} while (keep_running);
 
 release_exit:
-	if (ci->udp_fd < 0)
+	if (transp->udp_fd < 0)
 		libusb_exit(NULL);
 do_exit:
 	return ret;

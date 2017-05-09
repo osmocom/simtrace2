@@ -27,6 +27,8 @@ static struct wwan_perst perst2 = {
 };
 #endif
 
+static int initialized = 0;
+
 static void perst_tmr_cb(void *data)
 {
 	struct wwan_perst *perst = data;
@@ -36,6 +38,11 @@ static void perst_tmr_cb(void *data)
 
 static struct wwan_perst *get_perst_for_modem(int modem_nr)
 {
+	if (!initialized) {
+		TRACE_ERROR("Somebody forgot to call wwan_perst_init()\r\n");
+		wwan_perst_init();
+	}
+
 	switch (modem_nr) {
 #ifdef PIN_PERST1
 	case 1:

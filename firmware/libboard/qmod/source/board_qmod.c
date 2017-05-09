@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "wwan_led.h"
 #include "wwan_perst.h"
+#include "sim_switch.h"
 #include "boardver_adc.h"
 #include "card_pres.h"
 #include "osmocom/core/timer.h"
@@ -17,36 +18,8 @@ static const Pin pin_1234_detect = {PIO_PA14, PIOA, ID_PIOA, PIO_INPUT, PIO_PULL
 static const Pin pin_peer_rst = {PIO_PA0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 static const Pin pin_peer_erase = {PIO_PA11, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
-static const Pin pin_conn_usim1 = {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
-static const Pin pin_conn_usim2 = {PIO_PA28, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
-
 /* array of generated USB Strings */
 extern unsigned char *usb_strings[];
-
-static void qmod_use_physical_sim(unsigned int nr, int physical)
-{
-	const Pin *pin;
-
-	TRACE_INFO("Modem %d: %s SIM\n\r", nr,
-		   physical ? "physical" : "virtual");
-
-	switch (nr) {
-	case 1:
-		pin = &pin_conn_usim1;
-		break;
-	case 2:
-		pin = &pin_conn_usim2;
-		break;
-	default:
-		TRACE_ERROR("Invalid SIM%u\n\r", nr);
-		return;
-	}
-
-	if (physical)
-		PIO_Clear(pin);
-	else
-		PIO_Set(pin);
-}
 
 static int qmod_sam3_is_12(void)
 {
@@ -218,10 +191,10 @@ void board_exec_dbg_cmd(int ch)
 		wwan_perst_do_reset_pulse(2, 300);
 		break;
 	case '!':
-		qmod_use_physical_sim(1, 0);
+		sim_switch_use_physical(1, 0);
 		break;
 	case '@':
-		qmod_use_physical_sim(2, 0);
+		sim_switch_use_physical(2, 0);
 		break;
 	default:
 		if (!qmod_sam3_is_12())
@@ -238,6 +211,7 @@ void board_main_top(void)
 
 	wwan_led_init();
 	wwan_perst_init();
+	sim_switch_init();
 
 	/* make sure we can detect whether running in ST12 or ST34 */
 	PIO_Configure(&pin_1234_detect, 1);
@@ -250,8 +224,6 @@ void board_main_top(void)
 	}
 	PIO_Configure(&pin_peer_rst, 1);
 	PIO_Configure(&pin_peer_erase, 1);
-	PIO_Configure(&pin_conn_usim1, 1);
-	PIO_Configure(&pin_conn_usim2, 1);
 	i2c_pin_init();
 
 	if (qmod_sam3_is_12()) {

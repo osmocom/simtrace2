@@ -12,6 +12,7 @@
 #include "usb_buf.h"
 #include "simtrace_prot.h"
 #include "wwan_perst.h"
+#include "sim_switch.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
@@ -521,6 +522,21 @@ static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 	return 0;
 }
 
+static int usb_command_sim_select(struct msgb *msg, struct cardem_inst *ci)
+{
+	struct st_modem_sim_select *mss = msg->l2h;
+
+	if (msgb_l2len(msg) < sizeof(*mss))
+		return -1;
+
+	if (mss->remote_sim)
+		sim_switch_use_physical(ci->num, 0);
+	else
+		sim_switch_use_physical(ci->num, 1);
+
+	return 0;
+}
+
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 {
@@ -532,6 +548,7 @@ static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 		usb_command_modem_reset(msg, ci);
 		break;
 	case SIMTRACE_MSGT_DT_MODEM_SIM_SELECT:
+		usb_command_sim_select(msg, ci);
 		break;
 	case SIMTRACE_MSGT_BD_MODEM_STATUS:
 		break;

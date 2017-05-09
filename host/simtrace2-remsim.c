@@ -93,6 +93,10 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 	return 0;
 }
 
+/***********************************************************************
+ * SIMTRACE pcore protocol
+ ***********************************************************************/
+
 static struct msgb *st_msgb_alloc(void)
 {
 	return msgb_alloc_headroom(1024+32, 32, "SIMtrace");
@@ -107,7 +111,7 @@ static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
 #endif
 
 /*! \brief Transmit a given command to the SIMtrace2 device */
-static int tx_to_dev_msg(struct cardem_inst *ci, struct msgb *msg)
+static int st_tx_msgb_to_dev(struct cardem_inst *ci, struct msgb *msg)
 {
 	int rc;
 
@@ -126,7 +130,7 @@ static int tx_to_dev_msg(struct cardem_inst *ci, struct msgb *msg)
 	return rc;
 }
 
-static struct simtrace_msg_hdr *push_simtrace_hdr(struct msgb *msg, uint8_t msg_class, uint8_t msg_type)
+static struct simtrace_msg_hdr *st_push_hdr(struct msgb *msg, uint8_t msg_class, uint8_t msg_type)
 {
 	struct simtrace_msg_hdr *sh = msgb_push(msg, sizeof(*sh));
 
@@ -136,8 +140,13 @@ static struct simtrace_msg_hdr *push_simtrace_hdr(struct msgb *msg, uint8_t msg_
 	sh->msg_len = msgb_length(msg);
 }
 
+/***********************************************************************
+ * Card Emulation protocol
+ ***********************************************************************/
+
+
 /*! \brief Request the SIMtrace2 to generate a card-insert signal */
-static int request_card_insert(struct cardem_inst *ci, bool inserted)
+static int cardem_request_card_insert(struct cardem_inst *ci, bool inserted)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_cardinsert *cins;
@@ -147,19 +156,19 @@ static int request_card_insert(struct cardem_inst *ci, bool inserted)
 	if (inserted)
 		cins->card_insert = 1;
 
-	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_CARDINSERT);
+	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_CARDINSERT);
 
-	return tx_to_dev_msg(ci, msg);
+	return st_tx_msgb_to_dev(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Rx */
-static int request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
+static int cardem_request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= request_pb_and_rx(%02x, %d)\n", pb, le);
+	printf("<= %s(%02x, %d)\n", __func__, pb, le);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 1;
@@ -167,13 +176,14 @@ static int request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le)
 	/* one data byte */
 	msgb_put_u8(msg, pb);
 
-	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return tx_to_dev_msg(ci, msg);
+	return st_tx_msgb_to_dev(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
-static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *data, uint8_t data_len_in)
+static int cardem_request_pb_and_tx(struct cardem_inst *ci, uint8_t pb,
+				    const uint8_t *data, uint8_t data_len_in)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
@@ -181,7 +191,8 @@ static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *
 
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= request_pb_and_tx(%02x, %s, %d)\n", pb, osmo_hexdump(data, data_len_in), data_len_in);
+	printf("<= %s(%02x, %s, %d)\n", __func__, pb,
+		osmo_hexdump(data, data_len_in), data_len_in);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 1 + data_len_in;
@@ -192,13 +203,13 @@ static int request_pb_and_tx(struct cardem_inst *ci, uint8_t pb, const uint8_t *
 	cur = msgb_put(msg, data_len_in);
 	memcpy(cur, data, data_len_in);
 
-	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return tx_to_dev_msg(ci, msg);
+	return st_tx_msgb_to_dev(ci, msg);
 }
 
 /*! \brief Request the SIMtrace2 to send a Status Word */
-static int request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
+static int cardem_request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;
@@ -206,7 +217,7 @@ static int request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= request_sw_tx(%02x %02x)\n", sw[0], sw[1]);
+	printf("<= %s(%02x %02x)\n", __func__, sw[0], sw[1]);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 2;
@@ -215,9 +226,9 @@ static int request_sw_tx(struct cardem_inst *ci, const uint8_t *sw)
 	cur[0] = sw[0];
 	cur[1] = sw[1];
 
-	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
+	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_TX_DATA);
 
-	return tx_to_dev_msg(ci, msg);
+	return st_tx_msgb_to_dev(ci, msg);
 }
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
@@ -231,7 +242,7 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 	atr[atr_len-1] = csum;
 }
 
-static int request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned int atr_len)
+static int cardem_request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned int atr_len)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_set_atr *satr;
@@ -239,17 +250,22 @@ static int request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned 
 
 	satr = (struct cardemu_usb_msg_set_atr *) msgb_put(msg, sizeof(*satr));
 
-	printf("<= request_set_atr(%s)\n", osmo_hexdump(atr, atr_len));
+	printf("<= %s(%s)\n", __func__, osmo_hexdump(atr, atr_len));
 
 	memset(satr, 0, sizeof(*satr));
 	satr->atr_len = atr_len;
 	cur = msgb_put(msg, atr_len);
 	memcpy(cur, atr, atr_len);
 
-	push_simtrace_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_SET_ATR);
+	st_push_hdr(msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_SET_ATR);
 
-	return tx_to_dev_msg(ci, msg);
+	return st_tx_msgb_to_dev(ci, msg);
 }
+
+
+/***********************************************************************
+ * Incoming Messages
+ ***********************************************************************/
 
 /*! \brief Process a STATUS message from the SIMtrace2 */
 static int process_do_status(struct cardem_inst *ci, uint8_t *buf, int len)
@@ -329,10 +345,10 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 		ac.sw[1] = msgb_apdu_sw(tmsg) & 0xff;
 		printf("SW=0x%04x, len_rx=%d\n", msgb_apdu_sw(tmsg), msgb_l3len(tmsg));
 		if (msgb_l3len(tmsg))
-			request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
-		request_sw_tx(ci, ac.sw);
+			cardem_request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
+		cardem_request_sw_tx(ci, ac.sw);
 	} else if (ac.lc.tot > ac.lc.cur) {
-		request_pb_and_rx(ci, ac.hdr.ins, ac.lc.tot - ac.lc.cur);
+		cardem_request_pb_and_rx(ci, ac.hdr.ins, ac.lc.tot - ac.lc.cur);
 	}
 	return 0;
 }
@@ -440,7 +456,7 @@ static void run_mainloop(struct cardem_inst *ci)
 		}
 		/* dispatch any incoming data */
 		if (xfer_len > 0) {
-			//printf("URB: %s\n", osmo_hexdump(buf, rc));
+			printf("URB: %s\n", osmo_hexdump(buf, rc));
 			process_usb_msg(ci, buf, xfer_len);
 			msg_count++;
 			byte_count += xfer_len;
@@ -454,7 +470,7 @@ static void signal_handler(int signal)
 {
 	switch (signal) {
 	case SIGINT:
-		request_card_insert(ci, false);
+		cardem_request_card_insert(ci, false);
 		exit(0);
 		break;
 	default:
@@ -606,12 +622,12 @@ int main(int argc, char **argv)
 			}
 		}
 
-		request_card_insert(ci, true);
+		cardem_request_card_insert(ci, true);
 		uint8_t real_atr[] = { 0x3B, 0x9F, 0x96, 0x80, 0x1F, 0xC7, 0x80, 0x31,
 					     0xA0, 0x73, 0xBE, 0x21, 0x13, 0x67, 0x43, 0x20,
 					     0x07, 0x18, 0x00, 0x00, 0x01, 0xA5 };
 		atr_update_csum(real_atr, sizeof(real_atr));
-		request_set_atr(ci, real_atr, sizeof(real_atr));
+		cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
 
 		run_mainloop(ci);
 		ret = 0;

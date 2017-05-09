@@ -11,6 +11,7 @@
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
 #include "simtrace_prot.h"
+#include "wwan_perst.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
@@ -496,6 +497,30 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	}
 }
 
+static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
+{
+	struct st_modem_reset *mr = msg->l2h;
+
+	if (msgb_l2len(msg) < sizeof(*mr))
+		return -1;
+
+	switch (mr->asserted) {
+	case 0:
+		wwan_perst_set(ci->num, 0);
+		break;
+	case 1:
+		wwan_perst_set(ci->num, 1);
+		break;
+	case 2:
+		wwan_perst_do_reset_pulse(ci->num, mr->pulse_duration_msec);
+		break;
+	default:
+		return -1;
+	}
+
+	return 0;
+}
+
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 {
@@ -504,6 +529,7 @@ static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 	hdr = (struct simtrace_msg_hdr *) msg->l1h;
 	switch (hdr->msg_type) {
 	case SIMTRACE_MSGT_DT_MODEM_RESET:
+		usb_command_modem_reset(msg, ci);
 		break;
 	case SIMTRACE_MSGT_DT_MODEM_SIM_SELECT:
 		break;

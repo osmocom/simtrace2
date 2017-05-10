@@ -7,6 +7,7 @@
  */
 
 #include "board.h"
+#include "trace.h"
 #include "wwan_perst.h"
 #include "osmocom/core/timer.h"
 
@@ -33,6 +34,7 @@ static void perst_tmr_cb(void *data)
 {
 	struct wwan_perst *perst = data;
 	/* release the (low-active) reset */
+	TRACE_INFO("De-asserting modem reset\r\n");
 	PIO_Clear(&perst->pin);
 }
 
@@ -63,6 +65,7 @@ int wwan_perst_do_reset_pulse(int modem_nr, unsigned int duration_ms)
 	if (!perst)
 		return -1;
 
+	TRACE_INFO("%u: Asserting modem reset\r\n", modem_nr);
 	PIO_Set(&perst->pin);
 	osmo_timer_schedule(&perst->timer, duration_ms/1000, (duration_ms%1000)*1000);
 
@@ -76,10 +79,13 @@ int wwan_perst_set(int modem_nr, int active)
 		return -1;
 
 	osmo_timer_del(&perst->timer);
-	if (active)
+	if (active) {
+		TRACE_INFO("%u: Asserting modem reset\r\n", modem_nr);
 		PIO_Set(&perst->pin);
-	else
+	} else {
+		TRACE_INFO("%u: De-asserting modem reset\r\n", modem_nr);
 		PIO_Clear(&perst->pin);
+	}
 
 	return 0;
 }

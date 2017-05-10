@@ -41,10 +41,13 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 		return -1;
 	}
 
-	if (physical)
+	if (physical) {
+		TRACE_INFO("%u: Use local/physical SIM\r\n", nr);
 		PIO_Clear(pin);
-	else
+	} else {
+		TRACE_INFO("%u: Use remote/emulated SIM\r\n", nr);
 		PIO_Set(pin);
+	}
 
 	return 0;
 }

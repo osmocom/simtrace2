@@ -540,7 +540,9 @@ static void run_mainloop(struct cardem_inst *ci)
 		if (transp->udp_fd < 0) {
 			rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
 						  buf, sizeof(buf), &xfer_len, 100000);
-			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT) {
+			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT &&
+				      rc != LIBUSB_ERROR_INTERRUPTED &&
+				      rc != LIBUSB_ERROR_IO) {
 				fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
 				return;
 			}

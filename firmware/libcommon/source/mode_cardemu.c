@@ -500,7 +500,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 
 static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 {
-	struct st_modem_reset *mr = msg->l2h;
+	struct st_modem_reset *mr = (struct st_modem_reset *) msg->l2h;
 
 	if (msgb_l2len(msg) < sizeof(*mr))
 		return -1;
@@ -524,7 +524,7 @@ static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 
 static int usb_command_sim_select(struct msgb *msg, struct cardem_inst *ci)
 {
-	struct st_modem_sim_select *mss = msg->l2h;
+	struct st_modem_sim_select *mss = (struct st_modem_sim_select *) msg->l2h;
 
 	if (msgb_l2len(msg) < sizeof(*mss))
 		return -1;
@@ -561,7 +561,7 @@ static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 {
-	struct simtrace_msg_hdr *sh = msg->l1h;
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->l1h;
 
 	if (msgb_length(msg) < sizeof(*sh)) {
 		/* FIXME: Error */

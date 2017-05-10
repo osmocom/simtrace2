@@ -165,7 +165,7 @@ static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss);
 /* update simtrace header msg_len and submit USB buffer */
 void usb_buf_upd_len_and_submit(struct msgb *msg)
 {
-	struct simtrace_msg_hdr *sh = msg->l1h;
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->l1h;
 
 	sh->msg_len = msgb_length(msg);
 

@@ -295,6 +295,72 @@ static int cardem_request_set_atr(struct cardem_inst *ci, const uint8_t *atr, un
 }
 
 /***********************************************************************
+ * Modem Control protocol
+ ***********************************************************************/
+
+static int _modem_reset(struct st_slot *slot, uint8_t asserted, uint16_t pulse_ms)
+{
+	struct msgb *msg = st_msgb_alloc();
+	struct st_modem_reset *sr ;
+
+	sr = (struct st_modem_reset *) msgb_put(msg, sizeof(*sr));
+	sr->asserted = asserted;
+	sr->pulse_duration_msec = pulse_ms;
+
+	return st_slot_tx_msg(slot, msg, SIMTRACE_MSGC_MODEM, SIMTRACE_MSGT_DT_MODEM_RESET);
+}
+
+/*! \brief pulse the RESET line of the modem for \a duration_ms milli-seconds*/
+int st_modem_reset_pulse(struct st_slot *slot, uint16_t duration_ms)
+{
+	return _modem_reset(slot, 2, duration_ms);
+}
+
+/*! \brief assert the RESET line of the modem */
+int st_modem_reset_active(struct st_slot *slot)
+{
+	return _modem_reset(slot, 1, 0);
+}
+
+/*! \brief de-assert the RESET line of the modem */
+int st_modem_reset_inactive(struct st_slot *slot)
+{
+	return _modem_reset(slot, 0, 0);
+}
+
+static int _modem_sim_select(struct st_slot *slot, uint8_t remote_sim)
+{
+	struct msgb *msg = st_msgb_alloc();
+	struct st_modem_sim_select *ss;
+
+	ss = (struct st_modem_sim_select *) msgb_put(msg, sizeof(*ss));
+	ss->remote_sim = remote_sim;
+
+	return st_slot_tx_msg(slot, msg, SIMTRACE_MSGC_MODEM, SIMTRACE_MSGT_DT_MODEM_SIM_SELECT);
+}
+
+/*! \brief select local (physical) SIM for given slot */
+int st_modem_sim_select_local(struct st_slot *slot)
+{
+	return _modem_sim_select(slot, 0);
+}
+
+/*! \brief select remote (emulated/forwarded) SIM for given slot */
+int st_modem_sim_select_remote(struct st_slot *slot)
+{
+	return _modem_sim_select(slot, 1);
+}
+
+/*! \brief Request slot to send us status information about the modem */
+int st_modem_get_status(struct st_slot *slot)
+{
+	struct msgb *msg = st_msgb_alloc();
+
+	return st_slot_tx_msg(slot, msg, SIMTRACE_MSGC_MODEM, SIMTRACE_MSGT_BD_MODEM_STATUS);
+}
+
+
+/***********************************************************************
  * Incoming Messages
  ***********************************************************************/
 
@@ -666,12 +732,21 @@ int main(int argc, char **argv)
 			}
 		}
 
+		/* simulate card-insert to modem (owhw, not qmod) */
 		cardem_request_card_insert(ci, true);
+
+		/* select remote (forwarded) SIM */
+		st_modem_sim_select_remote(ci->slot);
+
+		/* set the ATR */
 		uint8_t real_atr[] = { 0x3B, 0x9F, 0x96, 0x80, 0x1F, 0xC7, 0x80, 0x31,
 					     0xA0, 0x73, 0xBE, 0x21, 0x13, 0x67, 0x43, 0x20,
 					     0x07, 0x18, 0x00, 0x00, 0x01, 0xA5 };
 		atr_update_csum(real_atr, sizeof(real_atr));
 		cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
+
+		/* select remote (forwarded) SIM */
+		st_modem_reset_pulse(ci->slot, 300);
 
 		run_mainloop(ci);
 		ret = 0;

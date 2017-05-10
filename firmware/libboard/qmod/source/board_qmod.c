@@ -207,11 +207,13 @@ void board_exec_dbg_cmd(int ch)
 
 void board_main_top(void)
 {
+#ifndef APPLICATION_dfu
 	usb_buf_init();
 
 	wwan_led_init();
 	wwan_perst_init();
 	sim_switch_init();
+#endif
 
 	/* make sure we can detect whether running in ST12 or ST34 */
 	PIO_Configure(&pin_1234_detect, 1);
@@ -224,7 +226,10 @@ void board_main_top(void)
 	}
 	PIO_Configure(&pin_peer_rst, 1);
 	PIO_Configure(&pin_peer_erase, 1);
+
+#ifndef APPLICATION_dfu
 	i2c_pin_init();
+#endif
 
 	if (qmod_sam3_is_12()) {
 		TRACE_INFO("Detected Quad-Modem ST12\n\r");
@@ -239,6 +244,8 @@ void board_main_top(void)
 
 	/* Obtain the circuit board version (currently just prints voltage */
 	get_board_version_adc();
+#ifndef APPLICATION_dfu
 	/* Initialize checking for card insert/remove events */
 	card_present_init();
+#endif
 }

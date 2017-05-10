@@ -522,6 +522,7 @@ static const struct option opts[] = {
 	{ "usb-interface", 1, 0, 'I' },
 	{ "usb-altsetting", 1, 0, 'S' },
 	{ "usb-address", 1, 0, 'A' },
+	{ "usb-path", 1, 0, 'H' },
 	{ NULL, 0, 0, 0 }
 };
 
@@ -601,6 +602,7 @@ int main(int argc, char **argv)
 	int if_num = 0, vendor_id = -1, product_id = -1;
 	int config_id = -1, altsetting = 0, addr = -1;
 	char *remote_udp_host = NULL;
+	char *path = NULL;
 	struct osim_reader_hdl *reader;
 	struct osim_card_hdl *card;
 
@@ -609,7 +611,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:ak", opts, &option_index);
+		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:ak", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -649,6 +651,9 @@ int main(int argc, char **argv)
 			break;
 		case 'A':
 			addr = atoi(optarg);
+			break;
+		case 'H':
+			path = optarg;
 			break;
 		}
 	}
@@ -714,6 +719,8 @@ int main(int argc, char **argv)
 			ifm->interface = if_num;
 			ifm->altsetting = altsetting;
 			ifm->addr = addr;
+			if (path)
+				osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
 			transp->usb_devh = usb_open_claim_interface(NULL, ifm);
 			if (!transp->usb_devh) {
 				fprintf(stderr, "can't open USB device\n");

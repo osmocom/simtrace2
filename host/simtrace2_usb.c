@@ -41,8 +41,8 @@ static int find_devices(void)
 		libusb_device_handle *dev_handle;
 		char strbuf[256];
 
-		printf("\t%04x:%04x Addr=%u, Cfg=%u, Intf=%u, Alt=%u: %d/%d/%d ",
-			m->vendor, m->product, m->addr,
+		printf("\t%04x:%04x Addr=%u, Path=%s, Cfg=%u, Intf=%u, Alt=%u: %d/%d/%d ",
+			m->vendor, m->product, m->addr, m->path,
 			m->configuration, m->interface, m->altsetting,
 			m->class, m->sub_class, m->protocol);
 

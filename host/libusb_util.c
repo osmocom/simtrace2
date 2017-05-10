@@ -3,10 +3,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <libusb.h>
 
 #include "libusb_util.h"
+
+static char path_buf[USB_MAX_PATH_LEN];
+
+static char *get_path(libusb_device *dev)
+{
+#if (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION >= 0x01000102) || (defined(LIBUSBX_API_VERSION) && LIBUSBX_API_VERSION >= 0x01000102)
+	uint8_t path[8];
+	int r,j;
+	r = libusb_get_port_numbers(dev, path, sizeof(path));
+	if (r > 0) {
+		sprintf(path_buf,"%d-%d",libusb_get_bus_number(dev),path[0]);
+		for (j = 1; j < r; j++){
+			sprintf(path_buf+strlen(path_buf),".%d",path[j]);
+		};
+	}
+	return path_buf;
+#else
+# warning "libusb too old - building without USB path support!"
+	return NULL;
+#endif
+}
 
 static int match_dev_id(const struct libusb_device_descriptor *desc, const struct dev_id *id)
 {
@@ -79,6 +101,7 @@ int dev_find_matching_interfaces(libusb_device *dev, int class, int sub_class, i
 	struct libusb_device_descriptor dev_desc;
 	int rc, i, out_idx = 0;
 	uint8_t addr;
+	char *path;
 
 	rc = libusb_get_device_descriptor(dev, &dev_desc);
 	if (rc < 0) {
@@ -87,6 +110,7 @@ int dev_find_matching_interfaces(libusb_device *dev, int class, int sub_class, i
 	}
 
 	addr = libusb_get_device_address(dev);
+	path = get_path(dev);
 
 	/* iterate over all configurations */
 	for (i = 0; i < dev_desc.bNumConfigurations; i++) {
@@ -117,6 +141,8 @@ int dev_find_matching_interfaces(libusb_device *dev, int class, int sub_class, i
 				out[out_idx].vendor = dev_desc.idVendor;
 				out[out_idx].product = dev_desc.idProduct;
 				out[out_idx].addr = addr;
+				strncpy(out[out_idx].path, path, sizeof(out[out_idx].path));
+				out[out_idx].path[sizeof(out[out_idx].path)-1] = '\0';
 				out[out_idx].configuration = conf_desc->bConfigurationValue;
 				out[out_idx].interface = if_desc->bInterfaceNumber;
 				out[out_idx].altsetting = if_desc->bAlternateSetting;
@@ -198,9 +224,12 @@ libusb_device_handle *usb_open_claim_interface(libusb_context *ctx,
 
 	for (dev = list; *dev; dev++) {
 		int addr;
+		char *path;
 
 		addr = libusb_get_device_address(*dev);
-		if (addr == ifm->addr) {
+		path = get_path(*dev);
+		if ((ifm->addr && addr == ifm->addr) ||
+		    (strlen(ifm->path) && !strcmp(path, ifm->path))) {
 			rc = libusb_open(*dev, &usb_devh);
 			if (rc < 0) {
 				perror("Cannot open device");

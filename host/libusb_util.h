@@ -2,6 +2,8 @@
 
 #include <libusb.h>
 
+#define USB_MAX_PATH_LEN 20
+
 struct dev_id {
 	uint16_t vendor_id;
 	uint16_t product_id;
@@ -21,6 +23,8 @@ struct usb_interface_match {
 	uint16_t product;
 	/* USB Bus Address */
 	uint8_t addr;
+	/* physical path */
+	char path[USB_MAX_PATH_LEN];
 	/* configuration of matching interface */
 	uint8_t configuration;
 	/* interface number of matching interface */

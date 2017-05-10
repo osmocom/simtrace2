@@ -577,6 +577,9 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 		dispatch_usb_command_cardem(msg, ci);
 		break;
 	case SIMTRACE_MSGC_MODEM:
+		/* FIXME: Find out why this fails if used for !=
+		 * MSGC_MODEM ?!? */
+		msg->l2h = msg->l1h + sizeof(*sh);
 		dispatch_usb_command_modem(msg, ci);
 		break;
 	default:

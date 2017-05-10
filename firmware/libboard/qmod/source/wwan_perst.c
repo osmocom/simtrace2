@@ -45,11 +45,11 @@ static struct wwan_perst *get_perst_for_modem(int modem_nr)
 
 	switch (modem_nr) {
 #ifdef PIN_PERST1
-	case 1:
+	case 0:
 		return &perst1;
 #endif
 #ifdef PIN_PERST2
-	case 2:
+	case 1:
 		return &perst2;
 #endif
 	default:

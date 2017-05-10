@@ -27,12 +27,12 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 
 	switch (nr) {
 #ifdef PIN_SIM_SWITCH1
-	case 1:
+	case 0:
 		pin = &pin_conn_usim1;
 		break;
 #endif
 #ifdef PIN_SIM_SWITCH2
-	case 2:
+	case 1:
 		pin = &pin_conn_usim2;
 		break;
 #endif

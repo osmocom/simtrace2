@@ -139,7 +139,7 @@ int st_transp_tx_msg(struct st_transport *transp, struct msgb *msg)
 	printf("<- %s\n", msgb_hexdump(msg));
 
 	if (transp->udp_fd < 0) {
-		unsigned int xfer_len;
+		int xfer_len;
 
 		rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.out,
 					  msgb_data(msg), msgb_length(msg),
@@ -155,13 +155,16 @@ int st_transp_tx_msg(struct st_transport *transp, struct msgb *msg)
 static struct simtrace_msg_hdr *st_push_hdr(struct msgb *msg, uint8_t msg_class, uint8_t msg_type,
 					    uint8_t slot_nr)
 {
-	struct simtrace_msg_hdr *sh = msgb_push(msg, sizeof(*sh));
+	struct simtrace_msg_hdr *sh;
 
+	sh = (struct simtrace_msg_hdr *) msgb_push(msg, sizeof(*sh));
 	memset(sh, 0, sizeof(*sh));
 	sh->msg_class = msg_class;
 	sh->msg_type = msg_type;
 	sh->slot_nr = slot_nr;
 	sh->msg_len = msgb_length(msg);
+
+	return sh;
 }
 
 /* transmit a given message to a specified slot. Expects all headers
@@ -169,7 +172,7 @@ static struct simtrace_msg_hdr *st_push_hdr(struct msgb *msg, uint8_t msg_class,
 int st_slot_tx_msg(struct st_slot *slot, struct msgb *msg,
 		   uint8_t msg_class, uint8_t msg_type)
 {
-	struct simtrace_msg_hdr *sh = msg->data;
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->data;
 
 	sh->slot_nr = slot->slot_nr;
 
@@ -682,7 +685,6 @@ close_exit:
 			sleep(1);
 	} while (keep_running);
 
-release_exit:
 	if (transp->udp_fd < 0)
 		libusb_exit(NULL);
 do_exit:

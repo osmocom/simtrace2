@@ -142,10 +142,10 @@ static void libusb_fd_added_cb(int fd, short events, void *user_data)
 /* call-back when libusb removes a FD */
 static void libusb_fd_removed_cb(int fd, void *user_data)
 {
-	struct osmo_fd *ofd;
 
 	printf("%s(%u)\n", __func__, fd);
 #if 0
+	struct osmo_fd *ofd;
 	/* FIXME: This needs new export in libosmocore! */
 	ofd = osmo_fd_get_by_fd(fd);
 
@@ -160,7 +160,7 @@ static void libusb_fd_removed_cb(int fd, void *user_data)
 static int ofd_udp_cb(struct osmo_fd *ofd, unsigned int what)
 {
 	int rc;
-	int addrlen = sizeof(g_sa_remote);
+	socklen_t addrlen = sizeof(g_sa_remote);
 
 	rc = recvfrom(ofd->fd, g_buf_out.buf, sizeof(g_buf_out.buf), 0,
 			(struct sockaddr *)&g_sa_remote, &addrlen);
@@ -204,7 +204,6 @@ int main(int argc, char **argv)
 {
 	int rc;
 	int c, ret = 1;
-	char *remote_host = NULL;
 	int local_udp_port = 52342;
 	unsigned int if_num = 0;
 
@@ -282,7 +281,6 @@ close_exit:
 	if (g_devh)
 		libusb_close(g_devh);
 
-release_exit:
 	libusb_exit(NULL);
 	return ret;
 }

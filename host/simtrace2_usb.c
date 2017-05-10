@@ -52,7 +52,8 @@ static int find_devices(void)
 			perror("Cannot open device");
 			continue;
 		}
-		rc = libusb_get_string_descriptor_ascii(dev_handle, m->string_idx, strbuf, sizeof(strbuf));
+		rc = libusb_get_string_descriptor_ascii(dev_handle, m->string_idx,
+					(unsigned char *)strbuf, sizeof(strbuf));
 		libusb_close(dev_handle);
 		if (rc < 0) {
 			printf("\n");

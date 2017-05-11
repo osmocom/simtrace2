@@ -1,6 +1,9 @@
 #pragma once
 #include "board_common.h"
 
+#define LED_USIM1	LED_GREEN
+#define LED_USIM2	LED_RED
+
 /** Name of the board */
 #define BOARD_NAME "QMOD"
 /** Board definition */

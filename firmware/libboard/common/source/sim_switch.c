@@ -2,6 +2,7 @@
 
 #include "board.h"
 #include "trace.h"
+#include "led.h"
 #include "sim_switch.h"
 
 #ifdef PIN_SIM_SWITCH1
@@ -16,6 +17,7 @@ static int initialized = 0;
 int sim_switch_use_physical(unsigned int nr, int physical)
 {
 	const Pin *pin;
+	enum led led;
 
 	if (!initialized) {
 		TRACE_ERROR("Somebody forgot to call sim_switch_init()\r\n");
@@ -29,11 +31,13 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 #ifdef PIN_SIM_SWITCH1
 	case 0:
 		pin = &pin_conn_usim1;
+		led = LED_USIM1;
 		break;
 #endif
 #ifdef PIN_SIM_SWITCH2
 	case 1:
 		pin = &pin_conn_usim2;
+		led = LED_USIM2;
 		break;
 #endif
 	default:
@@ -44,9 +48,11 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 	if (physical) {
 		TRACE_INFO("%u: Use local/physical SIM\r\n", nr);
 		PIO_Clear(pin);
+		led_blink(led, BLINK_ALWAYS_ON);
 	} else {
 		TRACE_INFO("%u: Use remote/emulated SIM\r\n", nr);
 		PIO_Set(pin);
+		led_blink(led, BLINK_ALWAYS_OFF);
 	}
 
 	return 0;

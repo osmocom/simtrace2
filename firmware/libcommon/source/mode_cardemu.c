@@ -399,6 +399,7 @@ void mode_cardemu_init(void)
 	PIO_EnableIt(&pin_usim1_vcc);
 #endif /* DETECT_VCC_BY_ADC */
 	cardem_inst[0].ch = card_emu_init(0, 2, 0, PHONE_DATAIN, PHONE_INT);
+	sim_switch_use_physical(0, 1);
 
 #ifdef CARDEMU_SECOND_UART
 	INIT_LLIST_HEAD(&cardem_inst[1].usb_out_queue);
@@ -413,7 +414,9 @@ void mode_cardemu_init(void)
 	PIO_EnableIt(&pin_usim2_vcc);
 #endif /* DETECT_VCC_BY_ADC */
 	cardem_inst[1].ch = card_emu_init(1, 0, 1, CARDEM_USIM2_DATAIN, CARDEM_USIM2_INT);
+	sim_switch_use_physical(1, 1);
 #endif /* CARDEMU_SECOND_UART */
+
 }
 
 /* called if config is deactivated */

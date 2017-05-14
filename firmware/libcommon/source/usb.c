@@ -47,8 +47,8 @@
  *------------------------------------------------------------------------------*/
 #include "usb_strings_generated.h"
 enum strDescNum {
-	PRODUCT_STRING = 1,
-	MANUF_STR,
+	MANUF_STR = 1,
+	PRODUCT_STRING,
 	SNIFFER_CONF_STR,
 	CCID_CONF_STR,
 	PHONE_CONF_STR,

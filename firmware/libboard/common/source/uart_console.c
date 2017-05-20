@@ -129,7 +129,8 @@ extern uint32_t UART_GetChar( void )
         UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
     }
 
-    while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 ) ;
+    while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 )
+        WDT_Restart(WDT);
 
     return pUart->UART_RHR ;
 }
@@ -281,6 +282,7 @@ extern uint32_t UART_GetInteger( uint32_t* pdwValue )
                 return 0 ;
             }
         }
+        WDT_Restart(WDT);
     }
 }
 

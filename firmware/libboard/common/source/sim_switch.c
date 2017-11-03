@@ -69,5 +69,6 @@ int sim_switch_init(void)
 	PIO_Configure(&pin_conn_usim2, 1);
 	num_switch++;
 #endif
+	initialized = 1;
 	return num_switch;
 }

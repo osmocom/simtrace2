@@ -109,5 +109,6 @@ int wwan_perst_init(void)
 	perst2.timer.data = (void *) &perst2;
 	num_perst++;
 #endif
+	initialized = 1;
 	return num_perst;
 }

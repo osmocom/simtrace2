@@ -13,8 +13,11 @@ static uint8_t msgb_inuse[NUM_RCTX_SMALL];
 void *_talloc_zero(const void *ctx, size_t size, const char *name)
 {
 	unsigned int i;
+	unsigned long x;
 
+	local_irq_save(x);
 	if (size > RCTX_SIZE_SMALL) {
+		local_irq_restore(x);
 		TRACE_ERROR("%s() request too large(%d > %d)\r\n", __func__, size, RCTX_SIZE_SMALL);
 		return NULL;
 	}
@@ -24,9 +27,11 @@ void *_talloc_zero(const void *ctx, size_t size, const char *name)
 			uint8_t *out = msgb_data[i];
 			msgb_inuse[i] = 1;
 			memset(out, 0, size);
+			local_irq_restore(x);
 			return out;
 		}
 	}
+	local_irq_restore(x);
 	TRACE_ERROR("%s() out of memory!\r\n", __func__);
 	return NULL;
 }
@@ -34,6 +39,9 @@ void *_talloc_zero(const void *ctx, size_t size, const char *name)
 int _talloc_free(void *ptr, const char *location)
 {
 	unsigned int i;
+	unsigned long x;
+
+	local_irq_save(x);
 	for (i = 0; i < ARRAY_SIZE(msgb_inuse); i++) {
 		if (ptr == msgb_data[i]) {
 			if (!msgb_inuse[i]) {
@@ -41,10 +49,12 @@ int _talloc_free(void *ptr, const char *location)
 			} else {
 				msgb_inuse[i] = 0;
 			}
+			local_irq_restore(x);
 			return 0;
 		}
 	}
 
+	local_irq_restore(x);
 	TRACE_ERROR("%s: invalid pointer %p from %s\r\n", __func__, ptr, location);
 	return -1;
 }

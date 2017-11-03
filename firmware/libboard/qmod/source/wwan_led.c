@@ -14,9 +14,9 @@ static const Pin pin_wwan1 = PIN_WWAN1;
 
 static void wwan1_irqhandler(const Pin *pPin)
 {
-	int active = wwan_led_active(1);
+	int active = wwan_led_active(0);
 
-	TRACE_INFO("WWAN1 LED %u\r\n", active);
+	TRACE_INFO("0: WWAN LED %u\r\n", active);
 
 	/* TODO: notify host via USB */
 }
@@ -27,8 +27,8 @@ static const Pin pin_wwan2 = PIN_WWAN2;
 
 static void wwan2_irqhandler(const Pin *pPin)
 {
-	int active = wwan_led_active(2);
-	TRACE_INFO("WWAN2 LED %u\r\n", active);
+	int active = wwan_led_active(1);
+	TRACE_INFO("1: WWAN LED %u\r\n", active);
 
 	/* TODO: notify host via USB */
 }
@@ -42,12 +42,12 @@ int wwan_led_active(int wwan)
 
 	switch (wwan) {
 #ifdef PIN_WWAN1
-	case 1:
+	case 0:
 		pin = &pin_wwan1;
 		break;
 #endif
 #ifdef PIN_WWAN2
-	case 2:
+	case 1:
 		pin = &pin_wwan2;
 		break;
 #endif

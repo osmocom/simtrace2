@@ -12,18 +12,21 @@
 #include "osmocom/core/timer.h"
 
 struct wwan_perst {
+	uint8_t idx;
 	const Pin pin;
 	struct osmo_timer_list timer;
 };
 
 #ifdef PIN_PERST1
 static struct wwan_perst perst1 = {
+	.idx = 0,
 	.pin = PIN_PERST1,
 };
 #endif
 
 #ifdef PIN_PERST2
 static struct wwan_perst perst2 = {
+	.idx = 1,
 	.pin = PIN_PERST2,
 };
 #endif
@@ -34,7 +37,7 @@ static void perst_tmr_cb(void *data)
 {
 	struct wwan_perst *perst = data;
 	/* release the (low-active) reset */
-	TRACE_INFO("De-asserting modem reset\r\n");
+	TRACE_INFO("%u: De-asserting modem reset\r\n", perst->idx);
 	PIO_Clear(&perst->pin);
 }
 

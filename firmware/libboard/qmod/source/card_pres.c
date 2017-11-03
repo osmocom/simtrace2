@@ -17,9 +17,9 @@ int is_card_present(int port)
 	const Pin *pin;
 	int present;
 
-	if (port < 1 || port > NUM_CARDPRES)
+	if (port < 0 || port >= NUM_CARDPRES)
 		return -1;
-	pin = &pin_cardpres[port-1];
+	pin = &pin_cardpres[port];
 
 	/* Card present signals are low-active, as we have a switch
 	 * against GND and an internal-pull-up in the SAM3 */
@@ -32,12 +32,12 @@ static void cardpres_tmr_cb(void *data)
 {
 	unsigned int i;
 
-	for (i = 1; i <= ARRAY_SIZE(pin_cardpres); i++) {
+	for (i = 0; i < ARRAY_SIZE(pin_cardpres); i++) {
 		int state = is_card_present(i);
-		if (state != last_state[i-1]) {
+		if (state != last_state[i]) {
 			TRACE_INFO("Card Detect %d Status %d -> %d\r\n", i, last_state[i], state);
 			/* FIXME: report to USB host */
-			last_state[i-1] = state;
+			last_state[i] = state;
 		}
 	}
 

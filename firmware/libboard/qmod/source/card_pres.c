@@ -35,7 +35,7 @@ static void cardpres_tmr_cb(void *data)
 	for (i = 0; i < ARRAY_SIZE(pin_cardpres); i++) {
 		int state = is_card_present(i);
 		if (state != last_state[i]) {
-			TRACE_INFO("Card Detect %d Status %d -> %d\r\n", i, last_state[i], state);
+			TRACE_INFO("%u: Card Detect Status %d -> %d\r\n", i, last_state[i], state);
 			/* FIXME: report to USB host */
 			last_state[i] = state;
 		}

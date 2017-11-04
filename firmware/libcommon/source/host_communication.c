@@ -1,6 +1,7 @@
 #include "board.h"
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
+#include "utils.h"
 
 #include "osmocom/core/linuxlist.h"
 #include "osmocom/core/msgb.h"
@@ -16,12 +17,13 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 {
 	struct msgb *msg = (struct msgb *) arg;
 	struct usb_buffered_ep *bep = msg->dst;
+	unsigned long x;
 
 	TRACE_DEBUG("%s (EP=0x%02x)\r\n", __func__, bep->ep);
 
-	__disable_irq();
+	local_irq_save(x);
 	bep->in_progress--;
-	__enable_irq();
+	local_irq_restore(x);
 	TRACE_DEBUG("%u: in_progress=%d\n", bep->ep, bep->in_progress);
 
 	if (status != USBD_STATUS_SUCCESS)
@@ -34,6 +36,7 @@ int usb_refill_to_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
+	unsigned long x;
 	int rc;
 
 #if 0
@@ -43,14 +46,14 @@ int usb_refill_to_host(uint8_t ep)
 	}
 #endif
 
-	__disable_irq();
+	local_irq_save(x);
 	if (bep->in_progress) {
-		__enable_irq();
+		local_irq_restore(x);
 		return 0;
 	}
 
 	if (llist_empty(&bep->queue)) {
-		__enable_irq();
+		local_irq_restore(x);
 		return 0;
 	}
 
@@ -58,7 +61,7 @@ int usb_refill_to_host(uint8_t ep)
 
 	msg = msgb_dequeue(&bep->queue);
 
-	__enable_irq();
+	local_irq_restore(x);
 
 	TRACE_DEBUG("%s (EP=0x%02x), in_progress=%d\r\n", __func__, ep, bep->in_progress);
 
@@ -70,9 +73,9 @@ int usb_refill_to_host(uint8_t ep)
 		TRACE_ERROR("%s error %x\n", __func__, rc);
 		/* re-insert to head of queue */
 		llist_add_irqsafe(&msg->list, &bep->queue);
-		__disable_irq();
+		local_irq_save(x);
 		bep->in_progress--;
-		__enable_irq();
+		local_irq_restore(x);
 		TRACE_DEBUG("%02x: in_progress=%d\n", bep->ep, bep->in_progress);
 		return 0;
 	}
@@ -105,6 +108,7 @@ int usb_refill_from_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
+	unsigned long x;
 	int rc;
 
 #if 0
@@ -142,16 +146,17 @@ int usb_drain_queue(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
+	unsigned long x;
 	int ret = 0;
 
 	/* wait until no transfers are in progress anymore and block
 	 * further interrupts */
 	while (1) {
-		__disable_irq();
+		local_irq_save(x);
 		if (!bep->in_progress) {
 			break;
 		}
-		__enable_irq();
+		local_irq_restore(x);
 		/* retry */
 	}
 
@@ -162,7 +167,7 @@ int usb_drain_queue(uint8_t ep)
 	}
 
 	/* re-enable interrupts and return number of free'd msgbs */
-	__enable_irq();
+	local_irq_restore(x);
 
 	return ret;
 }

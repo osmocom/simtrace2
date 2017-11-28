@@ -78,8 +78,8 @@ extern const USBDDriverDescriptors dfu_descriptors;
 
 /* no DFU bootloader is being used */
 #define DFURT_NUM_IF	0
-#define DFURT_IF_DESCRIPTOR_STRUCT(a, b)
-#define DFURT_IF_DESCRIPTOR
+#define DFURT_IF_DESCRIPTOR_STRUCT
+#define DFURT_IF_DESCRIPTOR(a, b)
 
 #endif /* BOARD_USB_DFU */
 

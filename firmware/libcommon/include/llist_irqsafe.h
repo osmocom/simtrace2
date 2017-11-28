@@ -10,7 +10,7 @@ static inline void llist_add_irqsafe(struct llist_head *_new,
 
 	local_irq_save(x);
 	llist_add(_new, head);
-	local_irq_retsore(x);
+	local_irq_restore(x);
 }
 
 static inline void llist_add_tail_irqsafe(struct llist_head *_new,

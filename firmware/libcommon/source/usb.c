@@ -268,7 +268,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 #ifdef CARDEMU_SECOND_UART
 		.bNumInterfaces		= 2+DFURT_NUM_IF,
 #else
-		.bNumInterefaces	= 1+DFURT_NUM_IF,
+		.bNumInterfaces		= 1+DFURT_NUM_IF,
 #endif
 		.bConfigurationValue	= CFG_NUM_PHONE,
 		.iConfiguration		= PHONE_CONF_STR,
@@ -506,7 +506,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 		.bAlternateSetting	= 0,
 		.bNumEndpoints		= 3,
 		.bInterfaceClass	= 0xff,
-		.bInterfaceSubClass	= SIMTRAC_SUBCLASS_CARDEM,
+		.bInterfaceSubClass	= SIMTRACE_SUBCLASS_CARDEM,
 		.bInterfaceProtocol	= 0,
 		.iInterface		= PHONE_CONF_STR,
 	},

@@ -82,6 +82,6 @@
 #define BOARD_USB_RELEASE	0x000
 
 //#define HAVE_SNIFFER
-//#define HAVE_CCID
+#define HAVE_CCID
 #define HAVE_CARDEM
 //#define HAVE_MITM

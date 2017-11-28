@@ -3,6 +3,7 @@
 
 #include "ringbuffer.h"
 #include "board.h"
+#include <usb/device/dfu/dfu.h>
 
 /* Endpoint numbers */
 #define DATAOUT     1
@@ -71,6 +72,7 @@ typedef struct {
     USBEndpointDescriptor      bulkIn;
     /// Interrupt OUT endpoint descriptor
     USBEndpointDescriptor      interruptIn;
+    DFURT_IF_DESCRIPTOR_STRUCT
 } __attribute__ ((packed)) CCIDDriverConfigurationDescriptors;
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];

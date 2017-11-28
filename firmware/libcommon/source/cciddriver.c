@@ -83,8 +83,6 @@
 /// Driver structure for an CCID device
 typedef struct {
 
-    /// Standard USB device driver instance
-    USBDDriver             usbdDriver;
     /// CCID message
     S_ccid_bulk_in_header  sCcidMessage;
     /// CCID command
@@ -889,7 +887,7 @@ static void CCID_RequestHandler(const USBGenericRequest *pRequest)
     else if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_STANDARD) {
 
         // Forward request to the standard handler
-        USBDDriver_RequestHandler(&(ccidDriver.usbdDriver), pRequest);
+        USBDDriver_RequestHandler(USBD_GetDriver(), pRequest);
     }
     else {
 

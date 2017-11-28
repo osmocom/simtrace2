@@ -89,12 +89,14 @@ void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 
 void USART1_IrqHandler(void)
 {
-	config_func_ptrs[simtrace_config].usart1_irq();
+	if (config_func_ptrs[simtrace_config].usart1_irq)
+		config_func_ptrs[simtrace_config].usart1_irq();
 }
 
 void USART0_IrqHandler(void)
 {
-	config_func_ptrs[simtrace_config].usart0_irq();
+	if (config_func_ptrs[simtrace_config].usart0_irq)
+		config_func_ptrs[simtrace_config].usart0_irq();
 }
 
 /* returns '1' in case we should break any endless loop */

@@ -249,3 +249,39 @@ void board_main_top(void)
 	card_present_init();
 #endif
 }
+
+static int uart_has_loopback_jumper(void)
+{
+	unsigned int i;
+	const Pin uart_loopback_pins[] = {
+		{PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT},
+		{PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+	};
+
+	/* Configure UART pins as I/O */
+	PIO_Configure(uart_loopback_pins, PIO_LISTSIZE(uart_loopback_pins));
+
+	for (i = 0; i < 10; i++) {
+		/* Set TxD high; abort if RxD doesn't go high either */
+		PIO_Set(&uart_loopback_pins[1]);
+		if (!PIO_Get(&uart_loopback_pins[0]))
+			return 0;
+		/* Set TxD low, abort if RxD doesn't go low either */
+		PIO_Clear(&uart_loopback_pins[1]);
+		if (PIO_Get(&uart_loopback_pins[0]))
+			return 0;
+	}
+	/* if we reached here, RxD always follows TxD and thus a
+	 * loopback jumper has been placed on RxD/TxD, and we will boot
+	 * into DFU unconditionally */
+	return 1;
+}
+
+int board_override_enter_dfu(void)
+{
+	/* If the loopback jumper is set, we enter DFU mode */
+	if (uart_has_loopback_jumper())
+		return 1;
+
+	return 0;
+}

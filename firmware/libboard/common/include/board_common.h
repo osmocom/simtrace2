@@ -119,4 +119,5 @@
 
 extern void board_exec_dbg_cmd(int ch);
 extern void board_main_top(void);
+extern int board_override_enter_dfu(void);
 #endif

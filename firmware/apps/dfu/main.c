@@ -105,31 +105,10 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 	return req_len;
 }
 
-static int uart_has_loopback_jumper(void)
+/* can be overridden by board specific code, e.g. by pushbutton */
+WEAK int board_override_enter_dfu(void)
 {
-	unsigned int i;
-	const Pin uart_loopback_pins[] = {
-		{PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT},
-		{PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-	};
-
-	/* Configure UART pins as I/O */
-	PIO_Configure(uart_loopback_pins, PIO_LISTSIZE(uart_loopback_pins));
-
-	for (i = 0; i < 10; i++) {
-		/* Set TxD high; abort if RxD doesn't go high either */
-		PIO_Set(&uart_loopback_pins[1]);
-		if (!PIO_Get(&uart_loopback_pins[0]))
-			return 0;
-		/* Set TxD low, abort if RxD doesn't go low either */
-		PIO_Clear(&uart_loopback_pins[1]);
-		if (PIO_Get(&uart_loopback_pins[0]))
-			return 0;
-	}
-	/* if we reached here, RxD always follows TxD and thus a
-	 * loopback jumper has been placed on RxD/TxD, and we will boot
-	 * into DFU unconditionally */
-	return 1;
+	return 0;
 }
 
 /* using this function we can determine if we should enter DFU mode
@@ -139,7 +118,7 @@ int USBDFU_OverrideEnterDFU(void)
 	uint32_t *app_part = (uint32_t *)FLASH_ADDR(0);
 
 	/* If the loopback jumper is set, we enter DFU mode */
-	if (uart_has_loopback_jumper())
+	if (board_override_enter_dfu())
 		return 1;
 
 	/* if the first word of the application partition doesn't look

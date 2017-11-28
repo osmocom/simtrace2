@@ -11,7 +11,6 @@
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
 #include "simtrace_prot.h"
-#include "wwan_perst.h"
 #include "sim_switch.h"
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
@@ -506,6 +505,10 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	}
 }
 
+#ifdef PINS_PERST
+#include "wwan_perst.h"
+#endif
+
 static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 {
 	struct st_modem_reset *mr = (struct st_modem_reset *) msg->l2h;
@@ -514,6 +517,7 @@ static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 		return -1;
 
 	switch (mr->asserted) {
+#ifdef PINS_PERST
 	case 0:
 		wwan_perst_set(ci->num, 0);
 		break;
@@ -523,6 +527,7 @@ static int usb_command_modem_reset(struct msgb *msg, struct cardem_inst *ci)
 	case 2:
 		wwan_perst_do_reset_pulse(ci->num, mr->pulse_duration_msec);
 		break;
+#endif
 	default:
 		return -1;
 	}

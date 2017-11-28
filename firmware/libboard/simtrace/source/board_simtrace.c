@@ -35,3 +35,17 @@ void board_main_top(void)
 	//card_present_init();
 #endif
 }
+
+int board_override_enter_dfu(void)
+{
+	const Pin bl_sw_pin = PIN_BOOTLOADER_SW;
+
+	PIO_Configure(&bl_sw_pin, 1);
+
+	/* Enter DFU bootloader in case the respective button is pressed */
+	if (PIO_Get(&bl_sw_pin) == 0) {
+		//printf("BOOTLOADER switch presssed -> Force DFU\n\r");
+		return 1;
+	} else
+		return 0;
+}

@@ -849,7 +849,6 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 }
 
 
-#if 0
 //------------------------------------------------------------------------------
 /// SETUP request handler for a CCID device
 /// \param pRequest Pointer to a USBGenericRequest instance
@@ -915,7 +914,6 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 {
     CCID_RequestHandler(request);
 }
-#endif
 #endif
 
 

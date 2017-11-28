@@ -144,9 +144,9 @@ INCLUDES += -Iapps/$(APP)
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
-CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef
+CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal #-Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
-CFLAGS += -Wsign-compare -Waggregate-return
+CFLAGS += -Waggregate-return #-Wsign-compare
 CFLAGS += -Wformat=0
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked

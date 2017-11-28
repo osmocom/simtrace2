@@ -71,11 +71,13 @@ static struct Usart_info usart_info = {
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
+/* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)
 {
 	TRACE_INFO("Sniffer config\n");
 }
 
+/* called when *different* configuration is set by host */
 void Sniffer_exit(void)
 {
 	TRACE_INFO("Sniffer exit\n");
@@ -84,6 +86,7 @@ void Sniffer_exit(void)
 	USART_SetReceiverEnabled(USART_PHONE, 0);
 }
 
+/* called when *CCID* configuration is set by host */
 void Sniffer_init(void)
 {
 	TRACE_INFO("Sniffer Init\n");
@@ -100,6 +103,7 @@ void Sniffer_init(void)
 	NVIC_EnableIRQ(USART1_IRQn);
 }
 
+/* main (idle/busy) loop of this USB configuration */
 void Sniffer_run(void)
 {
 	check_data_from_phone();

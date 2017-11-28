@@ -126,6 +126,7 @@ static void ConfigureCardDetection(void)
  *-----------------------------------------------------------------------------*/
 extern CCIDDriverConfigurationDescriptors configurationDescriptorCCID;
 
+/* Called during USB enumeration after device is enumerated by host */
 void CCID_configure(void)
 {
 	CCIDDriver_Initialize();
@@ -133,6 +134,7 @@ void CCID_configure(void)
 	PIO_ConfigureIt(&pinSmartCard, ISR_PioSmartCard);
 }
 
+/* called when *different* configuration is set by host */
 void CCID_exit(void)
 {
 	PIO_DisableIt(&pinSmartCard);
@@ -140,6 +142,7 @@ void CCID_exit(void)
 	USART_SetReceiverEnabled(usart_info.base, 0);
 }
 
+/* called when *CCID* configuration is set by host */
 void CCID_init(void)
 {
 	uint8_t pAtr[MAX_ATR_SIZE];
@@ -179,6 +182,7 @@ void CCID_init(void)
 	}
 }
 
+/* main (idle/busy) loop of this USB configuration */
 void CCID_run(void)
 {
 

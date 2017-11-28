@@ -90,6 +90,7 @@ uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart)
 
     /* Wait USART ready for reception */
     while( ((us_base->US_CSR & US_CSR_RXRDY) == 0) ) {
+	WDT_Restart(WDT);
         if(timeout++ > 12000 * (BOARD_MCK/1000000)) {
             TRACE_WARNING("TimeOut\n\r");
             return( 0 );

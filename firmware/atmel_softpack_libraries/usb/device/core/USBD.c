@@ -47,6 +47,8 @@
 #include "USBD.h"
 #include "USBD_HAL.h"
 
+extern void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request);
+
 /*---------------------------------------------------------------------------
  *      Definitions
  *---------------------------------------------------------------------------*/
@@ -144,7 +146,11 @@ void USBD_RequestHandler(uint8_t bEndpoint,
                       bEndpoint);
     }
     else {
+#if defined(BOARD_USB_DFU) && !defined(APPLICATION_dfu)
+        USBDFU_Runtime_RequestHandler(pRequest);
+#else
         USBDCallbacks_RequestReceived(pRequest);
+#endif
     }
 }
 

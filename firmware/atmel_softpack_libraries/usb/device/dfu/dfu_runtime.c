@@ -141,7 +141,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 	if (USBGenericRequest_GetType(request) != USBGenericRequest_CLASS ||
 	    USBGenericRequest_GetRecipient(request) != USBGenericRequest_INTERFACE) {
 		TRACE_DEBUG("std_ho_usbd ");
-		USBDDriver_RequestHandler(usbdDriver, request);
+		USBDCallbacks_RequestReceived(request);
 		return;
 	}
 
@@ -215,10 +215,4 @@ void DFURT_SwitchToDFU(void)
 	/* reset the processor, we will start execution with the
 	 * ResetVector of the bootloader */
 	NVIC_SystemReset();
-}
-
-void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
-{
-	/* FIXME: integration with CCID control point reqeusts */
-	USBDFU_Runtime_RequestHandler(request);
 }

@@ -1,0 +1,22 @@
+
+== Important DFU topics / reliability ==
+x some kind of DFU fallback / boot cycle counter ?
+* CRC check of image before attempting to execute it ?
+x Keep WDT running while in DFU or app
+? USB control request for flash erase
+
+== QModem related ==
+x new vendor/product ID for hub and SAM3s
+* board-specfic string descriptors
+* re-mapping of USB ports in EEPROM
+
+== Lower Priority ==
+* unique serial number in iSerial?
+* printing of banner from generic function
+* board_main_top() automatically before calling main()
+x compile-time USB string generation
+* shared USB strings for DFU and runtime
+* version detection voltage ranges
+* locking of bootloader pages?
+* debug console command for switch-to-dfu
+* read CPU reset cause (and time?) via USB

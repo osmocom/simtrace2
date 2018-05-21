@@ -134,7 +134,7 @@ static void BootIntoApp(void)
 
 	pSrc = (unsigned int *) ((unsigned char *)IFLASH_ADDR + BOARD_DFU_BOOT_SIZE);
 	SCB->VTOR = ((unsigned int)(pSrc)) | (0x0 << 7);
-	appReset = pSrc[1];
+	appReset = (void(*)(void))pSrc[1];
 
 	g_dfu->state = DFU_STATE_appIDLE;
 

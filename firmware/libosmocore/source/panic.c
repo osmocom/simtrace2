@@ -43,6 +43,7 @@ static osmo_panic_handler_t osmo_panic_handler = (void*)0;
 #include <stdio.h>
 #include <stdlib.h>
 
+__attribute__ ((format (printf, 1, 0)))
 static void osmo_panic_default(const char *fmt, va_list args)
 {
 	vfprintf(stderr, fmt, args);
@@ -73,6 +74,7 @@ static void osmo_panic_default(const char *fmt, va_list args)
  * The default function on most systems will generate a backtrace and
  * then abort() the process.
  */
+__attribute__ ((format (printf, 1, 0)))
 void osmo_panic(const char *fmt, ...)
 {
 	va_list args;

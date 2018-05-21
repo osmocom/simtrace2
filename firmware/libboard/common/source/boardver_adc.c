@@ -1,14 +1,6 @@
 #include "board.h"
 #include "boardver_adc.h"
 
-/* FIXME: share this with mode_cardemu.c */
-#define UV_PER_LSB	((3300 * 1000) / 4096)
-static uint32_t adc2uv(uint16_t adc)
-{
-	uint32_t uv = (uint32_t) adc * UV_PER_LSB;
-	return uv;
-}
-
 /***********************************************************************
  * ADC for board version detection
  ***********************************************************************/

@@ -52,7 +52,7 @@ bool rbuf_is_full(volatile ringbuf * rb)
 	return rc;
 }
 
-void rbuf_write(volatile volatile ringbuf * rb, uint8_t item)
+void rbuf_write(volatile ringbuf * rb, uint8_t item)
 {
 	unsigned long state;
 

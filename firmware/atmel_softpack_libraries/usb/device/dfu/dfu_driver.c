@@ -217,7 +217,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 	uint8_t req = USBGenericRequest_GetRequest(request);
 	uint16_t len = USBGenericRequest_GetLength(request);
 	uint16_t val = USBGenericRequest_GetValue(request);
-	int rc, ret;
+	int rc, ret = DFU_RET_NOTHING;
 
 	TRACE_DEBUG("type=0x%x, recipient=0x%x val=0x%x len=%u\n\r",
 			USBGenericRequest_GetType(request),

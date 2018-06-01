@@ -21,22 +21,24 @@ unsigned int g_unique_id[4];
 #define IFLASH_END	((uint8_t *)IFLASH_ADDR + IFLASH_SIZE)
 #define IRAM_END	((uint8_t *)IRAM_ADDR + IRAM_SIZE)
 
-/* incoming call-back: Host has transfered 'len' bytes (stored at
+/* incoming call-back: Host has transferred 'len' bytes (stored at
  * 'data'), which we shall write to 'offset' into the partition
- * associated with 'altif'.  Guaranted to be les than
+ * associated with 'altif'.  Guaranted to be less than
  * BOARD_DFU_PAGE_SIZE */
 int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 			 uint8_t *data, unsigned int len)
 {
 	uint32_t addr;
 	int rc;
+	/* address of the last allocated variable on the stack */
+	uint32_t stack_addr = (uint32_t)&rc;
 
 	printf("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
 
 	switch (altif) {
 	case ALTIF_RAM:
 		addr = RAM_ADDR(offset);
-		if (addr > IRAM_ADDR + IRAM_SIZE) {
+		if (addr + len >= IRAM_ADDR + IRAM_SIZE || addr + len >= stack_addr) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;
@@ -45,7 +47,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		return DFU_RET_ZLP;
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
-		if (addr > IFLASH_ADDR + IFLASH_SIZE) {
+		if (addr + len >= IFLASH_ADDR + IFLASH_SIZE) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;

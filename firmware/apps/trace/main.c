@@ -1,4 +1,22 @@
-// FIXME: Copyright license here
+/*
+ * (C) 2010-2017 by Harald Welte <hwelte@sysmocom.de>
+ * (C) 2018 by Kevin Redon <kredon@sysmocom.de>
+ * All Rights Reserved
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 /*------------------------------------------------------------------------------
  *          Headers
  *------------------------------------------------------------------------------*/
@@ -84,6 +102,9 @@ static volatile enum confNum simtrace_config = CFG_NUM_CCID;
 void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 {
 	TRACE_INFO_WP("cfgChanged%d ", cfgnum);
+	if (cfgnum >= sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0])) {
+		TRACE_FATAL_WP("no functions defined for configuration %d\n\r", cfgnum);
+	}
 	simtrace_config = cfgnum;
 }
 
@@ -144,10 +165,13 @@ extern int main(void)
 		   g_unique_id[2], g_unique_id[3]);
 	TRACE_INFO("Reset Cause: 0x%x\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
 
+	TRACE_INFO("cfg %d\n\r", simtrace_config);
+
 	board_main_top();
 
 	TRACE_INFO("USB init...\n\r");
 	SIMtrace_USB_Initialize();
+	TRACE_INFO_WP("USBD_Inited\n\r");
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
 		WDT_Restart(WDT);
@@ -164,14 +188,26 @@ extern int main(void)
 	}
 
 	TRACE_INFO("calling configure of all configurations...\n\r");
-	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]);
-	     ++i) {
-		if (config_func_ptrs[i].configure)
+	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]); ++i) {
+		if (config_func_ptrs[i].configure) {
 			config_func_ptrs[i].configure();
+		} else {
+			TRACE_WARNING("no configure function defined for configuration %d\n\r", i);
+		}
 	}
 
+	TRACE_INFO("cfg %d\n\r", simtrace_config);
+
 	TRACE_INFO("calling init of config %u...\n\r", simtrace_config);
-	config_func_ptrs[simtrace_config].init();
+	if (simtrace_config >= sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0])) {
+		TRACE_ERROR("no functions defined for configuration %d\n\r", simtrace_config);
+	} else {
+		if (config_func_ptrs[simtrace_config].init) {
+			config_func_ptrs[simtrace_config].init();
+		} else {
+			TRACE_ERROR("no init function defined for configuration %d\n\r", simtrace_config);
+		}
+	}
 	last_simtrace_config = simtrace_config;
 
 	TRACE_INFO("entering main loop...\n\r");
@@ -199,11 +235,31 @@ extern int main(void)
 		if (last_simtrace_config != simtrace_config) {
 			TRACE_INFO("USB config chg %u -> %u\n\r",
 				   last_simtrace_config, simtrace_config);
-			config_func_ptrs[last_simtrace_config].exit();
-			config_func_ptrs[simtrace_config].init();
+			if (last_simtrace_config < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0])) {
+				if (config_func_ptrs[last_simtrace_config].exit) {
+					config_func_ptrs[last_simtrace_config].exit();
+				} else {
+					TRACE_WARNING("exit not defined for configuration %d\n\r", last_simtrace_config);
+				}
+			} else {
+				TRACE_ERROR("no functions defined for configuration %d\n\r", last_simtrace_config);
+			}
+			if (simtrace_config < sizeof(config_func_ptrs)/sizeof(config_func_ptrs[0])) {
+				if (config_func_ptrs[simtrace_config].init) {
+					config_func_ptrs[simtrace_config].init();
+				} else {
+					 TRACE_WARNING("init not defined for configuration %d\n\r", simtrace_config);
+				}
+			} else {
+				TRACE_FATAL("no functions defined for configuration %d\n\r", simtrace_config);
+			}
 			last_simtrace_config = simtrace_config;
 		} else {
-			config_func_ptrs[simtrace_config].run();
+			if (config_func_ptrs[simtrace_config].run) {
+				config_func_ptrs[simtrace_config].run();
+			} else {
+				TRACE_ERROR("run not defined for configuration %d\n\r", simtrace_config);
+			}
 		}
 	}
 }

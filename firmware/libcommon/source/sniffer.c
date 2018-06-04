@@ -27,13 +27,14 @@
  * ----------------------------------------------------------------------------
  */
 
+#include "board.h"
+#include "simtrace.h"
+
 #ifdef HAVE_SNIFFER
 
 /*------------------------------------------------------------------------------
  *          Headers
  *------------------------------------------------------------------------------*/
-
-#include "board.h"
 
 #include <string.h>
 
@@ -67,6 +68,12 @@ static struct Usart_info usart_info = {
 	.state = USART_RCV,
 };
 
+
+int check_data_from_phone(void)
+{
+	TRACE_INFO("check data from phone\n\r");
+}
+
 /*-----------------------------------------------------------------------------
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
@@ -74,22 +81,22 @@ static struct Usart_info usart_info = {
 /* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)
 {
-	TRACE_INFO("Sniffer config\n");
+	TRACE_INFO("Sniffer config\n\r");
 }
 
 /* called when *different* configuration is set by host */
 void Sniffer_exit(void)
 {
-	TRACE_INFO("Sniffer exit\n");
+	TRACE_INFO("Sniffer exit\n\r");
 	USART_DisableIt(USART_PHONE, US_IER_RXRDY);
 	NVIC_DisableIRQ(USART1_IRQn);
 	USART_SetReceiverEnabled(USART_PHONE, 0);
 }
 
-/* called when *CCID* configuration is set by host */
+/* called when *Sniffer* configuration is set by host */
 void Sniffer_init(void)
 {
-	TRACE_INFO("Sniffer Init\n");
+	TRACE_INFO("Sniffer Init\n\r");
 	/*  Configure ISO7816 driver */
 	PIO_Configure(pinsISO7816_sniff, PIO_LISTSIZE(pinsISO7816_sniff));
 	PIO_Configure(pins_bus, PIO_LISTSIZE(pins_bus));

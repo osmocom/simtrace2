@@ -11,7 +11,7 @@
 /** Phone (SIM card emulator)/CCID Reader/MITM configuration    **/
 /*  Normally the communication lines between phone and SIM card are disconnected    */
 // Disconnect SIM card I/O, VPP line from the phone lines
-// FIXME: Per default pins are input, therefore high-impedance, therefore they don not activate the bus switch, right?
+// FIXME: Per default pins are input, therefore high-impedance, therefore the bus switch is in an unknown state by default for hardware version <= 1.4. It should be pulled high by an external resistor to set the bus switch to high-impedance (e.g. off).
 #define PIN_SC_SW_DEFAULT               {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 // Disconnect SIM card RST, CLK line from the phone lines
 #define PIN_IO_SW_DEFAULT               {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
@@ -82,7 +82,7 @@
 #define BOARD_DFU_USB_PRODUCT_ID USB_PRODUCT_SIMTRACE2_DFU
 #define BOARD_USB_RELEASE	0x000
 
-//#define HAVE_SNIFFER
+#define HAVE_SNIFFER
 #define HAVE_CCID
 #define HAVE_CARDEM
 //#define HAVE_MITM

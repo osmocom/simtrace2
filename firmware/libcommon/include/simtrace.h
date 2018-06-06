@@ -108,6 +108,8 @@ extern void CCID_run( void );
 extern void mode_cardemu_run(void);
 extern void MITM_run( void );
 
+/*  IRQ functions   */
+extern void Sniffer_usart1_irq(void);
 extern void mode_cardemu_usart0_irq(void);
 extern void mode_cardemu_usart1_irq(void);
 

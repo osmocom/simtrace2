@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
+ * Copyright (c) 2018, Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -331,8 +332,13 @@ static void GetDescriptor(
             /* Check if descriptor exists */
 
             if (indexRDesc >= numStrings) {
-
-                USBD_Stall(0);
+                /* Sometimes descriptor string 0xee is requested.
+                 * This is a mechanism used by Microsoft Windows to further identify the USB device.
+                 * Instead of stalling, as is the original code, leading to an USB reset, we send an empty packet.
+                 * I am not sure if sending an empty string would be better, but an empty packet seems sufficient.
+                 */
+                //USBD_Stall(0);
+                USBD_Write(0, NULL, 0, 0, 0);
             }
             else {
 

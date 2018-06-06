@@ -58,7 +58,7 @@ static const Pin pPwr[] = {
 	/* Enable power converter 4.5-6V to 3.3V; low: off */
 	{SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT},
 
-	/* Enable second power converter: VCC_PHONE to VCC_SIM; high: on */
+	/* Enable power forwarding: VCC_PHONE to VCC_SIM; high: on */
 	{VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 };
 
@@ -68,10 +68,37 @@ static struct Usart_info usart_info = {
 	.state = USART_RCV,
 };
 
+/* Ring buffer to store sniffer communication data */
+static struct ringbuf sniff_buffer;
+
+/*------------------------------------------------------------------------------
+ *         Global functions
+ *------------------------------------------------------------------------------*/
+
+void Sniffer_usart1_irq(void)
+{
+	/* Read channel status register */
+	uint32_t csr = usart_info.base->US_CSR & usart_info.base->US_IMR;
+	/* Verify if character has been received */
+	if (csr & US_CSR_RXRDY) {
+		/* Read communication data byte between phone and SIM */
+		uint8_t byte = usart_info.base->US_RHR;
+		/* Store sniffed data into buffer (also clear interrupt */ 
+		rbuf_write(&sniff_buffer, byte);
+	}
+}
+
+/*------------------------------------------------------------------------------
+ *         Internal functions
+ *------------------------------------------------------------------------------*/
 
 int check_data_from_phone(void)
 {
-	TRACE_INFO("check data from phone\n\r");
+	/* Display sniffed data */
+	while (!rbuf_is_empty(&sniff_buffer)) {
+		uint8_t byte = rbuf_read(&sniff_buffer);
+		TRACE_INFO_WP("0x%02x ", byte);
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -97,6 +124,10 @@ void Sniffer_exit(void)
 void Sniffer_init(void)
 {
 	TRACE_INFO("Sniffer Init\n\r");
+
+	/* Clear ring buffer containing the sniffed data */
+	rbuf_reset(&sniff_buffer);
+
 	/*  Configure ISO7816 driver */
 	PIO_Configure(pinsISO7816_sniff, PIO_LISTSIZE(pinsISO7816_sniff));
 	PIO_Configure(pins_bus, PIO_LISTSIZE(pins_bus));

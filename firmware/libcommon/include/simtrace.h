@@ -77,7 +77,6 @@ typedef struct {
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
-int check_data_from_phone();
 void update_fidi(uint8_t fidi);
 
 void ISR_PhoneRST( const Pin *pPin);
@@ -109,7 +108,7 @@ extern void mode_cardemu_run(void);
 extern void MITM_run( void );
 
 /*  IRQ functions   */
-extern void Sniffer_usart1_irq(void);
+extern void Sniffer_usart0_irq(void);
 extern void mode_cardemu_usart0_irq(void);
 extern void mode_cardemu_usart1_irq(void);
 

@@ -36,7 +36,7 @@ static const conf_func config_func_ptrs[] = {
 		.init = Sniffer_init,
 		.exit = Sniffer_exit,
 		.run = Sniffer_run,
-		.usart1_irq = Sniffer_usart1_irq,
+		.usart0_irq = Sniffer_usart0_irq,
 	},
 #endif
 #ifdef HAVE_CCID
@@ -144,6 +144,7 @@ extern int main(void)
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 	TRACE_INFO("Reset Cause: 0x%x\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+	TRACE_INFO("USB configuration used: %d\n\r", simtrace_config);
 
 	board_main_top();
 

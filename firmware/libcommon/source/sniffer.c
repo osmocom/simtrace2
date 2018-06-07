@@ -1,32 +1,22 @@
-/* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support
- * ----------------------------------------------------------------------------
- * Copyright (c) 2009, Atmel Corporation
+/*
+ * (C) 2010-2017 by Harald Welte <hwelte@sysmocom.de>
+ * (C) 2018 by Kevin Redon <kredon@sysmocom.de>
+ * All Rights Reserved
  *
- * All rights reserved.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * - Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the disclaimer below.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Atmel's name may not be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * DISCLAIMER: THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
- * DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * ----------------------------------------------------------------------------
  */
-
 #include "board.h"
 #include "simtrace.h"
 
@@ -47,27 +37,24 @@
 
 /** Maximum ATR ucSize in bytes.*/
 #define MAX_ATR_SIZE            55
+
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-/** ISO7816 pins */
-static const Pin pinsISO7816_sniff[] = { PINS_SIM_SNIFF_SIM };
+/* Pin configuration to sniff communication (using USART connection to SIM card) */
+static const Pin pins_sniff[] = { PINS_SIM_SNIFF_SIM };
+/* Connect phone to card using bus switch */
 static const Pin pins_bus[] = { PINS_BUS_SNIFF };
-
-static const Pin pPwr[] = {
-	/* Enable power converter 4.5-6V to 3.3V; low: off */
-	{SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT},
-
-	/* Enable power forwarding: VCC_PHONE to VCC_SIM; high: on */
-	{VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
-};
-
-static struct Usart_info usart_info = {
-	.base = USART_PHONE,
-	.id = ID_USART_PHONE,
+/* Power card using phone VCC */
+static const Pin pins_power[] = { PWR_PINS };
+/* Timer Counter pins to measure ETU timing */
+static const Pin pins_tc[] = { PINS_TC };
+/* USART peripheral used to sniff communication */
+static struct Usart_info sniff_usart = {
+	.base = USART_SIM,
+	.id = ID_USART_SIM,
 	.state = USART_RCV,
 };
-
 /* Ring buffer to store sniffer communication data */
 static struct ringbuf sniff_buffer;
 
@@ -75,14 +62,14 @@ static struct ringbuf sniff_buffer;
  *         Global functions
  *------------------------------------------------------------------------------*/
 
-void Sniffer_usart1_irq(void)
+void Sniffer_usart0_irq(void)
 {
 	/* Read channel status register */
-	uint32_t csr = usart_info.base->US_CSR & usart_info.base->US_IMR;
+	uint32_t csr = sniff_usart.base->US_CSR & sniff_usart.base->US_IMR;
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {
 		/* Read communication data byte between phone and SIM */
-		uint8_t byte = usart_info.base->US_RHR;
+		uint8_t byte = sniff_usart.base->US_RHR;
 		/* Store sniffed data into buffer (also clear interrupt */ 
 		rbuf_write(&sniff_buffer, byte);
 	}
@@ -92,7 +79,7 @@ void Sniffer_usart1_irq(void)
  *         Internal functions
  *------------------------------------------------------------------------------*/
 
-int check_data_from_phone(void)
+static void check_sniffed_data(void)
 {
 	/* Display sniffed data */
 	while (!rbuf_is_empty(&sniff_buffer)) {
@@ -115,9 +102,10 @@ void Sniffer_configure(void)
 void Sniffer_exit(void)
 {
 	TRACE_INFO("Sniffer exit\n\r");
-	USART_DisableIt(USART_PHONE, US_IER_RXRDY);
-	NVIC_DisableIRQ(USART1_IRQn);
-	USART_SetReceiverEnabled(USART_PHONE, 0);
+	USART_DisableIt(sniff_usart.base, US_IER_RXRDY);
+	/* NOTE: don't forget to set the IRQ according to the USART peripheral used */
+	NVIC_DisableIRQ(USART0_IRQn);
+	USART_SetReceiverEnabled(sniff_usart.base, 0);
 }
 
 /* called when *Sniffer* configuration is set by host */
@@ -125,25 +113,28 @@ void Sniffer_init(void)
 {
 	TRACE_INFO("Sniffer Init\n\r");
 
+	/* Configure pins to sniff communication between phone and card */
+	PIO_Configure(pins_sniff, PIO_LISTSIZE(pins_sniff));
+	/* Configure pins to connect phone to card */
+	PIO_Configure(pins_bus, PIO_LISTSIZE(pins_bus));
+	/* Configure pins to forward phone power to card */
+	PIO_Configure(pins_power, PIO_LISTSIZE(pins_power));
+
 	/* Clear ring buffer containing the sniffed data */
 	rbuf_reset(&sniff_buffer);
-
-	/*  Configure ISO7816 driver */
-	PIO_Configure(pinsISO7816_sniff, PIO_LISTSIZE(pinsISO7816_sniff));
-	PIO_Configure(pins_bus, PIO_LISTSIZE(pins_bus));
-
-	PIO_Configure(pPwr, PIO_LISTSIZE(pPwr));
-
-	ISO7816_Init(&usart_info, CLK_SLAVE);
-
-	USART_SetReceiverEnabled(USART_PHONE, 1);
-	USART_EnableIt(USART_PHONE, US_IER_RXRDY);
-	NVIC_EnableIRQ(USART1_IRQn);
+	/* Configure USART to as ISO-7816 slave communication to sniff communication */
+	ISO7816_Init(&sniff_usart, CLK_SLAVE);
+	/* Only receive data when sniffing */
+	USART_SetReceiverEnabled(sniff_usart.base, 1);
+	/* Enable interrupt to indicate when data has been received */
+	USART_EnableIt(sniff_usart.base, US_IER_RXRDY);
+	/* Enable interrupt requests for the USART peripheral (warning: use IRQ corresponding to USART) */
+	NVIC_EnableIRQ(USART0_IRQn);
 }
 
 /* main (idle/busy) loop of this USB configuration */
 void Sniffer_run(void)
 {
-	check_data_from_phone();
+	check_sniffed_data();
 }
 #endif /* HAVE_SNIFFER */

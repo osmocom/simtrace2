@@ -55,6 +55,7 @@ static const conf_func config_func_ptrs[] = {
 		.exit = Sniffer_exit,
 		.run = Sniffer_run,
 		.usart0_irq = Sniffer_usart0_irq,
+		.usart1_irq = Sniffer_usart1_irq,
 	},
 #endif
 #ifdef HAVE_CCID

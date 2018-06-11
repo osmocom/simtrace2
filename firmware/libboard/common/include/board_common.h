@@ -77,10 +77,19 @@
 #define BOARD_ISO7816_BASE_USART    USART0
 #define BOARD_ISO7816_ID_USART      ID_USART0
 
+/* USART peripherals for a phone and SIM card setup */
+/* USART peripheral connected to the SIM card */
 #define USART_SIM       USART0
+/* ID of USART peripheral connected to the SIM card */
 #define ID_USART_SIM    ID_USART0
-#define USART_PHONE       USART1
-#define ID_USART_PHONE    ID_USART1
+/* Interrupt request ID of USART peripheral connected to the SIM card */
+#define IRQ_USART_SIM   USART0_IRQn
+/* USART peripheral connected to the phone */
+#define USART_PHONE     USART1
+/* ID of USART peripheral connected to the phone */
+#define ID_USART_PHONE  ID_USART1
+/* Interrupt request ID of USART peripheral connected to the phone */
+#define IRQ_USART_PHONE USART1_IRQn
 
 #define SIM_PWEN        PIO_PA5
 #define VCC_FWD         PIO_PA26

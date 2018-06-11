@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+/* This code implement the Sniffer mode to sniff the communication between a SIM card and a phone.
+ * For historical reasons (i.e. SIMtrace hardware) the USART peripheral connected to the SIM card is used.
+ */
 #include "board.h"
 #include "simtrace.h"
 
@@ -35,20 +38,51 @@
 /** Maximum ucSize in bytes of the smartcard answer to a command.*/
 #define MAX_ANSWER_SIZE         10
 
-/** Maximum ATR ucSize in bytes.*/
-#define MAX_ATR_SIZE            55
+/*! Maximum Answer-To-Reset (ATR) size in bytes ucSize in bytes
+ *  @note defined in ISO/IEC 7816-3:2006(E) section 8.2.1 as 32, on top the initial character TS of section 8.1
+ *  @remark technical there is no size limitation since Yi present in T0,TDi will indicate if more interface bytes are present, including TDi+i
+ */
+#define MAX_ATR_SIZE 33
+
+/*! ISO 7816-3 states relevant to the sniff mode */
+enum iso7816_3_sniff_state {
+	ISO7816_S_RESET, /*!< in Reset */
+	ISO7816_S_WAIT_ATR, /*!< waiting for ATR to start */
+	ISO7816_S_IN_ATR, /*!< while we are receiving the ATR */
+	ISO7816_S_WAIT_APDU, /*!< waiting for start of new APDU */
+	ISO7816_S_IN_APDU, /*!< inside a single APDU */
+	ISO7816_S_IN_PTS, /*!< while we are inside the PTS / PSS */
+};
+
+/*! Answer-To-Reset (ATR) sub-states of ISO7816_S_IN_ATR
+ *  @note defined in ISO/IEC 7816-3:2006(E) section 8
+ */
+enum atr_sniff_state {
+	ATR_S_WAIT_TS, /*!< initial byte */
+	ATR_S_WAIT_T0, /*!< format byte */
+	ATR_S_WAIT_TA, /*!< first sub-group interface byte */
+	ATR_S_WAIT_TB, /*!< second sub-group interface byte */
+	ATR_S_WAIT_TC, /*!< third sub-group interface byte */
+	ATR_S_WAIT_TD, /*!< fourth sub-group interface byte */
+	ATR_S_WAIT_HIST, /*!< historical byte */
+	ATR_S_WAIT_TCK, /*!< check byte */
+	ATR_S_DONE, /*!< to indicated all ATR bytes have been received */
+};
 
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
-/* Pin configuration to sniff communication (using USART connection to SIM card) */
-static const Pin pins_sniff[] = { PINS_SIM_SNIFF_SIM };
-/* Connect phone to card using bus switch */
+
+/* note: the sniffer code is currently designed to support only one sniffing interface, but the hardware would support a second one.
+ * to support a second sniffer interface the code should be restructured to use handles.
+ */
+/* Pin configurations */
+/* Pin configuration to sniff communication (using USART connection card) */
+static const Pin pins_sniff[] = { PINS_SIM_SNIFF };
 static const Pin pins_bus[] = { PINS_BUS_SNIFF };
-/* Power card using phone VCC */
-static const Pin pins_power[] = { PWR_PINS };
-/* Timer Counter pins to measure ETU timing */
+static const Pin pins_power[] = { PINS_PWR_SNIFF };
 static const Pin pins_tc[] = { PINS_TC };
+/* USART related variables */
 /* USART peripheral used to sniff communication */
 static struct Usart_info sniff_usart = {
 	.base = USART_SIM,
@@ -57,23 +91,6 @@ static struct Usart_info sniff_usart = {
 };
 /* Ring buffer to store sniffer communication data */
 static struct ringbuf sniff_buffer;
-
-/*------------------------------------------------------------------------------
- *         Global functions
- *------------------------------------------------------------------------------*/
-
-void Sniffer_usart0_irq(void)
-{
-	/* Read channel status register */
-	uint32_t csr = sniff_usart.base->US_CSR & sniff_usart.base->US_IMR;
-	/* Verify if character has been received */
-	if (csr & US_CSR_RXRDY) {
-		/* Read communication data byte between phone and SIM */
-		uint8_t byte = sniff_usart.base->US_RHR;
-		/* Store sniffed data into buffer (also clear interrupt */ 
-		rbuf_write(&sniff_buffer, byte);
-	}
-}
 
 /*------------------------------------------------------------------------------
  *         Internal functions
@@ -85,6 +102,38 @@ static void check_sniffed_data(void)
 	while (!rbuf_is_empty(&sniff_buffer)) {
 		uint8_t byte = rbuf_read(&sniff_buffer);
 		TRACE_INFO_WP("0x%02x ", byte);
+	}
+}
+
+/*! Interrupt Service Routine called on USART activity */
+void Sniffer_usart_irq(void)
+{
+	/* Read channel status register */
+	uint32_t csr = sniff_usart.base->US_CSR & sniff_usart.base->US_IMR;
+	/* Verify if character has been received */
+	if (csr & US_CSR_RXRDY) {
+		/* Read communication data byte between phone and SIM */
+		uint8_t byte = sniff_usart.base->US_RHR;
+		/* Store sniffed data into buffer (also clear interrupt */
+		rbuf_write(&sniff_buffer, byte);
+	}
+}
+
+/*------------------------------------------------------------------------------
+ *         Global functions
+ *------------------------------------------------------------------------------*/
+
+void Sniffer_usart1_irq(void)
+{
+	if (ID_USART1==sniff_usart.id) {
+		Sniffer_usart_irq();
+	}
+}
+
+void Sniffer_usart0_irq(void)
+{
+	if (ID_USART0==sniff_usart.id) {
+		Sniffer_usart_irq();
 	}
 }
 
@@ -128,8 +177,10 @@ void Sniffer_init(void)
 	USART_SetReceiverEnabled(sniff_usart.base, 1);
 	/* Enable interrupt to indicate when data has been received */
 	USART_EnableIt(sniff_usart.base, US_IER_RXRDY);
-	/* Enable interrupt requests for the USART peripheral (warning: use IRQ corresponding to USART) */
-	NVIC_EnableIRQ(USART0_IRQn);
+	/* Enable interrupt requests for the USART peripheral */
+	NVIC_EnableIRQ(IRQ_USART_SIM);
+
+	/* TODO configure RST pin ISR */
 }
 
 /* main (idle/busy) loop of this USB configuration */

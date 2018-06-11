@@ -14,6 +14,8 @@
 #define PIN_BOOTLOADER_SW      {PIO_PA31, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP}
 /* Enable powering the card using the second 3.3 V output of the LDO (active high) */
 #define SIM_PWEN_PIN           {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/* Enable powering the SIM card */
+#define PWR_PINS                SIM_PWEN_PIN
 /* Card presence pin */
 #define SW_SIM                  PIO_PA8
 /* Pull card presence pin high (shorted to ground in card slot when card is present) */
@@ -49,7 +51,7 @@
 /* Pin used as clock input (to measure the ETU duration; connected to CLK_PHONE in schematic) */
 #define PIN_PHONE_CLK_INPUT    {PIO_PA29B_TCLK2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 
-/** Default configuration **/
+/** Default pin configuration **/
 /* Disconnect VPP, CLK, and RST lines between card and phone using bus switch (high sets bus switch to high-impedance) */
 #define PIN_SC_SW_DEFAULT      {PIO_PA20, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 /* Disconnect I/O line between card and phone using bus switch (high sets bus switch to high-impedance) */
@@ -64,16 +66,14 @@
 #define PIN_IO_SW_SNIFF        {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /* Connect all lines (VPP, CLK, RST, and I/O) between card and phone */
 #define PINS_BUS_SNIFF          PIN_SC_SW_SNIFF, PIN_IO_SW_SNIFF
-/* Use RST_SIM line to detect phone issued card reset */
-#define PIN_SIM_RST_SNIFF      {PIO_PA7, PIOA, ID_PIOA, PIO_INPUT,  PIO_PULLUP | PIO_DEBOUNCE | PIO_DEGLITCH | PIO_IT_EDGE }
 /* Pins used to sniff phone-card communication */
-#define PINS_SIM_SNIFF_SIM      PIN_SIM_IO, PIN_SIM_CLK, PIN_SIM_RST_SNIFF
+#define PINS_SIM_SNIFF          PIN_SIM_IO, PIN_SIM_CLK, PIN_SIM_RST
 /* Disable power converter 4.5-6V to 3.3V (active high) */
 #define PIN_SIM_PWEN_SNIFF     {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /* Enable power switch to forward VCC_PHONE to VCC_SIM (active high) */
 #define PIN_VCC_FWD_SNIFF      {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 /* Use phone VCC to power card */
-#define PWR_PINS                PIN_SIM_PWEN_SNIFF, PIN_VCC_FWD_SNIFF
+#define PINS_PWR_SNIFF          PIN_SIM_PWEN_SNIFF, PIN_VCC_FWD_SNIFF
 
 /** CCID configuration */
 /* Card RST reset signal input (active low; RST_SIM in schematic) */

@@ -42,7 +42,7 @@
  *         Internal variables
  *------------------------------------------------------------------------------*/
 /* Pin configuration to sniff communication (using USART connection to SIM card) */
-static const Pin pins_sniff[] = { PINS_SIM_SNIFF_SIM };
+static const Pin pins_sniff[] = { PINS_SIM_SNIFF };
 /* Connect phone to card using bus switch */
 static const Pin pins_bus[] = { PINS_BUS_SNIFF };
 /* Power card using phone VCC */

@@ -44,7 +44,7 @@ int board_override_enter_dfu(void)
 
 	/* Enter DFU bootloader in case the respective button is pressed */
 	if (PIO_Get(&bl_sw_pin) == 0) {
-		//printf("BOOTLOADER switch presssed -> Force DFU\n\r");
+		printf("BOOTLOADER switch presssed -> Force DFU\n\r");
 		return 1;
 	} else
 		return 0;

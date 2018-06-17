@@ -603,10 +603,16 @@ static const USBDDriverDescriptors driverDescriptors = {
 
 void SIMtrace_USB_Initialize(void)
 {
+
+	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
+	const Pin usb_dp_pullup = PIN_USB_PULLUP;
+	PIO_Configure(&usb_dp_pullup, 1);
+	PIO_Set(&usb_dp_pullup);
+	mdelay(15);
+	PIO_Clear(&usb_dp_pullup);
+
 	// Get std USB driver
 	USBDDriver *pUsbd = USBD_GetDriver();
-
-	TRACE_DEBUG(".");
 
 	// Initialize standard USB driver
 	USBDDriver_Initialize(pUsbd, &driverDescriptors, 0);	// Multiple interface settings not supported

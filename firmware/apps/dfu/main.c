@@ -194,6 +194,12 @@ extern int main(void)
 	board_main_top();
 
 	TRACE_INFO("USB init...\n\r");
+	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
+	const Pin usb_dp_pullup = PIN_USB_PULLUP;
+	PIO_Configure(&usb_dp_pullup, 1);
+	PIO_Set(&usb_dp_pullup);
+	mdelay(15);
+	PIO_Clear(&usb_dp_pullup);
 	USBDFU_Initialize(&dfu_descriptors);
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {

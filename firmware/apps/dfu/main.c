@@ -38,7 +38,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	switch (altif) {
 	case ALTIF_RAM:
 		addr = RAM_ADDR(offset);
-		if (addr + len >= IRAM_ADDR + IRAM_SIZE || addr + len >= stack_addr) {
+		if (addr < IRAM_ADDR || addr + len >= IRAM_ADDR + IRAM_SIZE || addr + len >= stack_addr) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;
@@ -47,13 +47,32 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		return DFU_RET_ZLP;
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
-		if (addr + len >= IFLASH_ADDR + IFLASH_SIZE) {
+		if (addr < IFLASH_ADDR || addr + len >= IFLASH_ADDR + IFLASH_SIZE) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
 			return DFU_RET_STALL;
 		}
+		rc = FLASHD_Unlock(addr, addr + len, 0, 0);
+		if (rc != 0) {
+			TRACE_ERROR("DFU download flash unlock failed\n\r");
+			/* FIXME: set error codes */
+			return DFU_RET_STALL;
+		}
 		rc = FLASHD_Write(addr, data, len);
 		if (rc != 0) {
+			TRACE_ERROR("DFU download flash erase failed\n\r");
+			/* FIXME: set error codes */
+			return DFU_RET_STALL;
+		}
+		for (unsigned int i=0; i<len; i++) {
+			if (((uint8_t*)addr)[i]!=data[i]) {
+				TRACE_ERROR("DFU download flash data written not correct\n\r");
+				return DFU_RET_STALL;
+			}
+		}
+		rc = FLASHD_Lock(addr, addr + len, 0, 0);
+		if (rc != 0) {
+			TRACE_ERROR("DFU download flash lock failed\n\r");
 			/* FIXME: set error codes */
 			return DFU_RET_STALL;
 		}
@@ -216,7 +235,9 @@ extern int main(void)
 		i++;
 	}
 
+	/* Initialize the flash to be able to write it, using the IAP ROM code */
 	FLASHD_Initialize(BOARD_MCK, 1);
+
 	TRACE_INFO("entering main loop...\n\r");
 	while (1) {
 		WDT_Restart(WDT);

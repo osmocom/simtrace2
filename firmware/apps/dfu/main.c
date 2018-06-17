@@ -10,6 +10,8 @@
 #define ALTIF_FLASH 1
 
 unsigned int g_unique_id[4];
+/* remember if the watchdog has been configured in the main loop so we can kick it in the ISR */
+static bool watchdog_configured = false;
 
 /*----------------------------------------------------------------------------
  *       Callbacks
@@ -32,6 +34,10 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	int rc;
 	/* address of the last allocated variable on the stack */
 	uint32_t stack_addr = (uint32_t)&rc;
+	/* kick the dog to have enough time to flash */
+	if (watchdog_configured) {
+		WDT_Restart(WDT);
+	}
 
 	printf("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
 
@@ -186,9 +192,10 @@ extern int main(void)
 	led_blink(LED_RED, BLINK_3O_30F);
 #endif
 
-	/* Enable watchdog for 500ms, with no window */
+	/* Enable watchdog for 2000ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
-		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
+		   (WDT_GetPeriod(2000) << 16) | WDT_GetPeriod(2000));
+	watchdog_configured = true;
 
 	PIO_InitializeInterrupts(0);
 

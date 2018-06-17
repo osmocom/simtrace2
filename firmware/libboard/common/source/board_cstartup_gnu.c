@@ -159,9 +159,20 @@ void ResetException( void )
      * not initialized yet */
     g_dfu = &_g_dfu;
     if ((g_dfu->magic != USB_DFU_MAGIC) && !USBDFU_OverrideEnterDFU()) {
-        BootIntoApp();
-        /* Infinite loop */
-        while ( 1 ) ;
+        /* start application if valid
+         * the application starts with the vector table
+         * the first entry in the vector table is the initial stack pointer (SP) address
+         * the stack will be placed in RAM, which begins at 0x2000 0000
+         * there is up to 48 KB of RAM (0xc000)
+         * since the stack grown "downwards" it should start at the end of the RAM: max 0x2000 c000
+         * if the SP is not in this range (e.g. flash has been erased) there is no valid application
+         * the second entry in the vector table is the reset address, corresponding to the application start
+         */
+        if (((*((uint32_t*)(IFLASH_ADDR+BOARD_DFU_BOOT_SIZE)))&0xFFFF0000)==0x20000000) {
+            BootIntoApp();
+            /* Infinite loop */
+            while ( 1 ) ;
+        }
     }
 #endif
 

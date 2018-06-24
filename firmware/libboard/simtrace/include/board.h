@@ -66,8 +66,10 @@
 #define PIN_IO_SW_SNIFF        {PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /* Connect all lines (VPP, CLK, RST, and I/O) between card and phone */
 #define PINS_BUS_SNIFF          PIN_SC_SW_SNIFF, PIN_IO_SW_SNIFF
+/* Card RST reset signal input (use as input since the phone will drive it) */
+#define PIN_SIM_RST_SNIFF      {PIO_PA7, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
 /* Pins used to sniff phone-card communication */
-#define PINS_SIM_SNIFF          PIN_SIM_IO, PIN_SIM_CLK, PIN_SIM_RST
+#define PINS_SIM_SNIFF          PIN_SIM_IO, PIN_SIM_CLK, PIN_SIM_RST_SNIFF
 /* Disable power converter 4.5-6V to 3.3V (active high) */
 #define PIN_SIM_PWEN_SNIFF     {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /* Enable power switch to forward VCC_PHONE to VCC_SIM (active high) */

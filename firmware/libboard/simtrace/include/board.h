@@ -111,8 +111,8 @@
 /* SIMtrace board supports sniffer mode */
 #define HAVE_SNIFFER
 /* SIMtrace board supports CCID mode */
-#define HAVE_CCID
+//#define HAVE_CCID
 /* SIMtrace board supports card emulation mode */
-#define HAVE_CARDEM
+//#define HAVE_CARDEM
 /* SIMtrace board supports man-in-the-middle mode */
 //#define HAVE_MITM

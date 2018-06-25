@@ -65,10 +65,14 @@
 /** UART0 */
 /** Console baudrate always using 115200. */
 #define CONSOLE_BAUDRATE    115200
-/** Usart Hw interface used by the console (UART0). */
-#define CONSOLE_USART       UART0
-/** Usart Hw ID used by the console (UART0). */
+/** UART peripheral used by the console (UART0). */
+#define CONSOLE_UART       UART0
+/** UART peripheral ID used by the console (UART0). */
 #define CONSOLE_ID          ID_UART0
+/** UART ISR used by the console (UART0). */
+#define CONSOLE_ISR         UART0_IrqHandler
+/** UART IRQ used by the console (UART0). */
+#define CONSOLE_IRQ         UART0_IRQn
 /** Pins description corresponding to Rxd,Txd, (UART pins) */
 #define CONSOLE_PINS        {PINS_UART}
 

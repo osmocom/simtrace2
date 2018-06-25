@@ -43,6 +43,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "ringbuffer.h"
+
 /*----------------------------------------------------------------------------
  *        Definitions
  *----------------------------------------------------------------------------*/
@@ -52,7 +54,9 @@
  *----------------------------------------------------------------------------*/
 
 /** Is Console Initialized. */
-static uint8_t _ucIsConsoleInitialized=0 ;
+static uint8_t _ucIsConsoleInitialized=0;
+/** Ring buffer to queue data to be sent */
+static ringbuf uart_tx_buffer;
 
 /**
  * \brief Configures an USART peripheral with the specified parameters.
@@ -63,7 +67,7 @@ static uint8_t _ucIsConsoleInitialized=0 ;
 extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 {
     const Pin pPins[] = CONSOLE_PINS;
-    Uart *pUart = CONSOLE_USART;
+    Uart *pUart = CONSOLE_UART;
 
     /* Configure PIO */
     PIO_Configure(pPins, PIO_LISTSIZE(pPins));
@@ -85,10 +89,32 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     /* Disable PDC channel */
     pUart->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
 
+    /* Reset transmit ring buffer */
+    rbuf_reset(&uart_tx_buffer);
+
+    /* Enable TX interrupts */
+    pUart->UART_IER = UART_IER_TXRDY;
+    NVIC_EnableIRQ(CONSOLE_IRQ);
+    
     /* Enable receiver and transmitter */
     pUart->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
 
+    /* Remember the configuration is complete */
     _ucIsConsoleInitialized=1 ;
+}
+
+/** Interrupt Service routine to transmit queued data */
+void CONSOLE_ISR(void)
+{
+	Uart *uart = CONSOLE_UART;
+	if (uart->UART_SR & UART_SR_TXRDY) {
+		if (!rbuf_is_empty(&uart_tx_buffer)) {
+			//uart->UART_IER = UART_IER_TXRDY;
+			uart->UART_THR = rbuf_read(&uart_tx_buffer);
+		} else {
+			uart->UART_IDR = UART_IER_TXRDY;
+		}
+	}
 }
 
 /**
@@ -99,19 +125,28 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
  */
 extern void UART_PutChar( uint8_t c )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = CONSOLE_UART ;
 
+    /* Initialize console is not already done */
     if ( !_ucIsConsoleInitialized )
     {
         UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
     }
 
-    /* Wait for the transmitter to be ready */
-    while ( (pUart->UART_SR & UART_SR_TXEMPTY) == 0 ) ;
+    /* Wait until there is space in the buffer */
+    while (rbuf_is_full(&uart_tx_buffer)) {
+        if (pUart->UART_SR & UART_SR_TXEMPTY) {
+            pUart->UART_IER = UART_IER_TXRDY;
+            CONSOLE_ISR();
+        }
+    }
 
-    /* Send character */
-    pUart->UART_THR=c ;
-
+    /* Put character into buffer */
+    rbuf_write(&uart_tx_buffer, c);
+    if (pUart->UART_SR & UART_SR_TXEMPTY) {
+        pUart->UART_IER = UART_IER_TXRDY;
+        CONSOLE_ISR();
+    }
 }
 
 /**
@@ -122,7 +157,7 @@ extern void UART_PutChar( uint8_t c )
  */
 extern uint32_t UART_GetChar( void )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = CONSOLE_UART ;
 
     if ( !_ucIsConsoleInitialized )
     {
@@ -142,7 +177,7 @@ extern uint32_t UART_GetChar( void )
  */
 extern uint32_t UART_IsRxReady( void )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = CONSOLE_UART;
 
     if ( !_ucIsConsoleInitialized )
     {

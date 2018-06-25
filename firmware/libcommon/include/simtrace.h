@@ -77,7 +77,11 @@ typedef struct {
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];
 
-void update_fidi(uint8_t fidi);
+/*! Update USART baud rate to Fi/Di ratio
+ *  @param[io] usart USART peripheral base address
+ *  @param[in] fidi FiDi value as provided in TA interface byte
+ */
+void update_fidi(Usart *usart, uint8_t fidi);
 
 void ISR_PhoneRST( const Pin *pPin);
 

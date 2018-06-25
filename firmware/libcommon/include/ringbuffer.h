@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#define RING_BUFLEN 128
+#define RING_BUFLEN 256
 
 typedef struct ringbuf {
 	uint8_t buf[RING_BUFLEN];

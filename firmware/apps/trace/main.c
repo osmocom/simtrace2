@@ -22,7 +22,7 @@ typedef struct {
 	void (*exit) (void);
 	/* main loop content for given configuration */
 	void (*run) (void);
-	/* Interrupt handler for USART1 */
+	/* Interrupt handler for USART0 */
 	void (*usart0_irq) (void);
 	/* Interrupt handler for USART1 */
 	void (*usart1_irq) (void);
@@ -127,9 +127,9 @@ extern int main(void)
 	led_init();
 	led_blink(LED_RED, BLINK_3O_5F);
 
-	/* Enable watchdog for 500ms, with no window */
+	/* Enable watchdog for 2000 ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
-		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
+		   (WDT_GetPeriod(2000) << 16) | WDT_GetPeriod(2000));
 
 	PIO_InitializeInterrupts(0);
 

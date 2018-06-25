@@ -116,20 +116,27 @@ void mode_trace_usart1_irq(void)
 }
 
 /*  FIDI update functions   */
-void update_fidi(uint8_t fidi)
+void update_fidi(Usart *usart, uint8_t fidi)
 {
-	int rc;
+	if (NULL==usart) {
+		return;
+	}
 
 	uint8_t fi = fidi >> 4;
 	uint8_t di = fidi & 0xf;
+	int ratio = compute_fidi_ratio(fi, di);
 
-	rc = compute_fidi_ratio(fi, di);
-	if (rc > 0 && rc < 0x400) {
-		TRACE_INFO("computed Fi(%u) Di(%u) ratio: %d", fi, di, rc);
-		/* make sure UART uses new F/D ratio */
-		USART_PHONE->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
-		USART_PHONE->US_FIDI = rc & 0x3ff;
-		USART_PHONE->US_CR |= US_CR_RXEN | US_CR_STTTO;
-	} else
-		TRACE_INFO("computed FiDi ratio %d unsupported", rc);
+	if (ratio > 0 && ratio < 0x8000) {
+		/* make sure USART uses new F/D ratio */
+		usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
+		/* disable write protection */
+		if (usart->US_WPMR) {
+			usart->US_WPMR = US_WPMR_WPKEY(0x555341);
+		}
+		usart->US_FIDI = (ratio & 0x7ff);
+		usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
+		TRACE_INFO("updated USART Fi(%u)/Di(%u) ratio(%d): %u\n\r", fi, di, ratio, usart->US_FIDI);
+	} else {
+		TRACE_WARNING("computed Fi/Di ratio %d unsupported\n\r", ratio);
+	}
 }

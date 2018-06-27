@@ -30,7 +30,7 @@ enum simtrace_msg_class {
 	SIMTRACE_MSGC_GENERIC = 0,
 	/* Card Emulation / Forwarding */
 	SIMTRACE_MSGC_CARDEM,
-	/* Modem Control (if modem is attached next to device */
+	/* Modem Control (if modem is attached next to device) */
 	SIMTRACE_MSGC_MODEM,
 	/* SIM protocol tracing */
 	SIMTRACE_MSGC_TRACE,
@@ -107,7 +107,7 @@ enum simtrace_capability_generic {
 	SIMTRACE_CAP_LED_1,
 	/* Has LED2 */
 	SIMTRACE_CAP_LED_2,
-	/* Has Single-Pole Dual-Throw (local/remote SIM */
+	/* Has Single-Pole Dual-Throw (local/remote SIM) */
 	SIMTRACE_CAP_SPDT,
 	/* Has Bus-Switch (trace / MITM) */
 	SIMTRACE_CAP_BUS_SWITCH,
@@ -127,7 +127,7 @@ enum simtrace_capability_generic {
 	SIMTRACE_CAP_ASSERT_MODEM_RST,
 };
 
-/* vendor-specific capabilities of sysmoocm devices */
+/* vendor-specific capabilities of sysmocom devices */
 enum simtrace_capability_vendor {
 	/* Can erase a peer SAM3 controller */
 	SIMTRACE_CAP_SYSMO_QMOD_ERASE_PEER,
@@ -253,7 +253,7 @@ struct cardemu_usb_msg_error {
 
 /* SIMTRACE_MSGT_DT_MODEM_RESET */
 struct st_modem_reset {
-	/* 0: de-assert reset, 1: assert reset, 2: poulse reset */
+	/* 0: de-assert reset, 1: assert reset, 2: pulse reset */
 	uint8_t asserted;
 	/* if above is '2', duration of pulse in ms */
 	uint16_t pulse_duration_msec;

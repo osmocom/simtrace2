@@ -27,7 +27,7 @@ static void led_set(enum led led, int on)
 struct blink_state {
 	/* duration of the state in ms */
 	uint16_t duration;
-	/* bringhtness of LED during the state */
+	/* brightness of LED during the state */
 	uint8_t on;
 } __attribute__((packed));
 
@@ -53,6 +53,9 @@ static const struct blink_state bs_3on_1off_3on_30off[] = {
 
 static const struct blink_state bs_3on_1off_3on_1off_3on_30off[] = {
 	{ 300, 1 }, { 100, 0 }, { 300, 1 }, { 100, 0 }, { 300, 1 }, { 3000, 0 }
+};
+static const struct blink_state bs_2on_off[] = {
+	{ 200, 1 }, { 0, 0 },
 };
 static const struct blink_state bs_200on_off[] = {
 	{ 20000, 1 }, { 0, 0 },
@@ -93,6 +96,10 @@ static const struct blink_pattern patterns[] = {
 	[BLINK_3O_1F_3O_1F_3O_30F] = {
 		.states = bs_3on_1off_3on_1off_3on_30off,
 		.size = ARRAY_SIZE(bs_3on_1off_3on_1off_3on_30off),
+	},
+	[BLINK_2O_F] = {
+		.states = bs_2on_off,
+		.size = ARRAY_SIZE(bs_2on_off),
 	},
 	[BLINK_200O_F] = {
 		.states = bs_200on_off,
@@ -158,15 +165,15 @@ static void blink_tmr_cb(void *data)
 }
 
 static struct led_state led_state[] = {
-	[LED_GREEN] = {
-		.led = LED_GREEN,
-		.timer.cb = blink_tmr_cb,
-		.timer.data = &led_state[LED_GREEN],
-	},
 	[LED_RED] = {
 		.led = LED_RED,
 		.timer.cb = blink_tmr_cb,
 		.timer.data = &led_state[LED_RED],
+	},
+	[LED_GREEN] = {
+		.led = LED_GREEN,
+		.timer.cb = blink_tmr_cb,
+		.timer.data = &led_state[LED_GREEN],
 	},
 };
 #endif /* PINS_LEDS */

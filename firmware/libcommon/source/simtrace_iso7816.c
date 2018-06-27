@@ -135,8 +135,8 @@ void update_fidi(Usart_info *usart, uint8_t fidi)
 		}
 		usart->base->US_FIDI = (ratio & 0x7ff);
 		usart->base->US_CR |= US_CR_RXEN | US_CR_STTTO;
-		TRACE_INFO("updated USART(%u) Fi(%u)/Di(%u) ratio(%d): %u\n\r", usart->id, fi, di, ratio, usart->base->US_FIDI);
+		//TRACE_INFO("updated USART(%u) Fi(%u)/Di(%u) ratio(%d): %u\n\r", usart->id, fi, di, ratio, usart->base->US_FIDI);
 	} else {
-		TRACE_WARNING("computed Fi/Di ratio %d unsupported\n\r", ratio);
+		//TRACE_WARNING("computed Fi/Di ratio %d unsupported\n\r", ratio); /* don't print since this is function is also called by ISRs */
 	}
 }

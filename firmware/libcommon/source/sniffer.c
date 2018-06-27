@@ -54,8 +54,8 @@ enum iso7816_3_sniff_state {
 	ISO7816_S_RESET, /*!< in Reset */
 	ISO7816_S_WAIT_ATR, /*!< waiting for ATR to start */
 	ISO7816_S_IN_ATR, /*!< while we are receiving the ATR */
-	ISO7816_S_WAIT_APDU, /*!< waiting for start of new APDU */
-	ISO7816_S_IN_APDU, /*!< inside a single APDU */
+	ISO7816_S_WAIT_TPDU, /*!< waiting for start of new TPDU */
+	ISO7816_S_IN_TPDU, /*!< inside a single TPDU */
 	ISO7816_S_IN_PPS_REQ, /*!< while we are inside the PPS request */
 	ISO7816_S_WAIT_PPS_RSP, /*!< waiting for start of the PPS response */
 	ISO7816_S_IN_PPS_RSP, /*!< while we are inside the PPS request */
@@ -85,6 +85,23 @@ enum pps_sniff_state {
 	PPS_S_WAIT_PPS2, /*!< second parameter byte */
 	PPS_S_WAIT_PPS3, /*!< third parameter byte */
 	PPS_S_WAIT_PCK, /*!< check byte */
+};
+
+/*! Transport Protocol Data Unit (TPDU) sub-states of ISO7816_S_IN_TPDU
+ *  @note defined in ISO/IEC 7816-3:2006(E) section 10 and 12
+ *  @remark APDUs are formed by one or more command+response TPDUs
+ */
+enum tpdu_sniff_state {
+	TPDU_S_CLA, /*!< class byte */
+	TPDU_S_INS, /*!< instruction byte */
+	TPDU_S_P1, /*!< first parameter byte for the instruction */
+	TPDU_S_P2, /*!< second parameter byte for the instruction */
+	TPDU_S_P3, /*!< third parameter byte encoding the data length */
+	TPDU_S_PROCEDURE, /*!< procedure byte (could also be SW1) */
+	TPDU_S_DATA_REMAINING, /*!< remaining data bytes */
+	TPDU_S_DATA_SINGLE, /*!< single data byte */
+	TPDU_S_SW1, /*!< first status word */
+	TPDU_S_SW2, /*!< second status word */
 };
 
 /*------------------------------------------------------------------------------
@@ -141,6 +158,15 @@ enum pps_sniff_state pps_state;
 uint8_t pps_req[MAX_PPS_SIZE];
 /*! PPS response data */
 uint8_t pps_rsp[MAX_PPS_SIZE];
+/*! TPDU state */
+enum tpdu_sniff_state tpdu_state;
+/*! Final TPDU packet
+ *  @note this is the complete command+response TPDU, including header, data, and status words
+ *  @remark this does not include the procedure bytes
+ */
+uint8_t tpdu_packet[5+256+2];
+/*! Current index in TPDU packet */
+uint8_t tpdu_packet_i = 0;
 
 /*------------------------------------------------------------------------------
  *         Internal functions
@@ -182,6 +208,10 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	case ISO7816_S_IN_PPS_REQ:
 	case ISO7816_S_IN_PPS_RSP:
 		pps_state = PPS_S_WAIT_PPSS;
+		break;
+	case ISO7816_S_WAIT_TPDU:
+		tpdu_state = TPDU_S_CLA;
+		tpdu_packet_i = 0;
 		break;
 	default:
 		break;
@@ -291,7 +321,7 @@ static void process_byte_atr(uint8_t byte)
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* we could verify the checksum, but we are just here to sniff */
 		print_atr(); /* print ATR for info */
-		change_state(ISO7816_S_WAIT_APDU); /* go to next state */
+		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
 		TRACE_INFO("Unknown ATR state %u\n\r", atr_state);
@@ -352,7 +382,7 @@ static void process_byte_pps(uint8_t byte)
 			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
 		} else {
 			TRACE_INFO("Invalid PPSS received\n\r");
-			change_state(ISO7816_S_WAIT_APDU); /* go back to APDU state */
+			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 		}
 		break;
 	case PPS_S_WAIT_PPS0: /*!< format byte */
@@ -398,7 +428,7 @@ static void process_byte_pps(uint8_t byte)
 			if (0==check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */
 			} else { /* checksum is invalid */
-				change_state(ISO7816_S_WAIT_APDU); /* go to next state */
+				change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 			}
 		} else if (ISO7816_S_IN_PPS_RSP==iso_state) {
 			if (0==check) { /* checksum is valid */
@@ -415,7 +445,7 @@ static void process_byte_pps(uint8_t byte)
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");
 			}
-			change_state(ISO7816_S_WAIT_APDU); /* co to next state */
+			change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		}
 		break;
 	default:
@@ -423,8 +453,108 @@ static void process_byte_pps(uint8_t byte)
 	}
 }
 
-static void process_byte_apdu(uint8_t byte)
+/*! Print current TPDU */
+static void print_tpdu(void)
 {
+	if (ISO7816_S_IN_TPDU!=iso_state) {
+		TRACE_WARNING("Can't print TPDU in ISO 7816-3 state %u\n\r", iso_state);
+		return;
+	}
+
+	led_blink(LED_GREEN, BLINK_2O_F);
+	printf("TPDU: ");
+	uint16_t i;
+	for (i = 0; i < tpdu_packet_i && i < ARRAY_SIZE(tpdu_packet); i++) {
+		printf("%02x ", tpdu_packet[i]);
+	}
+	printf("\n\r");
+}
+
+static void process_byte_tpdu(uint8_t byte)
+{
+	/* sanity check */
+	if (ISO7816_S_IN_TPDU!=iso_state) {
+		TRACE_ERROR("Processing TPDU data in wrong ISO 7816-3 state %u\n\r", iso_state);
+		return;
+	}
+	if (tpdu_packet_i>=ARRAY_SIZE(tpdu_packet)) {
+		TRACE_ERROR("TPDU data overflow\n\r");
+		return;
+	}
+
+	/* handle TPDU byte depending on current state */
+	switch (tpdu_state) {
+	case TPDU_S_CLA:
+		if (0xff==byte) {
+			TRACE_WARNING("0xff is not a valid class byte\n\r");
+			break;
+		}
+		tpdu_packet_i = 0;
+		tpdu_packet[tpdu_packet_i++] = byte;
+		tpdu_state = TPDU_S_INS;
+		break;
+	case TPDU_S_INS:
+		tpdu_packet_i = 1;
+		tpdu_packet[tpdu_packet_i++] = byte;
+		tpdu_state = TPDU_S_P1;
+		break;
+	case TPDU_S_P1:
+		tpdu_packet_i = 2;
+		tpdu_packet[tpdu_packet_i++] = byte;
+		tpdu_state = TPDU_S_P2;
+		break;
+	case TPDU_S_P2:
+		tpdu_packet_i = 3;
+		tpdu_packet[tpdu_packet_i++] = byte;
+		tpdu_state = TPDU_S_P3;
+		break;
+	case TPDU_S_P3:
+		tpdu_packet_i = 4;
+		tpdu_packet[tpdu_packet_i++] = byte;
+		tpdu_state = TPDU_S_PROCEDURE;
+		break;
+	case TPDU_S_PROCEDURE:
+		if (0x60==byte) { /* wait for next procedure byte */
+			break;
+		} else if (tpdu_packet[1]==byte) { /* get all remaining data bytes */
+			tpdu_state = TPDU_S_DATA_REMAINING;
+			break;
+		} else if ((~tpdu_packet[1])==byte) { /* get single data byte */
+			tpdu_state = TPDU_S_DATA_SINGLE;
+			break;
+		}
+	case TPDU_S_SW1:
+		if ((0x60==(byte&0xf0)) || (0x90==(byte&0xf0))) { /* this procedure byte is SW1 */
+			tpdu_packet[tpdu_packet_i++] = byte;
+			tpdu_state = TPDU_S_SW2;
+		} else {
+			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
+		}
+		break;
+	case TPDU_S_SW2:
+		tpdu_packet[tpdu_packet_i++] = byte;
+		print_tpdu(); /* print TPDU for info */
+		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
+		break;
+	case TPDU_S_DATA_SINGLE:
+	case TPDU_S_DATA_REMAINING:
+		tpdu_packet[tpdu_packet_i++] = byte;
+		if (0==tpdu_packet[4]) {
+			if (5+256<=tpdu_packet_i) {
+				tpdu_state = TPDU_S_SW1;
+			}
+		} else {
+			if (5+tpdu_packet[4]<=tpdu_packet_i) {
+				tpdu_state = TPDU_S_SW1;
+			}
+		}
+		if (TPDU_S_DATA_SINGLE==tpdu_state) {
+			tpdu_state = TPDU_S_PROCEDURE;
+		}
+		break;
+	default:
+		TRACE_ERROR("unhandled TPDU state %u\n\r", tpdu_state);
+	}
 }
 
 static void check_sniffed_data(void)
@@ -441,7 +571,7 @@ static void check_sniffed_data(void)
 		case ISO7816_S_IN_ATR: /* More ATR data incoming */
 			process_byte_atr(byte);
 			break;
-		case ISO7816_S_WAIT_APDU: /* After the ATR we expect APDU or PPS data */
+		case ISO7816_S_WAIT_TPDU: /* After the ATR we expect TPDU or PPS data */
 		case ISO7816_S_WAIT_PPS_RSP:
 			if (byte == 0xff) {
 				if (ISO7816_S_WAIT_PPS_RSP==iso_state) {
@@ -452,8 +582,11 @@ static void check_sniffed_data(void)
 				process_byte_pps(byte);
 				break;
 			}
-		case ISO7816_S_IN_APDU: /* More APDU data incoming */
-			process_byte_apdu(byte);
+		case ISO7816_S_IN_TPDU: /* More TPDU data incoming */
+			if (ISO7816_S_WAIT_TPDU==iso_state) {
+				change_state(ISO7816_S_IN_TPDU);
+			}
+			process_byte_tpdu(byte);
 			break;
 		case ISO7816_S_IN_PPS_REQ:
 		case ISO7816_S_IN_PPS_RSP:

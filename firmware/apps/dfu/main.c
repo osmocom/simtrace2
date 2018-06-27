@@ -13,6 +13,12 @@ unsigned int g_unique_id[4];
 /* remember if the watchdog has been configured in the main loop so we can kick it in the ISR */
 static bool watchdog_configured = false;
 
+/* There is not enough space in the 16 KiB DFU bootloader to include led.h functions */
+#ifdef PINS_LEDS
+/** LED pin configurations */
+static const Pin pinsLeds[] = { PINS_LEDS } ;
+#endif
+
 /*----------------------------------------------------------------------------
  *       Callbacks
  *----------------------------------------------------------------------------*/
@@ -42,53 +48,62 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 
 	printf("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
 
+#ifdef PINS_LEDS
+	PIO_Clear(&pinsLeds[LED_NUM_RED]);
+#endif
+
 	switch (altif) {
 	case ALTIF_RAM:
 		addr = RAM_ADDR(offset);
 		if (addr < IRAM_ADDR || addr + len >= IRAM_ADDR + IRAM_SIZE || addr + len >= stack_addr) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
-			return DFU_RET_STALL;
+			rc = DFU_RET_STALL;
+			break;
 		}
 		memcpy((void *)addr, data, len);
-		return DFU_RET_ZLP;
+		rc = DFU_RET_ZLP;
+		break;
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
 		if (addr < IFLASH_ADDR || addr + len >= IFLASH_ADDR + IFLASH_SIZE) {
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
-			return DFU_RET_STALL;
+			rc = DFU_RET_STALL;
+			break;
 		}
 		rc = FLASHD_Unlock(addr, addr + len, 0, 0);
 		if (rc != 0) {
 			TRACE_ERROR("DFU download flash unlock failed\n\r");
-			/* FIXME: set error codes */
-			return DFU_RET_STALL;
+			rc =  DFU_RET_STALL;
+			break;
 		}
 		rc = FLASHD_Write(addr, data, len);
 		if (rc != 0) {
 			TRACE_ERROR("DFU download flash erase failed\n\r");
-			/* FIXME: set error codes */
-			return DFU_RET_STALL;
+			rc = DFU_RET_STALL;
+			break;
 		}
 		for (i = 0; i < len; i++) {
 			if (((uint8_t*)addr)[i]!=data[i]) {
 				TRACE_ERROR("DFU download flash data written not correct\n\r");
-				return DFU_RET_STALL;
+				rc = DFU_RET_STALL;
+				break;
 			}
 		}
-		rc = FLASHD_Lock(addr, addr + len, 0, 0);
-		if (rc != 0) {
-			TRACE_ERROR("DFU download flash lock failed\n\r");
-			/* FIXME: set error codes */
-			return DFU_RET_STALL;
-		}
-		return DFU_RET_ZLP;
+		rc = DFU_RET_ZLP;
+		break;
 	default:
-		/* FIXME: set error codes */
 		TRACE_ERROR("DFU download for unknown AltIf %d\n\r", altif);
-		return DFU_RET_STALL;
+		rc = DFU_RET_STALL;
+		break;
 	}
+
+#ifdef PINS_LEDS
+	PIO_Set(&pinsLeds[LED_NUM_RED]);
+#endif
+
+	return rc;
 }
 
 /* incoming call-back: Host has requested to read back 'req_len' bytes
@@ -187,16 +202,17 @@ extern int main(void)
 	unsigned int i = 0;
 	uint32_t reset_cause = (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos;
 
-#if 0
-	led_init();
-	led_blink(LED_GREEN, BLINK_3O_30F);
-	led_blink(LED_RED, BLINK_3O_30F);
-#endif
-
 	/* Enable watchdog for 2000ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
 		   (WDT_GetPeriod(2000) << 16) | WDT_GetPeriod(2000));
 	watchdog_configured = true;
+
+#ifdef PINS_LEDS
+	/* Configure LED */
+	PIO_Configure(pinsLeds, sizeof(pinsLeds));
+	PIO_Set(&pinsLeds[LED_NUM_RED]);
+	PIO_Clear(&pinsLeds[LED_NUM_GREEN]);
+#endif
 
 	PIO_InitializeInterrupts(0);
 

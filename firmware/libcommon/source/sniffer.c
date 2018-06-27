@@ -193,11 +193,9 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	switch (iso_state_new) {
 	case ISO7816_S_RESET:
 		update_fidi(sniff_usart.base, 0x11); /* reset baud rate to default Di/Fi values */
-		// TODO disable USART and TC
 		break;
 	case ISO7816_S_WAIT_ATR:
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
-		// TODO enable USART and TC
 		break;
 	case ISO7816_S_IN_ATR:
 		atr_i = 0;
@@ -613,6 +611,30 @@ void Sniffer_usart_isr(void)
 		/* Store sniffed data into buffer (also clear interrupt */
 		rbuf_write(&sniff_buffer, byte);
 	}
+	/* Verify it WT timeout occurred, to detect unresponsive card */
+	if (csr & US_CSR_TIMEOUT) {
+		/* Stop timeout until next character is received */
+		sniff_usart.base->US_CR |= US_CR_STTTO;
+		/* Use timeout to detect end of ATR/PPS/TPDU */
+		switch (iso_state) {
+		case ISO7816_S_RESET:
+		case ISO7816_S_WAIT_ATR:
+			break;
+		case ISO7816_S_IN_ATR:
+			change_state(ISO7816_S_WAIT_ATR);
+			break;
+		case ISO7816_S_WAIT_TPDU:
+			break;
+		case ISO7816_S_WAIT_PPS_RSP:
+		case ISO7816_S_IN_TPDU:
+		case ISO7816_S_IN_PPS_REQ:
+		case ISO7816_S_IN_PPS_RSP:
+			change_state(ISO7816_S_WAIT_TPDU);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 /** PIO interrupt service routine to checks if the card reset line has changed
@@ -699,8 +721,10 @@ void Sniffer_init(void)
 	ISO7816_Init(&sniff_usart, CLK_SLAVE);
 	/* Only receive data when sniffing */
 	USART_SetReceiverEnabled(sniff_usart.base, 1);
-	/* Enable interrupt to indicate when data has been received */
-	USART_EnableIt(sniff_usart.base, US_IER_RXRDY);
+	/* Enable Receiver time-out WT to detect unresponsive cards */
+	sniff_usart.base->US_RTOR = 9600-12; /* -12 because the timer starts at the end of the 12 ETU frame */
+	/* Enable interrupt to indicate when data has been received or timeout occurred */
+	USART_EnableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
 	/* Enable interrupt requests for the USART peripheral */
 	NVIC_EnableIRQ(IRQ_USART_SIM);
 

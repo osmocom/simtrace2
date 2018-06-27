@@ -124,8 +124,10 @@ extern int main(void)
 	enum confNum last_simtrace_config = simtrace_config;
 	unsigned int i = 0;
 
+	/* Configure LED output (red = on, green = activity */
 	led_init();
-	led_blink(LED_RED, BLINK_3O_5F);
+	led_blink(LED_RED, BLINK_ALWAYS_ON);
+	led_blink(LED_GREEN, BLINK_ALWAYS_OFF);
 
 	/* Enable watchdog for 2000 ms, with no window */
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |

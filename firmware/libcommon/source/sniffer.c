@@ -189,7 +189,23 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 
 	/* save new state */
 	iso_state = iso_state_new;
-	TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state);
+	//TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state); /* don't print since this is function is also called by ISRs */
+}
+
+/*! Print current ATR */
+static void print_atr(void)
+{
+	if (ISO7816_S_IN_ATR!=iso_state) {
+		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\n\r", iso_state);
+		return;
+	}
+
+	led_blink(LED_GREEN, BLINK_2O_F);
+	printf("ATR: ");
+	for (uint8_t i=0; i<atr_i && i<ARRAY_SIZE(atr); i++) {
+		printf("%02x ", atr[i]);
+	}
+	printf("\n\r");
 }
 
 /*! Process ATR byte
@@ -206,7 +222,7 @@ static void process_byte_atr(uint8_t byte)
 		return;
 	}
 	if (atr_i>=ARRAY_SIZE(atr)) {
-		TRACE_WARNING("ATR data overflow\n\r");
+		TRACE_ERROR("ATR data overflow\n\r");
 		return;
 	}
 
@@ -273,11 +289,44 @@ static void process_byte_atr(uint8_t byte)
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* we could verify the checksum, but we are just here to sniff */
-		change_state(ISO7816_S_WAIT_APDU); /* go to next state */
+		print_atr(); /* print ATR for info */
+		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
 		TRACE_INFO("Unknown ATR state %u\n\r", atr_state);
 	}
+}
+
+/*! Print current PPS */
+static void print_pps(void)
+{
+	uint8_t *pps_cur; /* current PPS (request or response) */
+
+	/* sanity check */
+	if (ISO7816_S_IN_PPS_REQ==iso_state) {
+		pps_cur = pps_req;
+	} else if (ISO7816_S_IN_PPS_RSP==iso_state) {
+		pps_cur = pps_rsp;
+	} else {
+		TRACE_ERROR("Can't print PPS in ISO 7816-3 state %u\n\r", iso_state);
+		return;
+	}
+
+	led_blink(LED_GREEN, BLINK_2O_F);
+	printf("PPS %s : ", ISO7816_S_IN_PPS_REQ==iso_state ? "REQUEST" : "RESPONSE");
+	printf("%02x ", pps_cur[0]);
+	printf("%02x ", pps_cur[1]);
+	if (pps_cur[1]&0x10) {
+		printf("%02x ", pps_cur[2]);
+	}
+	if (pps_cur[1]&0x20) {
+		printf("%02x ", pps_cur[3]);
+	}
+	if (pps_cur[1]&0x40) {
+		printf("%02x ", pps_cur[4]);
+	}
+	printf("%02x ", pps_cur[5]);
+	printf("\n\r");
 }
 
 static void process_byte_pps(uint8_t byte)
@@ -343,6 +392,7 @@ static void process_byte_pps(uint8_t byte)
 			check ^= pps_cur[4];
 		}
 		check ^= pps_cur[5];
+		print_pps(); /* print PPS for info */
 		if (ISO7816_S_IN_PPS_REQ==iso_state) {
 			if (0==check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */

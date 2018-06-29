@@ -33,8 +33,8 @@
 
 #include <assert.h>
 #include <limits.h>
-#include "osmocom/core/linuxlist.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/timer.h>
 
 /* These store the amount of time that we wait until next timer expires. */
 static struct osmo_timeval nearest;

@@ -3,7 +3,7 @@
 #include "talloc.h"
 #include "trace.h"
 #include "utils.h"
-#include "osmocom/core/utils.h"
+#include <osmocom/core/utils.h>
 
 #define NUM_RCTX_SMALL 10
 #define RCTX_SIZE_SMALL 348

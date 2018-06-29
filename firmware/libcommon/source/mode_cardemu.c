@@ -6,8 +6,8 @@
 #include "card_emu.h"
 #include "iso7816_fidi.h"
 #include "utils.h"
-#include "osmocom/core/linuxlist.h"
-#include "osmocom/core/msgb.h"
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/msgb.h>
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
 #include "simtrace_prot.h"

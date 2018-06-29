@@ -9,7 +9,7 @@
 #include "sim_switch.h"
 #include "boardver_adc.h"
 #include "card_pres.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/timer.h>
 #include "usb_buf.h"
 
 static const Pin pin_hubpwr_override = PIN_PRTPWR_OVERRIDE;

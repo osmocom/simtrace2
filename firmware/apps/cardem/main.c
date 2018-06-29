@@ -6,7 +6,7 @@
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/timer.h>
 
 unsigned int g_unique_id[4];
 

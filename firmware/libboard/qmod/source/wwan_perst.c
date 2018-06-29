@@ -9,7 +9,7 @@
 #include "board.h"
 #include "trace.h"
 #include "wwan_perst.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/timer.h>
 
 struct wwan_perst {
 	uint8_t idx;

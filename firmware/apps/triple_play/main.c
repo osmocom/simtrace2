@@ -7,7 +7,7 @@
 #include "simtrace.h"
 #include "utils.h"
 #include "req_ctx.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/timer.h>
 
 unsigned int g_unique_id[4];
 

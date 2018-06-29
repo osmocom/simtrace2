@@ -60,8 +60,8 @@ struct timezone;
 
 #include <stdbool.h>
 
-#include "osmocom/core/linuxlist.h"
-#include "osmocom/core/linuxrbtree.h"
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/linuxrbtree.h>
 
 /**
  * Timer management:

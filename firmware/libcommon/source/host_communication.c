@@ -3,8 +3,8 @@
 #include "usb_buf.h"
 #include "utils.h"
 
-#include "osmocom/core/linuxlist.h"
-#include "osmocom/core/msgb.h"
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/msgb.h>
 #include <errno.h>
 
 /***********************************************************************

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "osmocom/core/linuxlist.h"
-#include "osmocom/core/msgb.h"
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/msgb.h>
 
 /* buffered USB endpoint (with queue of msgb) */
 struct usb_buffered_ep {

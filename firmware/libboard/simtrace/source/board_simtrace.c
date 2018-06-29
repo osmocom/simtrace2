@@ -5,7 +5,7 @@
 #include "simtrace.h"
 #include "utils.h"
 #include "sim_switch.h"
-#include "osmocom/core/timer.h"
+#include <osmocom/core/timer.h>
 #include "usb_buf.h"
 
 void board_exec_dbg_cmd(int ch)

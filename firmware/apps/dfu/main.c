@@ -31,6 +31,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 			 uint8_t *data, unsigned int len)
 {
 	uint32_t addr;
+	unsigned int i;
 	int rc;
 	/* address of the last allocated variable on the stack */
 	uint32_t stack_addr = (uint32_t)&rc;
@@ -70,7 +71,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 			/* FIXME: set error codes */
 			return DFU_RET_STALL;
 		}
-		for (unsigned int i=0; i<len; i++) {
+		for (i = 0; i < len; i++) {
 			if (((uint8_t*)addr)[i]!=data[i]) {
 				TRACE_ERROR("DFU download flash data written not correct\n\r");
 				return DFU_RET_STALL;

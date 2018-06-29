@@ -192,7 +192,7 @@ $(OUTPUT)-combined.bin: $(BIN)/$(BOARD)-dfu-flash-padded.bin $(OUTPUT)-dfu.bin
 	cat $^ > $@
 
 $(BIN) $(OBJ):
-	mkdir $@
+	mkdir -p $@
 
 usbstring/usbstring: usbstring/usbstring.c
 	gcc $^ -o $@

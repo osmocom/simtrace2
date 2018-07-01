@@ -130,11 +130,11 @@ int dev_find_matching_interfaces(libusb_device *dev, int class, int sub_class, i
 			for (k = 0; k < intf->num_altsetting; k++) {
 				const struct libusb_interface_descriptor *if_desc;
 				if_desc = &intf->altsetting[k];
-				if (class > 0 && if_desc->bInterfaceClass != class)
+				if (class >= 0 && if_desc->bInterfaceClass != class)
 					continue;
-				if (sub_class > 0 && if_desc->bInterfaceSubClass != sub_class)
+				if (sub_class >= 0 && if_desc->bInterfaceSubClass != sub_class)
 					continue;
-				if (protocol > 0 && if_desc->bInterfaceProtocol != protocol)
+				if (protocol >= 0 && if_desc->bInterfaceProtocol != protocol)
 					continue;
 				/* MATCH! */
 				out[out_idx].usb_dev = dev;
@@ -197,7 +197,7 @@ int usb_match_interfaces(libusb_context *ctx, const struct dev_id *dev_ids,
 			dev_desc.idVendor, dev_desc.idProduct, addr);
 #endif
 
-		rc = dev_find_matching_interfaces(*dev, 255, 2, -1, out_cur, out_len_remain);
+		rc = dev_find_matching_interfaces(*dev, class, sub_class, protocol, out_cur, out_len_remain);
 		if (rc < 0)
 			continue;
 		out_cur += rc;

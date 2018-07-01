@@ -5,20 +5,7 @@
 #include "board.h"
 #include <usb/device/dfu/dfu.h>
 
-/* Endpoint numbers */
-#define DATAOUT     1
-#define DATAIN      2
-#define INT         3
-
 #define BUFLEN  512
-
-#define PHONE_DATAOUT     4
-#define PHONE_DATAIN      5
-#define PHONE_INT         6
-
-#define CARDEM_USIM2_DATAOUT	DATAOUT
-#define CARDEM_USIM2_DATAIN	DATAIN
-#define CARDEM_USIM2_INT	INT
 
 #define CLK_MASTER      true
 #define CLK_SLAVE       false

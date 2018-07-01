@@ -33,6 +33,7 @@
 
 #include "board.h"
 #include "simtrace.h"
+#include "simtrace_usb.h"
 #include "ringbuffer.h"
 #include "iso7816_fidi.h"
 
@@ -67,7 +68,7 @@ void ISR_PhoneRST(const Pin * pPin)
 	}
 
 	if ((ret =
-	     USBD_Write(PHONE_INT, "R", 1,
+	     USBD_Write(SIMTRACE_USB_EP_PHONE_INT, "R", 1,
 			(TransferCallback) & Callback_PhoneRST_ISR,
 			0)) != USBD_STATUS_SUCCESS) {
 		TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);

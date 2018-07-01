@@ -94,6 +94,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		rc = DFU_RET_ZLP;
 		break;
 	default:
+		/* FIXME: set error codes */
 		TRACE_ERROR("DFU download for unknown AltIf %d\n\r", altif);
 		rc = DFU_RET_STALL;
 		break;
@@ -213,6 +214,10 @@ extern int main(void)
 	PIO_Set(&pinsLeds[LED_NUM_RED]);
 	PIO_Clear(&pinsLeds[LED_NUM_GREEN]);
 #endif
+
+	/* Enable watchdog for 500ms, with no window */
+	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
+		   (WDT_GetPeriod(500) << 16) | WDT_GetPeriod(500));
 
 	PIO_InitializeInterrupts(0);
 

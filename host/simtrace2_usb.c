@@ -6,15 +6,7 @@
 #include <osmocom/core/utils.h>
 
 #include "libusb_util.h"
-
-#define USB_VENDOR_OPENMOKO		0x1d50
-#define USB_PRODUCT_OWHW_SAM3_DFU	0x4000
-#define USB_PRODUCT_OWHW_SAM3		0x4001
-#define USB_PRODUCT_QMOD_HUB		0x4002
-#define USB_PRODUCT_QMOD_SAM3_DFU	0x4003
-#define USB_PRODUCT_QMOD_SAM3		0x4004
-#define USB_PRODUCT_SIMTRACE2_DFU	0x60e2
-#define USB_PRODUCT_SIMTRACE2		0x60e3
+#include "simtrace_usb.h"
 
 static const struct dev_id compatible_dev_ids[] = {
 	{ USB_VENDOR_OPENMOKO, USB_PRODUCT_OWHW_SAM3 },
@@ -23,15 +15,15 @@ static const struct dev_id compatible_dev_ids[] = {
 	{ 0, 0 }
 };
 
-//libusb_get_string_descriptor_ascii(hdl, idx, *data, len)
-
 static int find_devices(void)
 {
 	struct usb_interface_match ifm[16];
 	int rc, i, num_interfaces;
 
+	/* scan for USB devices matching SIMtrace USB ID with proprietary class */ 
 	rc = usb_match_interfaces(NULL, compatible_dev_ids,
-				  255, 2, -1, ifm, ARRAY_SIZE(ifm));
+				 USB_CLASS_PROPRIETARY, -1, -1, ifm, ARRAY_SIZE(ifm));
+	printf("USB matches: %d\n", rc);
 	if (rc < 0)
 		return rc;
 	num_interfaces = rc;

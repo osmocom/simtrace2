@@ -1,7 +1,3 @@
-#pragma once
-
-#include <stdint.h>
-
 /* SIMtrace2 USB protocol */
 
 /* (C) 2015-2017 by Harald Welte <hwelte@hmw-consulting.de>
@@ -21,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+#pragma once
+
+#include <stdint.h>
+#include <stdbool.h>
 
 /***********************************************************************
  * COMMON HEADER
@@ -32,8 +32,8 @@ enum simtrace_msg_class {
 	SIMTRACE_MSGC_CARDEM,
 	/* Modem Control (if modem is attached next to device) */
 	SIMTRACE_MSGC_MODEM,
-	/* SIM protocol tracing */
-	SIMTRACE_MSGC_TRACE,
+	/* Reader/phone-car/SIM communication sniff */
+	SIMTRACE_MSGC_SNIFF,
 
 	/* first vendor-specific request */
 	_SIMTRACE_MGSC_VENDOR_FIRST = 127,
@@ -74,10 +74,18 @@ enum simtrace_msg_type_modem {
 	SIMTRACE_MSGT_BD_MODEM_STATUS,
 };
 
-/* SIMTRACE_MSGC_TRACE */
-enum simtrace_msg_type_trace {
-	/* FIXME */
-	_dummy,
+/* SIMTRACE_MSGC_SNIFF */
+enum simtrace_msg_type_sniff {
+	/* Status change (card inserted, reset, ...) */
+	SIMTRACE_MSGT_SNIFF_CHANGE = 0,
+	/* Fi/Di baudrate change */
+	SIMTRACE_MSGT_SNIFF_FIDI,
+	/* ATR data */
+	SIMTRACE_MSGT_SNIFF_ATR,
+	/* PPS (request or response) data */
+	SIMTRACE_MSGT_SNIFF_PPS,
+	/* TPDU data */
+	SIMTRACE_MSGT_SNIFF_TPDU,
 };
 
 /* common message header */
@@ -92,7 +100,7 @@ struct simtrace_msg_hdr {
 } __attribute__ ((packed));
 
 /***********************************************************************
- * CARD EMULATOR / FORWARDER
+ * Capabilities
  ***********************************************************************/
 
 /* generic capabilities */
@@ -136,7 +144,6 @@ enum simtrace_capability_vendor {
 	/* can reset an attached USB hub */
 	SIMTRACE_CAP_SYSMO_QMOD_RESET_HUB,
 };
-
 
 /* SIMTRACE_CMD_BD_BOARD_INFO */
 struct simtrace_board_info {
@@ -276,3 +283,36 @@ struct st_modem_status {
 	/* bit-field of changed status bits */
 	uint8_t changed_mask;
 } __attribute__((packed));
+
+/***********************************************************************
+ * SNIFF
+ ***********************************************************************/
+
+/* SIMTRACE_MSGT_SNIFF_CHANGE flags */
+#define SNIFF_CHANGE_FLAG_CARD_INSERT (1<<0)
+#define SNIFF_CHANGE_FLAG_CARD_EJECT (1<<1)
+#define SNIFF_CHANGE_FLAG_RESET_HOLD (1<<2)
+#define SNIFF_CHANGE_FLAG_RESET_RELEASE (1<<3)
+#define SNIFF_CHANGE_FLAG_TIMEOUT_WT (1<<4)
+
+/* SIMTRACE_MSGT_SNIFF_CHANGE */
+struct sniff_change {
+	/* SIMTRACE_MSGT_SNIFF_CHANGE flags */
+	uint32_t flags;
+} __attribute__ ((packed));
+
+/* SIMTRACE_MSGT_SNIFF_FIDI */
+struct sniff_fidi {
+	/* Fi/Di values as encoded in TA1 */
+	uint8_t fidi;
+} __attribute__ ((packed));
+
+/* SIMTRACE_MSGT_SNIFF_ATR, SIMTRACE_MSGT_SNIFF_PPS, SIMTRACE_MSGT_SNIFF_TPDU */
+struct sniff_data {
+	/* if the data is complete (an error might have occurred during transmission */
+	bool complete;
+	/* data length */
+	uint16_t length;
+	/* data */
+	uint8_t data[0];
+} __attribute__ ((packed));

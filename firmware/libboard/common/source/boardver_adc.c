@@ -1,6 +1,13 @@
 #include "board.h"
 #include "boardver_adc.h"
 
+#define UV_PER_LSB     ((3300 * 1000) / 4096)
+uint32_t adc2uv(uint16_t adc)
+{
+	uint32_t uv = (uint32_t) adc * UV_PER_LSB;
+	return uv;
+}
+
 /***********************************************************************
  * ADC for board version detection
  ***********************************************************************/

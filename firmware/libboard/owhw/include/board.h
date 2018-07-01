@@ -1,5 +1,6 @@
 #pragma once
 #include "board_common.h"
+#include "simtrace_usb.h"
 
 /** Name of the board */
 #define BOARD_NAME "OWHW"

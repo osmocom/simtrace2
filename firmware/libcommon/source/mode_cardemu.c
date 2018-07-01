@@ -11,6 +11,7 @@
 #include <osmocom/core/msgb.h>
 #include "llist_irqsafe.h"
 #include "usb_buf.h"
+#include "simtrace_usb.h"
 #include "simtrace_prot.h"
 #include "sim_switch.h"
 
@@ -54,9 +55,9 @@ struct cardem_inst cardem_inst[] = {
 			.id = ID_USART1,
 			.state = USART_RCV
 		},
-		.ep_out = PHONE_DATAOUT,
-		.ep_in = PHONE_DATAIN,
-		.ep_int = PHONE_INT,
+		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM1_DATAOUT,
+		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN,
+		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM1_INT,
 #ifdef PIN_SET_USIM1_PRES
 		.pin_insert = PIN_SET_USIM1_PRES,
 #endif
@@ -69,9 +70,9 @@ struct cardem_inst cardem_inst[] = {
 			.id = ID_USART0,
 			.state = USART_RCV
 		},
-		.ep_out = CARDEM_USIM2_DATAOUT,
-		.ep_in = CARDEM_USIM2_DATAIN,
-		.ep_int = CARDEM_USIM2_INT,
+		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM2_DATAOUT,
+		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN,
+		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM2_INT,
 #ifdef PIN_SET_USIM2_PRES
 		.pin_insert = PIN_SET_USIM2_PRES,
 #endif
@@ -391,7 +392,7 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[0].ch = card_emu_init(0, 2, 0, PHONE_DATAIN, PHONE_INT);
+	cardem_inst[0].ch = card_emu_init(0, 2, 0, SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM1_INT);
 	sim_switch_use_physical(0, 1);
 
 #ifdef CARDEMU_SECOND_UART
@@ -406,7 +407,7 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim2_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[1].ch = card_emu_init(1, 0, 1, CARDEM_USIM2_DATAIN, CARDEM_USIM2_INT);
+	cardem_inst[1].ch = card_emu_init(1, 0, 1, SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM2_INT);
 	sim_switch_use_physical(1, 1);
 #endif /* CARDEMU_SECOND_UART */
 

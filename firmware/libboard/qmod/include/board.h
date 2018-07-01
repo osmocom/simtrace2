@@ -1,5 +1,6 @@
 #pragma once
 #include "board_common.h"
+#include "simtrace_usb.h"
 
 #define LED_USIM1	LED_GREEN
 #define LED_USIM2	LED_RED

@@ -34,6 +34,13 @@
 #include <string.h>
 #include "utils.h"
 #include "iso7816_fidi.h"
+/* USB related libraries */
+#include "osmocom/core/linuxlist.h"
+#include "osmocom/core/msgb.h"
+#include "llist_irqsafe.h"
+#include "usb_buf.h"
+#include "simtrace_usb.h"
+#include "simtrace_prot.h"
 
 /*------------------------------------------------------------------------------
  *         Internal definitions
@@ -133,6 +140,9 @@ static struct Usart_info sniff_usart = {
 /*! Ring buffer to store sniffer communication data */
 static struct ringbuf sniff_buffer;
 
+/* Flags  to know is the card status changed (see SIMTRACE_MSGT_DT_SNIFF_CHANGE flags) */
+volatile uint32_t change_flags = 0;
+
 /* ISO 7816 variables */
 /*! ISO 7816-3 state */
 enum iso7816_3_sniff_state iso_state = ISO7816_S_RESET;
@@ -178,6 +188,59 @@ uint8_t tpdu_packet_i = 0;
  */
 static const uint8_t convention_convert_lut[256] = { 0xff, 0x7f, 0xbf, 0x3f, 0xdf, 0x5f, 0x9f, 0x1f, 0xef, 0x6f, 0xaf, 0x2f, 0xcf, 0x4f, 0x8f, 0x0f, 0xf7, 0x77, 0xb7, 0x37, 0xd7, 0x57, 0x97, 0x17, 0xe7, 0x67, 0xa7, 0x27, 0xc7, 0x47, 0x87, 0x07, 0xfb, 0x7b, 0xbb, 0x3b, 0xdb, 0x5b, 0x9b, 0x1b, 0xeb, 0x6b, 0xab, 0x2b, 0xcb, 0x4b, 0x8b, 0x0b, 0xf3, 0x73, 0xb3, 0x33, 0xd3, 0x53, 0x93, 0x13, 0xe3, 0x63, 0xa3, 0x23, 0xc3, 0x43, 0x83, 0x03, 0xfd, 0x7d, 0xbd, 0x3d, 0xdd, 0x5d, 0x9d, 0x1d, 0xed, 0x6d, 0xad, 0x2d, 0xcd, 0x4d, 0x8d, 0x0d, 0xf5, 0x75, 0xb5, 0x35, 0xd5, 0x55, 0x95, 0x15, 0xe5, 0x65, 0xa5, 0x25, 0xc5, 0x45, 0x85, 0x05, 0xf9, 0x79, 0xb9, 0x39, 0xd9, 0x59, 0x99, 0x19, 0xe9, 0x69, 0xa9, 0x29, 0xc9, 0x49, 0x89, 0x09, 0xf1, 0x71, 0xb1, 0x31, 0xd1, 0x51, 0x91, 0x11, 0xe1, 0x61, 0xa1, 0x21, 0xc1, 0x41, 0x81, 0x01, 0xfe, 0x7e, 0xbe, 0x3e, 0xde, 0x5e, 0x9e, 0x1e, 0xee, 0x6e, 0xae, 0x2e, 0xce, 0x4e, 0x8e, 0x0e, 0xf6, 0x76, 0xb6, 0x36, 0xd6, 0x56, 0x96, 0x16, 0xe6, 0x66, 0xa6, 0x26, 0xc6, 0x46, 0x86, 0x06, 0xfa, 0x7a, 0xba, 0x3a, 0xda, 0x5a, 0x9a, 0x1a, 0xea, 0x6a, 0xaa, 0x2a, 0xca, 0x4a, 0x8a, 0x0a, 0xf2, 0x72, 0xb2, 0x32, 0xd2, 0x52, 0x92, 0x12, 0xe2, 0x62, 0xa2, 0x22, 0xc2, 0x42, 0x82, 0x02, 0xfc, 0x7c, 0xbc, 0x3c, 0xdc, 0x5c, 0x9c, 0x1c, 0xec, 0x6c, 0xac, 0x2c, 0xcc, 0x4c, 0x8c, 0x0c, 0xf4, 0x74, 0xb4, 0x34, 0xd4, 0x54, 0x94, 0x14, 0xe4, 0x64, 0xa4, 0x24, 0xc4, 0x44, 0x84, 0x04, 0xf8, 0x78, 0xb8, 0x38, 0xd8, 0x58, 0x98, 0x18, 0xe8, 0x68, 0xa8, 0x28, 0xc8, 0x48, 0x88, 0x08, 0xf0, 0x70, 0xb0, 0x30, 0xd0, 0x50, 0x90, 0x10, 0xe0, 0x60, 0xa0, 0x20, 0xc0, 0x40, 0x80, 0x00, };
 
+/*! Allocate USB buffer and push + initialize simtrace_msg_hdr
+ *  @param[in] ep USB IN endpoint where the message will be sent to
+ *  @param[in] msg_class SIMtrace USB message class
+ *  @param[in] msg_type SIMtrace USB message type
+ *  @return USB message with allocated ans initialized header, or NULL if allocation failed
+ */
+static struct msgb *usb_msg_alloc_hdr(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
+{
+	struct msgb *usb_msg = usb_buf_alloc(SIMTRACE_USB_EP_CARD_DATAIN);
+	if (!usb_msg) {
+		return NULL;
+	}
+	struct simtrace_msg_hdr *usb_msg_header;
+	usb_msg->l1h = msgb_put(usb_msg, sizeof(*usb_msg_header));
+	usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
+	memset(usb_msg_header, 0, sizeof(*usb_msg_header));
+	usb_msg_header->msg_class = SIMTRACE_MSGC_SNIFF;
+	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_CHANGE;
+	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
+
+	return usb_msg;
+}
+
+/* update SIMtrace header msg_len and submit USB buffer
+ * param[in] usb_msg USB message to update and send
+ */
+void usb_msg_upd_len_and_submit(struct msgb *usb_msg)
+{
+	struct simtrace_msg_hdr *usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
+	usb_msg_header->msg_len = msgb_length(usb_msg);
+	usb_buf_submit(usb_msg);
+}
+
+/*! Send card change flags over USB
+ *  @param[in] flags change flags corresponding to SIMTRACE_MSGT_SNIFF_CHANGE 
+ */
+static void usb_send_change(uint32_t flags)
+{
+	/* Check flags */
+	if(0==flags) { /* no changes */
+		return;
+	}
+
+	/* Send message over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_CHANGE);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_change *usb_sniff_change = (struct sniff_change *) msgb_put(usb_msg, sizeof(*usb_sniff_change));
+	usb_sniff_change->flags = flags;
+	usb_msg_upd_len_and_submit(usb_msg);
+}
+
 /*! Update the ISO 7816-3 state
  *  @param[in] iso_state_new new ISO 7816-3 state to update to
  */
@@ -193,9 +256,11 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	switch (iso_state_new) {
 	case ISO7816_S_RESET:
 		update_fidi(&sniff_usart, 0x11); /* reset baud rate to default Di/Fi values */
+		usb_send_change(SNIFF_CHANGE_FLAG_RESET_HOLD); /* send reset change to host software over USB */
 		break;
 	case ISO7816_S_WAIT_ATR:
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
+		usb_send_change(SNIFF_CHANGE_FLAG_RESET_RELEASE); /* send reset change to host software over USB */
 		break;
 	case ISO7816_S_IN_ATR:
 		atr_i = 0;
@@ -220,21 +285,43 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	//TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state); /* don't print since this is function is also called by ISRs */
 }
 
-/*! Print current ATR */
-static void print_atr(void)
+/*! Send current ATR over USB
+ *  @note Also print the ATR over serial
+ */
+static void usb_send_atr(void)
 {
+	/* Check state */
 	if (ISO7816_S_IN_ATR!=iso_state) {
 		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
+	if (atr_i>=ARRAY_SIZE(atr)) {
+		TRACE_ERROR("ATR buffer overflow\n\r");
+		return;
+	}
 
+	/* Show activity on LED */
 	led_blink(LED_GREEN, BLINK_2O_F);
+
+	/* Print ATR */
 	printf("ATR: ");
 	uint8_t i;
-	for (i = 0; i < atr_i && i < ARRAY_SIZE(atr); i++) {
+	for (i = 0; i < atr_i; i++) {
 		printf("%02x ", atr[i]);
 	}
 	printf("\n\r");
+
+	/* Send ATR over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_ATR);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_data *usb_sniff_data_atr = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_atr));
+	usb_sniff_data_atr->complete = true;
+	usb_sniff_data_atr->length = atr_i;
+	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_atr->length);
+	memcpy(data, atr, atr_i);
+	usb_msg_upd_len_and_submit(usb_msg);
 }
 
 /*! Process ATR byte
@@ -318,7 +405,7 @@ static void process_byte_atr(uint8_t byte)
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* we could verify the checksum, but we are just here to sniff */
-		print_atr(); /* print ATR for info */
+		usb_send_atr(); /* send ATR to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
@@ -326,12 +413,14 @@ static void process_byte_atr(uint8_t byte)
 	}
 }
 
-/*! Print current PPS */
-static void print_pps(void)
+/*! Send current PPS over USB
+ *  @note Also print the PPS over serial
+ */
+static void usb_send_pps(void)
 {
 	uint8_t *pps_cur; /* current PPS (request or response) */
 
-	/* sanity check */
+	/* Sanity check */
 	if (ISO7816_S_IN_PPS_REQ==iso_state) {
 		pps_cur = pps_req;
 	} else if (ISO7816_S_IN_PPS_RSP==iso_state) {
@@ -341,21 +430,59 @@ static void print_pps(void)
 		return;
 	}
 
-	led_blink(LED_GREEN, BLINK_2O_F);
-	printf("PPS %s : ", ISO7816_S_IN_PPS_REQ==iso_state ? "REQUEST" : "RESPONSE");
-	printf("%02x ", pps_cur[0]);
-	printf("%02x ", pps_cur[1]);
+	/* Get only relevant data */
+	uint8_t pps[6];
+	uint8_t pps_i = 0;
+	pps[pps_i++] = pps_cur[0];
+	pps[pps_i++] = pps_cur[1];
 	if (pps_cur[1]&0x10) {
-		printf("%02x ", pps_cur[2]);
+		pps[pps_i++] = pps_cur[2];
 	}
 	if (pps_cur[1]&0x20) {
-		printf("%02x ", pps_cur[3]);
+		pps[pps_i++] = pps_cur[3];
 	}
 	if (pps_cur[1]&0x40) {
-		printf("%02x ", pps_cur[4]);
+		pps[pps_i++] = pps_cur[4];
 	}
-	printf("%02x ", pps_cur[5]);
+	pps[pps_i++] = pps_cur[5];
+	
+	/* Show activity on LED */
+	led_blink(LED_GREEN, BLINK_2O_F);
+
+	/* Print PPS */
+	printf("PPS: ");
+	uint8_t i;
+	for (i = 0; i < pps_i; i++) {
+		printf("%02x ", pps[i]);
+	}
 	printf("\n\r");
+
+	/* Send message over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_PPS);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_data *usb_sniff_data_pps = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_pps));
+	usb_sniff_data_pps->complete = true;
+	usb_sniff_data_pps->length = pps_i;
+	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_pps->length);
+	memcpy(data, pps, pps_i);
+	usb_msg_upd_len_and_submit(usb_msg);
+}
+
+/*! Send Fi/Di change over USB
+ *  @param[in] fidi Fi/Di factor as encoded in TA1 
+ */
+static void usb_send_fidi(uint8_t fidi)
+{
+	/* Send message over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_FIDI);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_fidi *usb_sniff_fidi = (struct sniff_fidi *) msgb_put(usb_msg, sizeof(*usb_sniff_fidi));
+	usb_sniff_fidi->fidi = fidi;
+	usb_msg_upd_len_and_submit(usb_msg);
 }
 
 static void process_byte_pps(uint8_t byte)
@@ -421,7 +548,7 @@ static void process_byte_pps(uint8_t byte)
 			check ^= pps_cur[4];
 		}
 		check ^= pps_cur[5];
-		print_pps(); /* print PPS for info */
+		usb_send_pps(); /* send PPS to host software using USB */
 		if (ISO7816_S_IN_PPS_REQ==iso_state) {
 			if (0==check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */
@@ -440,6 +567,7 @@ static void process_byte_pps(uint8_t byte)
 				}
 				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r", fn, dn);
 				update_fidi(&sniff_usart, pps_cur[2]);
+				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");
 			}
@@ -451,21 +579,39 @@ static void process_byte_pps(uint8_t byte)
 	}
 }
 
-/*! Print current TPDU */
-static void print_tpdu(void)
+/*! Send current TPDU over USB
+ *  @note Also print the TPDU over serial
+ */
+static void usb_send_tpdu(void)
 {
+	/* Check state */
 	if (ISO7816_S_IN_TPDU!=iso_state) {
 		TRACE_WARNING("Can't print TPDU in ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
 
+	/* Show activity on LED */
 	led_blink(LED_GREEN, BLINK_2O_F);
+
+	/* Print TPDU */
 	printf("TPDU: ");
 	uint16_t i;
 	for (i = 0; i < tpdu_packet_i && i < ARRAY_SIZE(tpdu_packet); i++) {
 		printf("%02x ", tpdu_packet[i]);
 	}
 	printf("\n\r");
+
+	/* Send ATR over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_TPDU);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_data *usb_sniff_data_tpdu = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_tpdu));
+	usb_sniff_data_tpdu->complete = true;
+	usb_sniff_data_tpdu->length = tpdu_packet_i;
+	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_tpdu->length);
+	memcpy(data, tpdu_packet, tpdu_packet_i);
+	usb_msg_upd_len_and_submit(usb_msg);
 }
 
 static void process_byte_tpdu(uint8_t byte)
@@ -531,7 +677,7 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	case TPDU_S_SW2:
 		tpdu_packet[tpdu_packet_i++] = byte;
-		print_tpdu(); /* print TPDU for info */
+		usb_send_tpdu(); /* send TPDU to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
 		break;
 	case TPDU_S_DATA_SINGLE:
@@ -552,47 +698,6 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	default:
 		TRACE_ERROR("unhandled TPDU state %u\n\r", tpdu_state);
-	}
-}
-
-static void check_sniffed_data(void)
-{
-	/* Handle sniffed data */
-	while (!rbuf_is_empty(&sniff_buffer)) {
-		uint8_t byte = rbuf_read(&sniff_buffer);
-		TRACE_WARNING_WP("< 0x%02x\n\r", byte);
-		switch (iso_state) { /* Handle byte depending on state */
-		case ISO7816_S_RESET: /* During reset we shouldn't receive any data */
-			break;
-		case ISO7816_S_WAIT_ATR: /* After a reset we expect the ATR */
-			change_state(ISO7816_S_IN_ATR); /* go to next state */
-		case ISO7816_S_IN_ATR: /* More ATR data incoming */
-			process_byte_atr(byte);
-			break;
-		case ISO7816_S_WAIT_TPDU: /* After the ATR we expect TPDU or PPS data */
-		case ISO7816_S_WAIT_PPS_RSP:
-			if (byte == 0xff) {
-				if (ISO7816_S_WAIT_PPS_RSP==iso_state) {
-					change_state(ISO7816_S_IN_PPS_RSP); /* Go to PPS state */
-				} else {
-					change_state(ISO7816_S_IN_PPS_REQ); /* Go to PPS state */
-				}
-				process_byte_pps(byte);
-				break;
-			}
-		case ISO7816_S_IN_TPDU: /* More TPDU data incoming */
-			if (ISO7816_S_WAIT_TPDU==iso_state) {
-				change_state(ISO7816_S_IN_TPDU);
-			}
-			process_byte_tpdu(byte);
-			break;
-		case ISO7816_S_IN_PPS_REQ:
-		case ISO7816_S_IN_PPS_RSP:
-			process_byte_pps(byte);
-			break;
-		default:
-			TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
-		}
 	}
 }
 
@@ -635,6 +740,7 @@ void Sniffer_usart_isr(void)
 		default:
 			break;
 		}
+		usb_send_change(SNIFF_CHANGE_FLAG_TIMEOUT_WT); /* send timeout to host software over USB */
 	}
 }
 
@@ -691,11 +797,14 @@ void Sniffer_configure(void)
 void Sniffer_exit(void)
 {
 	TRACE_INFO("Sniffer exit\n\r");
+	/* Disable USART */
 	USART_DisableIt(sniff_usart.base, US_IER_RXRDY);
 	/* NOTE: don't forget to set the IRQ according to the USART peripheral used */
 	NVIC_DisableIRQ(IRQ_USART_SIM);
 	USART_SetReceiverEnabled(sniff_usart.base, 0);
-	
+	/* Disable RST IRQ */
+	PIO_DisableIt(&pin_rst);
+	NVIC_DisableIRQ(PIOA_IRQn); /* CAUTION this needs to match to the correct port */
 }
 
 /* called when *Sniffer* configuration is set by host */
@@ -738,6 +847,58 @@ void Sniffer_init(void)
 /* Main (idle/busy) loop of this USB configuration */
 void Sniffer_run(void)
 {
-	check_sniffed_data();
+	/* Handle USB queue */
+	/* first try to send any pending messages on INT */
+	usb_refill_to_host(SIMTRACE_USB_EP_CARD_INT);
+	/* then try to send any pending messages on IN */
+	usb_refill_to_host(SIMTRACE_USB_EP_CARD_DATAIN);
+	/* ensure we can handle incoming USB messages from the host */
+	/* currently we don't need any incoming data
+	usb_refill_from_host(SIMTRACE_USB_EP_CARD_DATAOUT);
+	struct llist_head *queue = usb_get_queue(SIMTRACE_USB_EP_CARD_DATAOUT);
+	process_any_usb_commands(queue);
+	*/
+
+	/* Handle sniffed data */
+	if (!rbuf_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
+		uint8_t byte = rbuf_read(&sniff_buffer);
+		TRACE_DEBUG_WP("< 0x%02x\n\r", byte);
+		switch (iso_state) { /* Handle byte depending on state */
+		case ISO7816_S_RESET: /* During reset we shouldn't receive any data */
+			break;
+		case ISO7816_S_WAIT_ATR: /* After a reset we expect the ATR */
+			change_state(ISO7816_S_IN_ATR); /* go to next state */
+		case ISO7816_S_IN_ATR: /* More ATR data incoming */
+			process_byte_atr(byte);
+			break;
+		case ISO7816_S_WAIT_TPDU: /* After the ATR we expect TPDU or PPS data */
+		case ISO7816_S_WAIT_PPS_RSP:
+			if (byte == 0xff) {
+				if (ISO7816_S_WAIT_PPS_RSP==iso_state) {
+					change_state(ISO7816_S_IN_PPS_RSP); /* Go to PPS state */
+				} else {
+					change_state(ISO7816_S_IN_PPS_REQ); /* Go to PPS state */
+				}
+				process_byte_pps(byte);
+				break;
+			}
+		case ISO7816_S_IN_TPDU: /* More TPDU data incoming */
+			if (ISO7816_S_WAIT_TPDU==iso_state) {
+				change_state(ISO7816_S_IN_TPDU);
+			}
+			process_byte_tpdu(byte);
+			break;
+		case ISO7816_S_IN_PPS_REQ:
+		case ISO7816_S_IN_PPS_RSP:
+			process_byte_pps(byte);
+			break;
+		default:
+			TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
+		}
+	}
+
+	/* Handle flags */
+	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
+	}
 }
 #endif /* HAVE_SNIFFER */

@@ -19,8 +19,7 @@
  */
 /* This code implement the Sniffer mode to sniff the communication between a SIM card (or any ISO 7816 smart card) and a phone (or any ISO 7816 card reader).
  * For historical reasons (i.e. SIMtrace hardware) the USART peripheral connected to the SIM card is used.
- *  TODO handle RST, PTS, and send data over USB
- *  TODO put common ISO7816-3 code is separate library (and combine clean with iso7816_4)
+ * TODO put common ISO7816-3 code is separate library (and combine clean with iso7816_4)
  */
 #include "board.h"
 #include "simtrace.h"
@@ -188,35 +187,6 @@ uint8_t tpdu_packet_i = 0;
  */
 static const uint8_t convention_convert_lut[256] = { 0xff, 0x7f, 0xbf, 0x3f, 0xdf, 0x5f, 0x9f, 0x1f, 0xef, 0x6f, 0xaf, 0x2f, 0xcf, 0x4f, 0x8f, 0x0f, 0xf7, 0x77, 0xb7, 0x37, 0xd7, 0x57, 0x97, 0x17, 0xe7, 0x67, 0xa7, 0x27, 0xc7, 0x47, 0x87, 0x07, 0xfb, 0x7b, 0xbb, 0x3b, 0xdb, 0x5b, 0x9b, 0x1b, 0xeb, 0x6b, 0xab, 0x2b, 0xcb, 0x4b, 0x8b, 0x0b, 0xf3, 0x73, 0xb3, 0x33, 0xd3, 0x53, 0x93, 0x13, 0xe3, 0x63, 0xa3, 0x23, 0xc3, 0x43, 0x83, 0x03, 0xfd, 0x7d, 0xbd, 0x3d, 0xdd, 0x5d, 0x9d, 0x1d, 0xed, 0x6d, 0xad, 0x2d, 0xcd, 0x4d, 0x8d, 0x0d, 0xf5, 0x75, 0xb5, 0x35, 0xd5, 0x55, 0x95, 0x15, 0xe5, 0x65, 0xa5, 0x25, 0xc5, 0x45, 0x85, 0x05, 0xf9, 0x79, 0xb9, 0x39, 0xd9, 0x59, 0x99, 0x19, 0xe9, 0x69, 0xa9, 0x29, 0xc9, 0x49, 0x89, 0x09, 0xf1, 0x71, 0xb1, 0x31, 0xd1, 0x51, 0x91, 0x11, 0xe1, 0x61, 0xa1, 0x21, 0xc1, 0x41, 0x81, 0x01, 0xfe, 0x7e, 0xbe, 0x3e, 0xde, 0x5e, 0x9e, 0x1e, 0xee, 0x6e, 0xae, 0x2e, 0xce, 0x4e, 0x8e, 0x0e, 0xf6, 0x76, 0xb6, 0x36, 0xd6, 0x56, 0x96, 0x16, 0xe6, 0x66, 0xa6, 0x26, 0xc6, 0x46, 0x86, 0x06, 0xfa, 0x7a, 0xba, 0x3a, 0xda, 0x5a, 0x9a, 0x1a, 0xea, 0x6a, 0xaa, 0x2a, 0xca, 0x4a, 0x8a, 0x0a, 0xf2, 0x72, 0xb2, 0x32, 0xd2, 0x52, 0x92, 0x12, 0xe2, 0x62, 0xa2, 0x22, 0xc2, 0x42, 0x82, 0x02, 0xfc, 0x7c, 0xbc, 0x3c, 0xdc, 0x5c, 0x9c, 0x1c, 0xec, 0x6c, 0xac, 0x2c, 0xcc, 0x4c, 0x8c, 0x0c, 0xf4, 0x74, 0xb4, 0x34, 0xd4, 0x54, 0x94, 0x14, 0xe4, 0x64, 0xa4, 0x24, 0xc4, 0x44, 0x84, 0x04, 0xf8, 0x78, 0xb8, 0x38, 0xd8, 0x58, 0x98, 0x18, 0xe8, 0x68, 0xa8, 0x28, 0xc8, 0x48, 0x88, 0x08, 0xf0, 0x70, 0xb0, 0x30, 0xd0, 0x50, 0x90, 0x10, 0xe0, 0x60, 0xa0, 0x20, 0xc0, 0x40, 0x80, 0x00, };
 
-/*! Send card change flags over USB
- *  @param[in] flags change flags corresponding to SIMTRACE_MSGT_SNIFF_CHANGE 
- */
-static void usb_send_change(uint32_t flags)
-{
-	/* Check flags */
-	if(0==flags) { /* no changes */
-		return;
-	}
-
-	/* Send message over USB */
-	struct msgb *usb_msg = usb_buf_alloc(SIMTRACE_USB_EP_CARD_DATAIN);
-	if (!usb_msg) {
-		return;
-	}
-	struct simtrace_msg_hdr *usb_msg_header;
-	usb_msg->l1h = msgb_put(usb_msg, sizeof(*usb_msg_header));
-	usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
-	memset(usb_msg_header, 0, sizeof(*usb_msg_header));
-	usb_msg_header->msg_class = SIMTRACE_MSGC_SNIFF;
-	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_CHANGE;
-	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
-	struct sniff_change *usb_sniff_change;
-	usb_sniff_change = (struct sniff_change *) msgb_put(usb_msg, sizeof(*usb_sniff_change));
-	usb_sniff_change->flags = flags;
-	usb_msg_header->msg_len = msgb_length(usb_msg);
-	usb_buf_submit(usb_msg);
-}
-
 /*! Update the ISO 7816-3 state
  *  @param[in] iso_state_new new ISO 7816-3 state to update to
  */
@@ -232,11 +202,11 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	switch (iso_state_new) {
 	case ISO7816_S_RESET:
 		update_fidi(sniff_usart.base, 0x11); /* reset baud rate to default Di/Fi values */
-		usb_send_change(SNIFF_CHANGE_FLAG_RESET_HOLD); /* send reset change to host software over USB */
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
 		break;
 	case ISO7816_S_WAIT_ATR:
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
-		usb_send_change(SNIFF_CHANGE_FLAG_RESET_RELEASE); /* send reset change to host software over USB */
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_RELEASE; /* set flag and let main loop send it */
 		break;
 	case ISO7816_S_IN_ATR:
 		atr_i = 0;
@@ -714,42 +684,34 @@ static void process_byte_tpdu(uint8_t byte)
 void Sniffer_usart_isr(void)
 {
 	/* Read channel status register */
-	uint32_t csr = sniff_usart.base->US_CSR & sniff_usart.base->US_IMR;
+	uint32_t csr = sniff_usart.base->US_CSR;
+	/* Verify if there was an error */
+	if (csr & US_CSR_OVRE) {
+		TRACE_WARNING("USART overrun error\n\r");
+		sniff_usart.base->US_CR |= US_CR_RSTSTA;
+	}
+	if (csr & US_CSR_FRAME) {
+		TRACE_WARNING("USART framing error\n\r");
+		sniff_usart.base->US_CR |= US_CR_RSTSTA;
+	}
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {
 		/* Read communication data byte between phone and SIM */
 		uint8_t byte = sniff_usart.base->US_RHR;
-		/* Convert convention if required */
-		if (convention_convert) {
-			byte = convention_convert_lut[byte];
-		}
 		/* Store sniffed data into buffer (also clear interrupt */
-		rbuf_write(&sniff_buffer, byte);
+		if (rbuf_is_full(&sniff_buffer)) {
+			TRACE_ERROR("USART buffer full\n\r");
+		} else {
+			rbuf_write(&sniff_buffer, byte);
+		}
 	}
+	
 	/* Verify it WT timeout occurred, to detect unresponsive card */
 	if (csr & US_CSR_TIMEOUT) {
 		/* Stop timeout until next character is received */
 		sniff_usart.base->US_CR |= US_CR_STTTO;
-		/* Use timeout to detect end of ATR/PPS/TPDU */
-		switch (iso_state) {
-		case ISO7816_S_RESET:
-		case ISO7816_S_WAIT_ATR:
-			break;
-		case ISO7816_S_IN_ATR:
-			change_state(ISO7816_S_WAIT_ATR);
-			break;
-		case ISO7816_S_WAIT_TPDU:
-			break;
-		case ISO7816_S_WAIT_PPS_RSP:
-		case ISO7816_S_IN_TPDU:
-		case ISO7816_S_IN_PPS_REQ:
-		case ISO7816_S_IN_PPS_RSP:
-			change_state(ISO7816_S_WAIT_TPDU);
-			break;
-		default:
-			break;
-		}
-		usb_send_change(SNIFF_CHANGE_FLAG_TIMEOUT_WT); /* send timeout to host software over USB */
+		/* Just set the flag and let the main loop handle it */
+		change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
 	}
 }
 
@@ -853,6 +815,40 @@ void Sniffer_init(void)
 	}
 }
 
+/*! Send card change flags over USB
+ *  @param[in] flags change flags corresponding to SIMTRACE_MSGT_SNIFF_CHANGE
+ *  @note Also print the TPDU over the debug console 
+ */
+static void usb_send_change(uint32_t flags)
+{
+	/* Check flags */
+	if(0==flags) { /* no changes */
+		return;
+	}
+
+	if (flags&SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
+		printf("waiting time (WT) timeout\n\r");
+	}
+
+	/* Send message over USB */
+	struct msgb *usb_msg = usb_buf_alloc(SIMTRACE_USB_EP_CARD_DATAIN);
+	if (!usb_msg) {
+		return;
+	}
+	struct simtrace_msg_hdr *usb_msg_header;
+	usb_msg->l1h = msgb_put(usb_msg, sizeof(*usb_msg_header));
+	usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
+	memset(usb_msg_header, 0, sizeof(*usb_msg_header));
+	usb_msg_header->msg_class = SIMTRACE_MSGC_SNIFF;
+	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_CHANGE;
+	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
+	struct sniff_change *usb_sniff_change;
+	usb_sniff_change = (struct sniff_change *) msgb_put(usb_msg, sizeof(*usb_sniff_change));
+	usb_sniff_change->flags = flags;
+	usb_msg_header->msg_len = msgb_length(usb_msg);
+	usb_buf_submit(usb_msg);
+}
+
 /* Main (idle/busy) loop of this USB configuration */
 void Sniffer_run(void)
 {
@@ -871,7 +867,11 @@ void Sniffer_run(void)
 	/* Handle sniffed data */
 	if (!rbuf_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
 		uint8_t byte = rbuf_read(&sniff_buffer);
-		TRACE_DEBUG_WP("< 0x%02x\n\r", byte);
+		/* Convert convention if required */
+		if (convention_convert) {
+			byte = convention_convert_lut[byte];
+		}
+		//TRACE_ERROR_WP(">%02x", byte);
 		switch (iso_state) { /* Handle byte depending on state */
 		case ISO7816_S_RESET: /* During reset we shouldn't receive any data */
 			break;
@@ -908,6 +908,31 @@ void Sniffer_run(void)
 
 	/* Handle flags */
 	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
+		if (change_flags&SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
+			/* Use timeout to detect interrupted data transmission */
+			switch (iso_state) {
+			case ISO7816_S_IN_ATR:
+				usb_send_atr(false); /* send incomplete ATR to host software using USB */
+				change_state(ISO7816_S_WAIT_ATR);
+				break;
+			case ISO7816_S_IN_TPDU:
+				usb_send_tpdu(false); /* send incomplete PPS to host software using USB */
+				change_state(ISO7816_S_WAIT_TPDU);
+				break;
+			case ISO7816_S_IN_PPS_REQ:
+			case ISO7816_S_IN_PPS_RSP:
+				usb_send_pps(false); /* send incomplete TPDU to host software using USB */
+				change_state(ISO7816_S_WAIT_TPDU);
+				break;
+			default:
+				change_flags &= ~SNIFF_CHANGE_FLAG_TIMEOUT_WT; /* We don't care about the timeout is all other cases */
+				break;
+			}
+		}
+		if (change_flags) {
+			usb_send_change(change_flags); /* send timeout to host software over USB */
+			change_flags = 0; /* Reset flags */
+		}
 	}
 }
 #endif /* HAVE_SNIFFER */

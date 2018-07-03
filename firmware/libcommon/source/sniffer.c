@@ -176,7 +176,7 @@ enum tpdu_sniff_state tpdu_state;
  */
 uint8_t tpdu_packet[5+256+2];
 /*! Current index in TPDU packet */
-uint8_t tpdu_packet_i = 0;
+uint16_t tpdu_packet_i = 0;
 
 /*------------------------------------------------------------------------------
  *         Internal functions
@@ -625,13 +625,19 @@ static void process_byte_tpdu(uint8_t byte)
 	case TPDU_S_CLA:
 		if (0xff==byte) {
 			TRACE_WARNING("0xff is not a valid class byte\n\r");
-			break;
+			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
+			return;
 		}
 		tpdu_packet_i = 0;
 		tpdu_packet[tpdu_packet_i++] = byte;
 		tpdu_state = TPDU_S_INS;
 		break;
 	case TPDU_S_INS:
+		if ((0x60==(byte&0xf0)) || (0x90==(byte&0xf0))) {
+			TRACE_WARNING("invalid CLA 0x%02x\n\r", byte);
+			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
+			return;
+		}
 		tpdu_packet_i = 1;
 		tpdu_packet[tpdu_packet_i++] = byte;
 		tpdu_state = TPDU_S_P1;
@@ -667,6 +673,8 @@ static void process_byte_tpdu(uint8_t byte)
 			tpdu_state = TPDU_S_SW2;
 		} else {
 			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
+			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
+			return;
 		}
 		break;
 	case TPDU_S_SW2:
@@ -679,11 +687,11 @@ static void process_byte_tpdu(uint8_t byte)
 		tpdu_packet[tpdu_packet_i++] = byte;
 		if (0==tpdu_packet[4]) {
 			if (5+256<=tpdu_packet_i) {
-				tpdu_state = TPDU_S_SW1;
+				tpdu_state = TPDU_S_PROCEDURE;
 			}
 		} else {
 			if (5+tpdu_packet[4]<=tpdu_packet_i) {
-				tpdu_state = TPDU_S_SW1;
+				tpdu_state = TPDU_S_PROCEDURE;
 			}
 		}
 		if (TPDU_S_DATA_SINGLE==tpdu_state) {

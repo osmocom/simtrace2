@@ -829,6 +829,10 @@ void Sniffer_init(void)
 	sniff_usart.base->US_RTOR = 9600-12; /* -12 because the timer starts at the end of the 12 ETU frame */
 	/* Enable interrupt to indicate when data has been received or timeout occurred */
 	USART_EnableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
+	/* Set USB priority lower than USART to not miss sniffing data (both at 0 per default) */
+	if (NVIC_GetPriority(IRQ_USART_SIM)>=NVIC_GetPriority(UDP_IRQn)) {
+		NVIC_SetPriority(UDP_IRQn, NVIC_GetPriority(IRQ_USART_SIM)+2);
+	}
 	/* Enable interrupt requests for the USART peripheral */
 	NVIC_EnableIRQ(IRQ_USART_SIM);
 

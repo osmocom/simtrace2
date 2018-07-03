@@ -133,17 +133,15 @@ extern void UART_PutChar( uint8_t c )
         UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
     }
 
-    /* Wait until there is space in the buffer */
-    while (rbuf_is_full(&uart_tx_buffer)) {
-        if (pUart->UART_SR & UART_SR_TXEMPTY) {
-            pUart->UART_IER = UART_IER_TXRDY;
-            CONSOLE_ISR();
-        }
+    /* Only store input if buffer is not full, else drop it */
+    bool trigger_isr = false;
+    if (rbuf_is_empty(&uart_tx_buffer)) {
+        trigger_isr = true;
     }
-
-    /* Put character into buffer */
-    rbuf_write(&uart_tx_buffer, c);
-    if (pUart->UART_SR & UART_SR_TXEMPTY) {
+    if (!rbuf_is_full(&uart_tx_buffer)) {
+        rbuf_write(&uart_tx_buffer, c);
+    }
+    if (trigger_isr) {
         pUart->UART_IER = UART_IER_TXRDY;
         CONSOLE_ISR();
     }

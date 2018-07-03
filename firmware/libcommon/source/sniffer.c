@@ -91,6 +91,7 @@ enum pps_sniff_state {
 	PPS_S_WAIT_PPS2, /*!< second parameter byte */
 	PPS_S_WAIT_PPS3, /*!< third parameter byte */
 	PPS_S_WAIT_PCK, /*!< check byte */
+	PPS_S_WAIT_END, /*!< all done */
 };
 
 /*! Transport Protocol Data Unit (TPDU) sub-states of ISO7816_S_IN_TPDU
@@ -232,9 +233,10 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 }
 
 /*! Send current ATR over USB
- *  @note Also print the ATR over serial
+ *  @param[in] complete if the ATR is complete
+ *  @note Also print the ATR to debug console
  */
-static void usb_send_atr(void)
+static void usb_send_atr(bool complete)
 {
 	/* Check state */
 	if (ISO7816_S_IN_ATR!=iso_state) {
@@ -250,7 +252,7 @@ static void usb_send_atr(void)
 	led_blink(LED_GREEN, BLINK_2O_F);
 
 	/* Print ATR */
-	printf("ATR: ");
+	printf("ATR%s: ", complete ? "" : " (incomplete)");
 	for (uint8_t i=0; i<atr_i; i++) {
 		printf("%02x ", atr[i]);
 	}
@@ -270,7 +272,7 @@ static void usb_send_atr(void)
 	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
 	struct sniff_data *usb_sniff_data_atr;
 	usb_sniff_data_atr = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_atr));
-	usb_sniff_data_atr->complete = true;
+	usb_sniff_data_atr->complete = complete;
 	usb_sniff_data_atr->length = atr_i;
 	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_atr->length);
 	memcpy(data, atr, atr_i);
@@ -359,7 +361,7 @@ static void process_byte_atr(uint8_t byte)
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* we could verify the checksum, but we are just here to sniff */
-		usb_send_atr(); /* send ATR to host software using USB */
+		usb_send_atr(true); /* send ATR to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
@@ -368,9 +370,10 @@ static void process_byte_atr(uint8_t byte)
 }
 
 /*! Send current PPS over USB
- *  @note Also print the PPS over serial
+ *  @param[in] complete if the PPS is complete
+ *  @note Also print the PPS over the debug console
  */
-static void usb_send_pps(void)
+static void usb_send_pps(bool complete)
 {
 	uint8_t *pps_cur; /* current PPS (request or response) */
 
@@ -387,24 +390,30 @@ static void usb_send_pps(void)
 	/* Get only relevant data */
 	uint8_t pps[6];
 	uint8_t pps_i = 0;
-	pps[pps_i++] = pps_cur[0];
-	pps[pps_i++] = pps_cur[1];
-	if (pps_cur[1]&0x10) {
+	if (pps_state>PPS_S_WAIT_PPSS) {
+		pps[pps_i++] = pps_cur[0];
+	}
+	if (pps_state>PPS_S_WAIT_PPS0) {
+		pps[pps_i++] = pps_cur[1];
+	}
+	if (pps_state>PPS_S_WAIT_PPS1 && pps_cur[1]&0x10) {
 		pps[pps_i++] = pps_cur[2];
 	}
-	if (pps_cur[1]&0x20) {
+	if (pps_state>PPS_S_WAIT_PPS2 && pps_cur[1]&0x20) {
 		pps[pps_i++] = pps_cur[3];
 	}
-	if (pps_cur[1]&0x40) {
+	if (pps_state>PPS_S_WAIT_PPS3 && pps_cur[1]&0x40) {
 		pps[pps_i++] = pps_cur[4];
 	}
-	pps[pps_i++] = pps_cur[5];
+	if (pps_state>PPS_S_WAIT_PCK) {
+		pps[pps_i++] = pps_cur[5];
+	}
 	
 	/* Show activity on LED */
 	led_blink(LED_GREEN, BLINK_2O_F);
 
 	/* Print PPS */
-	printf("PPS: ");
+	printf("PPS%s: ", complete ? "" : " (incomplete)");
 	for (uint8_t i=0; i<pps_i; i++) {
 		printf("%02x ", pps[i]);
 	}
@@ -424,7 +433,7 @@ static void usb_send_pps(void)
 	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
 	struct sniff_data *usb_sniff_data_pps;
 	usb_sniff_data_pps = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_pps));
-	usb_sniff_data_pps->complete = true;
+	usb_sniff_data_pps->complete = complete;
 	usb_sniff_data_pps->length = pps_i;
 	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_pps->length);
 	memcpy(data, pps, pps_i);
@@ -519,7 +528,8 @@ static void process_byte_pps(uint8_t byte)
 			check ^= pps_cur[4];
 		}
 		check ^= pps_cur[5];
-		usb_send_pps(); /* send PPS to host software using USB */
+		pps_state = PPS_S_WAIT_END;
+		usb_send_pps(true); /* send PPS to host software using USB */
 		if (ISO7816_S_IN_PPS_REQ==iso_state) {
 			if (0==check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */
@@ -545,15 +555,20 @@ static void process_byte_pps(uint8_t byte)
 			change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		}
 		break;
+	case PPS_S_WAIT_END:
+		TRACE_WARNING("Unexpected PPS received %u\n\r", pps_state);
+		break;
 	default:
-		TRACE_INFO("Unknown PPS state %u\n\r", pps_state);
+		TRACE_WARNING("Unknown PPS state %u\n\r", pps_state);
+		break;
 	}
 }
 
 /*! Send current TPDU over USB
- *  @note Also print the TPDU over serial
+ *  @param[in] complete if the TPDU is complete
+ *  @note Also print the TPDU over the debug console
  */
-static void usb_send_tpdu(void)
+static void usb_send_tpdu(bool complete)
 {
 	/* Check state */
 	if (ISO7816_S_IN_TPDU!=iso_state) {
@@ -565,8 +580,8 @@ static void usb_send_tpdu(void)
 	led_blink(LED_GREEN, BLINK_2O_F);
 
 	/* Print TPDU */
-	printf("TPDU: ");
-	for (uint8_t i=0; i<tpdu_packet_i && i<ARRAY_SIZE(tpdu_packet); i++) {
+	printf("TPDU%s: ", complete ? "" : " (incomplete)");
+	for (uint16_t i=0; i<tpdu_packet_i && i<ARRAY_SIZE(tpdu_packet); i++) {
 		printf("%02x ", tpdu_packet[i]);
 	}
 	printf("\n\r");
@@ -581,11 +596,11 @@ static void usb_send_tpdu(void)
 	usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
 	memset(usb_msg_header, 0, sizeof(*usb_msg_header));
 	usb_msg_header->msg_class = SIMTRACE_MSGC_SNIFF;
-	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_ATR;
+	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_TPDU;
 	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
 	struct sniff_data *usb_sniff_data_tpdu;
 	usb_sniff_data_tpdu = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_tpdu));
-	usb_sniff_data_tpdu->complete = true;
+	usb_sniff_data_tpdu->complete = complete;
 	usb_sniff_data_tpdu->length = tpdu_packet_i;
 	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_tpdu->length);
 	memcpy(data, tpdu_packet, tpdu_packet_i);
@@ -656,7 +671,7 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	case TPDU_S_SW2:
 		tpdu_packet[tpdu_packet_i++] = byte;
-		usb_send_tpdu(); /* send TPDU to host software using USB */
+		usb_send_tpdu(true); /* send TPDU to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
 		break;
 	case TPDU_S_DATA_SINGLE:

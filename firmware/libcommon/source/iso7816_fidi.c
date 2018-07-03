@@ -24,13 +24,13 @@
 #include "iso7816_fidi.h"
 
 /* Table 7 of ISO 7816-3:2006 */
-static const uint16_t fi_table[] = {
+const uint16_t fi_table[] = {
 	372, 372, 558, 744, 1116, 1488, 1860, 0,
 	0, 512, 768, 1024, 1536, 2048, 0, 0
 };
 
 /* Table 8 from ISO 7816-3:2006 */
-static const uint8_t di_table[] = {
+const uint8_t di_table[] = {
 	0, 1, 2, 4, 8, 16, 32, 64,
 	12, 20, 2, 4, 8, 16, 32, 64,
 };

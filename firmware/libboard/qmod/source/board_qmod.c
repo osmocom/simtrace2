@@ -102,6 +102,26 @@ static int write_hub_eeprom(void)
 	return 0;
 }
 
+static int erase_hub_eeprom(void)
+{
+	int i;
+
+	/* wait */
+	mdelay(100);
+
+	TRACE_INFO("Erasing EEPROM...\n\r");
+	/* write the EEPROM once */
+	for (i = 0; i < 256; i++) {
+		int rc = eeprom_write_byte(0x50, i, 0xff);
+		/* if the result was negative, repeat that write */
+		if (rc < 0)
+			i--;
+	}
+
+	return 0;
+}
+
+
 static void board_exec_dbg_cmd_st12only(int ch)
 {
 	uint32_t addr, val;
@@ -113,6 +133,9 @@ static void board_exec_dbg_cmd_st12only(int ch)
 	switch (ch) {
 	case 'E':
 		write_hub_eeprom();
+		break;
+	case 'e':
+		erase_hub_eeprom();
 		break;
 	case 'O':
 		printf("Setting PRTPWR_OVERRIDE\n\r");
@@ -161,6 +184,7 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tR\treset SAM3\n\r");
 		if (qmod_sam3_is_12()) {
 			printf("\tE\tprogram EEPROM\n\r");
+			printf("\te\tErase EEPROM\n\r");
 			printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
 			printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
 			printf("\tH\tRelease HUB RESET (high)\n\r");

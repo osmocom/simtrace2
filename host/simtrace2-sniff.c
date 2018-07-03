@@ -92,7 +92,7 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 	return 0;
 }
 
-static int process_change(uint8_t *buf, int len)
+static int process_change(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
 	if (len<sizeof(struct sniff_change)) {
@@ -100,9 +100,7 @@ static int process_change(uint8_t *buf, int len)
 	}
 	struct sniff_change *change = (struct sniff_change *)buf;
 
-	if (SNIFF_CHANGE_FLAG_TIMEOUT_WT!=change->flags) {
-		printf("Card state change: ");
-	}
+	printf("Card state change: ");
 	if (change->flags&SNIFF_CHANGE_FLAG_CARD_INSERT) {
 		printf("card inserted ");
 	}
@@ -116,11 +114,9 @@ static int process_change(uint8_t *buf, int len)
 		printf("reset release ");
 	}
 	if (change->flags&SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
-		// do nothing since this also triggers on inactivity
+		printf("data transfer timeout ");
 	}
-	if (SNIFF_CHANGE_FLAG_TIMEOUT_WT!=change->flags) {
-		printf("\n");
-	}
+	printf("\n");
 
 	return 0;
 }
@@ -131,7 +127,7 @@ static const uint16_t fi_table[] = { 372, 372, 558, 744, 1116, 1488, 1860, 0, 0,
 /* Table 8 from ISO 7816-3:2006 */
 static const uint8_t di_table[] = { 0, 1, 2, 4, 8, 16, 32, 64, 12, 20, 2, 4, 8, 16, 32, 64, };
 
-static int process_fidi(uint8_t *buf, int len)
+static int process_fidi(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
 	if (len<sizeof(struct sniff_fidi)) {
@@ -143,7 +139,7 @@ static int process_fidi(uint8_t *buf, int len)
 	return 0;
 }
 
-static int process_atr(uint8_t *buf, int len)
+static int process_atr(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
 	if (len<sizeof(struct sniff_data)) {
@@ -165,7 +161,7 @@ static int process_atr(uint8_t *buf, int len)
 	return 0;
 }
 
-static int process_pps(uint8_t *buf, int len)
+static int process_pps(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
 	if (len<sizeof(struct sniff_data)) {
@@ -187,7 +183,7 @@ static int process_pps(uint8_t *buf, int len)
 	return 0;
 }
 
-static int process_tpdu(uint8_t *buf, int len)
+static int process_tpdu(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
 	if (len<sizeof(struct sniff_data)) {
@@ -200,17 +196,21 @@ static int process_tpdu(uint8_t *buf, int len)
 		return -2;
 	}
 
+	/* print TPDU */
 	printf("TPDU%s: ", tpdu->complete ? "" : " (incomplete)");
 	uint16_t i;
 	for (i = 0; i < tpdu->length; i++) {
 		printf("%02x ", tpdu->data[i]);
 	}
 	printf("\n");
+
+	/* send TPDU (now considered as APDU) to GSMTAP */
+	gsmtap_send_sim(tpdu->data, tpdu->length);
 	return 0;
 }
 
 /*! \brief Process an incoming message from the SIMtrace2 */
-static int process_usb_msg(uint8_t *buf, int len)
+static int process_usb_msg(const uint8_t *buf, int len)
 {
 	/* check if enough data for the header is present */
 	if (len<sizeof(struct simtrace_msg_hdr)) {

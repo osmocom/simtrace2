@@ -2,6 +2,10 @@
 #include "trace.h"
 #include "utils.h"
 
+/* WARNINGI: Since console output is internally using this ringbuffer to implement
+ * buffered writes, we cannot use any TRACE_*() or printf() style functions here,
+ * as it would create infinite recursion! */
+
 void rbuf_reset(volatile ringbuf * rb)
 {
 	unsigned long state;
@@ -52,7 +56,7 @@ bool rbuf_is_full(volatile ringbuf * rb)
 	return rc;
 }
 
-void rbuf_write(volatile ringbuf * rb, uint8_t item)
+int rbuf_write(volatile ringbuf * rb, uint8_t item)
 {
 	unsigned long state;
 
@@ -61,9 +65,10 @@ void rbuf_write(volatile ringbuf * rb, uint8_t item)
 		rb->buf[rb->iwr] = item;
 		rb->iwr = (rb->iwr + 1) % RING_BUFLEN;
 		local_irq_restore(state);
+		return 0;
 	} else {
 		local_irq_restore(state);
-		TRACE_ERROR("Ringbuffer full, losing bytes!");
+		return -1;
 	}
 }
 

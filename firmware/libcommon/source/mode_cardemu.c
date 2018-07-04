@@ -186,7 +186,8 @@ static void usart_irq_rx(uint8_t inst_num)
 
 	if (csr & US_CSR_RXRDY) {
         	byte = (usart->US_RHR) & 0xFF;
-		rbuf_write(&ci->rb, byte);
+		if (rbuf_write(&ci->rb, byte) < 0)
+			TRACE_ERROR("rbuf overrun\r\n");
 	}
 
 	if (csr & US_CSR_TXRDY) {

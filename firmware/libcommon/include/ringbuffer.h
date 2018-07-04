@@ -16,7 +16,7 @@ typedef struct ringbuf {
 void rbuf_reset(volatile ringbuf * rb);
 uint8_t rbuf_read(volatile ringbuf * rb);
 uint8_t rbuf_peek(volatile ringbuf * rb);
-void rbuf_write(volatile ringbuf * rb, uint8_t item);
+int rbuf_write(volatile ringbuf * rb, uint8_t item);
 bool rbuf_is_empty(volatile ringbuf * rb);
 bool rbuf_is_full(volatile ringbuf * rb);
 

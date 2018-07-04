@@ -16,9 +16,9 @@ static void led_set(enum led led, int on)
 	ASSERT(led < PIO_LISTSIZE(pinsLeds));
 
 	if (on)
-        	PIO_Set(&pinsLeds[led]);
-	else
         	PIO_Clear(&pinsLeds[led]);
+	else
+        	PIO_Set(&pinsLeds[led]);
 }
 
 /* LED blinking code */

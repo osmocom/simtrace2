@@ -169,8 +169,7 @@ extern int main(void)
 	}
 
 	TRACE_INFO("calling configure of all configurations...\n\r");
-	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]);
-	     ++i) {
+	for (i = 1; i < ARRAY_SIZE(config_func_ptrs); i++) {
 		if (config_func_ptrs[i].configure)
 			config_func_ptrs[i].configure();
 	}

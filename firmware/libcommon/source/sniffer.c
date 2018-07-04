@@ -178,6 +178,11 @@ uint8_t tpdu_packet[5+256+2];
 /*! Current index in TPDU packet */
 uint16_t tpdu_packet_i = 0;
 
+/*! Waiting Time (WT)
+ *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
+ */
+uint32_t wt = 9600;
+
 /*------------------------------------------------------------------------------
  *         Internal functions
  *------------------------------------------------------------------------------*/
@@ -187,6 +192,27 @@ uint16_t tpdu_packet_i = 0;
  *  @remark use a look up table to speed up conversion
  */
 static const uint8_t convention_convert_lut[256] = { 0xff, 0x7f, 0xbf, 0x3f, 0xdf, 0x5f, 0x9f, 0x1f, 0xef, 0x6f, 0xaf, 0x2f, 0xcf, 0x4f, 0x8f, 0x0f, 0xf7, 0x77, 0xb7, 0x37, 0xd7, 0x57, 0x97, 0x17, 0xe7, 0x67, 0xa7, 0x27, 0xc7, 0x47, 0x87, 0x07, 0xfb, 0x7b, 0xbb, 0x3b, 0xdb, 0x5b, 0x9b, 0x1b, 0xeb, 0x6b, 0xab, 0x2b, 0xcb, 0x4b, 0x8b, 0x0b, 0xf3, 0x73, 0xb3, 0x33, 0xd3, 0x53, 0x93, 0x13, 0xe3, 0x63, 0xa3, 0x23, 0xc3, 0x43, 0x83, 0x03, 0xfd, 0x7d, 0xbd, 0x3d, 0xdd, 0x5d, 0x9d, 0x1d, 0xed, 0x6d, 0xad, 0x2d, 0xcd, 0x4d, 0x8d, 0x0d, 0xf5, 0x75, 0xb5, 0x35, 0xd5, 0x55, 0x95, 0x15, 0xe5, 0x65, 0xa5, 0x25, 0xc5, 0x45, 0x85, 0x05, 0xf9, 0x79, 0xb9, 0x39, 0xd9, 0x59, 0x99, 0x19, 0xe9, 0x69, 0xa9, 0x29, 0xc9, 0x49, 0x89, 0x09, 0xf1, 0x71, 0xb1, 0x31, 0xd1, 0x51, 0x91, 0x11, 0xe1, 0x61, 0xa1, 0x21, 0xc1, 0x41, 0x81, 0x01, 0xfe, 0x7e, 0xbe, 0x3e, 0xde, 0x5e, 0x9e, 0x1e, 0xee, 0x6e, 0xae, 0x2e, 0xce, 0x4e, 0x8e, 0x0e, 0xf6, 0x76, 0xb6, 0x36, 0xd6, 0x56, 0x96, 0x16, 0xe6, 0x66, 0xa6, 0x26, 0xc6, 0x46, 0x86, 0x06, 0xfa, 0x7a, 0xba, 0x3a, 0xda, 0x5a, 0x9a, 0x1a, 0xea, 0x6a, 0xaa, 0x2a, 0xca, 0x4a, 0x8a, 0x0a, 0xf2, 0x72, 0xb2, 0x32, 0xd2, 0x52, 0x92, 0x12, 0xe2, 0x62, 0xa2, 0x22, 0xc2, 0x42, 0x82, 0x02, 0xfc, 0x7c, 0xbc, 0x3c, 0xdc, 0x5c, 0x9c, 0x1c, 0xec, 0x6c, 0xac, 0x2c, 0xcc, 0x4c, 0x8c, 0x0c, 0xf4, 0x74, 0xb4, 0x34, 0xd4, 0x54, 0x94, 0x14, 0xe4, 0x64, 0xa4, 0x24, 0xc4, 0x44, 0x84, 0x04, 0xf8, 0x78, 0xb8, 0x38, 0xd8, 0x58, 0x98, 0x18, 0xe8, 0x68, 0xa8, 0x28, 0xc8, 0x48, 0x88, 0x08, 0xf0, 0x70, 0xb0, 0x30, 0xd0, 0x50, 0x90, 0x10, 0xe0, 0x60, 0xa0, 0x20, 0xc0, 0x40, 0x80, 0x00, };
+
+/*! Update Waiting Time (WT)
+ *  @param[in] wi Waiting Integer (0 if unchanged)
+ *  @param[in] d Baud Rate divider (0 if unchanged)
+ *  @note set wt to be used by the receiver timeout
+ *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
+ */
+static void update_wt(uint8_t wi, uint8_t d)
+{
+	static uint8_t wt_wi = 10; /* Waiting time Integer (WI), used to calculate the Waiting Time (WT) */
+	static uint8_t wt_d = 1; /* baud rate adjustment integer (the actual value, not the table index) */
+	
+	if (0!=wi) {
+		wt_wi = wi;
+	}
+	if (0!=d) {
+		wt_d = d;
+	}
+	wt = wt_wi*960UL*wt_d;
+	TRACE_INFO("WT updated to %u\n\r", wt);
+}
 
 /*! Allocate USB buffer and push + initialize simtrace_msg_hdr
  *  @param[in] ep USB IN endpoint where the message will be sent to
@@ -236,6 +262,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	switch (iso_state_new) {
 	case ISO7816_S_RESET:
 		update_fidi(&sniff_usart, 0x11); /* reset baud rate to default Di/Fi values */
+		update_wt(10, 1); /* reset WT time-out */
 		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
 		break;
 	case ISO7816_S_WAIT_ATR:
@@ -312,6 +339,7 @@ static void process_byte_atr(uint8_t byte)
 {
 	static uint8_t atr_hist_len = 0; /* store the number of expected historical bytes */
 	static uint8_t y = 0; /* last mask of the upcoming TA, TB, TC, TD interface bytes */
+	static uint8_t i = 0; /* interface byte subgroup number */
 
 	/* sanity check */
 	if (ISO7816_S_IN_ATR!=iso_state) {
@@ -341,6 +369,7 @@ static void process_byte_atr(uint8_t byte)
 			atr_i--; /* revert last byte */
 			TRACE_WARNING("Invalid TS received\n\r");
 		}
+		i = 0; /* first interface byte sub-group is coming (T0 is kind of TD0) */
 		break;
 	case ATR_S_WAIT_T0: /* see ISO/IEC 7816-3:2006 section 8.2.2 */
 	case ATR_S_WAIT_TD: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
@@ -350,6 +379,7 @@ static void process_byte_atr(uint8_t byte)
 			t_protocol_support |= (1<<(byte&0x0f)); /* remember supported protocol to know if TCK will be present */
 		}
 		y = (byte&0xf0); /* remember upcoming interface bytes */
+		i++; /* next interface byte sub-group is coming */
 		if (y&0x10) {
 			atr_state = ATR_S_WAIT_TA; /* wait for interface byte TA */
 			break;
@@ -365,6 +395,14 @@ static void process_byte_atr(uint8_t byte)
 			break;
 		}
 	case ATR_S_WAIT_TC: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
+		/* retrieve WI encoded in TC2*/
+		if (ATR_S_WAIT_TC==atr_state && 2==i) {
+			if (0==byte) {
+				update_wt(10, 0);
+			} else {
+				update_wt(byte, 0);
+			}
+		}
 		if (y&0x80) {
 			atr_state = ATR_S_WAIT_TD; /* wait for interface byte TD */
 			break;
@@ -556,6 +594,7 @@ static void process_byte_pps(uint8_t byte)
 				}
 				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r", fi_table[fn], di_table[dn]);
 				update_fidi(&sniff_usart, pps_cur[2]);
+				update_wt(0, di_table[dn]);
 				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");
@@ -706,6 +745,9 @@ static void process_byte_tpdu(uint8_t byte)
 /*! Interrupt Service Routine called on USART activity */
 void Sniffer_usart_isr(void)
 {
+	/* Remaining Waiting Time (WI) counter (>16 bits) */
+	static volatile uint32_t wt_remaining = 9600;
+
 	/* Read channel status register */
 	uint32_t csr = sniff_usart.base->US_CSR;
 	/* Verify if there was an error */
@@ -717,10 +759,13 @@ void Sniffer_usart_isr(void)
 		TRACE_WARNING("USART framing error\n\r");
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
 	}
+
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {
 		/* Read communication data byte between phone and SIM */
 		uint8_t byte = sniff_usart.base->US_RHR;
+		/* Reset WT timer */
+		wt_remaining = wt;
 		/* Store sniffed data into buffer (also clear interrupt */
 		if (rbuf_is_full(&sniff_buffer)) {
 			TRACE_ERROR("USART buffer full\n\r");
@@ -728,13 +773,28 @@ void Sniffer_usart_isr(void)
 			rbuf_write(&sniff_buffer, byte);
 		}
 	}
-	
+
 	/* Verify it WT timeout occurred, to detect unresponsive card */
 	if (csr & US_CSR_TIMEOUT) {
-		/* Stop timeout until next character is received */
+		if (wt_remaining<=(sniff_usart.base->US_RTOR&0xffff)) {
+			/* Just set the flag and let the main loop handle it */
+			change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
+			/* Reset timeout value */
+			wt_remaining = wt;
+		} else {
+			wt_remaining -= (sniff_usart.base->US_RTOR&0xffff); /* be sure to subtract the actual timeout since the new might not have been set and reloaded yet */
+		}
+		if (wt_remaining>0xffff) {
+			sniff_usart.base->US_RTOR = 0xffff;
+		} else {
+			sniff_usart.base->US_RTOR = wt_remaining;
+		}
+		/* Stop timeout until next character is received (and clears the timeout flag) */
 		sniff_usart.base->US_CR |= US_CR_STTTO;
-		/* Just set the flag and let the main loop handle it */
-		change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
+		if (!(change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT)) {
+			/* Immediately restart the counter it the WT timeout did not occur (needs the timeout flag to be cleared) */
+			sniff_usart.base->US_CR |= US_CR_RETTO;
+		}
 	}
 }
 
@@ -825,8 +885,8 @@ void Sniffer_init(void)
 	ISO7816_Init(&sniff_usart, CLK_SLAVE);
 	/* Only receive data when sniffing */
 	USART_SetReceiverEnabled(sniff_usart.base, 1);
-	/* Enable Receiver time-out WT to detect unresponsive cards */
-	sniff_usart.base->US_RTOR = 9600-12; /* -12 because the timer starts at the end of the 12 ETU frame */
+	/* Enable Receiver time-out to detect waiting time (WT) time-out (e.g. unresponsive cards) */
+	sniff_usart.base->US_RTOR = wt;
 	/* Enable interrupt to indicate when data has been received or timeout occurred */
 	USART_EnableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
 	/* Set USB priority lower than USART to not miss sniffing data (both at 0 per default) */

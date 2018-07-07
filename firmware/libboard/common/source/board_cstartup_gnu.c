@@ -133,7 +133,11 @@ static void BootIntoApp(void)
 	void (*appReset)(void);
 
 	pSrc = (unsigned int *) ((unsigned char *)IFLASH_ADDR + BOARD_DFU_BOOT_SIZE);
-	SCB->VTOR = ((unsigned int)(pSrc)) | (0x0 << 7);
+	/* set vector table to application vector table (store at the beginning of the application) */
+	SCB->VTOR = (unsigned int)(pSrc);
+	/* set stack pointer to address provided in the beginning of the application (loaded into a register first) */
+	__asm__ volatile ("MSR msp,%0" : :"r"(*pSrc));
+	/* start application (by jumping to the reset function which address is stored as second entry of the vector table) */
 	appReset = (void(*)(void))pSrc[1];
 
 	g_dfu->state = DFU_STATE_appIDLE;

@@ -125,7 +125,6 @@ void CONSOLE_ISR(void)
 	Uart *uart = CONSOLE_UART;
 	if (uart->UART_SR & UART_SR_TXRDY) {
 		if (!rbuf_is_empty(&uart_tx_buffer)) {
-			//uart->UART_IER = UART_IER_TXRDY;
 			uart->UART_THR = rbuf_read(&uart_tx_buffer);
 		} else {
 			uart->UART_IDR = UART_IER_TXRDY;

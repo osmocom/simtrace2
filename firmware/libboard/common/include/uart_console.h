@@ -34,6 +34,7 @@
 #include <stdint.h>
 
 extern void UART_Configure( uint32_t dwBaudrate, uint32_t dwMasterClock ) ;
+extern void UART_Exit(void) ;
 extern void UART_PutChar( uint8_t uc ) ;
 extern uint32_t UART_GetChar( void ) ;
 extern uint32_t UART_IsRxReady( void ) ;

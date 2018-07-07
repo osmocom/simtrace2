@@ -173,6 +173,8 @@ void ResetException( void )
          * the second entry in the vector table is the reset address, corresponding to the application start
          */
         if (((*((uint32_t*)(IFLASH_ADDR+BOARD_DFU_BOOT_SIZE)))&0xFFFF0000)==0x20000000) {
+            UART_Exit();
+            __disable_irq();
             BootIntoApp();
             /* Infinite loop */
             while ( 1 ) ;

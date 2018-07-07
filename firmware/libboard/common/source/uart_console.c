@@ -103,6 +103,22 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     _ucIsConsoleInitialized=1 ;
 }
 
+/**
+ * \brief Disables the USART peripheral and related IRQ
+ */
+void UART_Exit(void)
+{
+	if (!_ucIsConsoleInitialized) {
+		return;
+	}
+
+	Uart *pUart = CONSOLE_UART;
+	pUart->UART_IDR = UART_IDR_TXRDY;
+	pUart->UART_CR = UART_CR_RSTRX | UART_CR_RSTTX | UART_CR_RXDIS | UART_CR_TXDIS | UART_CR_RSTSTA;
+	PMC->PMC_PCDR0 = 1 << CONSOLE_ID;
+	NVIC_DisableIRQ(CONSOLE_IRQ);
+}
+
 /** Interrupt Service routine to transmit queued data */
 void CONSOLE_ISR(void)
 {

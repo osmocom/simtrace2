@@ -1,5 +1,10 @@
-/* simtrace2-sniff - main program for the host PC to communicate with the SIMtrace 2 firmware in sniffer mode */
-/* This program is free software; you can redistribute it and/or
+/* simtrace2-sniff - main program for the host PC to communicate with the 
+ * SIMtrace 2 firmware in sniffer mode
+ * 
+ * (C) 2016 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * 
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
@@ -12,9 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * (C) 2010-2017 by Harald Welte <hwelte@hmw-consulting.de>
- * (C) 2018 by Kevin Redon <kredon@sysmocom.de>
  */
 #include <errno.h>
 #include <unistd.h>

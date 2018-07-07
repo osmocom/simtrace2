@@ -261,20 +261,32 @@ static int uart_has_loopback_jumper(void)
 	/* Configure UART pins as I/O */
 	PIO_Configure(uart_loopback_pins, PIO_LISTSIZE(uart_loopback_pins));
 
+	/* Send pattern over UART TX and check if it is received on RX
+	 * If the loop doesn't get interrupted, RxD always follows TxD and thus a
+	 * loopback jumper has been placed on RxD/TxD, and we will boot
+	 * into DFU unconditionally
+	 */
+	int has_loopback_jumper = 1;
 	for (i = 0; i < 10; i++) {
 		/* Set TxD high; abort if RxD doesn't go high either */
 		PIO_Set(&uart_loopback_pins[1]);
-		if (!PIO_Get(&uart_loopback_pins[0]))
-			return 0;
+		if (!PIO_Get(&uart_loopback_pins[0])) {
+			has_loopback_jumper = 0;
+			break;
+		}
 		/* Set TxD low, abort if RxD doesn't go low either */
 		PIO_Clear(&uart_loopback_pins[1]);
-		if (PIO_Get(&uart_loopback_pins[0]))
-			return 0;
+		if (PIO_Get(&uart_loopback_pins[0])) {
+			has_loopback_jumper = 0;
+			break;
+		}
 	}
-	/* if we reached here, RxD always follows TxD and thus a
-	 * loopback jumper has been placed on RxD/TxD, and we will boot
-	 * into DFU unconditionally */
-	return 1;
+
+	/* Put pins back to UART mode */
+	const Pin uart_pins[] = {PINS_UART};
+	PIO_Configure(uart_pins, PIO_LISTSIZE(uart_pins));
+
+	return has_loopback_jumper;
 }
 
 int board_override_enter_dfu(void)

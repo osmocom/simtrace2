@@ -150,16 +150,12 @@ extern void UART_PutChar( uint8_t c )
     }
 
     /* Only store input if buffer is not full, else drop it */
-    bool trigger_isr = false;
-    if (rbuf_is_empty(&uart_tx_buffer)) {
-        trigger_isr = true;
-    }
     if (!rbuf_is_full(&uart_tx_buffer)) {
         rbuf_write(&uart_tx_buffer, c);
-    }
-    if (trigger_isr) {
-        pUart->UART_IER = UART_IER_TXRDY;
-        CONSOLE_ISR();
+        if (!(pUart->UART_IMR & UART_IMR_TXRDY)) {
+            pUart->UART_IER = UART_IER_TXRDY;
+            CONSOLE_ISR();
+        }
     }
 }
 

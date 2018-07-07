@@ -159,22 +159,30 @@ WEAK int board_override_enter_dfu(void)
 int USBDFU_OverrideEnterDFU(void)
 {
 	uint32_t *app_part = (uint32_t *)FLASH_ADDR(0);
+	/* at the first call we are before the text segment has been relocated,
+	 * so g_dfu is not initialized yet */
+	g_dfu = &_g_dfu;
+	if (USB_DFU_MAGIC == g_dfu->magic) {
+		return 1;
+	}
 
 	/* If the loopback jumper is set, we enter DFU mode */
-	if (board_override_enter_dfu())
-		return 1;
+	if (board_override_enter_dfu()) {
+		return 2;
+	}
 
 	/* if the first word of the application partition doesn't look
 	 * like a stack pointer (i.e. point to RAM), enter DFU mode */
-	if ((app_part[0] < IRAM_ADDR) ||
-	    ((uint8_t *)app_part[0] > IRAM_END))
-		return 1;
+	if ((app_part[0] < IRAM_ADDR) || ((uint8_t *)app_part[0] > IRAM_END)) {
+		return 3;
+	}
 
 	/* if the second word of the application partition doesn't look
 	 * like a function from flash (reset vector), enter DFU mode */
 	if (((uint32_t *)app_part[1] < app_part) ||
-	    ((uint8_t *)app_part[1] > IFLASH_END))
-		return 1;
+	    ((uint8_t *)app_part[1] > IFLASH_END)) {
+		return 4;
+	}
 
 	return 0;
 }
@@ -218,7 +226,7 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-        printf("\n\r\n\r"
+	printf("\n\r\n\r"
 		"=============================================================================\n\r"
 		"DFU bootloader %s for board %s (C) 2010-2017 by Harald Welte\n\r"
 		"=============================================================================\n\r",
@@ -229,6 +237,35 @@ extern int main(void)
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 	TRACE_INFO("Reset Cause: 0x%x\n\r", reset_cause);
+
+#if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
+	/* Find out why we are in the DFU bootloader, and not the main application */
+	TRACE_INFO("DFU bootloader start reason: ");
+	switch (USBDFU_OverrideEnterDFU()) {
+	case 0:
+		/* 0 normally means that there is no override, but we are in the bootloader,
+		 * thus the first check in board_cstartup_gnu did return something else than 0.
+		 * this can only be g_dfu->magic which is erased when the segment are
+		 * relocated, which happens in board_cstartup_gnu just after USBDFU_OverrideEnterDFU.
+		 * no static variable can be used to store this case since this will also be overwritten
+		 */
+	case 1:
+		TRACE_INFO_WP("DFU switch requested by main application\n\r");
+		break;
+	case 2:
+		TRACE_INFO_WP("bootloader forced (button pressed or jumper set)\n\r");
+		break;
+	case 3:
+		TRACE_INFO_WP("stack pointer (first application word) does no point in RAM\n\r");
+		break;
+	case 4: // the is no reason
+		TRACE_INFO_WP("reset vector (second application word) does no point in flash\n\r");
+		break;
+	default:
+		TRACE_INFO_WP("unknown\n\r");
+		break;
+	}
+#endif
 
 	/* clear g_dfu on power-up reset */
 	if (reset_cause == 0)

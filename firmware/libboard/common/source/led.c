@@ -73,14 +73,21 @@ static const struct blink_state bs_3on_1off_3on_30off[] = {
 static const struct blink_state bs_3on_1off_3on_1off_3on_30off[] = {
 	{ 300, 1 }, { 100, 0 }, { 300, 1 }, { 100, 0 }, { 300, 1 }, { 3000, 0 }
 };
+
 static const struct blink_state bs_2on_off[] = {
 	{ 200, 1 }, { 0, 0 },
 };
+
 static const struct blink_state bs_200on_off[] = {
 	{ 20000, 1 }, { 0, 0 },
 };
+
 static const struct blink_state bs_600on_off[] = {
 	{ 60000, 1 }, { 0, 0 },
+};
+
+static const struct blink_state bs_2off_on[] = {
+	{ 200, 0 }, { 0, 1 },
 };
 
 
@@ -128,6 +135,11 @@ static const struct blink_pattern patterns[] = {
 		.states = bs_600on_off,
 		.size = ARRAY_SIZE(bs_600on_off),
 	},
+	[BLINK_2F_O] = {
+		.states = bs_2off_on,
+		.size = ARRAY_SIZE(bs_2off_on),
+	},
+
 };
 
 struct led_state {

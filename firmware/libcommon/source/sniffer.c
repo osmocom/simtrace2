@@ -412,8 +412,11 @@ static void process_byte_atr(uint8_t byte)
 			atr_state = ATR_S_WAIT_T0; /* wait for format byte */
 			break;
 		default:
-			atr_i--; /* revert last byte */
 			TRACE_WARNING("Invalid TS received\n\r");
+			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			usb_send_atr(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
+			change_state(ISO7816_S_WAIT_ATR); /* reset state */
+			break;
 		}
 		i = 0; /* first interface byte sub-group is coming (T0 is kind of TD0) */
 		break;
@@ -559,6 +562,8 @@ static void process_byte_pps(uint8_t byte)
 			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
 		} else {
 			TRACE_INFO("Invalid PPSS received\n\r");
+			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			usb_send_pps(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 		}
 		break;
@@ -670,6 +675,8 @@ static void process_byte_tpdu(uint8_t byte)
 	case TPDU_S_CLA:
 		if (0xff == byte) {
 			TRACE_WARNING("0xff is not a valid class byte\n\r");
+			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
 		}
@@ -680,6 +687,8 @@ static void process_byte_tpdu(uint8_t byte)
 	case TPDU_S_INS:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) {
 			TRACE_WARNING("invalid CLA 0x%02x\n\r", byte);
+			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
 		}
@@ -718,6 +727,8 @@ static void process_byte_tpdu(uint8_t byte)
 			tpdu_state = TPDU_S_SW2;
 		} else {
 			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
+			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
 		}
@@ -1005,15 +1016,18 @@ void Sniffer_run(void)
 			/* Use timeout to detect interrupted data transmission */
 			switch (iso_state) {
 			case ISO7816_S_IN_ATR:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 				usb_send_atr(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete ATR to host software using USB */
 				change_state(ISO7816_S_WAIT_ATR);
 				break;
 			case ISO7816_S_IN_TPDU:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 				usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete PPS to host software using USB */
 				change_state(ISO7816_S_WAIT_TPDU);
 				break;
 			case ISO7816_S_IN_PPS_REQ:
 			case ISO7816_S_IN_PPS_RSP:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 				usb_send_pps(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete TPDU to host software using USB */
 				change_state(ISO7816_S_WAIT_TPDU);
 				break;

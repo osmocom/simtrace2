@@ -302,7 +302,7 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 	}
 
 	/* Show activity on LED */
-	led_blink(LED_GREEN, BLINK_2O_F);
+	led_blink(LED_GREEN, BLINK_2F_O);
 
 	/* Print message */
 	switch (type) {

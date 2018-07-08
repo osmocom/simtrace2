@@ -2,7 +2,8 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2010, Atmel Corporation
- * Copyright (C) 2017, Harald Welte <laforge@gnumonks.org>
+ * Copyright (c) 2017, Harald Welte <laforge@gnumonks.org>
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *

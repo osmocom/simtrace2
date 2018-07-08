@@ -1,25 +1,29 @@
-/*
- * (C) 2010-2017 by Harald Welte <hwelte@sysmocom.de>
- * (C) 2018 by Kevin Redon <kredon@sysmocom.de>
- * All Rights Reserved
+/* SIMtrace 2 sniffer mode
+ *
+ * (C) 2016-2017 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
  */
-/* This code implement the Sniffer mode to sniff the communication between a SIM card (or any ISO 7816 smart card) and a phone (or any ISO 7816 card reader).
- * For historical reasons (i.e. SIMtrace hardware) the USART peripheral connected to the SIM card is used.
- * TODO put common ISO7816-3 code is separate library (and combine clean with iso7816_4)
+/* This code implement the Sniffer mode to sniff the communication between a 
+ * SIM card (or any ISO 7816 smart card) and a phone (or any ISO 7816 card 
+ * reader).
+ * For historical reasons (i.e. SIMtrace hardware) the USART peripheral 
+ * connected to the SIM card is used.
+ * TODO put common ISO7816-3 code is separate library (and combine clean with 
+ * iso7816_4)
  */
 #include "board.h"
 #include "simtrace.h"

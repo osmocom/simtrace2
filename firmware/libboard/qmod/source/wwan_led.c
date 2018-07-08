@@ -1,11 +1,24 @@
 /* Code to read/track the status of the WWAN LEDs of attached modems
  *
- * Depending on the board this is running on,  it might be possible
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
+ */
+/* Depending on the board this is running on,  it might be possible
  * for the controller to read the status of the WWAN LED output lines of
  * the cellular modem.  If the board supports this, it sets the
  * PIN_WWAN1 and/or PIN_WWAN2 defines in its board.h file.
  */
-
 #include "board.h"
 #include "wwan_led.h"
 

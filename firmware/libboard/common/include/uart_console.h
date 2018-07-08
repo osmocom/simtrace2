@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -26,8 +27,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ----------------------------------------------------------------------------
  */
-
-
 #ifndef _UART_CONSOLE_
 #define _UART_CONSOLE_
 

@@ -267,11 +267,9 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	case ISO7816_S_RESET:
 		update_fidi(&sniff_usart, 0x11); /* reset baud rate to default Di/Fi values */
 		update_wt(10, 1); /* reset WT time-out */
-		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
 		break;
 	case ISO7816_S_WAIT_ATR:
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
-		change_flags |= SNIFF_CHANGE_FLAG_RESET_RELEASE; /* set flag and let main loop send it */
 		break;
 	case ISO7816_S_IN_ATR:
 		atr_i = 0;
@@ -817,13 +815,9 @@ static void Sniffer_reset_isr(const Pin* pPin)
 	}
 	/* Update the ISO state according to the reset change */
 	if (PIO_Get(&pin_rst)) {
-		if (ISO7816_S_WAIT_ATR != iso_state) {
-			change_state(ISO7816_S_WAIT_ATR);
-		}
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
 	} else {
-		if (ISO7816_S_RESET != iso_state) {
-			change_state(ISO7816_S_RESET);
-		}
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_RELEASE; /* set flag and let main loop send it */
 	}
 }
 
@@ -949,6 +943,10 @@ void Sniffer_run(void)
 	process_any_usb_commands(queue);
 	*/
 
+	/* WARNING: the signal data and flags are not synchronized. We have to hope 
+	 * the processing is fast enough to not land in the wrong state while data
+	 * is remaining
+	 */
 	/* Handle sniffed data */
 	if (!rbuf_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
 		uint8_t byte = rbuf_read(&sniff_buffer);
@@ -993,6 +991,16 @@ void Sniffer_run(void)
 
 	/* Handle flags */
 	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
+		if (change_flags & SNIFF_CHANGE_FLAG_RESET_HOLD) {
+			if (ISO7816_S_WAIT_ATR != iso_state) {
+				change_state(ISO7816_S_WAIT_ATR);
+			}
+		}
+		if (change_flags & SNIFF_CHANGE_FLAG_RESET_RELEASE) {
+			if (ISO7816_S_RESET != iso_state) {
+				change_state(ISO7816_S_RESET);
+			}
+		}
 		if (change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
 			/* Use timeout to detect interrupted data transmission */
 			switch (iso_state) {

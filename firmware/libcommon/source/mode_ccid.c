@@ -84,11 +84,11 @@ static const Pin pinSmartCard = SMARTCARD_CONNECT_PIN;
 static void ISR_PioSmartCard(const Pin * pPin)
 {
 /* FIXME: why is pinSmartCard.pio->PIO_ISR the wrong number?
-    printf("+++++ Trying to check for pending interrupts (PIO ISR: 0x%X)\n\r", pinSmartCard.pio->PIO_ISR);
-    printf("+++++ Mask: 0x%X\n\r", pinSmartCard.mask);
+	printf("+++++ Trying to check for pending interrupts (PIO ISR: 0x%X)\n\r", pinSmartCard.pio->PIO_ISR);
+	printf("+++++ Mask: 0x%X\n\r", pinSmartCard.mask);
 Output:
-    +++++ Trying to check for pending interrupts (PIO ISR: 0x400)) = 1<<10
-    +++++ Mask: 0x100 = 1<<8
+	+++++ Trying to check for pending interrupts (PIO ISR: 0x400)) = 1<<10
+	+++++ Mask: 0x100 = 1<<8
 */
 	// PA10 is DTXD, which is the debug uart transmit pin
 

@@ -65,19 +65,19 @@ enum confNum {
 /// device using the CCID driver.
 typedef struct {
 
-    /// Configuration descriptor
-    USBConfigurationDescriptor configuration;
-    /// Interface descriptor
-    USBInterfaceDescriptor     interface;
-    /// CCID descriptor
-    CCIDDescriptor             ccid;
-    /// Bulk OUT endpoint descriptor
-    USBEndpointDescriptor      bulkOut;
-    /// Bulk IN endpoint descriptor
-    USBEndpointDescriptor      bulkIn;
-    /// Interrupt OUT endpoint descriptor
-    USBEndpointDescriptor      interruptIn;
-    DFURT_IF_DESCRIPTOR_STRUCT
+	/// Configuration descriptor
+	USBConfigurationDescriptor configuration;
+	/// Interface descriptor
+	USBInterfaceDescriptor     interface;
+	/// CCID descriptor
+	CCIDDescriptor             ccid;
+	/// Bulk OUT endpoint descriptor
+	USBEndpointDescriptor      bulkOut;
+	/// Bulk IN endpoint descriptor
+	USBEndpointDescriptor      bulkIn;
+	/// Interrupt OUT endpoint descriptor
+	USBEndpointDescriptor      interruptIn;
+	DFURT_IF_DESCRIPTOR_STRUCT
 } __attribute__ ((packed)) CCIDDriverConfigurationDescriptors;
 
 extern const USBConfigurationDescriptor *configurationDescriptorsArr[];

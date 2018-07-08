@@ -61,33 +61,33 @@
 //------------------------------------------------------------------------------
 void * memcpy(void *pDestination, const void *pSource, size_t num)
 {
-    unsigned char *pByteDestination;
-    unsigned char *pByteSource;
-    unsigned int *pAlignedSource = (unsigned int *) pSource;
-    unsigned int *pAlignedDestination = (unsigned int *) pDestination;
+	unsigned char *pByteDestination;
+	unsigned char *pByteSource;
+	unsigned int *pAlignedSource = (unsigned int *) pSource;
+	unsigned int *pAlignedDestination = (unsigned int *) pDestination;
 
-    // If num is more than 4 bytes, and both dest. and source are aligned,
-    // then copy dwords
-    if ((((unsigned int) pAlignedDestination & 0x3) == 0)
-        && (((unsigned int) pAlignedSource & 0x3) == 0)
-        && (num >= 4)) {
+	// If num is more than 4 bytes, and both dest. and source are aligned,
+	// then copy dwords
+	if ((((unsigned int) pAlignedDestination & 0x3) == 0)
+		&& (((unsigned int) pAlignedSource & 0x3) == 0)
+		&& (num >= 4)) {
 
-        while (num >= 4) {
+		while (num >= 4) {
 
-            *pAlignedDestination++ = *pAlignedSource++;
-            num -= 4;
-        }
-    }
+			*pAlignedDestination++ = *pAlignedSource++;
+			num -= 4;
+		}
+	}
 
-    // Copy remaining bytes
-    pByteDestination = (unsigned char *) pAlignedDestination;
-    pByteSource = (unsigned char *) pAlignedSource;
-    while (num--) {
+	// Copy remaining bytes
+	pByteDestination = (unsigned char *) pAlignedDestination;
+	pByteSource = (unsigned char *) pAlignedSource;
+	while (num--) {
 
-        *pByteDestination++ = *pByteSource++;
-    }
+		*pByteDestination++ = *pByteSource++;
+	}
 
-    return pDestination;
+	return pDestination;
 }
 
 //------------------------------------------------------------------------------
@@ -99,23 +99,23 @@ void * memcpy(void *pDestination, const void *pSource, size_t num)
 //------------------------------------------------------------------------------
 void * memset(void *pBuffer, int value, size_t num)
 {
-    unsigned char *pByteDestination;
-    unsigned int  *pAlignedDestination = (unsigned int *) pBuffer;
-    unsigned int  alignedValue = (value << 24) | (value << 16) | (value << 8) | value;
+	unsigned char *pByteDestination;
+	unsigned int  *pAlignedDestination = (unsigned int *) pBuffer;
+	unsigned int  alignedValue = (value << 24) | (value << 16) | (value << 8) | value;
 
-    // Set words if possible
-    if ((((unsigned int) pAlignedDestination & 0x3) == 0) && (num >= 4)) {
-        while (num >= 4) {
-            *pAlignedDestination++ = alignedValue;
-            num -= 4;
-        }
-    }
-    // Set remaining bytes
-    pByteDestination = (unsigned char *) pAlignedDestination;
-    while (num--) {
-        *pByteDestination++ = value;
-    }
-    return pBuffer;
+	// Set words if possible
+	if ((((unsigned int) pAlignedDestination & 0x3) == 0) && (num >= 4)) {
+		while (num >= 4) {
+			*pAlignedDestination++ = alignedValue;
+			num -= 4;
+		}
+	}
+	// Set remaining bytes
+	pByteDestination = (unsigned char *) pAlignedDestination;
+	while (num--) {
+		*pByteDestination++ = value;
+	}
+	return pBuffer;
 }
 
 //-----------------------------------------------------------------------------
@@ -126,16 +126,16 @@ void * memset(void *pBuffer, int value, size_t num)
 //-----------------------------------------------------------------------------
 char * strchr(const char *pString, int character)
 {
-    char * p = (char *)pString;
-    char   c = character & 0xFF;
+	char * p = (char *)pString;
+	char   c = character & 0xFF;
 
-    while(*p != c) {
-        if (*p == 0) {
-            return 0;
-        }
-        p++;
-    }
-    return p;
+	while(*p != c) {
+		if (*p == 0) {
+			return 0;
+		}
+		p++;
+	}
+	return p;
 }
 
 //-----------------------------------------------------------------------------
@@ -144,12 +144,12 @@ char * strchr(const char *pString, int character)
 //-----------------------------------------------------------------------------
 size_t strlen(const char *pString)
 {
-    unsigned int length = 0;
+	unsigned int length = 0;
 
-    while(*pString++ != 0) {
-        length++;
-    }
-    return length;
+	while(*pString++ != 0) {
+		length++;
+	}
+	return length;
 }
 
 
@@ -161,14 +161,14 @@ size_t strlen(const char *pString)
 //-----------------------------------------------------------------------------
 char * strrchr(const char *pString, int character)
 {
-    char *p = 0;
+	char *p = 0;
 
-    while(*pString != 0) {
-        if (*pString++ == character) {
-            p = (char*)pString;
-        }
-    }
-    return p;
+	while(*pString != 0) {
+		if (*pString++ == character) {
+			p = (char*)pString;
+		}
+	}
+	return p;
 }
 
 //-----------------------------------------------------------------------------
@@ -179,10 +179,10 @@ char * strrchr(const char *pString, int character)
 //-----------------------------------------------------------------------------
 char * strcpy(char *pDestination, const char *pSource)
 {
-    char *pSaveDest = pDestination;
+	char *pSaveDest = pDestination;
 
-    for(; (*pDestination = *pSource) != 0; ++pSource, ++pDestination);
-    return pSaveDest;
+	for(; (*pDestination = *pSource) != 0; ++pSource, ++pDestination);
+	return pSaveDest;
 }
 
 //-----------------------------------------------------------------------------
@@ -196,22 +196,22 @@ char * strcpy(char *pDestination, const char *pSource)
 //-----------------------------------------------------------------------------
 int strncmp(const char *pString1, const char *pString2, size_t count)
 {
-    int r;
+	int r;
 
-    while(count) {
-        r = *pString1 - *pString2;
-        if (r == 0) {
-            if (*pString1 == 0) {
-                break;
-            }
-            pString1++;
-            pString2++;
-            count--;
-            continue;
-        }
-        return r;
-    }
-    return 0;
+	while(count) {
+		r = *pString1 - *pString2;
+		if (r == 0) {
+			if (*pString1 == 0) {
+				break;
+			}
+			pString1++;
+			pString2++;
+			count--;
+			continue;
+		}
+		return r;
+	}
+	return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -223,17 +223,17 @@ int strncmp(const char *pString1, const char *pString2, size_t count)
 //-----------------------------------------------------------------------------
 char * strncpy(char *pDestination, const char *pSource, size_t count)
 {
-    char *pSaveDest = pDestination;
+	char *pSaveDest = pDestination;
 
-    while (count) {
-        *pDestination = *pSource;
-        if (*pSource == 0) {
-            break;
-        }
-        pDestination++;
-        pSource++;
-        count--;
-    }
-    return pSaveDest;
+	while (count) {
+		*pDestination = *pSource;
+		if (*pSource == 0) {
+			break;
+		}
+		pDestination++;
+		pSource++;
+		count--;
+	}
+	return pSaveDest;
 }
 

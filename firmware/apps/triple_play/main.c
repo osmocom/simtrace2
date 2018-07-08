@@ -151,7 +151,7 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-        printf("\r\n\r\n"
+		printf("\r\n\r\n"
 		"=============================================================================\r\n"
 		"SIMtrace2 firmware " GIT_REVISION " (C) 2010-2017 by Harald Welte\r\n"
 		"=============================================================================\r\n");

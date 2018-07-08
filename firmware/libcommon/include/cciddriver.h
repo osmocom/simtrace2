@@ -145,129 +145,129 @@ typedef struct
 /// 6.1.11.2 PIN Verification Data Structure
 typedef struct
 {
-    /// Number of seconds.
-    unsigned char bTimerOut;
-    /// Several parameters for the PIN format options
-    unsigned char bmFormatString;
-    /// Define the length of the PIN to present in the APDU command
-    unsigned char bmPINBlockString;
-    /// Allows the length PIN insertion in the APDU command
-    unsigned char bmPINLengthFormat;
-    /// Minimum PIN size in digit and Maximum PIN size in digit
-    unsigned char wPINMaxExtraDigit;
-    /// The value is a bit wise OR operation.
-    unsigned char bEntryValidationCondition;
-    /// Number of messages to display for the PIN modify command
-    unsigned char bNumberMessage;
-    /// Language used to display the messages.
-    unsigned char wLangId;
-    /// Message index in the Reader message table
-    unsigned char bMsgIndex;
-    /// T=1 I-block prologue field to use
-    unsigned char bTeoPrologue[3];
-    /// APDU to send to the ICC
-    unsigned char abPINApdu[255];
+	/// Number of seconds.
+	unsigned char bTimerOut;
+	/// Several parameters for the PIN format options
+	unsigned char bmFormatString;
+	/// Define the length of the PIN to present in the APDU command
+	unsigned char bmPINBlockString;
+	/// Allows the length PIN insertion in the APDU command
+	unsigned char bmPINLengthFormat;
+	/// Minimum PIN size in digit and Maximum PIN size in digit
+	unsigned char wPINMaxExtraDigit;
+	/// The value is a bit wise OR operation.
+	unsigned char bEntryValidationCondition;
+	/// Number of messages to display for the PIN modify command
+	unsigned char bNumberMessage;
+	/// Language used to display the messages.
+	unsigned char wLangId;
+	/// Message index in the Reader message table
+	unsigned char bMsgIndex;
+	/// T=1 I-block prologue field to use
+	unsigned char bTeoPrologue[3];
+	/// APDU to send to the ICC
+	unsigned char abPINApdu[255];
 }__attribute__ ((packed)) S_ccid_PIN_Verification;
 
 
 /// 6.1.11.7 PIN Modification Data Structure
 typedef struct
 {
-    /// Number of seconds. If 00h then CCID default value is used.
-    unsigned char bTimeOut;
-    /// Several parameters for the PIN format options (defined in § 6.1.11.4)
-    unsigned char bmFormatString4;
-    /// Define the length of the PIN to present in the APDU command
-    unsigned char bmPINBlockString;
-    /// Allows the length PIN insertion in the APDU command (defined in § 6.1.11.6)
-    unsigned char bmPinLengthFormat;
-    /// Insertion position offset in byte for the current PIN
-    unsigned char bInsertionOffsetOld;
-    /// Insertion position offset in byte for the new PIN
-    unsigned char bInsertionOffsetNew;
-    /// XXYYh
-    /// XX: Minimum PIN size in digit
-    /// YY: Maximum PIN size in digit
-    unsigned char wPINMaxExtraDigit;
-    /// 00h,01h,02h,03h
-    /// Indicates if a confirmation is requested before acceptance of a new PIN (meaning that the user has to enter this new PIN twice before it is accepted)
-    /// Indicates if the current PIN must be entered and set in the same APDU field of not.
-    unsigned char bConfirmPIN;
-    /// The value is a bit wise OR operation.
-    /// 01h Max size reached
-    /// 02h Validation key pressed
-    /// 04h Timeout occurred
-    unsigned char bEntryValidationCondition;
-    /// 00h,01h,02h,03h,or FFh
-    /// Number of messages to display for the PIN modify command.
-    unsigned char bNumberMessage;
-    /// Language used to display the messages. The 16 bit
-    unsigned char wLangId;
-    /// Message index in the Reader message table (should be 00h or 01h).
-    unsigned char bMsgIndex1;
-    /// Message index in the Reader message table (should be 01h or 02h).
-    unsigned char bMsgIndex2;
-    /// Message index in the Reader message table (should be 02h).
-    unsigned char bMsgIndex3;
-    /// T=1 I-block prologue field to use. Significant only if protocol in use is T=1.
-    unsigned char bTeoPrologue[3];
-    /// Byte array APDU to send to the ICC
-    unsigned char abPINApdu[255];
+	/// Number of seconds. If 00h then CCID default value is used.
+	unsigned char bTimeOut;
+	/// Several parameters for the PIN format options (defined in § 6.1.11.4)
+	unsigned char bmFormatString4;
+	/// Define the length of the PIN to present in the APDU command
+	unsigned char bmPINBlockString;
+	/// Allows the length PIN insertion in the APDU command (defined in § 6.1.11.6)
+	unsigned char bmPinLengthFormat;
+	/// Insertion position offset in byte for the current PIN
+	unsigned char bInsertionOffsetOld;
+	/// Insertion position offset in byte for the new PIN
+	unsigned char bInsertionOffsetNew;
+	/// XXYYh
+	/// XX: Minimum PIN size in digit
+	/// YY: Maximum PIN size in digit
+	unsigned char wPINMaxExtraDigit;
+	/// 00h,01h,02h,03h
+	/// Indicates if a confirmation is requested before acceptance of a new PIN (meaning that the user has to enter this new PIN twice before it is accepted)
+	/// Indicates if the current PIN must be entered and set in the same APDU field of not.
+	unsigned char bConfirmPIN;
+	/// The value is a bit wise OR operation.
+	/// 01h Max size reached
+	/// 02h Validation key pressed
+	/// 04h Timeout occurred
+	unsigned char bEntryValidationCondition;
+	/// 00h,01h,02h,03h,or FFh
+	/// Number of messages to display for the PIN modify command.
+	unsigned char bNumberMessage;
+	/// Language used to display the messages. The 16 bit
+	unsigned char wLangId;
+	/// Message index in the Reader message table (should be 00h or 01h).
+	unsigned char bMsgIndex1;
+	/// Message index in the Reader message table (should be 01h or 02h).
+	unsigned char bMsgIndex2;
+	/// Message index in the Reader message table (should be 02h).
+	unsigned char bMsgIndex3;
+	/// T=1 I-block prologue field to use. Significant only if protocol in use is T=1.
+	unsigned char bTeoPrologue[3];
+	/// Byte array APDU to send to the ICC
+	unsigned char abPINApdu[255];
 }__attribute__ ((packed)) S_ccid_PIN_Modification;
 
 /// Protocol Data Structure for Protocol T=0 (bProtocolNum=0, dwLength=00000005h)
 typedef struct
 {
-    /// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
-    /// clock rate conversion factor
-    /// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
-    /// baud rate conversion factor
-    unsigned char bmFindexDindex;
-    /// For T=0 ,B0 – 0b, B7-2 – 000000b
-    /// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
-    unsigned char bmTCCKST0;         // 0 to 2
-    /// Extra Guardtime between two characters. Add 0 to 254 etu to the normal 
-    /// guardtime of 12etu. FFh is the same as 00h.
-    unsigned char bGuardTimeT0;      // 0 to FF
-    /// WI for T=0 used to define WWT
-    unsigned char bWaitingIntegerT0; // 0 to FF
-    /// ICC Clock Stop Support
-    /// 00 = Stopping the Clock is not allowed
-    /// 01 = Stop with Clock signal Low
-    /// 02 = Stop with Clock signal High
-    /// 03 = Stop with Clock either High or Low
-    unsigned char bClockStop;        // 0 to 3
+	/// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
+	/// clock rate conversion factor
+	/// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
+	/// baud rate conversion factor
+	unsigned char bmFindexDindex;
+	/// For T=0 ,B0 – 0b, B7-2 – 000000b
+	/// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
+	unsigned char bmTCCKST0;         // 0 to 2
+	/// Extra Guardtime between two characters. Add 0 to 254 etu to the normal 
+	/// guardtime of 12etu. FFh is the same as 00h.
+	unsigned char bGuardTimeT0;      // 0 to FF
+	/// WI for T=0 used to define WWT
+	unsigned char bWaitingIntegerT0; // 0 to FF
+	/// ICC Clock Stop Support
+	/// 00 = Stopping the Clock is not allowed
+	/// 01 = Stop with Clock signal Low
+	/// 02 = Stop with Clock signal High
+	/// 03 = Stop with Clock either High or Low
+	unsigned char bClockStop;        // 0 to 3
 } __attribute__ ((packed)) S_ccid_protocol_t0;
 
 
 /// Protocol Data Structure for Protocol T=1 (bProtocolNum=1, dwLength=00000007h)
 typedef struct
 {
-    /// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
-    /// clock rate conversion factor
-    /// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
-    /// baud rate conversion factor
-    unsigned char bmFindexDindex;
-    /// For T=1, B7-2 – 000100b
-    /// B0 – Checksum type (b0=0 for LRC, b0=1 for CRC
-    /// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
-    unsigned char bmTCCKST1;           // 10h, 11h, 12h, 13h
-    /// Extra Guardtime (0 to 254 etu between two characters). 
-    /// If value is FFh, then guardtime is reduced by 1.
-    unsigned char bGuardTimeT1;        // 0 to FF
-    /// B7-4 = BWI
-    /// B3-0 = CWI
-    unsigned char bmWaitingIntegersT1; // 0 to 9
-    /// ICC Clock Stop Support
-    /// 00 = Stopping the Clock is not allowed
-    /// 01 = Stop with Clock signal Low
-    /// 02 = Stop with Clock signal High
-    /// 03 = Stop with Clock either High or Low
-    unsigned char bClockStop;          // 0 to 3
-    /// Size of negotiated IFSC
-    unsigned char bIFSC;               // 0 to FE
-    /// Nad value used by CCID
-    unsigned char bNadValue;           // 0 to FF
+	/// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
+	/// clock rate conversion factor
+	/// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
+	/// baud rate conversion factor
+	unsigned char bmFindexDindex;
+	/// For T=1, B7-2 – 000100b
+	/// B0 – Checksum type (b0=0 for LRC, b0=1 for CRC
+	/// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
+	unsigned char bmTCCKST1;           // 10h, 11h, 12h, 13h
+	/// Extra Guardtime (0 to 254 etu between two characters). 
+	/// If value is FFh, then guardtime is reduced by 1.
+	unsigned char bGuardTimeT1;        // 0 to FF
+	/// B7-4 = BWI
+	/// B3-0 = CWI
+	unsigned char bmWaitingIntegersT1; // 0 to 9
+	/// ICC Clock Stop Support
+	/// 00 = Stopping the Clock is not allowed
+	/// 01 = Stop with Clock signal Low
+	/// 02 = Stop with Clock signal High
+	/// 03 = Stop with Clock either High or Low
+	unsigned char bClockStop;          // 0 to 3
+	/// Size of negotiated IFSC
+	unsigned char bIFSC;               // 0 to FE
+	/// Nad value used by CCID
+	unsigned char bNadValue;           // 0 to FF
 } __attribute__ ((packed)) S_ccid_protocol_t1;
 
 
@@ -357,8 +357,8 @@ typedef struct
 //------------------------------------------------------------------------------
 
 extern unsigned char RDRtoPCHardwareError( unsigned char bSlot, 
-                                           unsigned char bSeq, 
-                                           unsigned char bHardwareErrorCode );
+					                       unsigned char bSeq, 
+					                       unsigned char bHardwareErrorCode );
 
 /*
 #if !defined(NOAUTOCALLBACK)
@@ -368,13 +368,13 @@ extern void USBDCallbacks_RequestReceived(const USBGenericRequest *request);
 extern void CCID_SmartCardRequest( void );
 extern void CCIDDriver_Initialize( void );
 extern unsigned char CCID_Read(void *pBuffer,
-                               unsigned int dLength,
-                               TransferCallback fCallback,
-                               void *pArgument);
+					           unsigned int dLength,
+					           TransferCallback fCallback,
+					           void *pArgument);
 extern unsigned char CCID_Write(void *pBuffer,
-                                unsigned int dLength,
-                                TransferCallback fCallback,
-                                void *pArgument);
+					            unsigned int dLength,
+					            TransferCallback fCallback,
+					            void *pArgument);
 extern unsigned char CCID_Insertion( void );
 extern unsigned char CCID_Removal( void );
 

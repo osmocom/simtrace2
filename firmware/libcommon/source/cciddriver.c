@@ -83,24 +83,24 @@
 /// Driver structure for an CCID device
 typedef struct {
 
-    /// CCID message
-    S_ccid_bulk_in_header  sCcidMessage;
-    /// CCID command
-    S_ccid_bulk_out_header sCcidCommand;
-    /// Interrupt message answer
-    unsigned char          BufferINT[4];
-    /// Buffer data of message
-    unsigned char          ProtocolDataStructure[10];
-    /// Protocol used
-    unsigned char          bProtocol;
-    /// SlotStatus
-    /// Bit 0 = Slot 0 current state
-    /// Bit 1 = Slot 0 changed status
-    /// Bit 2 = Slot 1 current state
-    /// Bit 3 = Slot 1 changed status
-    /// Bit 4 = Slot 2 current state
-    /// Bit 5 = Slot 2 changed status
-    unsigned char          SlotStatus;
+	/// CCID message
+	S_ccid_bulk_in_header  sCcidMessage;
+	/// CCID command
+	S_ccid_bulk_out_header sCcidCommand;
+	/// Interrupt message answer
+	unsigned char          BufferINT[4];
+	/// Buffer data of message
+	unsigned char          ProtocolDataStructure[10];
+	/// Protocol used
+	unsigned char          bProtocol;
+	/// SlotStatus
+	/// Bit 0 = Slot 0 current state
+	/// Bit 1 = Slot 0 changed status
+	/// Bit 2 = Slot 1 current state
+	/// Bit 3 = Slot 1 changed status
+	/// Bit 4 = Slot 2 current state
+	/// Bit 5 = Slot 2 changed status
+	unsigned char          SlotStatus;
 
 } CCIDDriver;
 
@@ -121,7 +121,7 @@ static CCIDDriverConfigurationDescriptors *configurationDescriptorsFS;
 //------------------------------------------------------------------------------
 void CCIDDriver_Initialize( void )
 {
-    configurationDescriptorsFS = (CCIDDriverConfigurationDescriptors *) configurationDescriptorsArr[CFG_NUM_CCID-1];
+	configurationDescriptorsFS = (CCIDDriverConfigurationDescriptors *) configurationDescriptorsArr[CFG_NUM_CCID-1];
 }
 
 //------------------------------------------------------------------------------
@@ -137,25 +137,25 @@ void CCIDDriver_Initialize( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCSlotStatus( void )
 {
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
-    ccidDriver.sCcidMessage.wLength   = 0;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
+	ccidDriver.sCcidMessage.wLength   = 0;
 
-    if (ccidDriver.SlotStatus == ICC_INSERTED_EVENT) {
-        ccidDriver.sCcidMessage.bStatus = 0;    /* ICC present and active card */
-    } else if (ccidDriver.SlotStatus == ICC_NOT_PRESENT) {
-        ccidDriver.sCcidMessage.bStatus = 2;    /* No ICC present*/
-    } else{
-        TRACE_ERROR("Strange bStatus");
-        ccidDriver.sCcidMessage.bStatus = 0;
-    }
-    ccidDriver.sCcidMessage.bError    = 0;
-    // 00h Clock running
-    // 01h Clock stopped in state L
-    // 02h Clock stopped in state H
-    // 03h Clock stopped in an unknown state
-    // All other values are Reserved for Future Use.
-    ccidDriver.sCcidMessage.bSpecific = 0;
+	if (ccidDriver.SlotStatus == ICC_INSERTED_EVENT) {
+		ccidDriver.sCcidMessage.bStatus = 0;    /* ICC present and active card */
+	} else if (ccidDriver.SlotStatus == ICC_NOT_PRESENT) {
+		ccidDriver.sCcidMessage.bStatus = 2;    /* No ICC present*/
+	} else{
+		TRACE_ERROR("Strange bStatus");
+		ccidDriver.sCcidMessage.bStatus = 0;
+	}
+	ccidDriver.sCcidMessage.bError    = 0;
+	// 00h Clock running
+	// 01h Clock stopped in state L
+	// 02h Clock stopped in state H
+	// 03h Clock stopped in an unknown state
+	// All other values are Reserved for Future Use.
+	ccidDriver.sCcidMessage.bSpecific = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -164,71 +164,71 @@ static void RDRtoPCSlotStatus( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCDatablock_ATR( void )
 {
-    unsigned char i;
-    unsigned char Atr[ATR_SIZE_MAX];
-    unsigned char length;
-    uint32_t status; 
+	unsigned char i;
+	unsigned char Atr[ATR_SIZE_MAX];
+	unsigned char length;
+	uint32_t status; 
 
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    status = ISO7816_Datablock_ATR( Atr, &length );
-    ISO7816_Decode_ATR( Atr );
+	status = ISO7816_Datablock_ATR( Atr, &length );
+	ISO7816_Decode_ATR( Atr );
 
-    if (status == 0) {
-        TRACE_DEBUG("Timeout occured while reading ATR");
+	if (status == 0) {
+		TRACE_DEBUG("Timeout occured while reading ATR");
 // FIXME: react properly to timeout..
 //        return;
-    }
+	}
 
 // FIXME: More tests? Is bProtocol = Atr[3] ?
-    if( length > 5 ) {
-        ccidDriver.ProtocolDataStructure[1] = Atr[3]&0x0F; // TD(1)
-        ccidDriver.bProtocol = Atr[3]&0x0F;           // TD(1)
-        TRACE_INFO("Protocol data structure: 0x%x\n\r",
-                        ccidDriver.ProtocolDataStructure[1]);
-    }
+	if( length > 5 ) {
+		ccidDriver.ProtocolDataStructure[1] = Atr[3]&0x0F; // TD(1)
+		ccidDriver.bProtocol = Atr[3]&0x0F;           // TD(1)
+		TRACE_INFO("Protocol data structure: 0x%x\n\r",
+					    ccidDriver.ProtocolDataStructure[1]);
+	}
 
-    // S_ccid_protocol_t0
-    // bmFindexDindex
-    ccidDriver.ProtocolDataStructure[0] = Atr[2];     // TA(1)
+	// S_ccid_protocol_t0
+	// bmFindexDindex
+	ccidDriver.ProtocolDataStructure[0] = Atr[2];     // TA(1)
 
-    // bmTCCKST0
-    // For T=0 ,B0 – 0b, B7-2 – 000000b
-    // B1 – Convention used (b1=0 for direct, b1=1 for inverse)
+	// bmTCCKST0
+	// For T=0 ,B0 – 0b, B7-2 – 000000b
+	// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
 
-    // bGuardTimeT0
-    // Extra Guardtime between two characters. Add 0 to 254 etu to the normal 
-    // guardtime of 12etu. FFh is the same as 00h.
-    ccidDriver.ProtocolDataStructure[2] = Atr[4];     // TC(1)
-    // AT91C_BASE_US0->US_TTGR = 0;  // TC1
+	// bGuardTimeT0
+	// Extra Guardtime between two characters. Add 0 to 254 etu to the normal 
+	// guardtime of 12etu. FFh is the same as 00h.
+	ccidDriver.ProtocolDataStructure[2] = Atr[4];     // TC(1)
+	// AT91C_BASE_US0->US_TTGR = 0;  // TC1
 
-    // bWaitingIntegerT0
-    // WI for T=0 used to define WWT
-    ccidDriver.ProtocolDataStructure[3] = Atr[7];     // TC(2)
+	// bWaitingIntegerT0
+	// WI for T=0 used to define WWT
+	ccidDriver.ProtocolDataStructure[3] = Atr[7];     // TC(2)
 
-    // bClockStop
-    // ICC Clock Stop Support
-    // 00 = Stopping the Clock is not allowed
-    // 01 = Stop with Clock signal Low
-    // 02 = Stop with Clock signal High
-    // 03 = Stop with Clock either High or Low
-    ccidDriver.ProtocolDataStructure[4] = 0x00;       // 0 to 3
+	// bClockStop
+	// ICC Clock Stop Support
+	// 00 = Stopping the Clock is not allowed
+	// 01 = Stop with Clock signal Low
+	// 02 = Stop with Clock signal High
+	// 03 = Stop with Clock either High or Low
+	ccidDriver.ProtocolDataStructure[4] = 0x00;       // 0 to 3
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATABLOCK;
-    ccidDriver.sCcidMessage.wLength      = length;  // Size of ATR
-    ccidDriver.sCcidMessage.bSizeToSend += length;  // Size of ATR
-    // bChainParameter: 00 the response APDU begins and ends in this command
-    ccidDriver.sCcidMessage.bSpecific    = 0;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATABLOCK;
+	ccidDriver.sCcidMessage.wLength      = length;  // Size of ATR
+	ccidDriver.sCcidMessage.bSizeToSend += length;  // Size of ATR
+	// bChainParameter: 00 the response APDU begins and ends in this command
+	ccidDriver.sCcidMessage.bSpecific    = 0;
 
-    for( i=0; i<length; i++ ) {
+	for( i=0; i<length; i++ ) {
 
-        ccidDriver.sCcidMessage.abData[i]  = Atr[i];
-    }
+		ccidDriver.sCcidMessage.abData[i]  = Atr[i];
+	}
 
-    // Set the slot to an active status
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError = 0;
+	// Set the slot to an active status
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -243,17 +243,17 @@ static void RDRtoPCDatablock_ATR( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCDatablock( void )
 {
-    //TRACE_DEBUG(".");
+	//TRACE_DEBUG(".");
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATABLOCK;
-    ccidDriver.sCcidMessage.bSizeToSend += ccidDriver.sCcidMessage.wLength;
-    // bChainParameter: 00 the response APDU begins and ends in this command
-    ccidDriver.sCcidMessage.bSpecific = 0;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATABLOCK;
+	ccidDriver.sCcidMessage.bSizeToSend += ccidDriver.sCcidMessage.wLength;
+	// bChainParameter: 00 the response APDU begins and ends in this command
+	ccidDriver.sCcidMessage.bSpecific = 0;
 
-    // Set the slot to an active status
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError = 0;
+	// Set the slot to an active status
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -265,34 +265,34 @@ static void RDRtoPCDatablock( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCParameters( void )
 {
-    unsigned int i;
+	unsigned int i;
 
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_PARAMETERS;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_PARAMETERS;
 
-    //ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError  = 0;
+	//ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError  = 0;
 
-    if( ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO ) {
+	if( ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO ) {
 
-        // T=0
-        ccidDriver.sCcidMessage.wLength   = sizeof(S_ccid_protocol_t0);
-        ccidDriver.sCcidMessage.bSpecific = PROTOCOL_TO;
-    }
-    else {
+		// T=0
+		ccidDriver.sCcidMessage.wLength   = sizeof(S_ccid_protocol_t0);
+		ccidDriver.sCcidMessage.bSpecific = PROTOCOL_TO;
+	}
+	else {
 
-        // T=1
-        ccidDriver.sCcidMessage.wLength   = sizeof(S_ccid_protocol_t1);
-        ccidDriver.sCcidMessage.bSpecific = PROTOCOL_T1;
-    }
+		// T=1
+		ccidDriver.sCcidMessage.wLength   = sizeof(S_ccid_protocol_t1);
+		ccidDriver.sCcidMessage.bSpecific = PROTOCOL_T1;
+	}
 
-    ccidDriver.sCcidMessage.bSizeToSend += ccidDriver.sCcidMessage.wLength;
+	ccidDriver.sCcidMessage.bSizeToSend += ccidDriver.sCcidMessage.wLength;
 
-    for( i=0; i<ccidDriver.sCcidMessage.wLength; i++ ) {
-        ccidDriver.sCcidMessage.abData[i] = ccidDriver.ProtocolDataStructure[i];
-    }
+	for( i=0; i<ccidDriver.sCcidMessage.wLength; i++ ) {
+		ccidDriver.sCcidMessage.abData[i] = ccidDriver.ProtocolDataStructure[i];
+	}
 
 }
 
@@ -303,23 +303,23 @@ static void RDRtoPCParameters( void )
 //------------------------------------------------------------------------------
 static void RDRtoPCEscape( unsigned char length, unsigned char *data_send_from_CCID )
 {
-    unsigned int i;
+	unsigned int i;
 
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_ESCAPE;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_ESCAPE;
 
-    ccidDriver.sCcidMessage.wLength   = length;
+	ccidDriver.sCcidMessage.wLength   = length;
 
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError  = 0;
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError  = 0;
 
-    ccidDriver.sCcidMessage.bSpecific = 0;  // bRFU
+	ccidDriver.sCcidMessage.bSpecific = 0;  // bRFU
 
-    for( i=0; i<length; i++ ) {
-        ccidDriver.sCcidMessage.abData[i] = data_send_from_CCID[i];
-    }
+	for( i=0; i<length; i++ ) {
+		ccidDriver.sCcidMessage.abData[i] = data_send_from_CCID[i];
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -328,23 +328,23 @@ static void RDRtoPCEscape( unsigned char length, unsigned char *data_send_from_C
 ///   PC_to_RDR_SetDataRateAndClockFrequency
 //------------------------------------------------------------------------------
 static void RDRtoPCDataRateAndClockFrequency( unsigned int dwClockFrequency, 
-                                       unsigned int dwDataRate )
+					                   unsigned int dwDataRate )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATARATEANDCLOCKFREQUENCY;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_DATARATEANDCLOCKFREQUENCY;
 
-    ccidDriver.sCcidMessage.wLength   = 8;
+	ccidDriver.sCcidMessage.wLength   = 8;
 
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError  = 0;
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError  = 0;
 
-    ccidDriver.sCcidMessage.bSpecific = 0;  // bRFU
+	ccidDriver.sCcidMessage.bSpecific = 0;  // bRFU
 
-    ccidDriver.sCcidMessage.abData[0] = dwClockFrequency;
-    
-    ccidDriver.sCcidMessage.abData[4] = dwDataRate;
+	ccidDriver.sCcidMessage.abData[0] = dwClockFrequency;
+	
+	ccidDriver.sCcidMessage.abData[4] = dwDataRate;
 }
 
 //------------------------------------------------------------------------------
@@ -354,27 +354,27 @@ static void RDRtoPCDataRateAndClockFrequency( unsigned int dwClockFrequency,
 //------------------------------------------------------------------------------
 static void PCtoRDRIccPowerOn( void )
 {
-    TRACE_DEBUG(".");
-    if( CCID_FEATURES_AUTO_VOLT == (configurationDescriptorsFS->ccid.dwFeatures & CCID_FEATURES_AUTO_VOLT) ) {
+	TRACE_DEBUG(".");
+	if( CCID_FEATURES_AUTO_VOLT == (configurationDescriptorsFS->ccid.dwFeatures & CCID_FEATURES_AUTO_VOLT) ) {
 
-        //bPowerSelect = ccidDriver.sCcidCommand.bSpecific_0;
-        ccidDriver.sCcidCommand.bSpecific_0 = VOLTS_AUTO;
-    }
+		//bPowerSelect = ccidDriver.sCcidCommand.bSpecific_0;
+		ccidDriver.sCcidCommand.bSpecific_0 = VOLTS_AUTO;
+	}
 
-    ISO7816_warm_reset();
+	ISO7816_warm_reset();
 //    ISO7816_cold_reset();
 
-    // for emulation only //JCB 
-    if ( ccidDriver.sCcidCommand.bSpecific_0 != VOLTS_5_0 ) {
+	// for emulation only //JCB 
+	if ( ccidDriver.sCcidCommand.bSpecific_0 != VOLTS_5_0 ) {
 
-        TRACE_ERROR("POWER_NOT_SUPPORTED\n\r");
-    }
+		TRACE_ERROR("POWER_NOT_SUPPORTED\n\r");
+	}
 
-    else {
+	else {
 
-        RDRtoPCDatablock_ATR();
+		RDRtoPCDatablock_ATR();
 
-    }
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -384,23 +384,23 @@ static void PCtoRDRIccPowerOn( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRIccPowerOff( void )
 {
-    unsigned char bStatus;
+	unsigned char bStatus;
 
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    ISO7816_IccPowerOff();
+	ISO7816_IccPowerOff();
 
-    //JCB stub
-    bStatus = ICC_BS_PRESENT_NOTACTIVATED;
+	//JCB stub
+	bStatus = ICC_BS_PRESENT_NOTACTIVATED;
 
-    // Set the slot to an inactive status
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError = 0;
+	// Set the slot to an inactive status
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError = 0;
 
-    // if error, see Table 6.1-2 errors
+	// if error, see Table 6.1-2 errors
 
-    // Return the slot status to the host
-    RDRtoPCSlotStatus();
+	// Return the slot status to the host
+	RDRtoPCSlotStatus();
 }
 
 //------------------------------------------------------------------------------
@@ -409,13 +409,13 @@ static void PCtoRDRIccPowerOff( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRGetSlotStatus( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    ccidDriver.sCcidMessage.bStatus = 0;
-    ccidDriver.sCcidMessage.bError = 0;
+	ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bError = 0;
 
-    // Return the slot status to the host
-    RDRtoPCSlotStatus();
+	// Return the slot status to the host
+	RDRtoPCSlotStatus();
 }
 
 //------------------------------------------------------------------------------
@@ -425,69 +425,69 @@ static void PCtoRDRGetSlotStatus( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRXfrBlock( void )
 {
-    uint16_t msglen = 0;
-    uint32_t ret;
+	uint16_t msglen = 0;
+	uint32_t ret;
 
-    TRACE_DEBUG("PCtoRDRXfrBlock\n");
+	TRACE_DEBUG("PCtoRDRXfrBlock\n");
 
-    // Check the block length
-    if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
-        TRACE_DEBUG("Err block/msg len");
-        ccidDriver.sCcidMessage.bStatus = 1;
-        ccidDriver.sCcidMessage.bError  = 0;
-    }
-    // check bBWI
-    else if ( 0 != ccidDriver.sCcidCommand.bSpecific_0 ) {
+	// Check the block length
+	if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
+		TRACE_DEBUG("Err block/msg len");
+		ccidDriver.sCcidMessage.bStatus = 1;
+		ccidDriver.sCcidMessage.bError  = 0;
+	}
+	// check bBWI
+	else if ( 0 != ccidDriver.sCcidCommand.bSpecific_0 ) {
 
-         TRACE_ERROR("Bad bBWI\n\r");
-    }
-    else {
+		 TRACE_ERROR("Bad bBWI\n\r");
+	}
+	else {
 
-        // APDU or TPDU
-        switch(configurationDescriptorsFS->ccid.dwFeatures 
-              & (CCID_FEATURES_EXC_TPDU|CCID_FEATURES_EXC_SAPDU|CCID_FEATURES_EXC_APDU)) {
+		// APDU or TPDU
+		switch(configurationDescriptorsFS->ccid.dwFeatures 
+			  & (CCID_FEATURES_EXC_TPDU|CCID_FEATURES_EXC_SAPDU|CCID_FEATURES_EXC_APDU)) {
 
-            case CCID_FEATURES_EXC_TPDU:
-                if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO) {
-                    TRACE_DEBUG("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
+			case CCID_FEATURES_EXC_TPDU:
+				if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_TO) {
+					TRACE_DEBUG("APDU cmd: %x %x %x ..", ccidDriver.sCcidCommand.APDU[0], ccidDriver.sCcidCommand.APDU[1],ccidDriver.sCcidCommand.APDU[2] );
 
-                    // Send commande APDU
-                    ret = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU ,
-                                            ccidDriver.sCcidMessage.abData,
-                                            ccidDriver.sCcidCommand.wLength,
-                                            &msglen );
-                    if (ret != 0) {
-                        TRACE_ERROR("APDU could not be sent: (US_CSR = 0x%x)", ret);
-                        return;
-                    }
-                }
-                else {
-                    if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
-                        TRACE_DEBUG("Not supported T=1\n\r");
-                    }
-                    else {
-                        TRACE_DEBUG("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
-                    }
-                }
-                break;
+					// Send commande APDU
+					ret = ISO7816_XfrBlockTPDU_T0( ccidDriver.sCcidCommand.APDU ,
+					                        ccidDriver.sCcidMessage.abData,
+					                        ccidDriver.sCcidCommand.wLength,
+					                        &msglen );
+					if (ret != 0) {
+					    TRACE_ERROR("APDU could not be sent: (US_CSR = 0x%x)", ret);
+					    return;
+					}
+				}
+				else {
+					if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
+					    TRACE_DEBUG("Not supported T=1\n\r");
+					}
+					else {
+					    TRACE_DEBUG("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
+					}
+				}
+				break;
 
-            case CCID_FEATURES_EXC_APDU:
-                TRACE_DEBUG("Not supported CCID_FEATURES_EXC_APDU\n\r");
-                break;
+			case CCID_FEATURES_EXC_APDU:
+				TRACE_DEBUG("Not supported CCID_FEATURES_EXC_APDU\n\r");
+				break;
 
-            default:
-                break;
-        }
+			default:
+				break;
+		}
 
-    }
+	}
 
-    ccidDriver.sCcidMessage.wLength = msglen;
-    TRACE_DEBUG("USB: 0x%X, 0x%X, 0x%X, 0x%X, 0x%X\n\r", ccidDriver.sCcidMessage.abData[0], 
-                                                                    ccidDriver.sCcidMessage.abData[1], 
-                                                                    ccidDriver.sCcidMessage.abData[2], 
-                                                                    ccidDriver.sCcidMessage.abData[3],
-                                                                    ccidDriver.sCcidMessage.abData[4] );
-     RDRtoPCDatablock();
+	ccidDriver.sCcidMessage.wLength = msglen;
+	TRACE_DEBUG("USB: 0x%X, 0x%X, 0x%X, 0x%X, 0x%X\n\r", ccidDriver.sCcidMessage.abData[0], 
+					                                                ccidDriver.sCcidMessage.abData[1], 
+					                                                ccidDriver.sCcidMessage.abData[2], 
+					                                                ccidDriver.sCcidMessage.abData[3],
+					                                                ccidDriver.sCcidMessage.abData[4] );
+	 RDRtoPCDatablock();
 
 }
 
@@ -497,21 +497,21 @@ static void PCtoRDRXfrBlock( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRGetParameters( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // We support only one slot
+	// We support only one slot
 
-    // bmIccStatus
-    if( ISO7816_StatusReset() ) {
-        // 0: An ICC is present and active (power is on and stable, RST is inactive
-        ccidDriver.sCcidMessage.bStatus = 0;
-    }
-    else {
-        // 1: An ICC is present and inactive (not activated or shut down by hardware error)
-        ccidDriver.sCcidMessage.bStatus = 1;
-    }
+	// bmIccStatus
+	if( ISO7816_StatusReset() ) {
+		// 0: An ICC is present and active (power is on and stable, RST is inactive
+		ccidDriver.sCcidMessage.bStatus = 0;
+	}
+	else {
+		// 1: An ICC is present and inactive (not activated or shut down by hardware error)
+		ccidDriver.sCcidMessage.bStatus = 1;
+	}
 
-    RDRtoPCParameters();
+	RDRtoPCParameters();
 }
 
 //------------------------------------------------------------------------------
@@ -520,12 +520,12 @@ static void PCtoRDRGetParameters( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRResetParameters( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    ccidDriver.SlotStatus = ICC_NOT_PRESENT;
-    ccidDriver.sCcidMessage.bStatus = ccidDriver.SlotStatus;
+	ccidDriver.SlotStatus = ICC_NOT_PRESENT;
+	ccidDriver.sCcidMessage.bStatus = ccidDriver.SlotStatus;
 
-    RDRtoPCParameters();
+	RDRtoPCParameters();
 }
 
 //------------------------------------------------------------------------------
@@ -534,13 +534,13 @@ static void PCtoRDRResetParameters( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRSetParameters( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    ccidDriver.SlotStatus = ccidDriver.sCcidCommand.bSlot;
-    ccidDriver.sCcidMessage.bStatus = ccidDriver.SlotStatus;
-    // Not all feature supported
+	ccidDriver.SlotStatus = ccidDriver.sCcidCommand.bSlot;
+	ccidDriver.sCcidMessage.bStatus = ccidDriver.SlotStatus;
+	// Not all feature supported
 
-    RDRtoPCParameters();
+	RDRtoPCParameters();
 }
 
 //------------------------------------------------------------------------------
@@ -551,13 +551,13 @@ static void PCtoRDRSetParameters( void )
 //------------------------------------------------------------------------------
 static void PCtoRDREscape( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // If needed by the user
-    ISO7816_Escape();
+	// If needed by the user
+	ISO7816_Escape();
 
-    // stub, return all value send
-    RDRtoPCEscape( ccidDriver.sCcidCommand.wLength, ccidDriver.sCcidCommand.APDU);    
+	// stub, return all value send
+	RDRtoPCEscape( ccidDriver.sCcidCommand.wLength, ccidDriver.sCcidCommand.APDU);    
 }
 
 //------------------------------------------------------------------------------
@@ -566,18 +566,18 @@ static void PCtoRDREscape( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRICCClock( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    if( 0 == ccidDriver.sCcidCommand.bSpecific_0 ) {
-        // restarts the clock
-        ISO7816_RestartClock();
-    }
-    else {
-        // stop clock in the state shown in the bClockStop field
-        ISO7816_StopClock();
-    }
+	if( 0 == ccidDriver.sCcidCommand.bSpecific_0 ) {
+		// restarts the clock
+		ISO7816_RestartClock();
+	}
+	else {
+		// stop clock in the state shown in the bClockStop field
+		ISO7816_StopClock();
+	}
 
-    RDRtoPCSlotStatus( );    
+	RDRtoPCSlotStatus( );    
 }
 
 //------------------------------------------------------------------------------
@@ -587,22 +587,22 @@ static void PCtoRDRICCClock( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRtoAPDU( void )
 {
-    unsigned char bmChanges;
-    unsigned char bClassGetResponse;
-    unsigned char bClassEnvelope;
+	unsigned char bmChanges;
+	unsigned char bClassGetResponse;
+	unsigned char bClassEnvelope;
 
-    TRACE_INFO(".");
+	TRACE_INFO(".");
 
-    if( configurationDescriptorsFS->ccid.dwFeatures == (CCID_FEATURES_EXC_SAPDU|CCID_FEATURES_EXC_APDU) ) {
+	if( configurationDescriptorsFS->ccid.dwFeatures == (CCID_FEATURES_EXC_SAPDU|CCID_FEATURES_EXC_APDU) ) {
 
-        bmChanges = ccidDriver.sCcidCommand.bSpecific_0;
-        bClassGetResponse = ccidDriver.sCcidCommand.bSpecific_1;
-        bClassEnvelope = ccidDriver.sCcidCommand.bSpecific_2;
+		bmChanges = ccidDriver.sCcidCommand.bSpecific_0;
+		bClassGetResponse = ccidDriver.sCcidCommand.bSpecific_1;
+		bClassEnvelope = ccidDriver.sCcidCommand.bSpecific_2;
 
-        ISO7816_toAPDU();
-    }
+		ISO7816_toAPDU();
+	}
 
-    RDRtoPCSlotStatus();    
+	RDRtoPCSlotStatus();    
 }
 
 //------------------------------------------------------------------------------
@@ -612,9 +612,9 @@ static void PCtoRDRtoAPDU( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRSecure( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    TRACE_DEBUG("For user\n\r");
+	TRACE_DEBUG("For user\n\r");
 }
 
 //------------------------------------------------------------------------------
@@ -627,10 +627,10 @@ static void PCtoRDRSecure( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRMechanical( void )
 {
-    TRACE_DEBUG(".");
-    TRACE_DEBUG("Not implemented\n\r");
+	TRACE_DEBUG(".");
+	TRACE_DEBUG("Not implemented\n\r");
 
-    RDRtoPCSlotStatus();
+	RDRtoPCSlotStatus();
 }
 
 //------------------------------------------------------------------------------
@@ -641,9 +641,9 @@ static void PCtoRDRMechanical( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRAbort( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    RDRtoPCSlotStatus();
+	RDRtoPCSlotStatus();
 }
 
 //------------------------------------------------------------------------------
@@ -653,24 +653,24 @@ static void PCtoRDRAbort( void )
 //------------------------------------------------------------------------------
 static void PCtoRDRSetDataRateAndClockFrequency( void )
 {
-    unsigned int dwClockFrequency;
-    unsigned int dwDataRate;
+	unsigned int dwClockFrequency;
+	unsigned int dwDataRate;
 
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    dwClockFrequency = ccidDriver.sCcidCommand.APDU[0]
-                     + (ccidDriver.sCcidCommand.APDU[1]<<8)
-                     + (ccidDriver.sCcidCommand.APDU[2]<<16)
-                     + (ccidDriver.sCcidCommand.APDU[3]<<24);
+	dwClockFrequency = ccidDriver.sCcidCommand.APDU[0]
+					 + (ccidDriver.sCcidCommand.APDU[1]<<8)
+					 + (ccidDriver.sCcidCommand.APDU[2]<<16)
+					 + (ccidDriver.sCcidCommand.APDU[3]<<24);
 
-    dwDataRate = ccidDriver.sCcidCommand.APDU[4]
-               + (ccidDriver.sCcidCommand.APDU[5]<<8)
-               + (ccidDriver.sCcidCommand.APDU[6]<<16)
-               + (ccidDriver.sCcidCommand.APDU[7]<<24);
+	dwDataRate = ccidDriver.sCcidCommand.APDU[4]
+			   + (ccidDriver.sCcidCommand.APDU[5]<<8)
+			   + (ccidDriver.sCcidCommand.APDU[6]<<16)
+			   + (ccidDriver.sCcidCommand.APDU[7]<<24);
 
-    ISO7816_SetDataRateandClockFrequency( dwClockFrequency, dwDataRate );
+	ISO7816_SetDataRateandClockFrequency( dwClockFrequency, dwDataRate );
 
-    RDRtoPCDataRateAndClockFrequency( dwClockFrequency, dwDataRate );
+	RDRtoPCDataRateAndClockFrequency( dwClockFrequency, dwDataRate );
 
 }
 
@@ -679,20 +679,20 @@ static void PCtoRDRSetDataRateAndClockFrequency( void )
 //------------------------------------------------------------------------------
 static void vCCIDCommandNotSupported( void )
 {
-    // Command not supported
-    // vCCIDReportError(CMD_NOT_SUPPORTED);
+	// Command not supported
+	// vCCIDReportError(CMD_NOT_SUPPORTED);
 
-    TRACE_DEBUG("CMD_NOT_SUPPORTED\n\r");
+	TRACE_DEBUG("CMD_NOT_SUPPORTED\n\r");
 
-    // Header fields settings
-    ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
-    ccidDriver.sCcidMessage.wLength      = 0;
-    ccidDriver.sCcidMessage.bSpecific    = 0;
+	// Header fields settings
+	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
+	ccidDriver.sCcidMessage.wLength      = 0;
+	ccidDriver.sCcidMessage.bSpecific    = 0;
 
-    ccidDriver.sCcidMessage.bStatus |= ICC_CS_FAILED;
+	ccidDriver.sCcidMessage.bStatus |= ICC_CS_FAILED;
 
-    // Send the response to the host
-    //vCCIDSendResponse();
+	// Send the response to the host
+	//vCCIDSendResponse();
 }
 
 //------------------------------------------------------------------------------
@@ -700,15 +700,15 @@ static void vCCIDCommandNotSupported( void )
 //------------------------------------------------------------------------------
 static void vCCIDSendResponse( void )
 {
-    unsigned char bStatus;
-    TRACE_DEBUG(".");
+	unsigned char bStatus;
+	TRACE_DEBUG(".");
 
-    do {
-        bStatus = CCID_Write((void*)&ccidDriver.sCcidMessage,
-                              ccidDriver.sCcidMessage.bSizeToSend, 0, 0 );
-    } while (bStatus != USBD_STATUS_SUCCESS);
+	do {
+		bStatus = CCID_Write((void*)&ccidDriver.sCcidMessage,
+					          ccidDriver.sCcidMessage.bSizeToSend, 0, 0 );
+	} while (bStatus != USBD_STATUS_SUCCESS);
 
-    TRACE_DEBUG("bStatus: 0x%x\n\r", bStatus);
+	TRACE_DEBUG("bStatus: 0x%x\n\r", bStatus);
 }
 
 
@@ -717,133 +717,133 @@ static void vCCIDSendResponse( void )
 //------------------------------------------------------------------------------
 static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transferred, uint32_t remaining )
 {
-    unsigned char MessageToSend = 0;
+	unsigned char MessageToSend = 0;
 
-    if (status != USBD_STATUS_SUCCESS) {
-        TRACE_ERROR("USB error: %d", status);
-        return;
-    }
-    TRACE_DEBUG("Command: 0x%X 0x%x 0x%X 0x%X 0x%X 0x%X 0x%X\n\r\n\r",
-                   (unsigned int)ccidDriver.sCcidCommand.bMessageType,
-                   (unsigned int)ccidDriver.sCcidCommand.wLength,
-                   (unsigned int)ccidDriver.sCcidCommand.bSlot,
-                   (unsigned int)ccidDriver.sCcidCommand.bSeq,
-                   (unsigned int)ccidDriver.sCcidCommand.bSpecific_0,
-                   (unsigned int)ccidDriver.sCcidCommand.bSpecific_1,
-                   (unsigned int)ccidDriver.sCcidCommand.bSpecific_2);
+	if (status != USBD_STATUS_SUCCESS) {
+		TRACE_ERROR("USB error: %d", status);
+		return;
+	}
+	TRACE_DEBUG("Command: 0x%X 0x%x 0x%X 0x%X 0x%X 0x%X 0x%X\n\r\n\r",
+				   (unsigned int)ccidDriver.sCcidCommand.bMessageType,
+				   (unsigned int)ccidDriver.sCcidCommand.wLength,
+				   (unsigned int)ccidDriver.sCcidCommand.bSlot,
+				   (unsigned int)ccidDriver.sCcidCommand.bSeq,
+				   (unsigned int)ccidDriver.sCcidCommand.bSpecific_0,
+				   (unsigned int)ccidDriver.sCcidCommand.bSpecific_1,
+				   (unsigned int)ccidDriver.sCcidCommand.bSpecific_2);
 
-    // Check the slot number
-    if ( ccidDriver.sCcidCommand.bSlot > 0 ) {
+	// Check the slot number
+	if ( ccidDriver.sCcidCommand.bSlot > 0 ) {
 
-        TRACE_ERROR("BAD_SLOT_NUMBER\n\r");
-    }
+		TRACE_ERROR("BAD_SLOT_NUMBER\n\r");
+	}
 
-    TRACE_INFO("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+	TRACE_INFO("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
 
-    ccidDriver.sCcidMessage.bStatus = 0;
+	ccidDriver.sCcidMessage.bStatus = 0;
 
-    ccidDriver.sCcidMessage.bSeq  = ccidDriver.sCcidCommand.bSeq;
-    ccidDriver.sCcidMessage.bSlot = ccidDriver.sCcidCommand.bSlot;
+	ccidDriver.sCcidMessage.bSeq  = ccidDriver.sCcidCommand.bSeq;
+	ccidDriver.sCcidMessage.bSlot = ccidDriver.sCcidCommand.bSlot;
 
-    ccidDriver.sCcidMessage.bSizeToSend = sizeof(S_ccid_bulk_in_header)-(ABDATA_SIZE+1);
+	ccidDriver.sCcidMessage.bSizeToSend = sizeof(S_ccid_bulk_in_header)-(ABDATA_SIZE+1);
 
 
-    // Command dispatcher
-    switch ( ccidDriver.sCcidCommand.bMessageType ) {
+	// Command dispatcher
+	switch ( ccidDriver.sCcidCommand.bMessageType ) {
 
-        case PC_TO_RDR_ICCPOWERON:
-            PCtoRDRIccPowerOn();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_ICCPOWERON:
+			PCtoRDRIccPowerOn();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_ICCPOWEROFF:
-            PCtoRDRIccPowerOff();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_ICCPOWEROFF:
+			PCtoRDRIccPowerOff();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_GETSLOTSTATUS:
-            PCtoRDRGetSlotStatus();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_GETSLOTSTATUS:
+			PCtoRDRGetSlotStatus();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_XFRBLOCK:
-            PCtoRDRXfrBlock();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_XFRBLOCK:
+			PCtoRDRXfrBlock();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_GETPARAMETERS:
-            PCtoRDRGetParameters();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_GETPARAMETERS:
+			PCtoRDRGetParameters();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_RESETPARAMETERS:
-            PCtoRDRResetParameters();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_RESETPARAMETERS:
+			PCtoRDRResetParameters();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_SETPARAMETERS:
-            PCtoRDRSetParameters();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_SETPARAMETERS:
+			PCtoRDRSetParameters();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_ESCAPE:
-            PCtoRDREscape();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_ESCAPE:
+			PCtoRDREscape();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_ICCCLOCK:
-            PCtoRDRICCClock();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_ICCCLOCK:
+			PCtoRDRICCClock();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_T0APDU:
-            // Only CCIDs reporting a short or extended APDU level in the dwFeatures 
-            // field of the CCID class descriptor may take this command into account.
-            if( (CCID_FEATURES_EXC_SAPDU == (CCID_FEATURES_EXC_SAPDU&configurationDescriptorsFS->ccid.dwFeatures))
-            || (CCID_FEATURES_EXC_APDU  == (CCID_FEATURES_EXC_APDU &configurationDescriptorsFS->ccid.dwFeatures)) ) {
+		case PC_TO_RDR_T0APDU:
+			// Only CCIDs reporting a short or extended APDU level in the dwFeatures 
+			// field of the CCID class descriptor may take this command into account.
+			if( (CCID_FEATURES_EXC_SAPDU == (CCID_FEATURES_EXC_SAPDU&configurationDescriptorsFS->ccid.dwFeatures))
+			|| (CCID_FEATURES_EXC_APDU  == (CCID_FEATURES_EXC_APDU &configurationDescriptorsFS->ccid.dwFeatures)) ) {
 
-                // command supported
-                PCtoRDRtoAPDU();
-            }
-            else {
-                // command not supported
-                TRACE_INFO("Not supported: PC_TO_RDR_T0APDU\n\r");
-                vCCIDCommandNotSupported();
-            }
-            MessageToSend = 1;
-            break;
+				// command supported
+				PCtoRDRtoAPDU();
+			}
+			else {
+				// command not supported
+				TRACE_INFO("Not supported: PC_TO_RDR_T0APDU\n\r");
+				vCCIDCommandNotSupported();
+			}
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_SECURE:
-            PCtoRDRSecure();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_SECURE:
+			PCtoRDRSecure();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_MECHANICAL:
-            PCtoRDRMechanical();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_MECHANICAL:
+			PCtoRDRMechanical();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_ABORT:
-            PCtoRDRAbort();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_ABORT:
+			PCtoRDRAbort();
+			MessageToSend = 1;
+			break;
 
-        case PC_TO_RDR_SETDATARATEANDCLOCKFREQUENCY:
-            PCtoRDRSetDataRateAndClockFrequency();
-            MessageToSend = 1;
-            break;
+		case PC_TO_RDR_SETDATARATEANDCLOCKFREQUENCY:
+			PCtoRDRSetDataRateAndClockFrequency();
+			MessageToSend = 1;
+			break;
 
-        default:
-            TRACE_DEBUG("default: Not supported: 0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
-            vCCIDCommandNotSupported();
-            MessageToSend = 1;
-            break;
+		default:
+			TRACE_DEBUG("default: Not supported: 0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+			vCCIDCommandNotSupported();
+			MessageToSend = 1;
+			break;
 
-    }
+	}
 
-    if( MessageToSend == 1 ) {
-        vCCIDSendResponse();
-    }
+	if( MessageToSend == 1 ) {
+		vCCIDSendResponse();
+	}
 }
 
 
@@ -853,49 +853,49 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 //------------------------------------------------------------------------------
 static void CCID_RequestHandler(const USBGenericRequest *pRequest)
 {
-    TRACE_DEBUG("CCID_RHl\n\r");
+	TRACE_DEBUG("CCID_RHl\n\r");
 
-    // Check if this is a class request
-    if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_CLASS) {
+	// Check if this is a class request
+	if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_CLASS) {
 
-        // Check if the request is supported
-        switch (USBGenericRequest_GetRequest(pRequest)) {
+		// Check if the request is supported
+		switch (USBGenericRequest_GetRequest(pRequest)) {
 
-            case CCIDGenericRequest_ABORT:
-                TRACE_DEBUG("CCIDGenericRequest_ABORT\n\r");
-                break;
+			case CCIDGenericRequest_ABORT:
+				TRACE_DEBUG("CCIDGenericRequest_ABORT\n\r");
+				break;
 
-            case CCIDGenericRequest_GET_CLOCK_FREQUENCIES:
-                TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_CLOCK_FREQUENCIES\n\r");
-                // A CCID with bNumClockSupported equal to 00h does not have 
-                // to support this request
-                break;
+			case CCIDGenericRequest_GET_CLOCK_FREQUENCIES:
+				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_CLOCK_FREQUENCIES\n\r");
+				// A CCID with bNumClockSupported equal to 00h does not have 
+				// to support this request
+				break;
 
-            case CCIDGenericRequest_GET_DATA_RATES:
-                TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_DATA_RATES\n\r");
-                // A CCID with bNumDataRatesSupported equal to 00h does not have 
-                // to support this request.
-                break;
+			case CCIDGenericRequest_GET_DATA_RATES:
+				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_DATA_RATES\n\r");
+				// A CCID with bNumDataRatesSupported equal to 00h does not have 
+				// to support this request.
+				break;
 
-            default:
-                TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request (%d)\n\r",
-                                                    USBGenericRequest_GetRequest(pRequest));
-                USBD_Stall(0);
-        }
-    }
+			default:
+				TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request (%d)\n\r",
+					                                USBGenericRequest_GetRequest(pRequest));
+				USBD_Stall(0);
+		}
+	}
 
-    else if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_STANDARD) {
+	else if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_STANDARD) {
 
-        // Forward request to the standard handler
-        USBDDriver_RequestHandler(USBD_GetDriver(), pRequest);
-    }
-    else {
+		// Forward request to the standard handler
+		USBDDriver_RequestHandler(USBD_GetDriver(), pRequest);
+	}
+	else {
 
-        // Unsupported request type
-        TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request type (%d)\n\r",
-                                                    USBGenericRequest_GetType(pRequest));
-        USBD_Stall(0);
-    }
+		// Unsupported request type
+		TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request type (%d)\n\r",
+					                                USBGenericRequest_GetType(pRequest));
+		USBD_Stall(0);
+	}
 }
 
 
@@ -910,7 +910,7 @@ static void CCID_RequestHandler(const USBGenericRequest *pRequest)
 // not static function
 void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 {
-    CCID_RequestHandler(request);
+	CCID_RequestHandler(request);
 }
 #endif
 
@@ -920,17 +920,17 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 //------------------------------------------------------------------------------
 void CCID_SmartCardRequest( void )
 {
-    unsigned char bStatus;
-    TRACE_DEBUG("CCID_req\n");
+	unsigned char bStatus;
+	TRACE_DEBUG("CCID_req\n");
 
-    do {
+	do {
 
-        bStatus = CCID_Read( (void*)&ccidDriver.sCcidCommand,
-                             sizeof(S_ccid_bulk_out_header),
-                             (TransferCallback)&CCIDCommandDispatcher,
-                             (void*)0 );
-    }
-    while (0);
+		bStatus = CCID_Read( (void*)&ccidDriver.sCcidCommand,
+					         sizeof(S_ccid_bulk_out_header),
+					         (TransferCallback)&CCIDCommandDispatcher,
+					         (void*)0 );
+	}
+	while (0);
 }
 
 
@@ -943,11 +943,11 @@ void CCID_SmartCardRequest( void )
 /// \return USBD_STATUS_LOCKED or USBD_STATUS_SUCCESS
 //------------------------------------------------------------------------------
 unsigned char CCID_Read(void *pBuffer,
-                        unsigned int dLength,
-                        TransferCallback fCallback,
-                        void *pArgument)
+					    unsigned int dLength,
+					    TransferCallback fCallback,
+					    void *pArgument)
 {
-    return USBD_Read(CCID_EPT_DATA_OUT, pBuffer, dLength, fCallback, pArgument);
+	return USBD_Read(CCID_EPT_DATA_OUT, pBuffer, dLength, fCallback, pArgument);
 }
 
 //------------------------------------------------------------------------------
@@ -959,11 +959,11 @@ unsigned char CCID_Read(void *pBuffer,
 /// \return USBD_STATUS_LOCKED or USBD_STATUS_SUCCESS
 //------------------------------------------------------------------------------
 unsigned char CCID_Write(void *pBuffer,
-                         unsigned int dLength,
-                         TransferCallback fCallback,
-                         void *pArgument)
+					     unsigned int dLength,
+					     TransferCallback fCallback,
+					     void *pArgument)
 {
-    return USBD_Write(CCID_EPT_DATA_IN, pBuffer, dLength, fCallback, pArgument);
+	return USBD_Write(CCID_EPT_DATA_IN, pBuffer, dLength, fCallback, pArgument);
 }
 
 //------------------------------------------------------------------------------
@@ -973,15 +973,15 @@ unsigned char CCID_Write(void *pBuffer,
 //------------------------------------------------------------------------------
 unsigned char CCID_Insertion( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Build the Interrupt-IN message
-    ccidDriver.BufferINT[0] = RDR_TO_PC_NOTIFYSLOTCHANGE;
-    ccidDriver.BufferINT[1] = ICC_INSERTED_EVENT;
-    ccidDriver.SlotStatus   = ICC_INSERTED_EVENT;
+	// Build the Interrupt-IN message
+	ccidDriver.BufferINT[0] = RDR_TO_PC_NOTIFYSLOTCHANGE;
+	ccidDriver.BufferINT[1] = ICC_INSERTED_EVENT;
+	ccidDriver.SlotStatus   = ICC_INSERTED_EVENT;
 
-    // Notify the host that a ICC is inserted
-    return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 2, 0, 0 );
+	// Notify the host that a ICC is inserted
+	return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 2, 0, 0 );
 }
 
 //------------------------------------------------------------------------------
@@ -991,15 +991,15 @@ unsigned char CCID_Insertion( void )
 //------------------------------------------------------------------------------
 unsigned char CCID_Removal( void )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Build the Interrupt-IN message
-    ccidDriver.BufferINT[0] = RDR_TO_PC_NOTIFYSLOTCHANGE;
-    ccidDriver.BufferINT[1] = ICC_NOT_PRESENT;
-    ccidDriver.SlotStatus   = ICC_NOT_PRESENT;
+	// Build the Interrupt-IN message
+	ccidDriver.BufferINT[0] = RDR_TO_PC_NOTIFYSLOTCHANGE;
+	ccidDriver.BufferINT[1] = ICC_NOT_PRESENT;
+	ccidDriver.SlotStatus   = ICC_NOT_PRESENT;
 
-    // Notify the host that a ICC is inserted
-    return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 2, 0, 0 );
+	// Notify the host that a ICC is inserted
+	return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 2, 0, 0 );
 }
 
 //------------------------------------------------------------------------------
@@ -1014,19 +1014,19 @@ unsigned char CCID_Removal( void )
 /// \return USBD_STATUS_LOCKED or USBD_STATUS_SUCCESS
 //------------------------------------------------------------------------------
 unsigned char RDRtoPCHardwareError( unsigned char bSlot, 
-                                    unsigned char bSeq, 
-                                    unsigned char bHardwareErrorCode )
+					                unsigned char bSeq, 
+					                unsigned char bHardwareErrorCode )
 {
-    TRACE_DEBUG(".");
+	TRACE_DEBUG(".");
 
-    // Build the Interrupt-IN message
-    ccidDriver.BufferINT[0] = RDR_TO_PC_HARDWAREERROR;
-    ccidDriver.BufferINT[1] = bSlot;
-    ccidDriver.BufferINT[2] = bSeq;
-    ccidDriver.BufferINT[3] = bHardwareErrorCode;
+	// Build the Interrupt-IN message
+	ccidDriver.BufferINT[0] = RDR_TO_PC_HARDWAREERROR;
+	ccidDriver.BufferINT[1] = bSlot;
+	ccidDriver.BufferINT[2] = bSeq;
+	ccidDriver.BufferINT[3] = bHardwareErrorCode;
 
-    // Notify the host that a ICC is inserted
-    return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 4, 0, 0 );
+	// Notify the host that a ICC is inserted
+	return USBD_Write( CCID_EPT_NOTIFICATION, ccidDriver.BufferINT, 4, 0, 0 );
 }
 
 #endif /* HAVE_CCID */

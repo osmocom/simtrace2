@@ -71,59 +71,59 @@ void ResetException( void ) ;
 __attribute__((section(".vectors")))
 IntFunc exception_table[] = {
 
-    /* Configure Initial Stack Pointer, using linker-generated symbols */
-    (IntFunc)(&pdwStack[STACK_SIZE-1]),
-    ResetException,
+	/* Configure Initial Stack Pointer, using linker-generated symbols */
+	(IntFunc)(&pdwStack[STACK_SIZE-1]),
+	ResetException,
 
-    NMI_Handler,
-    HardFault_Handler,
-    MemManage_Handler,
-    BusFault_Handler,
-    UsageFault_Handler,
-    0, 0, 0, 0,         /* Reserved */
-    SVC_Handler,
-    DebugMon_Handler,
-    0,                  /* Reserved  */
-    PendSV_Handler,
-    SysTick_Handler,
+	NMI_Handler,
+	HardFault_Handler,
+	MemManage_Handler,
+	BusFault_Handler,
+	UsageFault_Handler,
+	0, 0, 0, 0,         /* Reserved */
+	SVC_Handler,
+	DebugMon_Handler,
+	0,                  /* Reserved  */
+	PendSV_Handler,
+	SysTick_Handler,
 
-    /* Configurable interrupts  */
-    SUPC_IrqHandler,    /* 0  Supply Controller */
-    RSTC_IrqHandler,    /* 1  Reset Controller */
-    RTC_IrqHandler,     /* 2  Real Time Clock */
-    RTT_IrqHandler,     /* 3  Real Time Timer */
-    WDT_IrqHandler,     /* 4  Watchdog Timer */
-    PMC_IrqHandler,     /* 5  PMC */
-    EEFC_IrqHandler,    /* 6  EEFC */
-    IrqHandlerNotUsed,  /* 7  Reserved */
-    UART0_IrqHandler,   /* 8  UART0 */
-    UART1_IrqHandler,   /* 9  UART1 */
-    SMC_IrqHandler,     /* 10 SMC */
-    PIOA_IrqHandler,    /* 11 Parallel IO Controller A */
-    PIOB_IrqHandler,    /* 12 Parallel IO Controller B */
-    PIOC_IrqHandler,    /* 13 Parallel IO Controller C */
-    USART0_IrqHandler,  /* 14 USART 0 */
-    USART1_IrqHandler,  /* 15 USART 1 */
-    IrqHandlerNotUsed,  /* 16 Reserved */
-    IrqHandlerNotUsed,  /* 17 Reserved */
-    MCI_IrqHandler,     /* 18 MCI */
-    TWI0_IrqHandler,    /* 19 TWI 0 */
-    TWI1_IrqHandler,    /* 20 TWI 1 */
-    SPI_IrqHandler,     /* 21 SPI */
-    SSC_IrqHandler,     /* 22 SSC */
-    TC0_IrqHandler,     /* 23 Timer Counter 0 */
-    TC1_IrqHandler,     /* 24 Timer Counter 1 */
-    TC2_IrqHandler,     /* 25 Timer Counter 2 */
-    TC3_IrqHandler,     /* 26 Timer Counter 3 */
-    TC4_IrqHandler,     /* 27 Timer Counter 4 */
-    TC5_IrqHandler,     /* 28 Timer Counter 5 */
-    ADC_IrqHandler,     /* 29 ADC controller */
-    DAC_IrqHandler,     /* 30 DAC controller */
-    PWM_IrqHandler,     /* 31 PWM */
-    CRCCU_IrqHandler,   /* 32 CRC Calculation Unit */
-    ACC_IrqHandler,     /* 33 Analog Comparator */
-    USBD_IrqHandler,    /* 34 USB Device Port */
-    IrqHandlerNotUsed   /* 35 not used */
+	/* Configurable interrupts  */
+	SUPC_IrqHandler,    /* 0  Supply Controller */
+	RSTC_IrqHandler,    /* 1  Reset Controller */
+	RTC_IrqHandler,     /* 2  Real Time Clock */
+	RTT_IrqHandler,     /* 3  Real Time Timer */
+	WDT_IrqHandler,     /* 4  Watchdog Timer */
+	PMC_IrqHandler,     /* 5  PMC */
+	EEFC_IrqHandler,    /* 6  EEFC */
+	IrqHandlerNotUsed,  /* 7  Reserved */
+	UART0_IrqHandler,   /* 8  UART0 */
+	UART1_IrqHandler,   /* 9  UART1 */
+	SMC_IrqHandler,     /* 10 SMC */
+	PIOA_IrqHandler,    /* 11 Parallel IO Controller A */
+	PIOB_IrqHandler,    /* 12 Parallel IO Controller B */
+	PIOC_IrqHandler,    /* 13 Parallel IO Controller C */
+	USART0_IrqHandler,  /* 14 USART 0 */
+	USART1_IrqHandler,  /* 15 USART 1 */
+	IrqHandlerNotUsed,  /* 16 Reserved */
+	IrqHandlerNotUsed,  /* 17 Reserved */
+	MCI_IrqHandler,     /* 18 MCI */
+	TWI0_IrqHandler,    /* 19 TWI 0 */
+	TWI1_IrqHandler,    /* 20 TWI 1 */
+	SPI_IrqHandler,     /* 21 SPI */
+	SSC_IrqHandler,     /* 22 SSC */
+	TC0_IrqHandler,     /* 23 Timer Counter 0 */
+	TC1_IrqHandler,     /* 24 Timer Counter 1 */
+	TC2_IrqHandler,     /* 25 Timer Counter 2 */
+	TC3_IrqHandler,     /* 26 Timer Counter 3 */
+	TC4_IrqHandler,     /* 27 Timer Counter 4 */
+	TC5_IrqHandler,     /* 28 Timer Counter 5 */
+	ADC_IrqHandler,     /* 29 ADC controller */
+	DAC_IrqHandler,     /* 30 DAC controller */
+	PWM_IrqHandler,     /* 31 PWM */
+	CRCCU_IrqHandler,   /* 32 CRC Calculation Unit */
+	ACC_IrqHandler,     /* 33 Analog Comparator */
+	USBD_IrqHandler,    /* 34 USB Device Port */
+	IrqHandlerNotUsed   /* 35 not used */
 };
 
 #if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
@@ -153,56 +153,56 @@ static void BootIntoApp(void)
  */
 void ResetException( void )
 {
-    uint32_t *pSrc, *pDest ;
+	uint32_t *pSrc, *pDest ;
 
-    /* Low level Initialize */
-    LowLevelInit() ;
+	/* Low level Initialize */
+	LowLevelInit() ;
 
 
 #if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
-    if (!USBDFU_OverrideEnterDFU()) {
-        UART_Exit();
-        __disable_irq();
-        BootIntoApp();
-        /* Infinite loop */
-        while ( 1 ) ;
-    }
+	if (!USBDFU_OverrideEnterDFU()) {
+		UART_Exit();
+		__disable_irq();
+		BootIntoApp();
+		/* Infinite loop */
+		while ( 1 ) ;
+	}
 #endif
 
-    /* Initialize the relocate segment */
-    pSrc = &_etext ;
-    pDest = &_srelocate ;
+	/* Initialize the relocate segment */
+	pSrc = &_etext ;
+	pDest = &_srelocate ;
 
-    if ( pSrc != pDest )
-    {
-        for ( ; pDest < &_erelocate ; )
-        {
-            *pDest++ = *pSrc++ ;
-        }
-    }
+	if ( pSrc != pDest )
+	{
+		for ( ; pDest < &_erelocate ; )
+		{
+		    *pDest++ = *pSrc++ ;
+		}
+	}
 
-    /* Clear the zero segment */
-    for ( pDest = &_szero ; pDest < &_ezero ; )
-    {
-        *pDest++ = 0;
-    }
+	/* Clear the zero segment */
+	for ( pDest = &_szero ; pDest < &_ezero ; )
+	{
+		*pDest++ = 0;
+	}
 
-    /* Set the vector table base address */
-    pSrc = (uint32_t *)&_sfixed;
-    SCB->VTOR = ( (uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk ) ;
-    
-    if ( ((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE) )
-    {
+	/* Set the vector table base address */
+	pSrc = (uint32_t *)&_sfixed;
+	SCB->VTOR = ( (uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk ) ;
+	
+	if ( ((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE) )
+	{
 	    SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
-    }
+	}
 
-    /* App should have disabled interrupts during the transition */
-    __enable_irq();
+	/* App should have disabled interrupts during the transition */
+	__enable_irq();
 
-    /* Branch to main function */
-    main() ;
+	/* Branch to main function */
+	main() ;
 
-    /* Infinite loop */
-    while ( 1 ) ;
+	/* Infinite loop */
+	while ( 1 ) ;
 }
 

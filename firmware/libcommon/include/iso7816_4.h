@@ -76,9 +76,9 @@ extern uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart);
 
 extern void ISO7816_IccPowerOff(void);
 extern uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
-                                        uint8_t *pMessage,
-                                        uint16_t wLength,
-                                        uint16_t *retlen);
+					                    uint8_t *pMessage,
+					                    uint16_t wLength,
+					                    uint16_t *retlen);
 extern void ISO7816_Escape( void );
 extern void ISO7816_RestartClock(void);
 extern void ISO7816_StopClock( void );

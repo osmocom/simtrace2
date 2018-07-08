@@ -66,41 +66,41 @@ static ringbuf uart_tx_buffer;
  */
 extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 {
-    const Pin pPins[] = CONSOLE_PINS;
-    Uart *pUart = CONSOLE_UART;
+	const Pin pPins[] = CONSOLE_PINS;
+	Uart *pUart = CONSOLE_UART;
 
-    /* Configure PIO */
-    PIO_Configure(pPins, PIO_LISTSIZE(pPins));
+	/* Configure PIO */
+	PIO_Configure(pPins, PIO_LISTSIZE(pPins));
 
-    /* Configure PMC */
-    PMC->PMC_PCER0 = 1 << CONSOLE_ID;
+	/* Configure PMC */
+	PMC->PMC_PCER0 = 1 << CONSOLE_ID;
 
-    /* Reset and disable receiver & transmitter */
-    pUart->UART_CR = UART_CR_RSTRX | UART_CR_RSTTX
-                   | UART_CR_RXDIS | UART_CR_TXDIS;
+	/* Reset and disable receiver & transmitter */
+	pUart->UART_CR = UART_CR_RSTRX | UART_CR_RSTTX
+				   | UART_CR_RXDIS | UART_CR_TXDIS;
 
-    /* Configure mode */
-    pUart->UART_MR =  UART_MR_PAR_NO;
+	/* Configure mode */
+	pUart->UART_MR =  UART_MR_PAR_NO;
 
-    /* Configure baudrate */
-    /* Asynchronous, no oversampling */
-    pUart->UART_BRGR = (masterClock / baudrate) / 16;
+	/* Configure baudrate */
+	/* Asynchronous, no oversampling */
+	pUart->UART_BRGR = (masterClock / baudrate) / 16;
 
-    /* Disable PDC channel */
-    pUart->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
+	/* Disable PDC channel */
+	pUart->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
 
-    /* Reset transmit ring buffer */
-    rbuf_reset(&uart_tx_buffer);
+	/* Reset transmit ring buffer */
+	rbuf_reset(&uart_tx_buffer);
 
-    /* Enable TX interrupts */
-    pUart->UART_IER = UART_IER_TXRDY;
-    NVIC_EnableIRQ(CONSOLE_IRQ);
-    
-    /* Enable receiver and transmitter */
-    pUart->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
+	/* Enable TX interrupts */
+	pUart->UART_IER = UART_IER_TXRDY;
+	NVIC_EnableIRQ(CONSOLE_IRQ);
+	
+	/* Enable receiver and transmitter */
+	pUart->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
 
-    /* Remember the configuration is complete */
-    _ucIsConsoleInitialized=1 ;
+	/* Remember the configuration is complete */
+	_ucIsConsoleInitialized=1 ;
 }
 
 /**
@@ -140,22 +140,22 @@ void CONSOLE_ISR(void)
  */
 extern void UART_PutChar( uint8_t c )
 {
-    Uart *pUart = CONSOLE_UART ;
+	Uart *pUart = CONSOLE_UART ;
 
-    /* Initialize console is not already done */
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
-    }
+	/* Initialize console is not already done */
+	if ( !_ucIsConsoleInitialized )
+	{
+		UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
+	}
 
-    /* Only store input if buffer is not full, else drop it */
-    if (!rbuf_is_full(&uart_tx_buffer)) {
-        rbuf_write(&uart_tx_buffer, c);
-        if (!(pUart->UART_IMR & UART_IMR_TXRDY)) {
-            pUart->UART_IER = UART_IER_TXRDY;
-            CONSOLE_ISR();
-        }
-    }
+	/* Only store input if buffer is not full, else drop it */
+	if (!rbuf_is_full(&uart_tx_buffer)) {
+		rbuf_write(&uart_tx_buffer, c);
+		if (!(pUart->UART_IMR & UART_IMR_TXRDY)) {
+			pUart->UART_IER = UART_IER_TXRDY;
+			CONSOLE_ISR();
+		}
+	}
 }
 
 /**
@@ -166,17 +166,17 @@ extern void UART_PutChar( uint8_t c )
  */
 extern uint32_t UART_GetChar( void )
 {
-    Uart *pUart = CONSOLE_UART ;
+	Uart *pUart = CONSOLE_UART ;
 
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
-    }
+	if ( !_ucIsConsoleInitialized )
+	{
+		UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
+	}
 
-    while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 )
-        WDT_Restart(WDT);
+	while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 )
+		WDT_Restart(WDT);
 
-    return pUart->UART_RHR ;
+	return pUart->UART_RHR ;
 }
 
 /**
@@ -186,14 +186,14 @@ extern uint32_t UART_GetChar( void )
  */
 extern uint32_t UART_IsRxReady( void )
 {
-    Uart *pUart = CONSOLE_UART;
+	Uart *pUart = CONSOLE_UART;
 
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure( CONSOLE_BAUDRATE, BOARD_MCK ) ;
-    }
+	if ( !_ucIsConsoleInitialized )
+	{
+		UART_Configure( CONSOLE_BAUDRATE, BOARD_MCK ) ;
+	}
 
-    return (pUart->UART_SR & UART_SR_RXRDY) > 0 ;
+	return (pUart->UART_SR & UART_SR_RXRDY) > 0 ;
 }
 
 /**
@@ -204,14 +204,14 @@ extern uint32_t UART_IsRxReady( void )
  */
 extern void UART_DumpFrame( uint8_t* pucFrame, uint32_t dwSize )
 {
-    uint32_t dw ;
+	uint32_t dw ;
 
-    for ( dw=0 ; dw < dwSize ; dw++ )
-    {
-        printf( "%02X ", pucFrame[dw] ) ;
-    }
+	for ( dw=0 ; dw < dwSize ; dw++ )
+	{
+		printf( "%02X ", pucFrame[dw] ) ;
+	}
 
-    printf( "\n\r" ) ;
+	printf( "\n\r" ) ;
 }
 
 /**
@@ -223,62 +223,62 @@ extern void UART_DumpFrame( uint8_t* pucFrame, uint32_t dwSize )
  */
 extern void UART_DumpMemory( uint8_t* pucBuffer, uint32_t dwSize, uint32_t dwAddress )
 {
-    uint32_t i ;
-    uint32_t j ;
-    uint32_t dwLastLineStart ;
-    uint8_t* pucTmp ;
+	uint32_t i ;
+	uint32_t j ;
+	uint32_t dwLastLineStart ;
+	uint8_t* pucTmp ;
 
-    for ( i=0 ; i < (dwSize / 16) ; i++ )
-    {
-        printf( "0x%08X: ", (unsigned int)(dwAddress + (i*16)) ) ;
-        pucTmp = (uint8_t*)&pucBuffer[i*16] ;
+	for ( i=0 ; i < (dwSize / 16) ; i++ )
+	{
+		printf( "0x%08X: ", (unsigned int)(dwAddress + (i*16)) ) ;
+		pucTmp = (uint8_t*)&pucBuffer[i*16] ;
 
-        for ( j=0 ; j < 4 ; j++ )
-        {
-            printf( "%02X%02X%02X%02X ", pucTmp[0], pucTmp[1], pucTmp[2], pucTmp[3] ) ;
-            pucTmp += 4 ;
-        }
+		for ( j=0 ; j < 4 ; j++ )
+		{
+			printf( "%02X%02X%02X%02X ", pucTmp[0], pucTmp[1], pucTmp[2], pucTmp[3] ) ;
+			pucTmp += 4 ;
+		}
 
-        pucTmp=(uint8_t*)&pucBuffer[i*16] ;
+		pucTmp=(uint8_t*)&pucBuffer[i*16] ;
 
-        for ( j=0 ; j < 16 ; j++ )
-        {
-            UART_PutChar( *pucTmp++ ) ;
-        }
+		for ( j=0 ; j < 16 ; j++ )
+		{
+			UART_PutChar( *pucTmp++ ) ;
+		}
 
-        printf( "\n\r" ) ;
-    }
+		printf( "\n\r" ) ;
+	}
 
-    if ( (dwSize%16) != 0 )
-    {
-        dwLastLineStart=dwSize - (dwSize%16) ;
+	if ( (dwSize%16) != 0 )
+	{
+		dwLastLineStart=dwSize - (dwSize%16) ;
 
-        printf( "0x%08X: ", (unsigned int)(dwAddress + dwLastLineStart) ) ;
-        for ( j=dwLastLineStart ; j < dwLastLineStart+16 ; j++ )
-        {
-            if ( (j!=dwLastLineStart) && (j%4 == 0) )
-            {
-                printf( " " ) ;
-            }
+		printf( "0x%08X: ", (unsigned int)(dwAddress + dwLastLineStart) ) ;
+		for ( j=dwLastLineStart ; j < dwLastLineStart+16 ; j++ )
+		{
+			if ( (j!=dwLastLineStart) && (j%4 == 0) )
+			{
+				printf( " " ) ;
+			}
 
-            if ( j < dwSize )
-            {
-                printf( "%02X", pucBuffer[j] ) ;
-            }
-            else
-            {
-                printf("  ") ;
-            }
-        }
+			if ( j < dwSize )
+			{
+				printf( "%02X", pucBuffer[j] ) ;
+			}
+			else
+			{
+				printf("  ") ;
+			}
+		}
 
-        printf( " " ) ;
-        for ( j=dwLastLineStart ; j < dwSize ; j++ )
-        {
-            UART_PutChar( pucBuffer[j] ) ;
-        }
+		printf( " " ) ;
+		for ( j=dwLastLineStart ; j < dwSize ; j++ )
+		{
+			UART_PutChar( pucBuffer[j] ) ;
+		}
 
-        printf( "\n\r" ) ;
-    }
+		printf( "\n\r" ) ;
+	}
 }
 
 /**
@@ -288,46 +288,46 @@ extern void UART_DumpMemory( uint8_t* pucBuffer, uint32_t dwSize, uint32_t dwAdd
  */
 extern uint32_t UART_GetInteger( uint32_t* pdwValue )
 {
-    uint8_t ucKey ;
-    uint8_t ucNbNb=0 ;
-    uint32_t dwValue=0 ;
+	uint8_t ucKey ;
+	uint8_t ucNbNb=0 ;
+	uint32_t dwValue=0 ;
 
-    while ( 1 )
-    {
-        ucKey=UART_GetChar() ;
-        UART_PutChar( ucKey ) ;
+	while ( 1 )
+	{
+		ucKey=UART_GetChar() ;
+		UART_PutChar( ucKey ) ;
 
-        if ( ucKey >= '0' &&  ucKey <= '9' )
-        {
-            dwValue = (dwValue * 10) + (ucKey - '0');
-            ucNbNb++ ;
-        }
-        else
-        {
-            if ( ucKey == 0x0D || ucKey == ' ' )
-            {
-                if ( ucNbNb == 0 )
-                {
-                    printf( "\n\rWrite a number and press ENTER or SPACE!\n\r" ) ;
-                    return 0 ;
-                }
-                else
-                {
-                    printf( "\n\r" ) ;
-                    *pdwValue=dwValue ;
+		if ( ucKey >= '0' &&  ucKey <= '9' )
+		{
+			dwValue = (dwValue * 10) + (ucKey - '0');
+			ucNbNb++ ;
+		}
+		else
+		{
+			if ( ucKey == 0x0D || ucKey == ' ' )
+			{
+				if ( ucNbNb == 0 )
+				{
+					printf( "\n\rWrite a number and press ENTER or SPACE!\n\r" ) ;
+					return 0 ;
+				}
+				else
+				{
+					printf( "\n\r" ) ;
+					*pdwValue=dwValue ;
 
-                    return 1 ;
-                }
-            }
-            else
-            {
-                printf( "\n\r'%c' not a number!\n\r", ucKey ) ;
+					return 1 ;
+				}
+			}
+			else
+			{
+				printf( "\n\r'%c' not a number!\n\r", ucKey ) ;
 
-                return 0 ;
-            }
-        }
-        WDT_Restart(WDT);
-    }
+				return 0 ;
+			}
+		}
+		WDT_Restart(WDT);
+	}
 }
 
 /**
@@ -339,25 +339,25 @@ extern uint32_t UART_GetInteger( uint32_t* pdwValue )
  */
 extern uint32_t UART_GetIntegerMinMax( uint32_t* pdwValue, uint32_t dwMin, uint32_t dwMax )
 {
-    uint32_t dwValue=0 ;
+	uint32_t dwValue=0 ;
 
-    if ( UART_GetInteger( &dwValue ) == 0 )
-    {
-        return 0 ;
-    }
+	if ( UART_GetInteger( &dwValue ) == 0 )
+	{
+		return 0 ;
+	}
 
-    if ( dwValue < dwMin || dwValue > dwMax )
+	if ( dwValue < dwMin || dwValue > dwMax )
  {
-        printf( "\n\rThe number have to be between %d and %d\n\r", (int)dwMin, (int)dwMax ) ;
+		printf( "\n\rThe number have to be between %d and %d\n\r", (int)dwMin, (int)dwMax ) ;
 
-        return 0 ;
-    }
+		return 0 ;
+	}
 
-    printf( "\n\r" ) ;
+	printf( "\n\r" ) ;
 
-    *pdwValue = dwValue ;
+	*pdwValue = dwValue ;
 
-    return 1 ;
+	return 1 ;
 }
 
 /**
@@ -367,45 +367,45 @@ extern uint32_t UART_GetIntegerMinMax( uint32_t* pdwValue, uint32_t dwMin, uint3
  */
 extern uint32_t UART_GetHexa32( uint32_t* pdwValue )
 {
-    uint8_t ucKey ;
-    uint32_t dw = 0 ;
-    uint32_t dwValue = 0 ;
+	uint8_t ucKey ;
+	uint32_t dw = 0 ;
+	uint32_t dwValue = 0 ;
 
-    for ( dw=0 ; dw < 8 ; dw++ )
-    {
-        ucKey = UART_GetChar() ;
-        UART_PutChar( ucKey ) ;
+	for ( dw=0 ; dw < 8 ; dw++ )
+	{
+		ucKey = UART_GetChar() ;
+		UART_PutChar( ucKey ) ;
 
-        if ( ucKey >= '0' &&  ucKey <= '9' )
-        {
-            dwValue = (dwValue * 16) + (ucKey - '0') ;
-        }
-        else
-        {
-            if ( ucKey >= 'A' &&  ucKey <= 'F' )
-            {
-                dwValue = (dwValue * 16) + (ucKey - 'A' + 10) ;
-            }
-            else
-            {
-                if ( ucKey >= 'a' &&  ucKey <= 'f' )
-                {
-                    dwValue = (dwValue * 16) + (ucKey - 'a' + 10) ;
-                }
-                else
-                {
-                    printf( "\n\rIt is not a hexa character!\n\r" ) ;
+		if ( ucKey >= '0' &&  ucKey <= '9' )
+		{
+			dwValue = (dwValue * 16) + (ucKey - '0') ;
+		}
+		else
+		{
+			if ( ucKey >= 'A' &&  ucKey <= 'F' )
+			{
+				dwValue = (dwValue * 16) + (ucKey - 'A' + 10) ;
+			}
+			else
+			{
+				if ( ucKey >= 'a' &&  ucKey <= 'f' )
+				{
+					dwValue = (dwValue * 16) + (ucKey - 'a' + 10) ;
+				}
+				else
+				{
+					printf( "\n\rIt is not a hexa character!\n\r" ) ;
 
-                    return 0 ;
-                }
-            }
-        }
-    }
+					return 0 ;
+				}
+			}
+		}
+	}
 
-    printf("\n\r" ) ;
-    *pdwValue = dwValue ;
+	printf("\n\r" ) ;
+	*pdwValue = dwValue ;
 
-    return 1 ;
+	return 1 ;
 }
 
 #if defined __ICCARM__ /* IAR Ewarm 5.41+ */
@@ -418,9 +418,9 @@ extern uint32_t UART_GetHexa32( uint32_t* pdwValue )
  */
 extern WEAK signed int putchar( signed int c )
 {
-    UART_PutChar( c ) ;
+	UART_PutChar( c ) ;
 
-    return c ;
+	return c ;
 }
 #endif // defined __ICCARM__
 

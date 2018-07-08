@@ -97,7 +97,7 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 static int process_change(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
-	if (len<sizeof(struct sniff_change)) {
+	if (len < sizeof(struct sniff_change)) {
 		return -1;
 	}
 	struct sniff_change *change = (struct sniff_change *)buf;
@@ -141,73 +141,69 @@ static int process_fidi(const uint8_t *buf, int len)
 	return 0;
 }
 
-static int process_atr(const uint8_t *buf, int len)
+static int process_data(enum simtrace_msg_type_sniff type, const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
-	if (len<sizeof(struct sniff_data)) {
+	if (len < sizeof(struct sniff_data)) {
 		return -1;
 	}
-	struct sniff_data *atr = (struct sniff_data *)buf;
+	struct sniff_data *data = (struct sniff_data *)buf;
 
 	/* check if the data is available */
-	if (len<sizeof(struct sniff_data)+atr->length) {
+	if (len < sizeof(struct sniff_data) + data->length) {
 		return -2;
 	}
 
-	printf("ATR%s: ", atr->complete ? "" : " (incomplete)");
+	/* check type */
+	if (type != SIMTRACE_MSGT_SNIFF_ATR && type != SIMTRACE_MSGT_SNIFF_PPS && type != SIMTRACE_MSGT_SNIFF_TPDU) {
+		return -3;
+	}
+
+	/* Print message */
+	switch (type) {
+	case SIMTRACE_MSGT_SNIFF_ATR:
+		printf("ATR");
+		break;
+	case SIMTRACE_MSGT_SNIFF_PPS:
+		printf("PPS");
+		break;
+	case SIMTRACE_MSGT_SNIFF_TPDU:
+		printf("TPDU");
+		break;
+	default:
+		printf("???");
+		break;
+	}
+	if (data->flags) {
+		printf(" (");
+		if (data->flags & SNIFF_DATA_FLAG_ERROR_INCOMPLETE) {
+			printf("incomplete");
+			data->flags &= ~SNIFF_DATA_FLAG_ERROR_INCOMPLETE;
+			if (data->flags) {
+				printf(", ");
+			}
+		}
+		if (data->flags & SNIFF_DATA_FLAG_ERROR_MALFORMED) {
+			printf("malformed");
+			data->flags &= ~SNIFF_DATA_FLAG_ERROR_MALFORMED;
+			if (data->flags) {
+				printf(", ");
+			}
+		}
+		printf(")");
+	}
+	printf(": ");
 	uint16_t i;
-	for (i = 0; i < atr->length; i++) {
-		printf("%02x ", atr->data[i]);
-	}
-	printf("\n");
-	return 0;
-}
-
-static int process_pps(const uint8_t *buf, int len)
-{
-	/* check if there is enough data for the structure */
-	if (len<sizeof(struct sniff_data)) {
-		return -1;
-	}
-	struct sniff_data *pps = (struct sniff_data *)buf;
-
-	/* check if the data is available */
-	if (len<sizeof(struct sniff_data)+pps->length) {
-		return -2;
-	}
-
-	printf("PPS%s: ", pps->complete ? "" : " (incomplete) ");
-	uint16_t i;
-	for (i = 0; i < pps->length; i++) {
-		printf("%02x ", pps->data[i]);
-	}
-	printf("\n");
-	return 0;
-}
-
-static int process_tpdu(const uint8_t *buf, int len)
-{
-	/* check if there is enough data for the structure */
-	if (len<sizeof(struct sniff_data)) {
-		return -1;
-	}
-	struct sniff_data *tpdu = (struct sniff_data *)buf;
-
-	/* check if the data is available */
-	if (len<sizeof(struct sniff_data)+tpdu->length) {
-		return -2;
-	}
-
-	/* print TPDU */
-	printf("TPDU%s: ", tpdu->complete ? "" : " (incomplete)");
-	uint16_t i;
-	for (i = 0; i < tpdu->length; i++) {
-		printf("%02x ", tpdu->data[i]);
+	for (i = 0; i < data->length; i++) {
+		printf("%02x ", data->data[i]);
 	}
 	printf("\n");
 
-	/* send TPDU (now considered as APDU) to GSMTAP */
-	gsmtap_send_sim(tpdu->data, tpdu->length);
+	if (SIMTRACE_MSGT_SNIFF_TPDU == type) {
+		/* send TPDU (now considered as APDU) to GSMTAP */
+		gsmtap_send_sim(data->data, data->length);
+	}
+
 	return 0;
 }
 
@@ -215,19 +211,19 @@ static int process_tpdu(const uint8_t *buf, int len)
 static int process_usb_msg(const uint8_t *buf, int len)
 {
 	/* check if enough data for the header is present */
-	if (len<sizeof(struct simtrace_msg_hdr)) {
+	if (len < sizeof(struct simtrace_msg_hdr)) {
 		return 0;
 	}
 
 	/* check if message is complete */
 	struct simtrace_msg_hdr *msg_hdr = (struct simtrace_msg_hdr *)buf;
-	if (len<msg_hdr->msg_len) {
+	if (len < msg_hdr->msg_len) {
 		return 0;
 	}
 	//printf("msg: %s\n", osmo_hexdump(buf, msg_hdr->msg_len));
 
 	/* check for message class */
-	if (SIMTRACE_MSGC_SNIFF!=msg_hdr->msg_class) { /* we only care about sniffing messages */
+	if (SIMTRACE_MSGC_SNIFF != msg_hdr->msg_class) { /* we only care about sniffing messages */
 		return msg_hdr->msg_len; /* discard non-sniffing messaged */
 	}
 
@@ -242,13 +238,9 @@ static int process_usb_msg(const uint8_t *buf, int len)
 		process_fidi(buf, len);
 		break;
 	case SIMTRACE_MSGT_SNIFF_ATR:
-		process_atr(buf, len);
-		break;
 	case SIMTRACE_MSGT_SNIFF_PPS:
-		process_pps(buf, len);
-		break;
 	case SIMTRACE_MSGT_SNIFF_TPDU:
-		process_tpdu(buf, len);
+		process_data(msg_hdr->msg_type, buf, len);
 		break;
 	default:
 		printf("unknown SIMtrace msg type 0x%02x\n", msg_hdr->msg_type);

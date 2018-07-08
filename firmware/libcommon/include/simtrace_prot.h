@@ -294,6 +294,9 @@ struct st_modem_status {
 #define SNIFF_CHANGE_FLAG_RESET_HOLD (1<<2)
 #define SNIFF_CHANGE_FLAG_RESET_RELEASE (1<<3)
 #define SNIFF_CHANGE_FLAG_TIMEOUT_WT (1<<4)
+/* SIMTRACE_MSGT_SNIFF_ATR, SIMTRACE_MSGT_SNIFF_PPS, SIMTRACE_MSGT_SNIFF_TPDU flags */
+#define SNIFF_DATA_FLAG_ERROR_INCOMPLETE (1<<5)
+#define SNIFF_DATA_FLAG_ERROR_MALFORMED (1<<6)
 
 /* SIMTRACE_MSGT_SNIFF_CHANGE */
 struct sniff_change {
@@ -309,8 +312,8 @@ struct sniff_fidi {
 
 /* SIMTRACE_MSGT_SNIFF_ATR, SIMTRACE_MSGT_SNIFF_PPS, SIMTRACE_MSGT_SNIFF_TPDU */
 struct sniff_data {
-	/* if the data is complete (an error might have occurred during transmission */
-	bool complete;
+	/* data flags */
+	uint32_t flags;
 	/* data length */
 	uint16_t length;
 	/* data */

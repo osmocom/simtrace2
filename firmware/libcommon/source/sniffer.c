@@ -234,8 +234,8 @@ static struct msgb *usb_msg_alloc_hdr(uint8_t ep, uint8_t msg_class, uint8_t msg
 	usb_msg->l1h = msgb_put(usb_msg, sizeof(*usb_msg_header));
 	usb_msg_header = (struct simtrace_msg_hdr *) usb_msg->l1h;
 	memset(usb_msg_header, 0, sizeof(*usb_msg_header));
-	usb_msg_header->msg_class = SIMTRACE_MSGC_SNIFF;
-	usb_msg_header->msg_type = SIMTRACE_MSGT_SNIFF_CHANGE;
+	usb_msg_header->msg_class = msg_class;
+	usb_msg_header->msg_type = msg_type;
 	usb_msg->l2h = usb_msg->l1h + sizeof(*usb_msg_header);
 
 	return usb_msg;
@@ -296,11 +296,74 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	//TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state); /* don't print since this is function is also called by ISRs */
 }
 
+static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data, uint16_t length, uint32_t flags)
+{
+	/* Sanity check */
+	if (type != SIMTRACE_MSGT_SNIFF_ATR && type != SIMTRACE_MSGT_SNIFF_PPS && type != SIMTRACE_MSGT_SNIFF_TPDU) {
+		return;
+	}
+
+	/* Show activity on LED */
+	led_blink(LED_GREEN, BLINK_2O_F);
+
+	/* Send data over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, type);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_data *usb_sniff_data = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data));
+	usb_sniff_data->flags = flags;
+	usb_sniff_data->length = length;
+	uint8_t *sniff_data = msgb_put(usb_msg, usb_sniff_data->length);
+	memcpy(sniff_data, data, length);
+	usb_msg_upd_len_and_submit(usb_msg);
+
+	/* Print message */
+	switch (type) {
+	case SIMTRACE_MSGT_SNIFF_ATR:
+		printf("ATR");
+		break;
+	case SIMTRACE_MSGT_SNIFF_PPS:
+		printf("PPS");
+		break;
+	case SIMTRACE_MSGT_SNIFF_TPDU:
+		printf("TPDU");
+		break;
+	default:
+		printf("???");
+		break;
+	}
+	if (flags) {
+		printf(" (");
+		if (flags & SNIFF_DATA_FLAG_ERROR_INCOMPLETE) {
+			printf("incomplete");
+			flags &= ~SNIFF_DATA_FLAG_ERROR_INCOMPLETE;
+			if (flags) {
+				printf(", ");
+			}
+		}
+		if (flags & SNIFF_DATA_FLAG_ERROR_MALFORMED) {
+			printf("malformed");
+			flags &= ~SNIFF_DATA_FLAG_ERROR_MALFORMED;
+			if (flags) {
+				printf(", ");
+			}
+		}
+		printf(")");
+	}
+	printf(": ");
+	uint16_t i;
+	for (i = 0; i < length; i++) {
+		printf("%02x ", data[i]);
+	}
+	printf("\n\r");
+}
+
 /*! Send current ATR over USB
- *  @param[in] complete if the ATR is complete
+ *  @param[in] flags SNIFF_DATA_FLAG_ data flags 
  *  @note Also print the ATR to debug console
  */
-static void usb_send_atr(bool complete)
+static void usb_send_atr(uint32_t flags)
 {
 	/* Check state */
 	if (ISO7816_S_IN_ATR != iso_state) {
@@ -312,28 +375,8 @@ static void usb_send_atr(bool complete)
 		return;
 	}
 
-	/* Show activity on LED */
-	led_blink(LED_GREEN, BLINK_2O_F);
-
-	/* Print ATR */
-	printf("ATR%s: ", complete ? "" : " (incomplete)");
-	uint8_t i;
-	for (i = 0; i < atr_i; i++) {
-		printf("%02x ", atr[i]);
-	}
-	printf("\n\r");
-
 	/* Send ATR over USB */
-	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_ATR);
-	if (!usb_msg) {
-		return;
-	}
-	struct sniff_data *usb_sniff_data_atr = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_atr));
-	usb_sniff_data_atr->complete = complete;
-	usb_sniff_data_atr->length = atr_i;
-	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_atr->length);
-	memcpy(data, atr, atr_i);
-	usb_msg_upd_len_and_submit(usb_msg);
+	usb_send_data(SIMTRACE_MSGT_SNIFF_ATR, atr, atr_i, flags);
 }
 
 /*! Process ATR byte
@@ -428,7 +471,7 @@ static void process_byte_atr(uint8_t byte)
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* we could verify the checksum, but we are just here to sniff */
-		usb_send_atr(true); /* send ATR to host software using USB */
+		usb_send_atr(0); /* send ATR to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
@@ -437,10 +480,10 @@ static void process_byte_atr(uint8_t byte)
 }
 
 /*! Send current PPS over USB
- *  @param[in] complete if the PPS is complete
+ *  @param[in] flags SNIFF_DATA_FLAG_ data flags
  *  @note Also print the PPS over the debug console
  */
-static void usb_send_pps(bool complete)
+static void usb_send_pps(uint32_t flags)
 {
 	uint8_t *pps_cur; /* current PPS (request or response) */
 
@@ -475,29 +518,9 @@ static void usb_send_pps(bool complete)
 	if (pps_state > PPS_S_WAIT_PCK) {
 		pps[pps_i++] = pps_cur[5];
 	}
-	
-	/* Show activity on LED */
-	led_blink(LED_GREEN, BLINK_2O_F);
-
-	/* Print PPS */
-	printf("PPS%s: ", complete ? "" : " (incomplete)");
-	uint8_t i;
-	for (i = 0;  i < pps_i; i++) {
-		printf("%02x ", pps[i]);
-	}
-	printf("\n\r");
 
 	/* Send message over USB */
-	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_PPS);
-	if (!usb_msg) {
-		return;
-	}
-	struct sniff_data *usb_sniff_data_pps = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_pps));
-	usb_sniff_data_pps->complete = complete;
-	usb_sniff_data_pps->length = pps_i;
-	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_pps->length);
-	memcpy(data, pps, pps_i);
-	usb_msg_upd_len_and_submit(usb_msg);
+	usb_send_data(SIMTRACE_MSGT_SNIFF_PPS, pps, pps_i, flags);
 }
 
 /*! Send Fi/Di change over USB
@@ -579,7 +602,7 @@ static void process_byte_pps(uint8_t byte)
 		}
 		check ^= pps_cur[5];
 		pps_state = PPS_S_WAIT_END;
-		usb_send_pps(true); /* send PPS to host software using USB */
+		usb_send_pps(0); /* send PPS to host software using USB */
 		if (ISO7816_S_IN_PPS_REQ == iso_state) {
 			if (0 == check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */
@@ -616,10 +639,10 @@ static void process_byte_pps(uint8_t byte)
 }
 
 /*! Send current TPDU over USB
- *  @param[in] complete if the TPDU is complete
+ *  @param[in] flags SNIFF_DATA_FLAG_ data flags
  *  @note Also print the TPDU over the debug console
  */
-static void usb_send_tpdu(bool complete)
+static void usb_send_tpdu(uint32_t flags)
 {
 	/* Check state */
 	if (ISO7816_S_IN_TPDU != iso_state) {
@@ -627,28 +650,8 @@ static void usb_send_tpdu(bool complete)
 		return;
 	}
 
-	/* Show activity on LED */
-	led_blink(LED_GREEN, BLINK_2O_F);
-
-	/* Print TPDU */
-	printf("TPDU%s: ", complete ? "" : " (incomplete)");
-	uint16_t i;
-	for (i = 0; i < tpdu_packet_i && i < ARRAY_SIZE(tpdu_packet); i++) {
-		printf("%02x ", tpdu_packet[i]);
-	}
-	printf("\n\r");
-
 	/* Send ATR over USB */
-	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, SIMTRACE_MSGT_SNIFF_TPDU);
-	if (!usb_msg) {
-		return;
-	}
-	struct sniff_data *usb_sniff_data_tpdu = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data_tpdu));
-	usb_sniff_data_tpdu->complete = complete;
-	usb_sniff_data_tpdu->length = tpdu_packet_i;
-	uint8_t *data = msgb_put(usb_msg, usb_sniff_data_tpdu->length);
-	memcpy(data, tpdu_packet, tpdu_packet_i);
-	usb_msg_upd_len_and_submit(usb_msg);
+	usb_send_data(SIMTRACE_MSGT_SNIFF_TPDU, tpdu_packet, tpdu_packet_i, flags);
 }
 
 static void process_byte_tpdu(uint8_t byte)
@@ -722,7 +725,7 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	case TPDU_S_SW2:
 		tpdu_packet[tpdu_packet_i++] = byte;
-		usb_send_tpdu(true); /* send TPDU to host software using USB */
+		usb_send_tpdu(0); /* send TPDU to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
 		break;
 	case TPDU_S_DATA_SINGLE:
@@ -993,16 +996,16 @@ void Sniffer_run(void)
 			/* Use timeout to detect interrupted data transmission */
 			switch (iso_state) {
 			case ISO7816_S_IN_ATR:
-				usb_send_atr(false); /* send incomplete ATR to host software using USB */
+				usb_send_atr(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete ATR to host software using USB */
 				change_state(ISO7816_S_WAIT_ATR);
 				break;
 			case ISO7816_S_IN_TPDU:
-				usb_send_tpdu(false); /* send incomplete PPS to host software using USB */
+				usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete PPS to host software using USB */
 				change_state(ISO7816_S_WAIT_TPDU);
 				break;
 			case ISO7816_S_IN_PPS_REQ:
 			case ISO7816_S_IN_PPS_RSP:
-				usb_send_pps(false); /* send incomplete TPDU to host software using USB */
+				usb_send_pps(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete TPDU to host software using USB */
 				change_state(ISO7816_S_WAIT_TPDU);
 				break;
 			default:

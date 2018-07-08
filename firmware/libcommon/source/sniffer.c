@@ -335,7 +335,7 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 				printf(", ");
 			}
 		}
-		printf(")");
+		putchar(')');
 	}
 	printf(": ");
 	uint16_t i;

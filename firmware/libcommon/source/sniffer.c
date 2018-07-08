@@ -306,18 +306,6 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 	/* Show activity on LED */
 	led_blink(LED_GREEN, BLINK_2O_F);
 
-	/* Send data over USB */
-	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, type);
-	if (!usb_msg) {
-		return;
-	}
-	struct sniff_data *usb_sniff_data = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data));
-	usb_sniff_data->flags = flags;
-	usb_sniff_data->length = length;
-	uint8_t *sniff_data = msgb_put(usb_msg, usb_sniff_data->length);
-	memcpy(sniff_data, data, length);
-	usb_msg_upd_len_and_submit(usb_msg);
-
 	/* Print message */
 	switch (type) {
 	case SIMTRACE_MSGT_SNIFF_ATR:
@@ -357,6 +345,19 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 		printf("%02x ", data[i]);
 	}
 	printf("\n\r");
+
+	/* Send data over USB */
+	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, type);
+	if (!usb_msg) {
+		return;
+	}
+	struct sniff_data *usb_sniff_data = (struct sniff_data *) msgb_put(usb_msg, sizeof(*usb_sniff_data));
+	usb_sniff_data->flags = flags;
+	usb_sniff_data->length = length;
+	uint8_t *sniff_data = msgb_put(usb_msg, usb_sniff_data->length);
+	memcpy(sniff_data, data, length);
+	usb_msg_upd_len_and_submit(usb_msg);
+
 }
 
 /*! Send current ATR over USB

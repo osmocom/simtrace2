@@ -832,11 +832,11 @@ static void Sniffer_reset_isr(const Pin* pPin)
 		TRACE_ERROR("Pin other than reset caused a interrupt\n\r");
 		return;
 	}
-	/* Update the ISO state according to the reset change */
+	/* Update the ISO state according to the reset change (reset is active low) */
 	if (PIO_Get(&pin_rst)) {
-		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
-	} else {
 		change_flags |= SNIFF_CHANGE_FLAG_RESET_RELEASE; /* set flag and let main loop send it */
+	} else {
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
 	}
 }
 
@@ -1011,13 +1011,13 @@ void Sniffer_run(void)
 	/* Handle flags */
 	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_HOLD) {
-			if (ISO7816_S_WAIT_ATR != iso_state) {
-				change_state(ISO7816_S_WAIT_ATR);
+			if (ISO7816_S_RESET != iso_state) {
+				change_state(ISO7816_S_RESET);
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_RELEASE) {
-			if (ISO7816_S_RESET != iso_state) {
-				change_state(ISO7816_S_RESET);
+			if (ISO7816_S_WAIT_ATR != iso_state) {
+				change_state(ISO7816_S_WAIT_ATR);
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {

@@ -276,12 +276,15 @@ static void run_mainloop()
 		if (xfer_len > 0) {
 			//printf("URB: %s\n", osmo_hexdump(&buf[buf_i], xfer_len));
 			buf_i += xfer_len;
-			if (buf_i>=sizeof(buf)) {
+			if (buf_i >= sizeof(buf)) {
 				perror("preventing USB buffer overflow");
 				return;
 			}
-			int processed = process_usb_msg(buf, buf_i);
-			if (processed > 0 && processed <= buf_i) {
+			int processed;
+			while ((processed = process_usb_msg(buf, buf_i)) > 0) {
+				if (processed > buf_i) {
+					break;
+				}
 				for (i = processed; i < buf_i; i++) {
 					buf[i-processed] = buf[i];
 				}

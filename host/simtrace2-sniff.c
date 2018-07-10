@@ -94,6 +94,61 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 	return 0;
 }
 
+const struct value_string change_flags[] = {
+	{
+		.value = SNIFF_CHANGE_FLAG_CARD_INSERT,
+		.str = "card inserted",
+	},
+	{
+		.value = SNIFF_CHANGE_FLAG_CARD_EJECT,
+		.str = "card ejected",
+	},
+	{
+		.value = SNIFF_CHANGE_FLAG_RESET_HOLD,
+		.str = "reset hold",
+	},
+	{
+		.value = SNIFF_CHANGE_FLAG_RESET_RELEASE,
+		.str = "reset release",
+	},
+	{
+		.value = SNIFF_CHANGE_FLAG_TIMEOUT_WT,
+		.str = "data transfer timeout",
+	},
+	{
+		.value = 0,
+		.str = NULL,
+	},
+};
+
+const struct value_string data_flags[] = {
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_INCOMPLETE,
+		.str = "incomplete",
+	},
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_MALFORMED,
+		.str = "malformed",
+	},
+	{
+		.value = 0,
+		.str = NULL,
+	},
+};
+
+static void print_flags(const struct value_string* flag_meanings, uint32_t nb_flags, uint32_t flags) {
+	uint32_t i;
+	for (i = 0; i < nb_flags; i++) {
+		if (flags & flag_meanings[i].value) {
+			printf(flag_meanings[i].str);
+			flags &= ~flag_meanings[i].value;
+			if (flags) {
+				printf(", ");
+			}
+		}
+	}
+}
+
 static int process_change(const uint8_t *buf, int len)
 {
 	/* check if there is enough data for the structure */
@@ -103,22 +158,12 @@ static int process_change(const uint8_t *buf, int len)
 	struct sniff_change *change = (struct sniff_change *)buf;
 
 	printf("Card state change: ");
-	if (change->flags&SNIFF_CHANGE_FLAG_CARD_INSERT) {
-		printf("card inserted ");
+	if (change->flags) {
+		print_flags(change_flags, ARRAY_SIZE(change_flags), change->flags);
+		printf("\n");
+	} else {
+		printf("no changes\n");
 	}
-	if (change->flags&SNIFF_CHANGE_FLAG_CARD_EJECT) {
-		printf("card ejected ");
-	}
-	if (change->flags&SNIFF_CHANGE_FLAG_RESET_HOLD) {
-		printf("reset hold ");
-	}
-	if (change->flags&SNIFF_CHANGE_FLAG_RESET_RELEASE) {
-		printf("reset release ");
-	}
-	if (change->flags&SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
-		printf("data transfer timeout ");
-	}
-	printf("\n");
 
 	return 0;
 }
@@ -176,20 +221,7 @@ static int process_data(enum simtrace_msg_type_sniff type, const uint8_t *buf, i
 	}
 	if (data->flags) {
 		printf(" (");
-		if (data->flags & SNIFF_DATA_FLAG_ERROR_INCOMPLETE) {
-			printf("incomplete");
-			data->flags &= ~SNIFF_DATA_FLAG_ERROR_INCOMPLETE;
-			if (data->flags) {
-				printf(", ");
-			}
-		}
-		if (data->flags & SNIFF_DATA_FLAG_ERROR_MALFORMED) {
-			printf("malformed");
-			data->flags &= ~SNIFF_DATA_FLAG_ERROR_MALFORMED;
-			if (data->flags) {
-				printf(", ");
-			}
-		}
+		print_flags(data_flags, ARRAY_SIZE(data_flags), data->flags);
 		printf(")");
 	}
 	printf(": ");

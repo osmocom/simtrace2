@@ -134,6 +134,10 @@ const struct value_string data_flags[] = {
 		.value = 0,
 		.str = NULL,
 	},
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_CHECKSUM,
+		.str = "checksum error",
+	},
 };
 
 static void print_flags(const struct value_string* flag_meanings, uint32_t nb_flags, uint32_t flags) {

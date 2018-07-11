@@ -394,6 +394,7 @@ static void process_byte_atr(uint8_t byte)
 	static uint8_t atr_hist_len = 0; /* store the number of expected historical bytes */
 	static uint8_t y = 0; /* last mask of the upcoming TA, TB, TC, TD interface bytes */
 	static uint8_t i = 0; /* interface byte subgroup number */
+	static uint32_t flags = 0; /* error flag */
 
 	/* sanity check */
 	if (ISO7816_S_IN_ATR != iso_state) {
@@ -411,6 +412,7 @@ static void process_byte_atr(uint8_t byte)
 	/* handle ATR byte depending on current state */
 	switch (atr_state) {
 	case ATR_S_WAIT_TS: /* see ISO/IEC 7816-3:2006 section 8.1 */
+		flags = 0;
 		switch (byte) {
 		case 0x23: /* direct convention used, but decoded using inverse convention (a parity error should also have occurred) */
 		case 0x30: /* inverse convention used, but decoded using direct convention (a parity error should also have occurred) */
@@ -480,8 +482,21 @@ static void process_byte_atr(uint8_t byte)
 			break;
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
-		/* we could verify the checksum, but we are just here to sniff */
-		usb_send_atr(0); /* send ATR to host software using USB */
+		/* verify checksum if present */
+		if (ATR_S_WAIT_TCK == atr_state) {
+			uint8_t ui;
+			uint8_t checksum = 0;
+			for (ui = 1; ui < atr_i; atr_i++) {
+				checksum ^= atr[ui];
+			}
+			if (checksum) {
+				flags |= SNIFF_DATA_FLAG_ERROR_CHECKSUM;
+				/* We still consider the data as valid (e.g. for WT) even is the checksum is wrong.
+				 * It is up to the reader to handle this error (e.g. by resetting)
+				 */
+			}
+		}
+		usb_send_atr(flags); /* send ATR to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
@@ -551,6 +566,7 @@ static void usb_send_fidi(uint8_t fidi)
 static void process_byte_pps(uint8_t byte)
 {
 	uint8_t *pps_cur; /* current PPS (request or response) */
+	static uint32_t flags = 0; /* error flag */
 
 	/* sanity check */
 	if (ISO7816_S_IN_PPS_REQ == iso_state) {
@@ -565,6 +581,7 @@ static void process_byte_pps(uint8_t byte)
 	/* handle PPS byte depending on current state */
 	switch (pps_state) { /* see ISO/IEC 7816-3:2006 section 9.2 */
 	case PPS_S_WAIT_PPSS: /*!< initial byte */
+		flags = 0;
 		if (0xff) {
 			pps_cur[0] = byte;
 			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
@@ -613,8 +630,11 @@ static void process_byte_pps(uint8_t byte)
 			check ^= pps_cur[4];
 		}
 		check ^= pps_cur[5];
+		if (check) {
+			flags |= SNIFF_DATA_FLAG_ERROR_CHECKSUM;
+		}
 		pps_state = PPS_S_WAIT_END;
-		usb_send_pps(0); /* send PPS to host software using USB */
+		usb_send_pps(flags); /* send PPS to host software using USB */
 		if (ISO7816_S_IN_PPS_REQ == iso_state) {
 			if (0 == check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */

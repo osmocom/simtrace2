@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
  */
 #include "board.h"
+#include "boardver_adc.h"
 #include "simtrace.h"
 #include "ringbuffer.h"
 #include "card_emu.h"
@@ -296,7 +297,6 @@ static int card_vcc_adc_init(void)
 	return 0;
 }
 
-#define UV_PER_LSB	((3300 * 1000) / 4096)
 #define VCC_UV_THRESH_1V8	1500000
 #define VCC_UV_THRESH_3V	2800000
 
@@ -314,12 +314,6 @@ static void process_vcc_adc(struct cardem_inst *ci)
 		card_emu_io_statechg(ci->ch, CARD_IO_VCC, 0);
 	}
 	ci->vcc_uv_last = ci->vcc_uv;
-}
-
-static uint32_t adc2uv(uint16_t adc)
-{
-	uint32_t uv = (uint32_t) adc * UV_PER_LSB;
-	return uv;
 }
 
 void ADC_IrqHandler(void)

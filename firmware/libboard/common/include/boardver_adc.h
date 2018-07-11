@@ -15,3 +15,4 @@
 #pragma once
 
 int get_board_version_adc(void);
+uint32_t adc2uv(uint16_t adc);

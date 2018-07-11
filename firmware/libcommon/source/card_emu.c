@@ -762,14 +762,6 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 	ch->stats.rx_bytes++;
 
 	switch (ch->state) {
-	case ISO_S_WAIT_POWER:
-	case ISO_S_WAIT_CLK:
-	case ISO_S_WAIT_RST:
-	case ISO_S_WAIT_ATR:
-		TRACE_ERROR("%u: Received UART char in invalid 7816 state "
-			    "%u\r\n", ch->num, ch->state);
-		/* we shouldn't receive any data from the reader yet! */
-		break;
 	case ISO_S_WAIT_TPDU:
 		if (byte == 0xff) {
 			new_state = process_byte_pts(ch, byte);
@@ -783,6 +775,10 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 	case ISO_S_IN_PTS:
 		new_state = process_byte_pts(ch, byte);
 		goto out_silent;
+	default:
+		TRACE_ERROR("%u: Received UART char in invalid 7816 state "
+			    "%u\r\n", ch->num, ch->state);
+		break;
 	}
 
 out_silent:

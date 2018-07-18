@@ -203,7 +203,7 @@ static void usart_irq_rx(uint8_t inst_num)
 	csr = usart->US_CSR & usart->US_IMR;
 
 	if (csr & US_CSR_RXRDY) {
-			byte = (usart->US_RHR) & 0xFF;
+		byte = (usart->US_RHR) & 0xFF;
 		if (rbuf_write(&ci->rb, byte) < 0)
 			TRACE_ERROR("rbuf overrun\r\n");
 	}
@@ -341,7 +341,7 @@ void ADC_IrqHandler(void)
 #endif /* DETECT_VCC_BY_ADC */
 
 /***********************************************************************
- * Core USB  / mainloop integration
+ * Core USB  / main loop integration
  ***********************************************************************/
 
 static void usim1_rst_irqhandler(const Pin *pPin)

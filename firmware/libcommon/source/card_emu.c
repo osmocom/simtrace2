@@ -189,7 +189,7 @@ struct msgb *usb_buf_alloc_st(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
 	return msg;
 }
 
-/* Update cardemu_usb_msg_rx_data length + submit bufffer */
+/* Update cardemu_usb_msg_rx_data length + submit buffer */
 static void flush_rx_buffer(struct card_handle *ch)
 {
 	struct msgb *msg;
@@ -202,14 +202,14 @@ static void flush_rx_buffer(struct card_handle *ch)
 
 	ch->uart_rx_msg = NULL;
 
-	/* store length of data payload fild in header */
+	/* store length of data payload field in header */
 	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 	rd->data_len = msgb_l2len(msg) - sizeof(*rd);
 
 	usb_buf_upd_len_and_submit(msg);
 }
 
-/* convert a non-contiguous PTS request/responsei into a contiguous
+/* convert a non-contiguous PTS request/response into a contiguous
  * buffer, returning the number of bytes used in the buffer */
 static int serialize_pts(uint8_t *out,  const uint8_t *in)
 {
@@ -301,7 +301,7 @@ static void card_set_state(struct card_handle *ch,
 		ch->fi = 1;
 		ch->di = 1;
 		emu_update_fidi(ch);
-		/* initialize todefault WI, this will be overwritten if we
+		/* initialize to default WI, this will be overwritten if we
 		 * receive TC2, and it will be programmed into hardware after
 		 * ATR is finished */
 		ch->wi = ISO7816_3_DEFAULT_WI;
@@ -334,7 +334,7 @@ static void card_set_state(struct card_handle *ch,
  * PTS / PPS handling
  **********************************************************************/
 
-/* Update the ATR sub-state */
+/* Update the PTS sub-state */
 static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss)
 {
 	TRACE_DEBUG("%u: 7816 PTS state %u -> %u\r\n",
@@ -974,7 +974,7 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 
 	INIT_LLIST_HEAD(&ch->uart_tx_queue);
 
-	/* initialize the card_handle with reasonabe defaults */
+	/* initialize the card_handle with reasonable defaults */
 	ch->num = slot_num;
 	ch->irq_ep = irq_ep;
 	ch->in_ep = in_ep;

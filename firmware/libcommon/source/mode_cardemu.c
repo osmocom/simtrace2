@@ -593,6 +593,7 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 		usb_buf_free(msg);
 		return;
 	}
+	msg->l2h = msg->l1h + sizeof(*sh);
 
 	switch (sh->msg_class) {
 	case SIMTRACE_MSGC_GENERIC:
@@ -604,7 +605,6 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 	case SIMTRACE_MSGC_MODEM:
 		/* FIXME: Find out why this fails if used for !=
 		 * MSGC_MODEM ?!? */
-		msg->l2h = msg->l1h + sizeof(*sh);
 		dispatch_usb_command_modem(msg, ci);
 		break;
 	default:

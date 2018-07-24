@@ -250,34 +250,39 @@ libusb_device_handle *usb_open_claim_interface(libusb_context *ctx,
 		    (strlen(ifm->path) && !strcmp(path, ifm->path))) {
 			rc = libusb_open(*dev, &usb_devh);
 			if (rc < 0) {
-				perror("Cannot open device");
+				fprintf(stderr, "Cannot open device: %s\n", libusb_error_name(rc));
+				usb_devh = NULL;
 				break;
 			}
 			rc = libusb_get_configuration(usb_devh, &config);
 			if (rc < 0) {
-				perror("Cannot get current configuration");
+				fprintf(stderr, "Cannot get current configuration: %s\n", libusb_error_name(rc));
 				libusb_close(usb_devh);
+				usb_devh = NULL;
 				break;
 			}
 			if (config != ifm->configuration) {
 				rc = libusb_set_configuration(usb_devh, ifm->configuration);
 				if (rc < 0) {
-					perror("Cannot set configuration");
+					fprintf(stderr, "Cannot set configuration: %s\n", libusb_error_name(rc));
 					libusb_close(usb_devh);
+					usb_devh = NULL;
 					break;
 				}
 			}
 			rc = libusb_claim_interface(usb_devh, ifm->interface);
 			if (rc < 0) {
-				perror("Cannot claim interface");
+				fprintf(stderr, "Cannot claim interface: %s\n", libusb_error_name(rc));
 				libusb_close(usb_devh);
+				usb_devh = NULL;
 				break;
 			}
 			rc = libusb_set_interface_alt_setting(usb_devh, ifm->interface, ifm->altsetting);
 			if (rc < 0) {
-				perror("Cannot set interface altsetting");
+				fprintf(stderr, "Cannot set interface altsetting: %s\n", libusb_error_name(rc));
 				libusb_release_interface(usb_devh, ifm->interface);
 				libusb_close(usb_devh);
+				usb_devh = NULL;
 				break;
 			}
 		}

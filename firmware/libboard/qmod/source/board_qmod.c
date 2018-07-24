@@ -70,8 +70,6 @@ const unsigned char __eeprom_bin[256] = {
 #include "i2c.h"
 static int write_hub_eeprom(void)
 {
-	const unsigned int __eeprom_bin_len = 256;
-
 	int i;
 
 	/* wait */
@@ -79,16 +77,18 @@ static int write_hub_eeprom(void)
 
 	TRACE_INFO("Writing EEPROM...\n\r");
 	/* write the EEPROM once */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < ARRAY_SIZE(__eeprom_bin); i++) {
 		int rc = eeprom_write_byte(0x50, i, __eeprom_bin[i]);
-		/* if the result was negative, repeat that write */
-		if (rc < 0)
-			i--;
+		if (rc < 0) {
+			TRACE_ERROR("Writing EEPROM failed at byte %u: 0x%02x\n\r",
+				i, __eeprom_bin[i]);
+			return 1;
+		}
 	}
 
 	/* then pursue re-reading it again and again */
 	TRACE_INFO("Verifying EEPROM...\n\r");
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < ARRAY_SIZE(__eeprom_bin); i++) {
 		int byte = eeprom_read_byte(0x50, i);
 		TRACE_INFO("0x%02x: %02x\n\r", i, byte);
 		if (byte != __eeprom_bin[i])

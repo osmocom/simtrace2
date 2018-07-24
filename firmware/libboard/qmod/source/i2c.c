@@ -185,6 +185,8 @@ int eeprom_write_byte(uint8_t slave, uint8_t addr, uint8_t byte)
 	nack = i2c_write_byte(false, true, byte);
 	if (nack)
 		goto out_stop;
+	/* Wait tWR time to ensure EEPROM is writing correctly (tWR = 5 ms for AT24C02) */
+	mdelay(5);
 
 out_stop:
 	i2c_stop_cond();

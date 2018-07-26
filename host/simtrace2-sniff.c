@@ -65,7 +65,7 @@ struct st_transport {
 /* global GSMTAP instance */
 static struct gsmtap_inst *g_gti;
 
-static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
+static int gsmtap_send_sim(uint8_t sub_type, const uint8_t *data, unsigned int len)
 {
 	struct gsmtap_hdr *gh;
 	unsigned int gross_len = len + sizeof(*gh);
@@ -80,8 +80,9 @@ static int gsmtap_send_sim(const uint8_t *apdu, unsigned int len)
 	gh->version = GSMTAP_VERSION;
 	gh->hdr_len = sizeof(*gh)/4;
 	gh->type = GSMTAP_TYPE_SIM;
+	gh->sub_type = sub_type;
 
-	memcpy(buf + sizeof(*gh), apdu, len);
+	memcpy(buf + sizeof(*gh), data, len);
 
 	rc = write(gsmtap_inst_fd(g_gti), buf, gross_len);
 	if (rc < 0) {
@@ -235,9 +236,17 @@ static int process_data(enum simtrace_msg_type_sniff type, const uint8_t *buf, i
 	}
 	printf("\n");
 
-	if (SIMTRACE_MSGT_SNIFF_TPDU == type) {
-		/* send TPDU (now considered as APDU) to GSMTAP */
-		gsmtap_send_sim(data->data, data->length);
+	/* Send message as GSNTAP */
+	switch (type) {
+	case SIMTRACE_MSGT_SNIFF_ATR:
+		gsmtap_send_sim(GSMTAP_SIM_ATR, data->data, data->length);
+		break;
+	case SIMTRACE_MSGT_SNIFF_TPDU:
+		/* TPDU is now considered as APDU since SIMtrace sends complete TPDU */
+		gsmtap_send_sim(GSMTAP_SIM_APDU, data->data, data->length);
+		break;
+	default:
+		break;
 	}
 
 	return 0;

@@ -854,9 +854,9 @@ static void Sniffer_reset_isr(const Pin* pPin)
 	}
 	/* Update the ISO state according to the reset change (reset is active low) */
 	if (PIO_Get(&pin_rst)) {
-		change_flags |= SNIFF_CHANGE_FLAG_RESET_RELEASE; /* set flag and let main loop send it */
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_DEASSERT; /* set flag and let main loop send it */
 	} else {
-		change_flags |= SNIFF_CHANGE_FLAG_RESET_HOLD; /* set flag and let main loop send it */
+		change_flags |= SNIFF_CHANGE_FLAG_RESET_ASSERT; /* set flag and let main loop send it */
 	}
 }
 
@@ -1030,12 +1030,12 @@ void Sniffer_run(void)
 
 	/* Handle flags */
 	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
-		if (change_flags & SNIFF_CHANGE_FLAG_RESET_HOLD) {
+		if (change_flags & SNIFF_CHANGE_FLAG_RESET_ASSERT) {
 			if (ISO7816_S_RESET != iso_state) {
 				change_state(ISO7816_S_RESET);
 			}
 		}
-		if (change_flags & SNIFF_CHANGE_FLAG_RESET_RELEASE) {
+		if (change_flags & SNIFF_CHANGE_FLAG_RESET_DEASSERT) {
 			if (ISO7816_S_WAIT_ATR != iso_state) {
 				change_state(ISO7816_S_WAIT_ATR);
 			}

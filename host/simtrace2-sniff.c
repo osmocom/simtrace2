@@ -105,12 +105,12 @@ const struct value_string change_flags[] = {
 		.str = "card ejected",
 	},
 	{
-		.value = SNIFF_CHANGE_FLAG_RESET_HOLD,
-		.str = "reset hold",
+		.value = SNIFF_CHANGE_FLAG_RESET_ASSERT,
+		.str = "reset asserted",
 	},
 	{
-		.value = SNIFF_CHANGE_FLAG_RESET_RELEASE,
-		.str = "reset release",
+		.value = SNIFF_CHANGE_FLAG_RESET_DEASSERT,
+		.str = "reset de-asserted",
 	},
 	{
 		.value = SNIFF_CHANGE_FLAG_TIMEOUT_WT,

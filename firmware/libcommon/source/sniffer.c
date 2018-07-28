@@ -302,6 +302,38 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	//TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state); /* don't print since this is function is also called by ISRs */
 }
 
+const struct value_string data_flags[] = {
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_INCOMPLETE,
+		.str = "incomplete",
+	},
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_MALFORMED,
+		.str = "malformed",
+	},
+	{
+		.value = SNIFF_DATA_FLAG_ERROR_CHECKSUM,
+		.str = "checksum error",
+	},
+	{
+		.value = 0,
+		.str = NULL,
+	},
+};
+
+static void print_flags(const struct value_string* flag_meanings, uint32_t nb_flags, uint32_t flags) {
+	uint32_t i;
+	for (i = 0; i < nb_flags; i++) {
+		if (flags & flag_meanings[i].value) {
+			printf(flag_meanings[i].str);
+			flags &= ~flag_meanings[i].value;
+			if (flags) {
+				printf(", ");
+			}
+		}
+	}
+}
+
 static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data, uint16_t length, uint32_t flags)
 {
 	/* Sanity check */
@@ -329,20 +361,7 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 	}
 	if (flags) {
 		printf(" (");
-		if (flags & SNIFF_DATA_FLAG_ERROR_INCOMPLETE) {
-			printf("incomplete");
-			flags &= ~SNIFF_DATA_FLAG_ERROR_INCOMPLETE;
-			if (flags) {
-				printf(", ");
-			}
-		}
-		if (flags & SNIFF_DATA_FLAG_ERROR_MALFORMED) {
-			printf("malformed");
-			flags &= ~SNIFF_DATA_FLAG_ERROR_MALFORMED;
-			if (flags) {
-				printf(", ");
-			}
-		}
+		print_flags(data_flags, ARRAY_SIZE(data_flags), flags);
 		putchar(')');
 	}
 	printf(": ");

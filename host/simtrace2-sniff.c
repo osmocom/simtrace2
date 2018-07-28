@@ -132,12 +132,12 @@ const struct value_string data_flags[] = {
 		.str = "malformed",
 	},
 	{
-		.value = 0,
-		.str = NULL,
-	},
-	{
 		.value = SNIFF_DATA_FLAG_ERROR_CHECKSUM,
 		.str = "checksum error",
+	},
+	{
+		.value = 0,
+		.str = NULL,
 	},
 };
 

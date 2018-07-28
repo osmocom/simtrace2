@@ -299,7 +299,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 
 	/* save new state */
 	iso_state = iso_state_new;
-	//TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state); /* don't print since this is function is also called by ISRs */
+	TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state);
 }
 
 const struct value_string data_flags[] = {
@@ -1052,11 +1052,13 @@ void Sniffer_run(void)
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_ASSERT) {
 			if (ISO7816_S_RESET != iso_state) {
 				change_state(ISO7816_S_RESET);
+				printf("reset asserted\n\r");
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_DEASSERT) {
 			if (ISO7816_S_WAIT_ATR != iso_state) {
 				change_state(ISO7816_S_WAIT_ATR);
+				printf("reset de-asserted\n\r");
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {

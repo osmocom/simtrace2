@@ -505,7 +505,7 @@ static void process_byte_atr(uint8_t byte)
 		if (ATR_S_WAIT_TCK == atr_state) {
 			uint8_t ui;
 			uint8_t checksum = 0;
-			for (ui = 1; ui < atr_i; atr_i++) {
+			for (ui = 1; ui < atr_i; ui++) {
 				checksum ^= atr[ui];
 			}
 			if (checksum) {

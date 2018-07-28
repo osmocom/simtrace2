@@ -1,6 +1,7 @@
 /* card emulation mode
  *
  * (C) 2015-2017 by Harald Welte <laforge@gnumonks.org>
+ * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,15 +99,11 @@ struct cardem_inst cardem_inst[] = {
 
 static Usart *get_usart_by_chan(uint8_t uart_chan)
 {
-	switch (uart_chan) {
-	case 0:
-		return USART1;
-#ifdef CARDEMU_SECOND_UART
-	case 1:
-		return USART0;
-#endif
+	if (uart_chan < ARRAY_SIZE(cardem_inst)) {
+		return cardem_inst[uart_chan].usart_info.base;
+	} else {
+		return NULL;
 	}
-	return NULL;
 }
 
 /***********************************************************************
@@ -242,6 +239,20 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	usart->US_FIDI = fidi & 0x3ff;
 	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
 	return 0;
+}
+
+/* call-back from card_emu.c to force a USART interrupt */
+void card_emu_uart_interrupt(uint8_t uart_chan)
+{
+	Usart *usart = get_usart_by_chan(uart_chan);
+	if (!usart) {
+		return;
+	}
+	if (USART0 == usart) {
+		NVIC_SetPendingIRQ(USART0_IRQn);
+	} else if (USART1 == usart) {
+		NVIC_SetPendingIRQ(USART1_IRQn);
+	}
 }
 
 /***********************************************************************

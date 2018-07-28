@@ -1,6 +1,7 @@
 /* ISO7816-3 state machine for the card side
  *
  * (C) 2010-2017 by Harald Welte <laforge@gnumonks.org>
+ * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -296,32 +297,39 @@ static void card_set_state(struct card_handle *ch,
 		card_emu_uart_enable(ch->uart_chan, 0);
 		break;
 	case ISO_S_WAIT_ATR:
-		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		/* Reset to initial Fi / Di ratio */
 		ch->fi = 1;
 		ch->di = 1;
 		emu_update_fidi(ch);
+		/* the ATR should only be sent 400 to 40k clock cycles after the RESET.
+		 * we use the tc_etu mechanism to wait this time.
+		 * since the initial ETU is Fd=372/Dd=1 clock cycles long, we have to wait 2-107 ETU.
+		 */
+		tc_etu_set_wtime(ch->tc_chan, 2);
+		/* ensure the TC_ETU timer is enabled */
+		tc_etu_enable(ch->tc_chan);
+		break;
+	case ISO_S_IN_ATR:
 		/* initialize to default WI, this will be overwritten if we
-		 * receive TC2, and it will be programmed into hardware after
+		 * send TC2, and it will be programmed into hardware after
 		 * ATR is finished */
 		ch->wi = ISO7816_3_DEFAULT_WI;
 		/* update waiting time to initial waiting time */
 		ch->waiting_time = ISO7816_3_INIT_WTIME;
+		/* set initial waiting time */
 		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
 		/* Set ATR sub-state to initial state */
 		ch->atr.idx = 0;
-		//set_atr_state(ch, ATR_S_WAIT_TS);
-		/* Notice that we are just coming out of reset */
-		//ch->sh.flags |= SIMTRACE_FLAG_ATR;
+		/* enable USART transmission to reader */
 		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
-		break;
+		/* trigger USART TX IRQ to sent first ATR byte TS */
+		card_emu_uart_interrupt(ch->uart_chan);
 		break;
 	case ISO_S_WAIT_TPDU:
 		/* enable the receiver, disable transmitter */
 		set_tpdu_state(ch, TPDU_S_WAIT_CLA);
 		card_emu_uart_enable(ch->uart_chan, ENABLE_RX);
 		break;
-	case ISO_S_IN_ATR:
 	case ISO_S_IN_PTS:
 	case ISO_S_IN_TPDU:
 		/* do nothing */
@@ -329,6 +337,47 @@ static void card_set_state(struct card_handle *ch,
 	}
 }
 
+/**********************************************************************
+ * ATR handling
+ **********************************************************************/
+
+/*! Transmit ATR data to reader
+ *  @param[in] ch card interface connected to reader
+ *  @return numbers of bytes transmitted
+ */
+static int tx_byte_atr(struct card_handle *ch)
+{
+	if (NULL == ch) {
+		TRACE_ERROR("ATR TX: no card handle provided\n\r");
+		return 0;
+	}
+	if (ISO_S_IN_ATR != ch->state) {
+		TRACE_ERROR("%u: ATR TX: no in ATR state\n\r", ch->num);
+		return 0;
+	}
+
+	/* Transmit ATR */
+	if (ch->atr.idx < ch->atr.len) {
+		uint8_t byte = ch->atr.atr[ch->atr.idx++];
+		card_emu_uart_tx(ch->uart_chan, byte);
+		TRACE_DEBUG("%u: ATR TX: %02x\n\r", ch->num, byte);
+		return 1;
+	} else { /* The ATR has been completely transmitted */
+		/* TODO update WI using optional TC2 and then update WT */
+		//ch->wi = ISO7816_3_DEFAULT_WI;
+		/* update waiting time */
+		//ch->waiting_time = ISO7816_3_INIT_WTIME;
+		//tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
+		/* reset PTS to initial state */
+		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
+		/* go to next state */
+		card_set_state(ch, ISO_S_WAIT_TPDU);
+		return 0;
+	}
+
+	/* return number of bytes transmitted */
+	return 1;
+}
 
 /**********************************************************************
  * PTS / PPS handling
@@ -793,17 +842,7 @@ int card_emu_tx_byte(struct card_handle *ch)
 
 	switch (ch->state) {
 	case ISO_S_IN_ATR:
-		if (ch->atr.idx < ch->atr.len) {
-			uint8_t byte;
-			byte = ch->atr.atr[ch->atr.idx++];
-			rc = 1;
-
-			card_emu_uart_tx(ch->uart_chan, byte);
-
-			/* detect end of ATR */
-			if (ch->atr.idx >= ch->atr.len)
-				card_set_state(ch, ISO_S_WAIT_TPDU);
-		}
+		rc = tx_byte_atr(ch);
 		break;
 	case ISO_S_IN_PTS:
 		rc = tx_byte_pts(ch);
@@ -898,9 +937,8 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			if (ch->vcc_active && ch->clocked) {
 				/* enable the TC/ETU counter once reset has been released */
 				tc_etu_enable(ch->tc_chan);
+				/* prepare to send the ATR */
 				card_set_state(ch, ISO_S_WAIT_ATR);
-				/* FIXME: wait 400 to 40k clock cycles before sending ATR */
-				card_set_state(ch, ISO_S_IN_ATR);
 			}
 		} else if (active && !ch->in_reset) {
 			TRACE_INFO("%u: RST asserted\r\n", ch->num);
@@ -921,7 +959,15 @@ int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len)
 	ch->atr.len = len;
 	ch->atr.idx = 0;
 
-	/* FIXME: race condition with trasmitting ATR to reader? */
+#if TRACE_LEVEL >= TRACE_LEVEL_INFO 
+	uint8_t i;
+	TRACE_INFO("%u: ATR set: ", ch->num);
+	for (i = 0; i < ch->atr.len; i++) {
+		TRACE_INFO_WP("%02x ", atr[i]);
+	}
+	TRACE_INFO_WP("\n\r");
+#endif
+	/* FIXME: race condition with transmitting ATR to reader? */
 
 	return 0;
 }
@@ -952,7 +998,15 @@ void tc_etu_wtime_half_expired(void *handle)
 void tc_etu_wtime_expired(void *handle)
 {
 	struct card_handle *ch = handle;
-	TRACE_ERROR("%u: wtime_exp\r\n", ch->num);
+	switch (ch->state) {
+	case ISO_S_WAIT_ATR:
+		/* ISO 7816-3 6.2.1 time tc has passed, we can now send the ATR */
+		card_set_state(ch, ISO_S_IN_ATR);
+		break;
+	default:
+		TRACE_ERROR("%u: wtime_exp\r\n", ch->num);
+		break;
+	}
 }
 
 /* shortest ATR found in smartcard_list.txt */

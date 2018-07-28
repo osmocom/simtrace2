@@ -65,6 +65,11 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	printf("uart_enable(uart_chan=%u, %s)\n", uart_chan, rts);
 }
 
+void card_emu_uart_interrupt(uint8_t uart_chan)
+{
+	printf("uart_interrupt(uart_chan=%u)\n", uart_chan);
+}
+
 void tc_etu_set_wtime(uint8_t tc_chan, uint16_t wtime)
 {
 	printf("tc_etu_set_wtime(tc_chan=%u, wtime=%u)\n", tc_chan, wtime);
@@ -120,6 +125,8 @@ static void io_start_card(struct card_handle *ch)
 
 	/* release from reset and verify th ATR */
 	card_emu_io_statechg(ch, CARD_IO_RST, 0);
+	/* simulate waiting time before ATR expired */
+	tc_etu_wtime_expired(ch);
 	verify_atr(ch);
 }
 

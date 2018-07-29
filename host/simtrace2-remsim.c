@@ -173,15 +173,10 @@ static struct simtrace_msg_hdr *st_push_hdr(struct msgb *msg, uint8_t msg_class,
 int st_slot_tx_msg(struct st_slot *slot, struct msgb *msg,
 		   uint8_t msg_class, uint8_t msg_type)
 {
-	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->data;
-
-	sh->slot_nr = slot->slot_nr;
-
 	st_push_hdr(msg, msg_class, msg_type, slot->slot_nr);
 
 	return st_transp_tx_msg(slot->transp, msg);
 }
-
 
 /***********************************************************************
  * Card Emulation protocol

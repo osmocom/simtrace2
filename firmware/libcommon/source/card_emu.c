@@ -363,11 +363,39 @@ static int tx_byte_atr(struct card_handle *ch)
 		TRACE_DEBUG("%u: ATR TX: %02x\n\r", ch->num, byte);
 		return 1;
 	} else { /* The ATR has been completely transmitted */
-		/* TODO update WI using optional TC2 and then update WT */
-		//ch->wi = ISO7816_3_DEFAULT_WI;
-		/* update waiting time */
-		//ch->waiting_time = ISO7816_3_INIT_WTIME;
-		//tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
+		/* search for TC2 to updated WI */
+		ch->wi = ISO7816_3_DEFAULT_WI;
+		if (ch->atr.len >= 2 && ch->atr.atr[1] & 0xf0) { /* Y1 has some data */
+			uint8_t atr_td1 = 2;
+			if (ch->atr.atr[1] & 0x10) { /* TA1 is present */
+				atr_td1++;
+			}
+			if (ch->atr.atr[1] & 0x20) { /* TB1 is present */
+				atr_td1++;
+			}
+			if (ch->atr.atr[1] & 0x40) { /* TC1 is present */
+				atr_td1++;
+			}
+			if (ch->atr.atr[1] & 0x80) { /* TD1 is present */
+				if (ch->atr.len > atr_td1 && ch->atr.atr[atr_td1] & 0xf0) { /* Y2 has some data */
+					uint8_t atr_tc2 = atr_td1+1;
+					if (ch->atr.atr[atr_td1] & 0x10) { /* TA2 is present */
+						atr_tc2++;
+					}
+					if (ch->atr.atr[atr_td1] & 0x20) { /* TB2 is present */
+						atr_tc2++;
+					}
+					if (ch->atr.atr[atr_td1] & 0x40) { /* TC2 is present */
+						if (ch->atr.len > atr_tc2 && ch->atr.atr[atr_tc2]) { /* TC2 encodes WI */
+							ch->wi = ch->atr.atr[atr_tc2]; /* set WI */
+						}
+					}
+				}
+			}
+		}
+		/* update waiting time (see ISO 7816-3 10.2) */
+		ch->waiting_time = ch->wi * 960 * ch->fi;
+		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
 		/* reset PTS to initial state */
 		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		/* go to next state */

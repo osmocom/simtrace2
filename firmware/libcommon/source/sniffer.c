@@ -1050,6 +1050,23 @@ void Sniffer_run(void)
 	/* Handle flags */
 	if (change_flags) { /* WARNING this is not synced with the data buffer handling */
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_ASSERT) {
+			switch (iso_state) {
+			case ISO7816_S_IN_ATR:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_atr(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete ATR to host software using USB */
+				break;
+			case ISO7816_S_IN_TPDU:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete PPS to host software using USB */
+				break;
+			case ISO7816_S_IN_PPS_REQ:
+			case ISO7816_S_IN_PPS_RSP:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_pps(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete TPDU to host software using USB */
+				break;
+			default:
+				break;
+			}
 			if (ISO7816_S_RESET != iso_state) {
 				change_state(ISO7816_S_RESET);
 				printf("reset asserted\n\r");

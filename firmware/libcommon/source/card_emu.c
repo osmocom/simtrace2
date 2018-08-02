@@ -85,7 +85,7 @@ enum tpdu_state {
 	TPDU_S_WAIT_P2,		/* waiting for P2 byte from reader */
 	TPDU_S_WAIT_P3,		/* waiting for P3 byte from reader */
 	TPDU_S_WAIT_PB,		/* waiting for Tx of procedure byte */
-	TPDU_S_WAIT_RX,		/* waiitng for more data from reader */
+	TPDU_S_WAIT_RX,		/* waiting for more data from reader */
 	TPDU_S_WAIT_TX,		/* waiting for more data to reader */
 };
 
@@ -792,7 +792,7 @@ static int tx_byte_tpdu(struct card_handle *ch)
 
 	card_emu_uart_tx(ch->uart_chan, byte);
 
-	/* this must happen _after_ the byte has been transmittd */
+	/* this must happen _after_ the byte has been transmitted */
 	switch (ch->tpdu.state) {
 	case TPDU_S_WAIT_PB:
 		/* if we just transmitted the procedure byte, we need to decide

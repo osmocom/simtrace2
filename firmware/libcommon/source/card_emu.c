@@ -54,6 +54,22 @@ enum iso7816_3_card_state {
 	ISO_S_IN_TPDU,		/* inside a TPDU */
 };
 
+const struct value_string iso7816_3_card_state_names[] = {
+	OSMO_VALUE_STRING(ISO_S_WAIT_POWER),
+	OSMO_VALUE_STRING(ISO_S_WAIT_CLK),
+	OSMO_VALUE_STRING(ISO_S_WAIT_RST),
+	OSMO_VALUE_STRING(ISO_S_WAIT_ATR),
+	OSMO_VALUE_STRING(ISO_S_IN_ATR),
+	OSMO_VALUE_STRING(ISO_S_IN_PTS),
+	OSMO_VALUE_STRING(ISO_S_WAIT_TPDU),
+	OSMO_VALUE_STRING(ISO_S_IN_TPDU),
+	{
+		.value = 0,
+		.str = NULL,
+	},
+};
+
+
 /* detailed sub-states of ISO_S_IN_PTS */
 enum pts_state {
 	PTS_S_WAIT_REQ_PTSS,
@@ -285,8 +301,9 @@ static void card_set_state(struct card_handle *ch,
 	if (ch->state == new_state)
 		return;
 
-	TRACE_DEBUG("%u: 7816 card state %u -> %u\r\n", ch->num,
-		    ch->state, new_state);
+	TRACE_DEBUG("%u: 7816 card state %u (%s) -> %u (%s)\r\n", ch->num,
+		    ch->state, get_value_string(iso7816_3_card_state_names, ch->state),
+		    new_state, get_value_string(iso7816_3_card_state_names, new_state));
 	ch->state = new_state;
 
 	switch (new_state) {

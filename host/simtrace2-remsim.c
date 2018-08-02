@@ -536,7 +536,7 @@ static void run_mainloop(struct cardem_inst *ci)
 		/* read data from SIMtrace2 device (local or via USB) */
 		if (transp->udp_fd < 0) {
 			rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
-						  buf, sizeof(buf), &xfer_len, 100000);
+						  buf, sizeof(buf), &xfer_len, 100);
 			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT &&
 				      rc != LIBUSB_ERROR_INTERRUPTED &&
 				      rc != LIBUSB_ERROR_IO) {
@@ -553,7 +553,7 @@ static void run_mainloop(struct cardem_inst *ci)
 		}
 		/* dispatch any incoming data */
 		if (xfer_len > 0) {
-			printf("URB: %s\n", osmo_hexdump(buf, rc));
+			printf("URB: %s\n", osmo_hexdump(buf, xfer_len));
 			process_usb_msg(ci, buf, xfer_len);
 			msg_count++;
 			byte_count += xfer_len;

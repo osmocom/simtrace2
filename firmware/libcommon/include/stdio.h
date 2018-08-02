@@ -52,9 +52,14 @@ signed int printf(const char *pFormat, ...);
 signed int sprintf(char *pStr, const char *pFormat, ...);
 signed int puts(const char *pStr);
 
-
 int fputc(int c, FILE *stream);
 int fputs(const char *s, FILE *stream);
 
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) fputc(c, stdout)
+
+signed int vfprintf_sync(FILE *pStream, const char *pFormat, va_list ap);
+signed int vprintf_sync(const char *pFormat, va_list ap);
+signed int printf_sync(const char *pFormat, ...);
+int fputc_sync(int c, FILE *stream);
+int fputs_sync(const char *s, FILE *stream);

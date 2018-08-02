@@ -29,15 +29,14 @@
  */
 #ifndef _UART_CONSOLE_
 #define _UART_CONSOLE_
-
 #include <stdint.h>
 
 extern void UART_Configure( uint32_t dwBaudrate, uint32_t dwMasterClock ) ;
-extern void UART_Exit(void) ;
+extern void UART_Exit( void ) ;
 extern void UART_PutChar( uint8_t uc ) ;
+extern void UART_PutChar_Sync( uint8_t uc ) ;
 extern uint32_t UART_GetChar( void ) ;
 extern uint32_t UART_IsRxReady( void ) ;
-
 
 extern void UART_DumpFrame( uint8_t* pucFrame, uint32_t dwSize ) ;
 extern void UART_DumpMemory( uint8_t* pucBuffer, uint32_t dwSize, uint32_t dwAddress ) ;

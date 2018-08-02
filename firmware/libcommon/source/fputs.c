@@ -26,6 +26,19 @@ int fputc(int c, FILE *stream)
 int fputs(const char *s, FILE *stream)
 {
 	while (*s != '\0')
-		UART_PutChar(*s++);
+		fputc(*s++, stream);
+	return 0;
+}
+
+int fputc_sync(int c, FILE *stream)
+{
+	UART_PutChar_Sync(c);
+	return c;
+}
+
+int fputs_sync(const char *s, FILE *stream)
+{
+	while (*s != '\0')
+		fputc_sync(*s++, stream);
 	return 0;
 }

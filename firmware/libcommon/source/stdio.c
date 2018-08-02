@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support 
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -436,6 +437,32 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
 }
 
 //------------------------------------------------------------------------------
+/// Outputs a formatted string on the given stream. Format arguments are given
+/// in a va_list instance.
+/// \note This function is synchronous (i.e. blocks until the print completes)
+/// \param pStream  Output stream.
+/// \param pFormat  Format string
+/// \param ap  Argument list.
+//------------------------------------------------------------------------------
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
+signed int vfprintf_sync(FILE *pStream, const char *pFormat, va_list ap)
+{
+	char pStr[MAX_STRING_SIZE];
+	char pError[] = "stdio.c: increase MAX_STRING_SIZE\n\r";
+
+	// Write formatted string in buffer
+	if (vsprintf(pStr, pFormat, ap) >= MAX_STRING_SIZE) {
+
+		fputs_sync(pError, stderr);
+	}
+
+	// Display string
+	return fputs_sync(pStr, pStream);
+}
+#pragma GCC diagnostic pop
+
+//------------------------------------------------------------------------------
 /// Outputs a formatted string on the DBGU stream. Format arguments are given
 /// in a va_list instance.
 /// \param pFormat  Format string
@@ -444,6 +471,18 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
 signed int vprintf(const char *pFormat, va_list ap)
 {
 	return vfprintf(stdout, pFormat, ap);
+}
+
+//------------------------------------------------------------------------------
+/// Outputs a formatted string on the DBGU stream. Format arguments are given
+/// in a va_list instance.
+/// \note This function is synchronous (i.e. blocks until the print completes)
+/// \param pFormat  Format string
+/// \param ap  Argument list.
+//------------------------------------------------------------------------------
+signed int vprintf_sync(const char *pFormat, va_list ap)
+{
+	return vfprintf_sync(stdout, pFormat, ap);
 }
 
 //------------------------------------------------------------------------------
@@ -478,6 +517,25 @@ signed int printf(const char *pFormat, ...)
 	// Forward call to vprintf
 	va_start(ap, pFormat);
 	result = vprintf(pFormat, ap);
+	va_end(ap);
+
+	return result;
+}
+
+//------------------------------------------------------------------------------
+/// Outputs a formatted string on the DBGU stream, using a variable number of
+/// arguments.
+/// \note This function is synchronous (i.e. blocks until the print completes)
+/// \param pFormat  Format string.
+//------------------------------------------------------------------------------
+signed int printf_sync(const char *pFormat, ...)
+{
+	va_list ap;
+	signed int result;
+
+	// Forward call to vprintf
+	va_start(ap, pFormat);
+	result = vprintf_sync(pFormat, ap);
 	va_end(ap);
 
 	return result;

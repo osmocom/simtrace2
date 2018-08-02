@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -41,6 +42,7 @@
  *        Headers
  *----------------------------------------------------------------------------*/
 
+#define printf printf_sync
 #include "chip.h"
 
 /*----------------------------------------------------------------------------

@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -135,10 +136,10 @@ void CONSOLE_ISR(void)
 /**
  * \brief Outputs a character on the UART line.
  *
- * \note This function is synchronous (i.e. uses polling).
+ * \note This function is asynchronous (i.e. uses a buffer and interrupt to complete the transfer).
  * \param c  Character to send.
  */
-extern void UART_PutChar( uint8_t c )
+void UART_PutChar( uint8_t uc )
 {
 	Uart *pUart = CONSOLE_UART ;
 
@@ -148,14 +149,35 @@ extern void UART_PutChar( uint8_t c )
 		UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
 	}
 
-	/* Only store input if buffer is not full, else drop it */
 	if (!rbuf_is_full(&uart_tx_buffer)) {
-		rbuf_write(&uart_tx_buffer, c);
+		rbuf_write(&uart_tx_buffer, uc);
 		if (!(pUart->UART_IMR & UART_IMR_TXRDY)) {
 			pUart->UART_IER = UART_IER_TXRDY;
 			CONSOLE_ISR();
 		}
 	}
+}
+
+/**
+ * \brief Outputs a character on the UART line.
+ *
+ * \note This function is synchronous (i.e. uses polling and blocks until the transfer is complete).
+ * \param c  Character to send.
+ */
+void UART_PutChar_Sync( uint8_t uc )
+{
+	Uart *pUart = CONSOLE_UART ;
+
+	/* Initialize console is not already done */
+	if ( !_ucIsConsoleInitialized )
+	{
+		UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
+	}
+
+	while (!(pUart->UART_SR & UART_SR_TXRDY)); /* Wait for transfer buffer to be empty */
+	pUart->UART_THR = uc; /* Send data to UART peripheral */
+	while (!(pUart->UART_SR & UART_SR_TXRDY)); /* Wait for transfer buffer to transferred to shift register */
+	while (!(pUart->UART_SR & UART_SR_TXEMPTY)); /* Wait for transfer shift register to be empty (i.e. transfer is complete) */
 }
 
 /**

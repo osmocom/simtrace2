@@ -360,7 +360,6 @@ static int tx_byte_atr(struct card_handle *ch)
 	if (ch->atr.idx < ch->atr.len) {
 		uint8_t byte = ch->atr.atr[ch->atr.idx++];
 		card_emu_uart_tx(ch->uart_chan, byte);
-		TRACE_DEBUG("%u: ATR TX: %02x\n\r", ch->num, byte);
 		return 1;
 	} else { /* The ATR has been completely transmitted */
 		/* search for TC2 to updated WI */

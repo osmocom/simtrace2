@@ -223,6 +223,9 @@ static void flush_rx_buffer(struct card_handle *ch)
 	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 	rd->data_len = msgb_l2len(msg) - sizeof(*rd);
 
+	TRACE_INFO("%u: %s (%u)\n\r",
+			ch->num, __func__, rd->data_len);
+
 	usb_buf_upd_len_and_submit(msg);
 }
 

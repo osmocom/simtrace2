@@ -42,8 +42,8 @@
  *        Headers
  *----------------------------------------------------------------------------*/
 
-#define printf printf_sync
 #include "chip.h"
+#define printf printf_sync
 
 /*----------------------------------------------------------------------------
  *        Exported functions

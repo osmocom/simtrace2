@@ -114,15 +114,8 @@
 #define SIM_PWEN        PIO_PA5
 #define VCC_FWD         PIO_PA26
 
-/** Pin configuration to control USB pull-up on D+
- *  @details the USB pull-up on D+ is enable by default on the board but can be disabled by setting PA16 high
- */
-#define PIN_USB_PULLUP  {PIO_PA16, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
-
 // Board has UDP controller
 #define BOARD_USB_UDP
-// D+ has external pull-up
-#define BOARD_USB_PULLUP_EXTERNAL
 
 #define BOARD_USB_DFU
 #define BOARD_DFU_BOOT_SIZE	(16 * 1024)

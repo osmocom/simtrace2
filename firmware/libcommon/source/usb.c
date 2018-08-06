@@ -2,6 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
+ * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -35,6 +36,7 @@
 #include "simtrace.h"
 #include "simtrace_usb.h"
 #include "utils.h"
+#include "USBD_HAL.h"
 
 #include <cciddriverdescriptors.h>
 #include <usb/common/dfu/usb_dfu.h>
@@ -576,11 +578,17 @@ void SIMtrace_USB_Initialize(void)
 {
 
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
+#ifdef PIN_USB_PULLUP
 	const Pin usb_dp_pullup = PIN_USB_PULLUP;
 	PIO_Configure(&usb_dp_pullup, 1);
 	PIO_Set(&usb_dp_pullup);
-	mdelay(15);
+#endif
+	USBD_HAL_Suspend();
+	mdelay(20);
+#ifdef PIN_USB_PULLUP
 	PIO_Clear(&usb_dp_pullup);
+#endif
+	USBD_HAL_Activate();
 
 	// Get std USB driver
 	USBDDriver *pUsbd = USBD_GetDriver();

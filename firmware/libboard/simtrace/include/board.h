@@ -117,6 +117,11 @@
 /* SPI flash write protect pin (active low, pulled low) */
 #define PIN_SPI_WP    {PA15, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 
+/** Pin configuration to control USB pull-up on D+
+ *  @details the USB pull-up on D+ is enable by default on the board but can be disabled by setting PA16 high
+ */
+#define PIN_USB_PULLUP  {PIO_PA16, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+
 /** USB definitions */
 /* OpenMoko SIMtrace 2 USB vendor ID */
 #define BOARD_USB_VENDOR_ID	USB_VENDOR_OPENMOKO

@@ -113,9 +113,11 @@ static int erase_hub_eeprom(void)
 	/* write the EEPROM once */
 	for (i = 0; i < 256; i++) {
 		int rc = eeprom_write_byte(0x50, i, 0xff);
-		/* if the result was negative, repeat that write */
-		if (rc < 0)
-			i--;
+		if (rc < 0) {
+			TRACE_ERROR("Erasing EEPROM failed at byte %u: 0x%02x\n\r",
+				i, __eeprom_bin[i]);
+			return 1;
+		}
 	}
 
 	return 0;

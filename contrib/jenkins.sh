@@ -9,6 +9,7 @@ fi
 
 set -e
 
+publish="$1"
 base="$PWD"
 deps="$base/deps"
 inst="$deps/install"

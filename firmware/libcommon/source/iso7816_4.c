@@ -140,8 +140,8 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
 	while((us_base->US_CSR & (US_CSR_TXRDY)) == 0)  {
 		i++;
 		if (!(i%1000000)) {
-			printf("s: %x ", us_base->US_CSR);
-			printf("s: %x\r\n", us_base->US_RHR & 0xFF);
+			printf("s: %lx ", us_base->US_CSR);
+			printf("s: %lx\r\n", us_base->US_RHR & 0xFF);
 			us_base->US_CR = US_CR_RSTTX;
 			us_base->US_CR = US_CR_RSTRX;
 	  }

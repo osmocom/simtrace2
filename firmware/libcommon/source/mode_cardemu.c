@@ -50,7 +50,7 @@ static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
 #endif
 
 struct cardem_inst {
-	uint32_t num;
+	unsigned int num;
 	struct card_handle *ch;
 	struct llist_head usb_out_queue;
 	struct ringbuf rb;
@@ -117,7 +117,7 @@ static void wait_tx_idle(Usart *usart)
 	/* wait until last char has been fully transmitted */
 	while ((usart->US_CSR & (US_CSR_TXEMPTY)) == 0) {
 		if (!(i%1000000)) {
-			TRACE_ERROR("s: %x \r\n", usart->US_CSR);
+			TRACE_ERROR("s: %lx \r\n", usart->US_CSR);
 		}
 		i++;
 	}
@@ -174,7 +174,7 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 	int i = 1;
 	while ((usart->US_CSR & (US_CSR_TXRDY)) == 0) {
 		if (!(i%1000000)) {
-			TRACE_ERROR("%u: s: %x %02X\r\n",
+			TRACE_ERROR("%u: s: %lx %02lX\r\n",
 				uart_chan, usart->US_CSR,
 				usart->US_RHR & 0xFF);
 			usart->US_CR = US_CR_RSTTX;
@@ -213,7 +213,7 @@ static void usart_irq_rx(uint8_t inst_num)
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|
 		   US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) {
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-		TRACE_ERROR("%u e 0x%x st: 0x%x\n", ci->num, byte, csr);
+		TRACE_ERROR("%u e 0x%x st: 0x%lx\n", ci->num, byte, csr);
 	}
 }
 

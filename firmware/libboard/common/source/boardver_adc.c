@@ -86,7 +86,7 @@ int get_board_version_adc(void)
 	/* convert to voltage */
 	sample = ADC->ADC_CDR[2];
 	uv = adc2uv(sample);
-	TRACE_INFO("VERSION_DET ADC=%u => %u uV\r\n", sample, uv);
+	TRACE_INFO("VERSION_DET ADC=%u => %lu uV\r\n", sample, uv);
 
 	/* FIXME: convert to board version based on thresholds */
 

@@ -112,7 +112,7 @@ enum tpdu_state {
 #define	_P3	4
 
 struct card_handle {
-	uint32_t num;
+	unsigned int num;
 
 	enum iso7816_3_card_state state;
 

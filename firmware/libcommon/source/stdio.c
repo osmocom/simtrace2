@@ -62,8 +62,10 @@
 //------------------------------------------------------------------------------
 //
 FILE* const stdin = NULL;
-FILE* const stdout = NULL;
-FILE* const stderr = NULL;
+/* If we use NULL here, we get compiler warnings of calling stdio functions with
+ * NULL values.  Our fputs() implementation ignores the value of those pointers anyway */
+FILE* const stdout = (FILE *) 0x1;
+FILE* const stderr = (FILE *) 0x2;
 
 
 //------------------------------------------------------------------------------

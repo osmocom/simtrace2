@@ -163,13 +163,13 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		UART_GetIntegerMinMax(&addr, 0, 255);
 		printf("Please enter EEPROM value:\n\r");
 		UART_GetIntegerMinMax(&val, 0, 255);
-		printf("Writing value 0x%02x to EEPROM offset 0x%02x\n\r", val, addr);
+		printf("Writing value 0x%02lx to EEPROM offset 0x%02lx\n\r", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
 	case 'r':
 		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
+		printf("EEPROM[0x%02lx] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
 		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);

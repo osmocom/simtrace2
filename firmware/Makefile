@@ -141,13 +141,12 @@ INCLUDES += -Ilibosmocore/include
 INCLUDES += -Isrc_simtrace -Iinclude
 INCLUDES += -Iapps/$(APP)
 
-CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int #-Wformat=2
+CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int -Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
 CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal #-Wundef
 CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Waggregate-return #-Wsign-compare
-CFLAGS += -Wformat=0
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked
 CFLAGS += -Wredundant-decls -Wnested-externs #-Winline -Wlong-long

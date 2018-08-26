@@ -62,7 +62,7 @@ int _talloc_free(void *ptr, const char *location)
 	for (i = 0; i < ARRAY_SIZE(msgb_inuse); i++) {
 		if (ptr == msgb_data[i]) {
 			if (!msgb_inuse[i]) {
-				TRACE_ERROR("%s: double_free by \r\n", __func__, location);
+				TRACE_ERROR("%s: double_free by %s\r\n", __func__, location);
 			} else {
 				msgb_inuse[i] = 0;
 			}

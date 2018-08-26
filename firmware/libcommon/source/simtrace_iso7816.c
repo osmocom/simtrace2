@@ -58,7 +58,7 @@ void ISR_PhoneRST(const Pin * pPin)
 {
 	int ret;
 	// FIXME: no printfs in ISRs?
-	printf("+++ Int!! %x\n\r", pinPhoneRST.pio->PIO_ISR);
+	printf("+++ Int!! %lx\n\r", pinPhoneRST.pio->PIO_ISR);
 	if (((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)) {
 		if (PIO_Get(&pinPhoneRST) == 0) {
 			printf(" 0 ");

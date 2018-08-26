@@ -158,7 +158,7 @@ extern int main(void)
 		"=============================================================================\n\r");
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
-	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
+	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
@@ -173,7 +173,7 @@ extern int main(void)
 	if (reset_cause < ARRAY_SIZE(reset_causes)) {
 		TRACE_INFO("Reset Cause: %s\n\r", reset_causes[reset_cause]);
 	} else {
-		TRACE_INFO("Reset Cause: 0x%x\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+		TRACE_INFO("Reset Cause: 0x%lx\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
 	}
 #endif
 

@@ -150,7 +150,7 @@ int usb_refill_from_host(uint8_t ep)
 	rc = USBD_Read(ep, msg->head, msgb_tailroom(msg),
 			(TransferCallback) &usb_read_cb, msg);
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %s\n", __func__, rc);
+		TRACE_ERROR("%s error %d\n", __func__, rc);
 		usb_buf_free(msg);
 		bep->in_progress = 0;
 	}

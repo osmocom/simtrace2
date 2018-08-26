@@ -234,3 +234,7 @@ log:
 
 clean:
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst `find . -name \*.p`
+
+install:
+	mkdir -p $(DESTDIR)/usr/share/simtrace2
+	cp $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(DESTDIR)/usr/share/simtrace2

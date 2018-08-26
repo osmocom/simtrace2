@@ -1,4 +1,10 @@
-simtrace2 (0.5) UNRELEASED; urgency=medium
+simtrace2 (0.5.1) unstable; urgency=medium
+
+  * Backwards-compatibility with older (released, non-master) libosmocore
+
+ -- Harald Welte <lafore@gnumonks.org>  Sun, 26 Aug 2018 11:50:36 +0200
+
+simtrace2 (0.5) unstable; urgency=medium
 
   * Initial debian package release.
 

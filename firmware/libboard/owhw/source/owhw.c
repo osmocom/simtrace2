@@ -36,5 +36,5 @@ void cardsim_set_simpres(uint8_t slot, int present)
 
 void cardsim_gpio_init(void)
 {
-	PIO_Configure(&pins_cardsim, ARRAY_SIZE(pins_cardsim));
+	PIO_Configure(pins_cardsim, ARRAY_SIZE(pins_cardsim));
 }

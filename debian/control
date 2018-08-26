@@ -3,7 +3,7 @@ Maintainer: Harald Welte <laforge@gnumonks.org>
 Section: devel
 Priority: optional
 Build-Depends: debhelper (>= 9),
-               libosmocore-dev (>= 0.12.1),
+               libosmocore-dev,
                libnewlib-arm-none-eabi,
                libusb-1.0-0-dev,
                gcc-arm-none-eabi

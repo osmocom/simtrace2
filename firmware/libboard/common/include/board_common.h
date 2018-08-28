@@ -77,8 +77,8 @@
 #define PINS_UART  { PIO_PA9A_URXD0|PIO_PA10A_UTXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 
 /** UART0 */
-/** Console baudrate always using 115200. */
-#define CONSOLE_BAUDRATE    115200
+/** Console baud rate in bps */
+#define CONSOLE_BAUDRATE    921600
 /** UART peripheral used by the console (UART0). */
 #define CONSOLE_UART       UART0
 /** UART peripheral ID used by the console (UART0). */

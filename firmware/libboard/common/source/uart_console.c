@@ -85,7 +85,12 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 
 	/* Configure baudrate */
 	/* Asynchronous, no oversampling */
-	pUart->UART_BRGR = (masterClock / baudrate) / 16;
+	//pUart->UART_BRGR = (masterClock / baudrate) / 16;
+	if ((masterClock / baudrate) % 16 >= 7) {
+		pUart->UART_BRGR = ( masterClock / baudrate) / 16 + 1;
+	} else {
+		pUart->UART_BRGR = ( masterClock / baudrate) / 16 + 0;
+	}
 
 	/* Disable PDC channel */
 	pUart->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;

@@ -90,11 +90,12 @@ static int write_hub_eeprom(void)
 	TRACE_INFO("Verifying EEPROM...\n\r");
 	for (i = 0; i < ARRAY_SIZE(__eeprom_bin); i++) {
 		int byte = eeprom_read_byte(0x50, i);
-		TRACE_INFO("0x%02x: %02x\n\r", i, byte);
+		TRACE_DEBUG("0x%02x: %02x\n\r", i, byte);
 		if (byte != __eeprom_bin[i])
 			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\n\r",
 					i, __eeprom_bin[i], byte);
 	}
+	TRACE_INFO("EEPROM written\n\r");
 
 	/* FIXME: Release PIN_PRTPWR_OVERRIDE after we know the hub is
 	 * again powering us up */
@@ -119,6 +120,7 @@ static int erase_hub_eeprom(void)
 			return 1;
 		}
 	}
+	TRACE_INFO("EEPROM erased\n\r");
 
 	return 0;
 }
@@ -163,13 +165,13 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		UART_GetIntegerMinMax(&addr, 0, 255);
 		printf("Please enter EEPROM value:\n\r");
 		UART_GetIntegerMinMax(&val, 0, 255);
-		printf("Writing value 0x%02lx to EEPROM offset 0x%02lx\n\r", val, addr);
+		printf("Writing value 0x%02x to EEPROM offset 0x%02x\n\r", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
 	case 'r':
 		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("EEPROM[0x%02lx] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
+		printf("EEPROM[0x%02x] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
 		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);

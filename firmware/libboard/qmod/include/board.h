@@ -28,7 +28,10 @@
 /** Board definition */
 #define qmod
 
+/** oscillator used as main clock source (in Hz) */
 #define BOARD_MAINOSC 12000000
+/** desired main clock frequency (in Hz, based on BOARD_MAINOSC) */
+#define BOARD_MCK 58000000 // 18.432 * 29 / 6
 
 /* USIM 2 interface (USART) */
 #define PIN_USIM2_CLK		{PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}

@@ -26,8 +26,10 @@
 /* Board definition */
 #define simtrace
 
-/* Board main oscillator frequency (in Hz) */
+/** oscillator used as main clock source (in Hz) */
 #define BOARD_MAINOSC 18432000
+/** desired main clock frequency (in Hz, based on BOARD_MAINOSC) */
+#define BOARD_MCK 58982400 // 18.432 * 16 / 5
 
 /** Pin configuration **/
 /* Button to force bootloader start (shorted to ground when pressed */

@@ -350,19 +350,22 @@ signed int vsnprintf(char *pStr, size_t length, const char *pFormat, va_list ap)
 			}
 		
 			// Parse type
-			switch (*pFormat) {
-			case 'd': 
-			case 'i': num = PutSignedInt(pStr, fill, width, va_arg(ap, signed int)); break;
-			case 'u': num = PutUnsignedInt(pStr, fill, width, va_arg(ap, unsigned int)); break;
-			case 'x': num = PutHexa(pStr, fill, width, 0, va_arg(ap, unsigned int)); break;
-			case 'X': num = PutHexa(pStr, fill, width, 1, va_arg(ap, unsigned int)); break;
-			case 's': num = PutString(pStr, va_arg(ap, char *)); break;
-			case 'c': num = PutChar(pStr, va_arg(ap, unsigned int)); break;
-			default:
-				return EOF;
-			}
-
-			pFormat++;
+			do {
+				num = 0;
+				switch (*pFormat) {
+				case 'l': num = -1; break; // ignore long qualifier since int == long (and long long is not supported)
+				case 'd':
+				case 'i': num = PutSignedInt(pStr, fill, width, va_arg(ap, signed int)); break;
+				case 'u': num = PutUnsignedInt(pStr, fill, width, va_arg(ap, unsigned int)); break;
+				case 'x': num = PutHexa(pStr, fill, width, 0, va_arg(ap, unsigned int)); break;
+				case 'X': num = PutHexa(pStr, fill, width, 1, va_arg(ap, unsigned int)); break;
+				case 's': num = PutString(pStr, va_arg(ap, char *)); break;
+				case 'c': num = PutChar(pStr, va_arg(ap, unsigned int)); break;
+				default:
+					return EOF;
+				}
+				pFormat++;
+			} while (num < 0);
 			pStr += num;
 			size += num;
 		}

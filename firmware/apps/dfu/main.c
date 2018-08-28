@@ -256,7 +256,7 @@ extern int main(void)
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
-	TRACE_INFO("Reset Cause: 0x%x\n\r", reset_cause);
+	TRACE_INFO("Reset Cause: 0x%lx\n\r", reset_cause);
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
 	/* Find out why we are in the DFU bootloader, and not the main application */

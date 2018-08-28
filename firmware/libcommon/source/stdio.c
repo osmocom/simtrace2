@@ -429,12 +429,17 @@ signed int vsprintf(char *pString, const char *pFormat, va_list ap)
 signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
 {
 	char pStr[MAX_STRING_SIZE];
-	char pError[] = "stdio.c: increase MAX_STRING_SIZE\n\r";
 
 	// Write formatted string in buffer
-	if (vsprintf(pStr, pFormat, ap) >= MAX_STRING_SIZE) {
-
-		fputs(pError, stderr);
+	int rc = vsprintf(pStr, pFormat, ap);
+	if (rc < 0) {
+		fputs("format string error in ", stderr);
+		fputs(pFormat, stderr);
+		return rc;
+	}
+	if (rc >= MAX_STRING_SIZE) {
+		fputs("stdio.c: increase MAX_STRING_SIZE\n\r", stderr);
+		return rc;
 	}
 
 	// Display string
@@ -454,12 +459,17 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
 signed int vfprintf_sync(FILE *pStream, const char *pFormat, va_list ap)
 {
 	char pStr[MAX_STRING_SIZE];
-	char pError[] = "stdio.c: increase MAX_STRING_SIZE\n\r";
 
 	// Write formatted string in buffer
-	if (vsprintf(pStr, pFormat, ap) >= MAX_STRING_SIZE) {
-
-		fputs_sync(pError, stderr);
+	int rc = vsprintf(pStr, pFormat, ap);
+	if (rc < 0) {
+		fputs_sync("format string error in ", stderr);
+		fputs_sync(pFormat, stderr);
+		return rc;
+	}
+	if (rc >= MAX_STRING_SIZE) {
+		fputs_sync("stdio.c: increase MAX_STRING_SIZE\n\r", stderr);
+		return rc;
 	}
 
 	// Display string

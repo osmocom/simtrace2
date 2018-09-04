@@ -19,6 +19,7 @@
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
+#include "led.h"
 #include "wwan_led.h"
 #include "wwan_perst.h"
 #include "sim_switch.h"
@@ -186,6 +187,10 @@ void board_exec_dbg_cmd(int ch)
 	case '?':
 		printf("\t?\thelp\n\r");
 		printf("\tR\treset SAM3\n\r");
+		printf("\tl\tswitch off LED 1\n\r");
+		printf("\tL\tswitch off LED 1\n\r");
+		printf("\tg\tswitch off LED 2\n\r");
+		printf("\tG\tswitch off LED 2\n\r");
 		if (qmod_sam3_is_12()) {
 			printf("\tE\tprogram EEPROM\n\r");
 			printf("\te\tErase EEPROM\n\r");
@@ -208,6 +213,22 @@ void board_exec_dbg_cmd(int ch)
 		printf("Asking NVIC to reset us\n\r");
 		USBD_Disconnect();
 		NVIC_SystemReset();
+		break;
+	case 'l':
+		led_blink(LED_GREEN, BLINK_ALWAYS_OFF);
+		printf("LED 1 switched off\n\r");
+		break;
+	case 'L':
+		led_blink(LED_GREEN, BLINK_ALWAYS_ON);
+		printf("LED 1 switched on\n\r");
+		break;
+	case 'g':
+		led_blink(LED_RED, BLINK_ALWAYS_OFF);
+		printf("LED 2 switched off\n\r");
+		break;
+	case 'G':
+		led_blink(LED_RED, BLINK_ALWAYS_ON);
+		printf("LED 2 switched on\n\r");
 		break;
 	case 'X':
 		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\n\r");

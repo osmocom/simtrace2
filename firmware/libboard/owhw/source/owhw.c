@@ -21,6 +21,7 @@
 #include "chip.h"
 #include "board.h"
 #include "utils.h"
+#include "usb_buf.h"
 
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 
@@ -40,6 +41,13 @@ void board_exec_dbg_cmd(int ch)
 		printf("Unknown command '%c'\n\r", ch);
 		break;
 	}
+}
+
+void board_main_top(void)
+{
+#ifndef APPLICATION_dfu
+	usb_buf_init();
+#endif
 }
 
 void cardsim_set_simpres(uint8_t slot, int present)

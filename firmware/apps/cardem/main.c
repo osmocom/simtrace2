@@ -129,9 +129,8 @@ static void check_exec_dbg_cmd(void)
 		return;
 
 	ch = UART_GetChar();
-	/* We must echo the character to make python fdexpect happy, whcih we use in factory testing */
+	/* We must echo the character to make python fdexpect happy, which we use in factory testing */
 	fputc(ch, stdout);
-
 	board_exec_dbg_cmd(ch);
 }
 

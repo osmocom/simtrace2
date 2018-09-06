@@ -24,6 +24,24 @@
 
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 
+void board_exec_dbg_cmd(int ch)
+{
+	switch (ch) {
+	case '?':
+		printf("\t?\thelp\n\r");
+		printf("\tR\treset SAM3\n\r");
+		break;
+	case 'R':
+		printf("Asking NVIC to reset us\n\r");
+		USBD_Disconnect();
+		NVIC_SystemReset();
+		break;
+	default:
+		printf("Unknown command '%c'\n\r", ch);
+		break;
+	}
+}
+
 void cardsim_set_simpres(uint8_t slot, int present)
 {
 	if (slot > 1)

@@ -101,7 +101,11 @@ static volatile enum confNum simtrace_config = CFG_NUM_CCID;
 void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum)
 {
 	TRACE_INFO_WP("cfgChanged%d ", cfgnum);
-	simtrace_config = cfgnum;
+	if (cfgnum < ARRAY_SIZE(config_func_ptrs)) {
+		simtrace_config = cfgnum;
+	} else {
+		TRACE_ERROR("trying to set out of bounds config %u\r\n", cfgnum);
+	}
 }
 
 void USART1_IrqHandler(void)
@@ -204,7 +208,9 @@ extern int main(void)
 	}
 
 	TRACE_INFO("calling init of config %u...\n\r", simtrace_config);
-	config_func_ptrs[simtrace_config].init();
+	if (config_func_ptrs[simtrace_config].init) {
+		config_func_ptrs[simtrace_config].init();
+	}
 	last_simtrace_config = simtrace_config;
 
 	TRACE_INFO("entering main loop...\n\r");
@@ -232,11 +238,17 @@ extern int main(void)
 		if (last_simtrace_config != simtrace_config) {
 			TRACE_INFO("USB config chg %u -> %u\n\r",
 				   last_simtrace_config, simtrace_config);
-			config_func_ptrs[last_simtrace_config].exit();
-			config_func_ptrs[simtrace_config].init();
+			if (config_func_ptrs[last_simtrace_config].exit) {
+				config_func_ptrs[last_simtrace_config].exit();
+			}
+			if (config_func_ptrs[simtrace_config].init) {
+				config_func_ptrs[simtrace_config].init();
+			}
 			last_simtrace_config = simtrace_config;
 		} else {
-			config_func_ptrs[simtrace_config].run();
+			if (config_func_ptrs[simtrace_config].run) {
+				config_func_ptrs[simtrace_config].run();
+			}
 		}
 	}
 }

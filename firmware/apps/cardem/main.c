@@ -1,6 +1,7 @@
 /* SIMtrace 2 firmware card emulation application
  *
  * (C) 2015-2017 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

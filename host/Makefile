@@ -1,4 +1,4 @@
-LDFLAGS=`pkg-config --libs libusb-1.0 libosmocore` -losmocore
+LDFLAGS+=`pkg-config --libs libusb-1.0 libosmocore` -pthread
 CFLAGS=-Wall -g
 
 APPS=simtrace2-remsim simtrace2-remsim-usb2udp simtrace2-list simtrace2-sniff
@@ -6,7 +6,7 @@ APPS=simtrace2-remsim simtrace2-remsim-usb2udp simtrace2-list simtrace2-sniff
 all: $(APPS)
 
 simtrace2-remsim: simtrace2-remsim.o apdu_dispatch.o simtrace2-discovery.o libusb_util.o
-	$(CC) -o $@ $^ $(LDFLAGS) -losmosim
+	$(CC) -o $@ $^ $(LDFLAGS) `pkg-config --libs libosmosim libpcsclite`
 
 simtrace2-remsim-usb2udp: usb2udp.o simtrace2-discovery.o
 	$(CC) -o $@ $^ $(LDFLAGS)

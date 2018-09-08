@@ -35,7 +35,7 @@
 
 #include <libusb.h>
 
-#include "simtrace.h"
+#include "simtrace_usb.h"
 #include "simtrace_prot.h"
 #include "apdu_dispatch.h"
 #include "simtrace2-discovery.h"
@@ -243,7 +243,7 @@ int main(int argc, char **argv)
 
 	libusb_set_pollfd_notifiers(NULL, &libusb_fd_added_cb, &libusb_fd_removed_cb, NULL);
 
-	g_devh = libusb_open_device_with_vid_pid(NULL, SIMTRACE_USB_VENDOR, SIMTRACE_USB_PRODUCT);
+	g_devh = libusb_open_device_with_vid_pid(NULL, USB_VENDOR_OPENMOKO, USB_PRODUCT_OWHW_SAM3);
 	if (!g_devh) {
 		fprintf(stderr, "can't open USB device\n");
 		goto close_exit;

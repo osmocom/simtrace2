@@ -501,6 +501,7 @@ static void print_help(void)
 		"\t-I\t--usb-interface\tINTERFACE_ID\n"
 		"\t-S\t--usb-altsetting ALTSETTING_ID\n"
 		"\t-A\t--usb-address\tADDRESS\n"
+		"\t-H\t--usb-path\tPATH\n"
 		"\n"
 		);
 }

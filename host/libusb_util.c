@@ -159,7 +159,7 @@ int dev_find_matching_interfaces(libusb_device *dev, int class, int sub_class, i
 				out[out_idx].vendor = dev_desc.idVendor;
 				out[out_idx].product = dev_desc.idProduct;
 				out[out_idx].addr = addr;
-				strncpy(out[out_idx].path, path, sizeof(out[out_idx].path));
+				strncpy(out[out_idx].path, path, sizeof(out[out_idx].path)-1);
 				out[out_idx].path[sizeof(out[out_idx].path)-1] = '\0';
 				out[out_idx].configuration = conf_desc->bConfigurationValue;
 				out[out_idx].interface = if_desc->bInterfaceNumber;

@@ -85,4 +85,5 @@ int main(int argc, char **argv)
 {
 	libusb_init(NULL);
 	find_devices();
+	return 0;
 }

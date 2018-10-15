@@ -218,7 +218,7 @@ static int cardem_request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t 
 
 /*! \brief Request the SIMtrace2 to transmit a Procedure Byte, then Tx */
 static int cardem_request_pb_and_tx(struct cardem_inst *ci, uint8_t pb,
-				    const uint8_t *data, uint8_t data_len_in)
+				    const uint8_t *data, uint16_t data_len_in)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_tx_data *txd;

@@ -55,14 +55,38 @@ enum iso7816_3_card_state {
 };
 
 const struct value_string iso7816_3_card_state_names[] = {
-	OSMO_VALUE_STRING(ISO_S_WAIT_POWER),
-	OSMO_VALUE_STRING(ISO_S_WAIT_CLK),
-	OSMO_VALUE_STRING(ISO_S_WAIT_RST),
-	OSMO_VALUE_STRING(ISO_S_WAIT_ATR),
-	OSMO_VALUE_STRING(ISO_S_IN_ATR),
-	OSMO_VALUE_STRING(ISO_S_IN_PTS),
-	OSMO_VALUE_STRING(ISO_S_WAIT_TPDU),
-	OSMO_VALUE_STRING(ISO_S_IN_TPDU),
+	{
+		.value = ISO_S_WAIT_POWER,
+		.str = "WAIT_POWER",
+	},
+	{
+		.value = ISO_S_WAIT_CLK,
+		.str = "WAIT_CLK",
+	},
+	{
+		.value = ISO_S_WAIT_RST,
+		.str = "WAIT_RST",
+	},
+	{
+		.value = ISO_S_WAIT_ATR,
+		.str = "WAIT_ATR",
+	},
+	{
+		.value = ISO_S_IN_ATR,
+		.str = "IN_ATR",
+	},
+	{
+		.value = ISO_S_IN_PTS,
+		.str = "IN_PTS",
+	},
+	{
+		.value = ISO_S_WAIT_TPDU,
+		.str = "WAIT_TPDU",
+	},
+	{
+		.value = ISO_S_IN_TPDU,
+		.str = "IN_TPDU",
+	},
 	{
 		.value = 0,
 		.str = NULL,
@@ -86,6 +110,7 @@ enum pts_state {
 	PTS_S_WAIT_RESP_PCK = PTS_S_WAIT_REQ_PCK | 0x10,
 };
 
+/* PTS field byte index */
 #define _PTSS	0
 #define _PTS0	1
 #define _PTS1	2
@@ -105,6 +130,46 @@ enum tpdu_state {
 	TPDU_S_WAIT_TX,		/* waiting for more data to reader */
 };
 
+const struct value_string tpdu_state_names[] = {
+	{
+		.value = TPDU_S_WAIT_CLA,
+		.str = "WAIT_CLA",
+	},
+	{
+		.value = TPDU_S_WAIT_INS,
+		.str = "WAIT_INS",
+	},
+	{
+		.value = TPDU_S_WAIT_P1,
+		.str = "WAIT_P1",
+	},
+	{
+		.value = TPDU_S_WAIT_P2,
+		.str = "WAIT_P2",
+	},
+	{
+		.value = TPDU_S_WAIT_P3,
+		.str = "WAIT_P3",
+	},
+	{
+		.value = TPDU_S_WAIT_PB,
+		.str = "WAIT_PB",
+	},
+	{
+		.value = TPDU_S_WAIT_RX,
+		.str = "WAIT_RX",
+	},
+	{
+		.value = TPDU_S_WAIT_TX,
+		.str = "WAIT_TX",
+	},
+	{
+		.value = 0,
+		.str = NULL,
+	},
+};
+
+/* TPDU field byte index */
 #define	_CLA	0
 #define	_INS	1
 #define	_P1	2
@@ -304,9 +369,9 @@ static void card_set_state(struct card_handle *ch,
 	if (ch->state == new_state)
 		return;
 
-	TRACE_DEBUG("%u: 7816 card state %u (%s) -> %u (%s)\r\n", ch->num,
-		    ch->state, get_value_string(iso7816_3_card_state_names, ch->state),
-		    new_state, get_value_string(iso7816_3_card_state_names, new_state));
+	TRACE_DEBUG("%u: 7816 card state %s -> %s\r\n", ch->num,
+		    get_value_string(iso7816_3_card_state_names, ch->state),
+		    get_value_string(iso7816_3_card_state_names, new_state));
 	ch->state = new_state;
 
 	switch (new_state) {
@@ -651,9 +716,9 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 	if (ch->tpdu.state == new_ts)
 		return;
 
-	TRACE_DEBUG("%u: 7816 TPDU state %u -> %u\r\n", ch->num,
-		    ch->tpdu.state, new_ts);
-
+	TRACE_DEBUG("%u: 7816 TPDU state %s -> %s\r\n", ch->num,
+		get_value_string(tpdu_state_names, ch->tpdu.state),
+		get_value_string(tpdu_state_names, new_ts));
 	ch->tpdu.state = new_ts;
 
 	switch (new_ts) {

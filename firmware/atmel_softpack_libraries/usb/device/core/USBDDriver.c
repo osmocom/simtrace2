@@ -251,7 +251,7 @@ static void GetDescriptor(
     switch (type) {
 
         case USBGenericDescriptor_DEVICE:
-            TRACE_INFO_WP("Dev ");
+            TRACE_DEBUG_WP("Dev ");
 
             /* Adjust length and send descriptor */
 
@@ -263,7 +263,7 @@ static void GetDescriptor(
             break;
 
         case USBGenericDescriptor_CONFIGURATION:
-            TRACE_INFO_WP("Cfg ");
+            TRACE_DEBUG_WP("Cfg ");
 
             /* Adjust length and send descriptor */
 
@@ -280,7 +280,7 @@ static void GetDescriptor(
             break;
 
         case USBGenericDescriptor_DEVICEQUALIFIER:
-            TRACE_INFO_WP("Qua ");
+            TRACE_DEBUG_WP("Qua ");
 
             /* Check if descriptor exists */
 
@@ -301,7 +301,7 @@ static void GetDescriptor(
             break;
 
         case USBGenericDescriptor_OTHERSPEEDCONFIGURATION:
-            TRACE_INFO_WP("OSC ");
+            TRACE_DEBUG_WP("OSC ");
 
             /* Check if descriptor exists */
 
@@ -327,7 +327,7 @@ static void GetDescriptor(
             break;
 
         case USBGenericDescriptor_STRING:
-            TRACE_INFO_WP("Str%d ", indexRDesc);
+            TRACE_DEBUG_WP("Str%d ", indexRDesc);
 
             /* Check if descriptor exists */
 
@@ -504,13 +504,13 @@ void USBDDriver_RequestHandler(
     uint32_t length;
     uint32_t address;
 
-    TRACE_INFO_WP("Std ");
+    TRACE_DEBUG_WP("Std ");
 
     /* Check request code */
     switch (USBGenericRequest_GetRequest(pRequest)) {
 
         case USBGenericRequest_GETDESCRIPTOR:
-            TRACE_INFO_WP("gDesc ");
+            TRACE_DEBUG_WP("gDesc ");
 
             /* Send the requested descriptor */
             type = USBGetDescriptorRequest_GetDescriptorType(pRequest);
@@ -520,7 +520,7 @@ void USBDDriver_RequestHandler(
             break;
 
         case USBGenericRequest_SETADDRESS:
-            TRACE_INFO_WP("sAddr ");
+            TRACE_DEBUG_WP("sAddr ");
 
             /* Sends a zero-length packet and then set the device address */
             address = USBSetAddressRequest_GetAddress(pRequest);
@@ -528,7 +528,7 @@ void USBDDriver_RequestHandler(
             break;
 
         case USBGenericRequest_SETCONFIGURATION:
-            TRACE_INFO_WP("sCfg ");
+            TRACE_DEBUG_WP("sCfg ");
 
             /* Set the requested configuration */
             cfgnum = USBSetConfigurationRequest_GetConfiguration(pRequest);
@@ -536,27 +536,27 @@ void USBDDriver_RequestHandler(
             break;
 
         case USBGenericRequest_GETCONFIGURATION:
-            TRACE_INFO_WP("gCfg ");
+            TRACE_DEBUG_WP("gCfg ");
 
             /* Send the current configuration number */
             GetConfiguration(pDriver);
             break;
 
         case USBGenericRequest_GETSTATUS:
-            TRACE_INFO_WP("gSta ");
+            TRACE_DEBUG_WP("gSta ");
 
             /* Check who is the recipient */
             switch (USBGenericRequest_GetRecipient(pRequest)) {
 
                 case USBGenericRequest_DEVICE:
-                    TRACE_INFO_WP("Dev ");
+                    TRACE_DEBUG_WP("Dev ");
 
                     /* Send the device status */
                     GetDeviceStatus(pDriver);
                     break;
 
                 case USBGenericRequest_ENDPOINT:
-                    TRACE_INFO_WP("Ept ");
+                    TRACE_DEBUG_WP("Ept ");
 
                     /* Send the endpoint status */
                     eptnum = USBGenericRequest_GetEndpointNumber(pRequest);
@@ -572,13 +572,13 @@ void USBDDriver_RequestHandler(
             break;
 
         case USBGenericRequest_CLEARFEATURE:
-            TRACE_INFO_WP("cFeat ");
+            TRACE_DEBUG_WP("cFeat ");
 
             /* Check which is the requested feature */
             switch (USBFeatureRequest_GetFeatureSelector(pRequest)) {
 
                 case USBFeatureRequest_ENDPOINTHALT:
-                    TRACE_INFO_WP("Hlt ");
+                    TRACE_DEBUG_WP("Hlt ");
 
                     /* Unhalt endpoint and send a zero-length packet */
                     USBD_Unhalt(USBGenericRequest_GetEndpointNumber(pRequest));
@@ -586,7 +586,7 @@ void USBDDriver_RequestHandler(
                     break;
 
                 case USBFeatureRequest_DEVICEREMOTEWAKEUP:
-                    TRACE_INFO_WP("RmWU ");
+                    TRACE_DEBUG_WP("RmWU ");
 
                     /* Disable remote wake-up and send a zero-length packet */
                     pDriver->isRemoteWakeUpEnabled = 0;
@@ -602,13 +602,13 @@ void USBDDriver_RequestHandler(
             break;
 
     case USBGenericRequest_SETFEATURE:
-        TRACE_INFO_WP("sFeat ");
+        TRACE_DEBUG_WP("sFeat ");
 
         /* Check which is the selected feature */
         switch (USBFeatureRequest_GetFeatureSelector(pRequest)) {
 
             case USBFeatureRequest_DEVICEREMOTEWAKEUP:
-                TRACE_INFO_WP("RmWU ");
+                TRACE_DEBUG_WP("RmWU ");
 
                 /* Enable remote wake-up and send a ZLP */
                 pDriver->isRemoteWakeUpEnabled = 1;
@@ -616,25 +616,25 @@ void USBDDriver_RequestHandler(
                 break;
 
             case USBFeatureRequest_ENDPOINTHALT:
-                TRACE_INFO_WP("Halt ");
+                TRACE_DEBUG_WP("Halt ");
                 /* Halt endpoint */
                 USBD_Halt(USBGenericRequest_GetEndpointNumber(pRequest));
                 USBD_Write(0, 0, 0, 0, 0);
                 break;
             case USBFeatureRequest_OTG_B_HNP_ENABLE:
-                    TRACE_INFO_WP("OTG_B_HNP_ENABLE ");
+                    TRACE_DEBUG_WP("OTG_B_HNP_ENABLE ");
                     pDriver->otg_features_supported |=
                         1<<USBFeatureRequest_OTG_B_HNP_ENABLE;
                     USBD_Write(0, 0, 0, 0, 0);
                 break;
             case USBFeatureRequest_OTG_A_HNP_SUPPORT:
-                    TRACE_INFO_WP("OTG_A_HNP_SUPPORT ");
+                    TRACE_DEBUG_WP("OTG_A_HNP_SUPPORT ");
                     pDriver->otg_features_supported |=
                         1<<USBFeatureRequest_OTG_A_HNP_SUPPORT;
                     USBD_Write(0, 0, 0, 0, 0);
                 break;
             case USBFeatureRequest_OTG_A_ALT_HNP_SUPPORT:
-                    TRACE_INFO_WP("OTG_A_ALT_HNP_SUPPORT ");
+                    TRACE_DEBUG_WP("OTG_A_ALT_HNP_SUPPORT ");
                     pDriver->otg_features_supported |=
                         1<<USBFeatureRequest_OTG_A_ALT_HNP_SUPPORT;
                     USBD_Write(0, 0, 0, 0, 0);
@@ -649,7 +649,7 @@ void USBDDriver_RequestHandler(
         break;
 
     case USBGenericRequest_SETINTERFACE:
-        TRACE_INFO_WP("sInterface ");
+        TRACE_DEBUG_WP("sInterface ");
 
         infnum = USBInterfaceRequest_GetInterface(pRequest);
         setting = USBInterfaceRequest_GetAlternateSetting(pRequest);
@@ -657,7 +657,7 @@ void USBDDriver_RequestHandler(
         break;
 
     case USBGenericRequest_GETINTERFACE:
-        TRACE_INFO_WP("gInterface ");
+        TRACE_DEBUG_WP("gInterface ");
 
         infnum = USBInterfaceRequest_GetInterface(pRequest);
         GetInterface(pDriver, infnum);

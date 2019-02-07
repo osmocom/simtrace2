@@ -66,7 +66,11 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		WDT_Restart(WDT);
 	}
 
-	printf("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
+#if TRACE_LEVEL >= TRACE_LEVEL_INFO
+	TRACE_INFO("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
+#else
+	printf("DL off=%u\n\r", offset);
+#endif
 
 #ifdef PINS_LEDS
 	PIO_Clear(&pinsLeds[LED_NUM_RED]);

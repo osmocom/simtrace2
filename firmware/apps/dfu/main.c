@@ -1,7 +1,7 @@
 /* SIMtrace 2 firmware USB DFU bootloader
  *
  * (C) 2015-2017 by Harald Welte <hwelte@hmw-consulting.de>
- * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * (C) 2018-2019 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -248,7 +248,8 @@ extern int main(void)
 
 	printf("\n\r\n\r"
 		"=============================================================================\n\r"
-		"DFU bootloader %s for board %s (C) 2010-2017 by Harald Welte\n\r"
+		"DFU bootloader %s for board %s\n\r"
+		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r"
 		"=============================================================================\n\r",
 		manifest_revision, manifest_board);
 

@@ -214,8 +214,8 @@ static void update_wt(uint8_t wi, uint8_t d)
 	if (0 != d) {
 		wt_d = d;
 	}
-	wt = wt_wi*960UL*wt_d;
-	TRACE_INFO("WT updated to %lu\n\r", wt);
+	wt = wt_wi * 960UL * wt_d;
+	TRACE_INFO("WT updated to %lu ETU\n\r", wt);
 }
 
 /*! Allocate USB buffer and push + initialize simtrace_msg_hdr

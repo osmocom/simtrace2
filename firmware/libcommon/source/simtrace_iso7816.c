@@ -80,7 +80,7 @@ void ISR_PhoneRST(const Pin * pPin)
 }
 
 /*
- *  char_stat is zero if no error occured.
+ *  char_stat is zero if no error occurred.
  *  Otherwise it is filled with the content of the status register.
  */
 void mode_trace_usart1_irq(void)
@@ -110,7 +110,7 @@ void mode_trace_usart1_irq(void)
 			rbuf_write(&sim_rcv_buf, c);
 		} else {
 			TRACE_DEBUG("e %x st: %x\n", c, stat);
-		}		/* else: error occured */
+		}		/* else: error occurred */
 
 		char_stat = stat;
 	}

@@ -74,9 +74,9 @@
 
 /** Phone connection **/
 /* Phone USIM slot 1 VCC pin (VCC_PHONE in schematic) */
-#define PIN_USIM1_VCC          {PIO_PA25, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+#define PIN_USIM1_VCC          {PIO_PA25, PIOA, ID_PIOA, PIO_INPUT, PIO_IT_EDGE | PIO_DEGLITCH }
 /* Phone USIM slot 1 RST pin (active low; RST_PHONE in schematic) */
-#define PIN_USIM1_nRST         {PIO_PA24, PIOA, ID_PIOA, PIO_INPUT, PIO_IT_RISE_EDGE | PIO_DEGLITCH }
+#define PIN_USIM1_nRST         {PIO_PA24, PIOA, ID_PIOA, PIO_INPUT, PIO_IT_EDGE | PIO_DEGLITCH }
 /* Phone I/O data signal input/output (I/O_PHONE in schematic) */
 #define PIN_PHONE_IO           {PIO_PA22A_TXD1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /* Phone CLK clock input (CLK_PHONE in schematic) */

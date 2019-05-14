@@ -1121,8 +1121,8 @@ void tc_etu_wtime_expired(void *handle)
 	}
 }
 
-/* shortest ATR found in smartcard_list.txt */
-static const uint8_t default_atr[] = { 0x3B, 0x02, 0x14, 0x50 };
+/* shortest ATR possible (uses default speed and no options) */
+static const uint8_t default_atr[] = { 0x3B, 0x00 };
 
 static struct card_handle card_handles[NUM_SLOTS];
 

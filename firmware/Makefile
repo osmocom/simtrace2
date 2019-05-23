@@ -120,6 +120,10 @@ C_OBJECTS  = $(C_FILES:%.c=%.o)
 # TRACE_LEVEL_NO_TRACE   0
 TRACE_LEVEL ?= 4
 
+# allow asserting the peer SAM3S ERASE signal to completely erase the flash
+# only applicable for qmod board
+ALLOW_PEER_ERASE?=0
+
 DEBUG_PHONE_SNIFF?=0
 
 #CFLAGS+=-DUSB_NO_DEBUG=1
@@ -163,7 +167,7 @@ CFLAGS += -Wno-suggest-attribute=noreturn
 #CFLAGS += -Wa,-a,-ad
 CFLAGS += -D__ARM
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
-CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF)
+CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DDEBUG_PHONE_SNIFF=$(DEBUG_PHONE_SNIFF) -DALLOW_PEER_ERASE=$(ALLOW_PEER_ERASE)
 CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
 CFLAGS += -DAPPLICATION=\"$(APP)\" -DAPPLICATION_$(APP)

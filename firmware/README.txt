@@ -76,6 +76,10 @@ $ make TRACE_LEVEL=4
 ```
 Accepted values: 0 (NO_TRACE) to 5 (DEBUG)
 
+The qmod specific option `ALLOW_PEER_ERASE` controls if the UART debug command to assert the peer SAM3S ERASE line is present in the code.
+Per default this is set to 0 to prevent accidentally erasing all firmware, including the DFU bootloader, which would then need to be flashed using SAM-BA or JTAG/SWD.
+Setting `ALLOW_PEER_ERASE` to 1 enables back the debug command and should be used only for debugging or development purposes.
+
 = Flashing
 
 To flash a firmware image follow the instructions provided in the [wiki](https://projects.osmocom.org/projects/simtrace2/wiki/).

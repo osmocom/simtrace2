@@ -184,10 +184,12 @@ static void board_exec_dbg_cmd_st12only(int ch)
 /* returns '1' in case we should break any endless loop */
 void board_exec_dbg_cmd(int ch)
 {
+#if (ALLOW_PEER_ERASE > 0)
 	/* this variable controls if it is allowed to assert/release the ERASE line.
 	   this is done to prevent accidental ERASE on noisy serial input since only one character can trigger the ERASE.
 	 */
 	static bool allow_erase = false;
+#endif
 
 	switch (ch) {
 	case '?':
@@ -209,9 +211,11 @@ void board_exec_dbg_cmd(int ch)
 		}
 		printf("\tX\tRelease peer SAM3 from reset\n\r");
 		printf("\tx\tAssert peer SAM3 reset\n\r");
+#if (ALLOW_PEER_ERASE > 0)
 		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
 		printf("\ta\tAllow asserting peer SAM3 ERASE signal\n\r");
 		printf("\ty\tAssert peer SAM3 ERASE signal\n\r");
+#endif
 		printf("\tU\tProceed to USB Initialization\n\r");
 		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
 		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
@@ -245,6 +249,7 @@ void board_exec_dbg_cmd(int ch)
 		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\n\r");
 		PIO_Set(&pin_peer_rst);
 		break;
+#if (ALLOW_PEER_ERASE > 0)
 	case 'Y':
 		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
 		PIO_Clear(&pin_peer_erase);
@@ -261,6 +266,7 @@ void board_exec_dbg_cmd(int ch)
 			printf("Please first allow setting SIMTRACExx_ERASE\n\r");
 		}
 		break;
+#endif
 	case '1':
 		printf("Resetting Modem 1 (of this SAM3)\n\r");
 		wwan_perst_do_reset_pulse(0, 300);
@@ -283,10 +289,12 @@ void board_exec_dbg_cmd(int ch)
 		break;
 	}
 
+#if (ALLOW_PEER_ERASE > 0)
 	// set protection back so it can only run for one command
 	if ('a' != ch) {
 		allow_erase = false;
 	}
+#endif
 }
 
 void board_main_top(void)

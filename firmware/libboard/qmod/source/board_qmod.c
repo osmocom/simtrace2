@@ -1,7 +1,7 @@
 /* sysmocom quad-modem sysmoQMOD application code
  *
  * (C) 2016-2017 by Harald Welte <hwelte@hmw-consulting.de>
- * (C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * (C) 2018-2019, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -184,6 +184,11 @@ static void board_exec_dbg_cmd_st12only(int ch)
 /* returns '1' in case we should break any endless loop */
 void board_exec_dbg_cmd(int ch)
 {
+	/* this variable controls if it is allowed to assert/release the ERASE line.
+	   this is done to prevent accidental ERASE on noisy serial input since only one character can trigger the ERASE.
+	 */
+	static bool allow_erase = false;
+
 	switch (ch) {
 	case '?':
 		printf("\t?\thelp\n\r");
@@ -205,6 +210,7 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tX\tRelease peer SAM3 from reset\n\r");
 		printf("\tx\tAssert peer SAM3 reset\n\r");
 		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
+		printf("\ta\tAllow asserting peer SAM3 ERASE signal\n\r");
 		printf("\ty\tAssert peer SAM3 ERASE signal\n\r");
 		printf("\tU\tProceed to USB Initialization\n\r");
 		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
@@ -243,9 +249,17 @@ void board_exec_dbg_cmd(int ch)
 		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
 		PIO_Clear(&pin_peer_erase);
 		break;
+	case 'a':
+		printf("Asserting SIMTRACExx_ERASE allowed on next command\n\r");
+		allow_erase = true;
+		break;
 	case 'y':
-		printf("Seetting SIMTRACExx_ERASE (active)\n\r");
-		PIO_Set(&pin_peer_erase);
+		if (allow_erase) {
+			printf("Setting SIMTRACExx_ERASE (active)\n\r");
+			PIO_Set(&pin_peer_erase);
+		} else {
+			printf("Please first allow setting SIMTRACExx_ERASE\n\r");
+		}
 		break;
 	case '1':
 		printf("Resetting Modem 1 (of this SAM3)\n\r");
@@ -267,6 +281,11 @@ void board_exec_dbg_cmd(int ch)
 		else
 			board_exec_dbg_cmd_st12only(ch);
 		break;
+	}
+
+	// set protection back so it can only run for one command
+	if ('a' != ch) {
+		allow_erase = false;
 	}
 }
 

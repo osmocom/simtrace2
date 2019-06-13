@@ -111,4 +111,7 @@
 #define CARDEMU_SECOND_UART
 #define DETECT_VCC_BY_ADC
 
+/** sysmoQMOD only supports card emulation */
+#ifdef APPLICATION_cardem
 #define HAVE_CARDEM
+#endif

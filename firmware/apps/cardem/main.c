@@ -165,7 +165,7 @@ extern int main(void)
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
 		WDT_Restart(WDT);
 		check_exec_dbg_cmd();
-#if 0
+#if 1
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
 				    "not be configured)\n\r");

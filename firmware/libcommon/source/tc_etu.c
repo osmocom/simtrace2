@@ -23,6 +23,9 @@
 
 #include "chip.h"
 
+void card_emu_wt_halfed(void *handle);
+void card_emu_wt_expired(void *handle);
+
 /* pins for Channel 0 of TC-block 0, we only use TCLK + TIOB */
 #define PIN_TCLK0	{PIO_PA4, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT }
 #define PIN_TIOA0	{PIO_PA0, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
@@ -85,7 +88,7 @@ static void tc_etu_irq(struct tc_etu_state *te)
 		te->nr_events++;
 		if (te->nr_events == te->wait_events/2) {
 			/* Indicate that half the waiting tim has expired */
-			tc_etu_wtime_half_expired(te->handle);
+			card_emu_wt_halfed(te->handle);
 		}
 		if (te->nr_events >= te->wait_events) {
 			TcChannel *chan = te->chan;
@@ -96,7 +99,7 @@ static void tc_etu_irq(struct tc_etu_state *te)
 			chan->TC_CCR = TC_CCR_CLKEN;
 
 			/* Indicate that the waiting tim has expired */
-			tc_etu_wtime_expired(te->handle);
+			card_emu_wt_expired(te->handle);
 		}
 	}
 }

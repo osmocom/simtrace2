@@ -1,7 +1,7 @@
 /* ISO7816-3 state machine for the card side
  *
  * (C) 2010-2019 by Harald Welte <laforge@gnumonks.org>
- * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * (C) 2018-2019 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 
 #include "utils.h"
 #include "trace.h"
+#include "iso7816_3.h"
 #include "iso7816_fidi.h"
 #include "tc_etu.h"
 #include "card_emu.h"
@@ -154,18 +155,53 @@ struct card_handle {
 	bool in_reset;	/*< if card is in reset (true = RST low/asserted, false = RST high/ released) */
 	bool clocked;	/*< if clock is active ( true = active, false = inactive) */
 
-	/* timing parameters, from PTS */
-	uint8_t fi;
-	uint8_t di;
-	uint8_t wi;
-
 	uint8_t tc_chan;	/* TC channel number */
 	uint8_t uart_chan;	/* UART channel */
 
 	uint8_t in_ep;		/* USB IN EP */
 	uint8_t irq_ep;		/* USB IN EP */
 
-	uint32_t waiting_time;	/* in clocks */
+	/*! clock rate conversion integer F
+	 *  @implements ISO/IEC 7816-3:2006(E) section 7.1
+	 *  @note this represents the current value used
+	 */
+	uint16_t f;
+	/*! baud rate adjustment factor D
+	 *  @implements ISO/IEC 7816-3:2006(E) section 7.1
+	 *  @note this represents the current value used
+	 */
+	uint8_t d;
+	/*! clock frequency in Hz
+	 *  @implements ISO/IEC 7816-3:2006(E) section 7.1
+	 *  @note the USART peripheral in slave mode does not provide the current value. we could measure it but this is not really useful. instead we remember the maximum possible value corresponding to the selected F value
+	 */
+	uint32_t f_cur;
+	/*! clock rate conversion integer Fi
+	 *  @implements ISO/IEC 7816-3:2006(E) Table 7
+	 *  @note this represents the maximum value supported by the card, and can be indicated in TA1
+	 *  @note this value can be set in TA1
+	 */
+	uint16_t fi;
+	/*! baud rate adjustment factor Di
+	 *  @implements ISO/IEC 7816-3:2006(E) Table 8
+	 *  @note this represents the maximum value supported by the card, and can be indicated in TA1
+	 */
+	uint8_t di;
+	/*! clock frequency, in Hz
+	 *  @implements ISO/IEC 7816-3:2006(E) Table 7
+	 *  @note this represents the maximum value supported by the card, and can be indicated in TA1
+	 */
+	uint32_t f_max;
+	/*! Waiting Integer
+	 *  @implements ISO/IEC 7816-3:2006(E) Section 10.2
+	 *  @note this value can be set in TA2
+	 */
+	uint8_t wi;
+	/*! Waiting Time, in ETU
+	 *  @implements ISO/IEC 7816-3:2006(E) Section 8.1
+	 *  @note this depends on Fi, Di, and WI if T=0 is used
+	 */
+	uint32_t wt;
 
 	/* ATR state machine */
 	struct {
@@ -206,7 +242,9 @@ static void card_handle_reset(struct card_handle *ch)
 {
 	struct msgb *msg;
 
+#ifndef BOARD_simtrace
 	tc_etu_disable(ch->tc_chan);
+#endif
 
 	/* release any buffers we may still own */
 	if (ch->uart_tx_msg) {
@@ -390,13 +428,44 @@ static void card_set_state(struct card_handle *ch,
 	case ISO_S_WAIT_POWER:
 	case ISO_S_WAIT_CLK:
 	case ISO_S_WAIT_RST:
-		/* disable Rx and Tx of UART */
-		card_emu_uart_enable(ch->uart_chan, 0);
+		card_emu_uart_enable(ch->uart_chan, 0); // disable Rx and Tx of UART
+#ifdef BOARD_simtrace
+		card_emu_uart_update_wt(ch->uart_chan, 0); // disable timeout
+		if (ISO_S_WAIT_POWER == new_state) {
+			card_emu_uart_io_set(ch->uart_chan, false); // pull I/O line low
+		} else {
+			card_emu_uart_io_set(ch->uart_chan, true); // pull I/O line high
+		}
+#endif
 		break;
 	case ISO_S_WAIT_ATR:
+
+		// reset the ETU-related values
+		ch->f = ISO7816_3_DEFAULT_FD;
+		ch->d = ISO7816_3_DEFAULT_DD;
+
+#ifdef BOARD_simtrace
+		card_emu_uart_update_fd(ch->uart_chan, ch->f, ch->d); // set baud rate
+
+		// reset values optionally specified in the ATR
+		ch->fi = ISO7816_3_DEFAULT_FI;
+		ch->di = ISO7816_3_DEFAULT_DI;
+		ch->wi = ISO7816_3_DEFAULT_WI;
+		int32_t wt = iso7816_3_calculate_wt(ch->wi, ch->fi, ch->di, ch->f, ch->d); // get default waiting time
+		if (wt <= 0) {
+			TRACE_FATAL("%u: invalid WT %ld\r\n", ch->num, wt);
+		}
+		ch->wt = wt;
+		card_emu_uart_enable(ch->uart_chan, ENABLE_TX); // enable TX to be able to use the timeout
+		/* the ATR should only be sent 400 to 40k clock cycles after the RESET.
+		 * we use the UART timeout mechanism to wait this time.
+		 * since the initial ETU is Fd=372/Dd=1 clock cycles long, we have to wait 2-107 ETU.
+		 */
+		card_emu_uart_update_wt(ch->uart_chan, 2);
+#else
 		/* Reset to initial Fi / Di ratio */
-		ch->fi = 1;
-		ch->di = 1;
+		ch->f = 1;
+		ch->d = 1;
 		emu_update_fidi(ch);
 		/* the ATR should only be sent 400 to 40k clock cycles after the RESET.
 		 * we use the tc_etu mechanism to wait this time.
@@ -405,16 +474,20 @@ static void card_set_state(struct card_handle *ch,
 		tc_etu_set_wtime(ch->tc_chan, 2);
 		/* enable the TC/ETU counter once reset has been released */
 		tc_etu_enable(ch->tc_chan);
+#endif
+
 		break;
 	case ISO_S_IN_ATR:
+#ifndef BOARD_simtrace
 		/* initialize to default WI, this will be overwritten if we
 		 * send TC2, and it will be programmed into hardware after
 		 * ATR is finished */
 		ch->wi = ISO7816_3_DEFAULT_WI;
 		/* update waiting time to initial waiting time */
-		ch->waiting_time = ISO7816_3_INIT_WTIME;
+		ch->wt = ISO7816_3_INIT_WTIME;
 		/* set initial waiting time */
-		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
+		tc_etu_set_wtime(ch->tc_chan, ch->wt);
+#endif
 		/* Set ATR sub-state to initial state */
 		ch->atr.idx = 0;
 		/* enable USART transmission to reader */
@@ -489,9 +562,15 @@ static int tx_byte_atr(struct card_handle *ch)
 				}
 			}
 		}
+#ifdef BOARD_simtrace
+		/* FIXME update waiting time in case of card is specific mode */
+		/* reset PTS to initial state */
+		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
+#else
 		/* update waiting time (see ISO 7816-3 10.2) */
-		ch->waiting_time = ch->wi * 960 * ch->fi;
-		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
+		ch->wt = ch->wi * 960 * ch->fi;
+		tc_etu_set_wtime(ch->tc_chan, ch->wt);
+#endif
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		return 0;
@@ -557,9 +636,12 @@ from_pts3:
 	return PTS_S_WAIT_REQ_PCK | is_resp;
 }
 
-
-static int
-process_byte_pts(struct card_handle *ch, uint8_t byte)
+/*! process incoming PTS byte
+ *  @param[in] ch card handle on which the byte has been received
+ *  @param[in] byte received PTS byte
+ *  @return new iso7816_3_card_state or -1 at the end of PTS request
+ */
+static int process_byte_pts(struct card_handle *ch, uint8_t byte)
 {
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_REQ_PTSS:
@@ -625,11 +707,17 @@ static int tx_byte_pts(struct card_handle *ch)
 		break;
 	case PTS_S_WAIT_RESP_PTS1:
 		byte = ch->pts.resp[_PTS1];
-		/* This must be TA1 */
-		ch->fi = byte >> 4;
-		ch->di = byte & 0xf;
-		TRACE_DEBUG("%u: found Fi=%u Di=%u\r\n", ch->num,
-			    ch->fi, ch->di);
+		// TODO the value should have been validated when receiving the request
+		ch->f = iso7816_3_fi_table[byte >> 4]; // save selected Fn
+		if (0 == ch->f) {
+			TRACE_ERROR("%u: invalid F index in PPS response: %u\r\n", ch->num, byte >> 4);
+			// TODO become unresponsive to signal error condition
+		}
+		ch->d = iso7816_3_di_table[byte & 0xf]; // save selected Dn
+		if (0 == ch->d) {
+			TRACE_ERROR("%u: invalid D index in PPS response: %u\r\n", ch->num, byte & 0xf);
+			// TODO become unresponsive to signal error condition
+		}
 		break;
 	case PTS_S_WAIT_RESP_PTS2:
 		byte = ch->pts.resp[_PTS2];
@@ -654,10 +742,23 @@ static int tx_byte_pts(struct card_handle *ch)
 	switch (ch->pts.state) {
 	case PTS_S_WAIT_RESP_PCK:
 		card_emu_uart_wait_tx_idle(ch->uart_chan);
+#ifdef BOARD_simtrace
+		card_emu_uart_update_fd(ch->uart_chan, ch->f, ch->d); // set selected baud rate
+		int32_t wt = iso7816_3_calculate_wt(ch->wi, ch->fi, ch->di, ch->f, ch->d); // get new waiting time
+		if (wt <= 0) {
+			TRACE_ERROR("%u: invalid WT calculated: %ld\r\n", ch->num, wt);
+			// TODO become unresponsive to signal error condition
+		} else {
+			ch->wt = wt;
+		}
+		// FIXME disable WT
+#else
 		/* update baud rate generator with Fi/Di */
 		emu_update_fidi(ch);
+#endif
 		/* Wait for the next TPDU */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
+		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		break;
 	default:
 		/* calculate the next state and set it */
@@ -725,6 +826,10 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 {
 	if (ch->tpdu.state == new_ts)
 		return;
+	if (ISO_S_IN_TPDU != ch->state) {
+		TRACE_ERROR("%u: setting TPDU state in %s state\r\n", ch->num,
+			get_value_string(iso7816_3_card_state_names, ch->state));
+	}
 
 	TRACE_DEBUG("%u: 7816 TPDU state %s -> %s\r\n", ch->num,
 		get_value_string(tpdu_state_names, ch->tpdu.state),
@@ -732,15 +837,20 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 	ch->tpdu.state = new_ts;
 
 	switch (new_ts) {
-	case TPDU_S_WAIT_CLA:
-	case TPDU_S_WAIT_RX:
-		card_emu_uart_enable(ch->uart_chan, ENABLE_RX);
+	case TPDU_S_WAIT_CLA: // we will be waiting for the next incoming TDPU
+		card_emu_uart_enable(ch->uart_chan, ENABLE_RX); // switch back to receiving mode
+		card_emu_uart_update_wt(ch->uart_chan, 0); // disable waiting time since we don't expect any data
+		break;
+	case TPDU_S_WAIT_INS: // the reader started sending the TPDU header
+		card_emu_uart_update_wt(ch->uart_chan, ch->wt); // start waiting for the rest of the header/body
+		break;
+	case TPDU_S_WAIT_RX: // the reader should send us the TPDU body data
+		card_emu_uart_enable(ch->uart_chan, ENABLE_RX); // switch to receive mode to receive the body
+		card_emu_uart_update_wt(ch->uart_chan, ch->wt); // start waiting for the rest body
 		break;
 	case TPDU_S_WAIT_PB:
-		/* we just completed the TPDU header from reader to card
-		 * and now need to disable the receiver, enable the
-		 * transmitter and transmit the procedure byte */
-		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+		card_emu_uart_enable(ch->uart_chan, ENABLE_TX); // header is completely received, now we need to transmit the procedure byte
+		card_emu_uart_update_wt(ch->uart_chan, ch->wt); // prepare to extend the waiting time once half of it is reached
 		break;
 	default:
 		break;
@@ -1024,11 +1134,11 @@ void card_emu_report_status(struct card_handle *ch, bool report_on_irq)
 		sts->flags |= CEMU_STATUS_F_CLK_ACTIVE;
 	if (ch->in_reset)
 		sts->flags |= CEMU_STATUS_F_RESET_ACTIVE;
-	/* FIXME: voltage + card insert */
-	sts->fi = ch->fi;
-	sts->di = ch->di;
+	/* FIXME set voltage and card insert values */
+	sts->f = ch->f;
+	sts->d = ch->d;
 	sts->wi = ch->wi;
-	sts->waiting_time = ch->waiting_time;
+	sts->wt = ch->wt;
 
 	usb_buf_upd_len_and_submit(msg);
 }
@@ -1083,9 +1193,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	case CARD_IO_RST:
 		if (active == 0 && ch->in_reset) {
 			TRACE_INFO("%u: RST released\r\n", ch->num);
-			if (ch->vcc_active && ch->clocked) {
-				/* enable the TC/ETU counter once reset has been released */
-				tc_etu_enable(ch->tc_chan);
+			if (ch->vcc_active && ch->clocked && ISO_S_WAIT_RST == ch->state) {
 				/* prepare to send the ATR */
 				card_set_state(ch, ISO_S_WAIT_ATR);
 			}
@@ -1094,8 +1202,13 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			TRACE_INFO("%u: RST asserted\r\n", ch->num);
 			card_handle_reset(ch);
 			chg_mask |= CEMU_STATUS_F_RESET_ACTIVE;
+#ifdef BOARD_simtrace
+			card_set_state(ch, ISO_S_WAIT_RST);
+#endif
 		}
 		ch->in_reset = active;
+		break;
+	default:
 		break;
 	}
 
@@ -1143,7 +1256,7 @@ int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len)
 }
 
 /* hardware driver informs us that one (more) ETU has expired */
-void tc_etu_wtime_half_expired(void *handle)
+void card_emu_wt_halfed(void *handle)
 {
 	struct card_handle *ch = handle;
 	/* transmit NULL procedure byte well before waiting time expires */
@@ -1153,7 +1266,8 @@ void tc_etu_wtime_half_expired(void *handle)
 		case TPDU_S_WAIT_PB:
 		case TPDU_S_WAIT_TX:
 			putchar('N');
-			card_emu_uart_tx(ch->uart_chan, ISO7816_3_PB_NULL);
+			card_emu_uart_tx(ch->uart_chan, ISO7816_3_PB_NULL); // we are waiting for data from the user. send a procedure byte to ask the reader to wait more time
+			card_emu_uart_reset_wt(ch->uart_chan); // reset WT
 			break;
 		default:
 			break;
@@ -1165,7 +1279,7 @@ void tc_etu_wtime_half_expired(void *handle)
 }
 
 /* hardware driver informs us that one (more) ETU has expired */
-void tc_etu_wtime_expired(void *handle)
+void card_emu_wt_expired(void *handle)
 {
 	struct card_handle *ch = handle;
 	switch (ch->state) {
@@ -1174,6 +1288,7 @@ void tc_etu_wtime_expired(void *handle)
 		card_set_state(ch, ISO_S_IN_ATR);
 		break;
 	default:
+		// TODO become unresponsive
 		TRACE_ERROR("%u: wtime_exp\r\n", ch->num);
 		break;
 	}
@@ -1209,6 +1324,7 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 
 	INIT_LLIST_HEAD(&ch->uart_tx_queue);
 
+	/* initialize the card_handle with reasonable defaults */
 	ch->num = slot_num;
 	ch->irq_ep = irq_ep;
 	ch->in_ep = in_ep;
@@ -1217,21 +1333,26 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 	ch->in_reset = in_reset;
 	ch->clocked = clocked;
 
-	ch->fi = 0;
-	ch->di = 1;
+	ch->fi = ISO7816_3_DEFAULT_FI;
+	ch->di = ISO7816_3_DEFAULT_DI;
 	ch->wi = ISO7816_3_DEFAULT_WI;
+	ch->wt = ISO7816_3_DEFAULT_WT;;
 
 	ch->tc_chan = tc_chan;
 	ch->uart_chan = uart_chan;
-	ch->waiting_time = ISO7816_3_INIT_WTIME;
 
 	ch->atr.idx = 0;
 	ch->atr.len = sizeof(default_atr);
 	memcpy(ch->atr.atr, default_atr, ch->atr.len);
 
-	card_handle_reset(ch);
+	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
+	ch->tpdu.state = TPDU_S_WAIT_CLA;
 
+	card_handle_reset(ch);
+#ifndef BOARD_simtrace
+	/* simtrace uses uart timer instead */
 	tc_etu_init(ch->tc_chan, ch);
+#endif
 
 	return ch;
 }

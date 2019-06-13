@@ -22,6 +22,7 @@
 #include "simtrace.h"
 #include "ringbuffer.h"
 #include "card_emu.h"
+#include "iso7816_3.h"
 #include "iso7816_fidi.h"
 #include "utils.h"
 #include <osmocom/core/linuxlist.h>
@@ -54,11 +55,15 @@ struct cardem_inst {
 	struct card_handle *ch;
 	struct llist_head usb_out_queue;
 	struct ringbuf rb;
+	uint32_t wt; /*!< receiver waiting time to trigger timeout (0 to deactivate it) */
+	uint32_t wt_remaining; /*!< remaining waiting time */
+	bool wt_halfed; /*!< if at least half of the waiting time passed */
 	struct Usart_info usart_info;
 	int usb_pending_old;
 	uint8_t ep_out;
 	uint8_t ep_in;
 	uint8_t ep_int;
+	const Pin pin_io;
 	const Pin pin_insert;
 #ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
@@ -81,6 +86,7 @@ struct cardem_inst cardem_inst[] = {
 		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM1_DATAOUT,
 		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN,
 		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM1_INT,
+		.pin_io = PIN_USIM1_IO,
 #ifdef PIN_SET_USIM1_PRES
 		.pin_insert = PIN_SET_USIM1_PRES,
 #endif
@@ -96,6 +102,7 @@ struct cardem_inst cardem_inst[] = {
 		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM2_DATAOUT,
 		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN,
 		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM2_INT,
+		.pin_io = PIN_USIM2_IO,
 #ifdef PIN_SET_USIM2_PRES
 		.pin_insert = PIN_SET_USIM2_PRES,
 #endif
@@ -146,7 +153,11 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 		 * receiver enabled during transmit */
 		USART_SetReceiverEnabled(usart, 1);
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+#ifdef BOARD_simtrace
+		USART_EnableIt(usart, US_IER_TXRDY | US_IER_TIMEOUT);
+#else
 		USART_EnableIt(usart, US_IER_TXRDY);
+#endif
 		USART_SetTransmitterEnabled(usart, 1);
 		break;
 	case ENABLE_RX:
@@ -156,7 +167,11 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 		USART_SetTransmitterEnabled(usart, 1);
 		wait_tx_idle(usart);
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+#ifdef BOARD_simtrace
+		USART_EnableIt(usart, US_IER_RXRDY | US_IER_TIMEOUT);
+#else
 		USART_EnableIt(usart, US_IER_RXRDY);
+#endif
 		USART_SetReceiverEnabled(usart, 1);
 		break;
 	case 0:
@@ -198,11 +213,18 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 /* FIXME: integrate this with actual irq handler */
 static void usart_irq_rx(uint8_t inst_num)
 {
-	OSMO_ASSERT(inst_num < ARRAY_SIZE(cardem_inst));
+	if (inst_num >= ARRAY_SIZE(cardem_inst)) {
+		TRACE_ERROR("%u: UART channel out of bounds\r\n", inst_num);
+		return;
+	}
 	Usart *usart = get_usart_by_chan(inst_num);
 	struct cardem_inst *ci = &cardem_inst[inst_num];
 	uint32_t csr;
 	uint8_t byte = 0;
+	uint32_t errflags = (US_CSR_OVRE | US_CSR_FRAME | US_CSR_PARE | US_CSR_NACK | (1 << 10));
+#ifndef BOARD_simtrace
+	errflags |= US_CSR_TIMEOUT;
+#endif
 
 	csr = usart->US_CSR & usart->US_IMR; // save state/flags before they get changed
 
@@ -217,10 +239,33 @@ static void usart_irq_rx(uint8_t inst_num)
 			USART_DisableIt(usart, US_IER_TXRDY); // stop the TX ready signal if not byte has been transmitted
 	}
 
-	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) { // error flag set
+	if (csr & errflags) { // error flag set
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK; // reset UART state to clear flag
 		TRACE_ERROR("%u USART error on 0x%x status: 0x%lx\n", ci->num, byte, csr); // warn user about error
 	}
+#ifdef BOARD_simtrace
+	// handle timeout
+	if (csr & US_CSR_TIMEOUT) { // RX has been inactive for some time
+		if (ci->wt_remaining <= (usart->US_RTOR & 0xffff)) { // waiting time has passed
+			ci->wt_remaining = 0; // timeout reached (will stop the timer)
+		} else {
+			ci->wt_remaining -= (usart->US_RTOR & 0xffff); // be sure to subtract the actual timeout since the new might not have been set and reloaded yet
+		}
+		if (0 == ci->wt_remaining) {
+			card_emu_wt_expired(ci->ch); // let the state know WT has expired
+		} else if (ci->wt_remaining <= ci->wt / 2 && !ci->wt_halfed) {
+			ci->wt_halfed = true;
+			card_emu_wt_halfed(ci->ch); // let the state know WT has half expired
+		}
+		if (ci->wt_remaining > 0xffff) { // value exceeds the USART TO range
+			usart->US_RTOR = 0xffff; // use the MAX
+		} else {
+			usart->US_RTOR = ci->wt_remaining;
+		}
+		usart->US_CR |= US_CR_STTTO; // clear timeout flag (and stop timeout until next character is received)
+		usart->US_CR |= US_CR_RETTO; // restart the counter (it wt is 0, the timeout is not started)
+	}
+#endif
 }
 
 /*! ISR called for USART0 */
@@ -247,6 +292,91 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	usart->US_FIDI = fidi & 0x3ff;
 	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
 	return 0;
+}
+
+// call-back from card_emu.c to change UART baud rate
+void card_emu_uart_update_fd(uint8_t uart_chan, uint16_t f, uint8_t d)
+{
+	Usart *usart = get_usart_by_chan(uart_chan); // get the USART based on the card handle
+	if (NULL == usart) {
+		TRACE_ERROR("%u: USART not found by chan\r\n", uart_chan);
+		return;
+	}
+	if (!iso7816_3_valid_f(f)) {
+		TRACE_ERROR("%u: invalid F: %u\r\n", uart_chan, f);
+		return;
+	}
+	if (!iso7816_3_valid_d(d)) {
+		TRACE_ERROR("%u: invalid D: %u\r\n", uart_chan, d);
+		return;
+	}
+
+	uint16_t ratio = f / d;
+	if (ratio > 0 && ratio < 2048) {
+		/* make sure USART uses new F/D ratio */
+		usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX; // disable USART before changing baud rate
+		usart->US_FIDI = (ratio & 0x7ff); // change baud rate (ratio)
+		usart->US_CR |= US_CR_RXEN | US_CR_STTTO; // re-enable USART (and stop timeout)
+		TRACE_INFO("%u: USART F/D set to %u/%u\r\n", uart_chan, f, d);
+	} else {
+		TRACE_ERROR("%u: USART could not set F/D to %u/%u\r\n", uart_chan, f, d);
+		// TODO become unresponsive
+	}
+}
+
+void card_emu_uart_update_wt(uint8_t uart_chan, uint32_t wt)
+{
+	if (uart_chan >= ARRAY_SIZE(cardem_inst)) {
+		TRACE_ERROR("%u: UART channel out of bounds\r\n", uart_chan);
+		return;
+	}
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+	Usart *usart = get_usart_by_chan(uart_chan); // get the USART based on the card handle
+	if (NULL == usart) {
+		TRACE_ERROR("%u: USART not found by chan\r\n", uart_chan);
+		return;
+	}
+
+	ci->wt = wt; // save value
+	card_emu_uart_reset_wt(uart_chan); // reset and start timer
+	TRACE_INFO("%u: USART WT set to %lu ETU\r\n", uart_chan, wt);
+}
+
+void card_emu_uart_reset_wt(uint8_t uart_chan)
+{
+	if (uart_chan >= ARRAY_SIZE(cardem_inst)) {
+		TRACE_ERROR("%u: UART channel out of bounds\r\n", uart_chan);
+		return;
+	}
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+	Usart *usart = get_usart_by_chan(uart_chan); // get the USART based on the card handle
+	if (NULL == usart) {
+		TRACE_ERROR("%u: USART not found by chan\r\n", uart_chan);
+		return;
+	}
+
+	ci->wt_remaining = ci->wt; // reload WT value
+	ci->wt_halfed = false; // reset half expired
+	if (ci->wt_remaining > 0xffff) { // value exceeds the USART TO range
+		usart->US_RTOR = 0xffff; // use the MAX
+	} else {
+		usart->US_RTOR = ci->wt_remaining;
+	}
+	usart->US_CR |= US_CR_RETTO; // restart the counter (if wt is 0, the timeout is not started)
+}
+
+void card_emu_uart_io_set(uint8_t uart_chan, bool set)
+{
+	if (uart_chan >= ARRAY_SIZE(cardem_inst)) {
+		TRACE_ERROR("%u: UART channel out of bounds\r\n", uart_chan);
+		return;
+	}
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+	if (set) {
+		PIO_Set(&ci->pin_io);
+	} else {
+		PIO_Clear(&ci->pin_io);
+	}
 }
 
 /* call-back from card_emu.c to force a USART interrupt */
@@ -462,6 +592,10 @@ void mode_cardemu_init(void)
 					  SIMTRACE_CARDEM_USB_EP_USIM1_INT, cardem_inst[0].vcc_active,
 					  cardem_inst[0].rst_active, cardem_inst[0].vcc_active);
 	sim_switch_use_physical(0, 1);
+#ifndef DETECT_VCC_BY_ADC
+	usim1_vcc_irqhandler(NULL); // check VCC/CLK state
+#endif
+	usim1_rst_irqhandler(NULL); // force RST state
 
 #ifdef CARDEMU_SECOND_UART
 	INIT_LLIST_HEAD(&cardem_inst[1].usb_out_queue);

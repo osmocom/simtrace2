@@ -367,9 +367,9 @@ static int process_do_status(struct cardem_inst *ci, uint8_t *buf, int len)
 	struct cardemu_usb_msg_status *status;
 	status = (struct cardemu_usb_msg_status *) buf;
 
-	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u\n",
-		status->flags, status->fi, status->di, status->wi,
-		status->waiting_time);
+	printf("=> STATUS: flags=0x%x, F=%u, D=%u, WI=%u WT=%u\n",
+		status->flags, status->f, status->d, status->wi,
+		status->wt);
 
 	return 0;
 }

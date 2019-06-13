@@ -147,7 +147,7 @@
 #endif
 /* SIMtrace board supports card emulation mode */
 #ifdef APPLICATION_cardem
-//#define HAVE_CARDEM
+#define HAVE_CARDEM
 #endif
 /* SIMtrace board supports man-in-the-middle mode */
 #ifdef APPLICATION_mitm

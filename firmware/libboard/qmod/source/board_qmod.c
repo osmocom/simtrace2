@@ -28,6 +28,7 @@
 #include "card_pres.h"
 #include <osmocom/core/timer.h>
 #include "usb_buf.h"
+#include "i2c.h"
 
 static const Pin pin_hubpwr_override = PIN_PRTPWR_OVERRIDE;
 static const Pin pin_hub_rst = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
@@ -46,6 +47,7 @@ static int qmod_sam3_is_12(void)
 		return 0;
 }
 
+#if (ALLOW_PEER_ERASE > 0)
 const unsigned char __eeprom_bin[256] = {
 	USB_VENDOR_OPENMOKO & 0xff,
 	USB_VENDOR_OPENMOKO >> 8,
@@ -69,7 +71,6 @@ const unsigned char __eeprom_bin[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA0, 0x56, 0x23, 0x71, 0x04, 0x00, /* 0xf0 - 0xff */
 };
 
-#include "i2c.h"
 static int write_hub_eeprom(void)
 {
 	int i;
@@ -126,7 +127,7 @@ static int erase_hub_eeprom(void)
 
 	return 0;
 }
-
+#endif /* ALLOW_PEER_ERASE */
 
 static void board_exec_dbg_cmd_st12only(int ch)
 {
@@ -137,12 +138,14 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		return;
 
 	switch (ch) {
+#if (ALLOW_PEER_ERASE > 0)
 	case 'E':
 		write_hub_eeprom();
 		break;
 	case 'e':
 		erase_hub_eeprom();
 		break;
+#endif /* ALLOW_PEER_ERASE */
 	case 'O':
 		printf("Setting PRTPWR_OVERRIDE\n\r");
 		PIO_Set(&pin_hubpwr_override);
@@ -151,6 +154,7 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		printf("Clearing PRTPWR_OVERRIDE\n\r");
 		PIO_Clear(&pin_hubpwr_override);
 		break;
+#if (ALLOW_PEER_ERASE > 0)
 	case 'H':
 		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\n\r");
 		PIO_Clear(&pin_hub_rst);
@@ -170,6 +174,7 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		printf("Writing value 0x%02lx to EEPROM offset 0x%02lx\n\r", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
+#endif /* ALLOW_PEER_ERASE */
 	case 'r':
 		printf("Please enter EEPROM offset:\n\r");
 		UART_GetIntegerMinMax(&addr, 0, 255);

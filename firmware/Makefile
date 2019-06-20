@@ -28,6 +28,7 @@
 
 #   Makefile for compiling the Getting Started with SAM3S Microcontrollers project
 
+GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 #-------------------------------------------------------------------------------
 #        User-modifiable options
 #-------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ MEMORIES ?= flash dfu
 APP ?= dfu
 
 # Output directories
-OUTPUT = $(BOARD)-$(APP)
+OUTPUT = $(BOARD)-$(APP)-$(GIT_VERSION)
 BIN = bin
 OBJ = obj/$(BOARD)
 
@@ -73,7 +74,6 @@ GDB = $(CROSS_COMPILE)gdb
 NM = $(CROSS_COMPILE)nm
 
 TOP=..
-GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 
 #-------------------------------------------------------------------------------
 #		Files

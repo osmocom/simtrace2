@@ -546,12 +546,20 @@ void mode_cardemu_init(void)
 
 	TRACE_ENTRY();
 
+#ifdef PINS_PWR_CARDEMU
+	// enable power on required peripherals, else disable
+	Pin pins_pwr_cardemu[] = { PINS_PWR_CARDEMU };
+	PIO_Configure(pins_pwr_cardemu, PIO_LISTSIZE(pins_pwr_cardemu));
+#endif /* PINS_PWR_CARDEMU */
 #ifdef PINS_CARDSIM
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
 #endif
+	// ADC channel 6 and 7 are used to measure VCC (else they are grounded)
+	ADC->ADC_CHER |= ADC_CHER_CH6 | ADC_CHER_CH7; // enable the ADC channels to put them in high impedance (else they leak current)
 #ifdef DETECT_VCC_BY_ADC
-	card_vcc_adc_init();
+	card_vcc_adc_init(); // configure the ADC to measure VCC
 #endif /* DETECT_VCC_BY_ADC */
+	// TODO pull SIMtrace board SIM lines low, else they can leak current back to VCC
 
 	INIT_LLIST_HEAD(&cardem_inst[0].usb_out_queue);
 	rbuf_reset(&cardem_inst[0].rb);

@@ -105,6 +105,14 @@
 /* ISO7816-communication related pins */
 #define PINS_ISO7816            PIN_SIM_IO,  PIN_SIM_CLK,  PIN_ISO7816_RSTMC // SIM_PWEN_PIN, PIN_SIM_IO2, PIN_SIM_CLK2
 
+/** card emulation configuration */
+/* Disable power converter 4.5-6V to 3.3V (active high) */
+#define PIN_SIM_PWEN_CARDEMU   {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+/* Disable power switch to forward VCC_PHONE to VCC_SIM (active high) */
+#define PIN_VCC_FWD_CARDEMU    {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+/* Disable power to SIM */
+#define PINS_PWR_CARDEMU        PIN_SIM_PWEN_CARDEMU, PIN_VCC_FWD_CARDEMU
+
 /** External SPI flash interface   **/
 /* SPI MISO pin definition */
 #define PIN_SPI_MISO  {PIO_PA12A_MISO, PIOA, PIOA, PIO_PERIPH_A, PIO_PULLUP}

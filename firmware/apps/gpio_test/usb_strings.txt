@@ -1,0 +1,10 @@
+sysmocom - s.f.m.c. GmbH
+SIMtrace 2 compatible device
+SIMtrace Sniffer
+SIMtrace CCID
+SIMtrace Phone
+SIMtrace MITM
+CardEmulator Modem 1
+CardEmulator Modem 2
+CardEmulator Modem 3
+CardEmulator Modem 4

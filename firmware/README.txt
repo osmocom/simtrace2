@@ -24,6 +24,7 @@ Current boards supported are:
 * `simtrace`: The good old Osmocom SIMtrace PCB with SAM3 instead of SAM7, open hardware.
 * `qmod`: A sysmocom-proprietary quad mPCIe carrier board, publicly available
 * `owhw`: An undisclosed sysmocom-internal board, not publicly available
+* `octsimtest`: A sysmocom-proprietary production testing board, not publicly available
 
 = Firmware
 
@@ -51,6 +52,7 @@ Current applications supported are:
 * `cardem`: To provide remote SIM operation capabilities.
 * `trace`:  To monitor the communication between a SIM card and a phone (corresponds to the functionality provide by the first SIMtrace)
 * `triple_play`: To support the three previous functionalities, using USB configurations.
+* `gpio_test`: internal test code
 
 == Memories
 

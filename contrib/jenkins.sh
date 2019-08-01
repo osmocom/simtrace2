@@ -64,7 +64,8 @@ if [ "x$publish" = "x--publish" ]; then
 [rita.osmocom.org]:48 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK8iivY70EiR5NiGChV39gRLjNpC8lvu1ZdHtdMw2zuX
 EOF
 	SSH_COMMAND="ssh -o 'UserKnownHostsFile=$WORKSPACE/known_hosts' -p 48"
-	rsync -avz -e "$SSH_COMMAND" $TOPDIR/firmware/bin/*.{bin,elf} binaries@rita.osmocom.org:web-files/simtrace2/firmware/
+	rsync --archive --verbose --compress --delete --rsh "$SSH_COMMAND" $TOPDIR/firmware/bin/*-latest.{bin,elf} binaries@rita.osmocom.org:web-files/simtrace2/firmware/latest/
+	rsync --archive --verbose --compress --rsh "$SSH_COMMAND" --exclude $TOPDIR/firmware/bin/*-latest.{bin,elf} $TOPDIR/firmware/bin/*-*-*-*.{bin,elf} binaries@rita.osmocom.org:web-files/simtrace2/firmware/all/
 fi
 
 echo

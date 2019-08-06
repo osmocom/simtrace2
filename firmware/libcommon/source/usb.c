@@ -2,7 +2,7 @@
  *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2009, Atmel Corporation
- * Copyright (c) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * Copyright (c) 2018-2019, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * All rights reserved.
  *
@@ -46,7 +46,10 @@
  *       USB String descriptors 
  *------------------------------------------------------------------------------*/
 #include "usb_strings_generated.h"
+
+// the index of the strings (must match the order in usb_strings.txt)
 enum strDescNum {
+	// static strings from usb_strings
 	MANUF_STR = 1,
 	PRODUCT_STRING,
 	SNIFFER_CONF_STR,
@@ -55,8 +58,60 @@ enum strDescNum {
 	MITM_CONF_STR,
 	CARDEM_USIM1_INTF_STR,
 	CARDEM_USIM2_INTF_STR,
+	CARDEM_USIM3_INTF_STR,
+	CARDEM_USIM4_INTF_STR,
+	// runtime strings
+	SERIAL_STR,
+	VERSION_STR,
+	// count
 	STRING_DESC_CNT
 };
+
+/** array of static (from usb_strings) and runtime (serial, version) USB strings
+ */
+static const unsigned char *usb_strings_extended[ARRAY_SIZE(usb_strings) + 2];
+
+/* USB string for the serial (using 128-bit device ID) */
+static unsigned char usb_string_serial[] = {
+	USBStringDescriptor_LENGTH(32),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('0'),
+	USBStringDescriptor_UNICODE('0'),
+	USBStringDescriptor_UNICODE('1'),
+	USBStringDescriptor_UNICODE('1'),
+	USBStringDescriptor_UNICODE('2'),
+	USBStringDescriptor_UNICODE('2'),
+	USBStringDescriptor_UNICODE('3'),
+	USBStringDescriptor_UNICODE('3'),
+	USBStringDescriptor_UNICODE('4'),
+	USBStringDescriptor_UNICODE('4'),
+	USBStringDescriptor_UNICODE('5'),
+	USBStringDescriptor_UNICODE('5'),
+	USBStringDescriptor_UNICODE('6'),
+	USBStringDescriptor_UNICODE('6'),
+	USBStringDescriptor_UNICODE('7'),
+	USBStringDescriptor_UNICODE('7'),
+	USBStringDescriptor_UNICODE('8'),
+	USBStringDescriptor_UNICODE('8'),
+	USBStringDescriptor_UNICODE('9'),
+	USBStringDescriptor_UNICODE('9'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('d'),
+	USBStringDescriptor_UNICODE('d'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('f'),
+	USBStringDescriptor_UNICODE('f'),
+};
+
+/* USB string for the version */
+static const char git_version[] = GIT_VERSION;
+static unsigned char usb_string_version[2 + ARRAY_SIZE(git_version) * 2 - 2];
 
 /*------------------------------------------------------------------------------
  *       USB Device descriptors 
@@ -523,6 +578,27 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 };
 #endif /* HAVE_CARDEM */
 
+/* USB descriptor just to show the version */
+typedef struct _SIMTraceDriverConfigurationDescriptorVersion {
+	/** Standard configuration descriptor. */
+	USBConfigurationDescriptor configuration;
+} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorVersion;
+
+static const SIMTraceDriverConfigurationDescriptorVersion
+				configurationDescriptorVersion = {
+	/* Standard configuration descriptor */
+	.configuration = {
+		.bLength 		= sizeof(USBConfigurationDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
+		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorVersion),
+		.bNumInterfaces		= 0,
+		.bConfigurationValue	= CFG_NUM_VERSION,
+		.iConfiguration		= VERSION_STR,
+		.bmAttributes		= USBD_BMATTRIBUTES,
+		.bMaxPower		= USBConfigurationDescriptor_POWER(100),
+	},
+};
+
 const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
 #ifdef HAVE_SNIFFER
 	&configurationDescriptorSniffer.configuration,
@@ -536,6 +612,7 @@ const USBConfigurationDescriptor *configurationDescriptorsArr[] = {
 #ifdef HAVE_MITM
 	&configurationDescriptorMITM.configuration,
 #endif
+	&configurationDescriptorVersion.configuration,
 };
 
 /** Standard USB device descriptor for the CDC serial driver */
@@ -552,7 +629,7 @@ const USBDeviceDescriptor deviceDescriptor = {
 	.bcdDevice		= 2,	/* Release number */
 	.iManufacturer		= MANUF_STR,
 	.iProduct		= PRODUCT_STRING,
-	.iSerialNumber		= 0,
+	.iSerialNumber		= SERIAL_STR,
 	.bNumConfigurations	= ARRAY_SIZE(configurationDescriptorsArr),
 };
 
@@ -566,8 +643,8 @@ static const USBDDriverDescriptors driverDescriptors = {
 	0,			/* No high-speed configuration descriptor */
 	0,			/* No high-speed device qualifier descriptor */
 	0,			/* No high-speed other speed configuration descriptor */
-	usb_strings,
-	ARRAY_SIZE(usb_strings),/* cnt string descriptors in list */
+	usb_strings_extended,
+	ARRAY_SIZE(usb_strings_extended),/* cnt string descriptors in list */
 };
 
 /*----------------------------------------------------------------------------
@@ -592,6 +669,31 @@ void SIMtrace_USB_Initialize(void)
 
 	// Get std USB driver
 	USBDDriver *pUsbd = USBD_GetDriver();
+
+	// put device ID into USB serial number description
+	unsigned int device_id[4];
+	EEFC_ReadUniqueID(device_id);
+	char device_id_string[32 + 1];
+	snprintf(device_id_string, ARRAY_SIZE(device_id_string), "%08x%08x%08x%08x",
+		device_id[0], device_id[1], device_id[2], device_id[3]);
+	for (uint8_t i = 0; i < ARRAY_SIZE(device_id_string) - 1; i++) {
+		usb_string_serial[2 + 2 * i] = device_id_string[i];
+	}
+
+	// put version into USB string
+	usb_string_version[0] = USBStringDescriptor_LENGTH(ARRAY_SIZE(git_version) - 1);
+	usb_string_version[1] = USBGenericDescriptor_STRING;
+	for (uint8_t i = 0; i < ARRAY_SIZE(git_version) - 1; i++) {
+		usb_string_version[2 + i * 2 + 0] = git_version[i];
+		usb_string_version[2 + i * 2 + 1] = 0;
+	}
+
+	// fill extended USB strings
+	for (uint8_t i = 0; i < ARRAY_SIZE(usb_strings) && i < ARRAY_SIZE(usb_strings_extended); i++) {
+		usb_strings_extended[i] = usb_strings[i];
+	}
+	usb_strings_extended[SERIAL_STR] = usb_string_serial;
+	usb_strings_extended[VERSION_STR] = usb_string_version;
 
 	// Initialize standard USB driver
 	USBDDriver_Initialize(pUsbd, &driverDescriptors, 0);	// Multiple interface settings not supported

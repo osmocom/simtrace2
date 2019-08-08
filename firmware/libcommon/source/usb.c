@@ -653,7 +653,7 @@ static const USBDDriverDescriptors driverDescriptors = {
 
 void SIMtrace_USB_Initialize(void)
 {
-
+	unsigned int i;
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
 #ifdef PIN_USB_PULLUP
 	const Pin usb_dp_pullup = PIN_USB_PULLUP;
@@ -676,20 +676,20 @@ void SIMtrace_USB_Initialize(void)
 	char device_id_string[32 + 1];
 	snprintf(device_id_string, ARRAY_SIZE(device_id_string), "%08x%08x%08x%08x",
 		device_id[0], device_id[1], device_id[2], device_id[3]);
-	for (uint8_t i = 0; i < ARRAY_SIZE(device_id_string) - 1; i++) {
+	for (i = 0; i < ARRAY_SIZE(device_id_string) - 1; i++) {
 		usb_string_serial[2 + 2 * i] = device_id_string[i];
 	}
 
 	// put version into USB string
 	usb_string_version[0] = USBStringDescriptor_LENGTH(ARRAY_SIZE(git_version) - 1);
 	usb_string_version[1] = USBGenericDescriptor_STRING;
-	for (uint8_t i = 0; i < ARRAY_SIZE(git_version) - 1; i++) {
+	for (i = 0; i < ARRAY_SIZE(git_version) - 1; i++) {
 		usb_string_version[2 + i * 2 + 0] = git_version[i];
 		usb_string_version[2 + i * 2 + 1] = 0;
 	}
 
 	// fill extended USB strings
-	for (uint8_t i = 0; i < ARRAY_SIZE(usb_strings) && i < ARRAY_SIZE(usb_strings_extended); i++) {
+	for (i = 0; i < ARRAY_SIZE(usb_strings) && i < ARRAY_SIZE(usb_strings_extended); i++) {
 		usb_strings_extended[i] = usb_strings[i];
 	}
 	usb_strings_extended[SERIAL_STR] = usb_string_serial;

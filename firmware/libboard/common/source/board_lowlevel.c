@@ -127,6 +127,9 @@ extern WEAK void LowLevelInit( void )
 	SUPC->SUPC_SMMR = SUPC_SMMR_SMTH_3_0V | SUPC_SMMR_SMSMPL_CSM |
 	    	      SUPC_SMMR_SMRSTEN_ENABLE;
 
+	/* disable ERASE pin to prevent accidental flash erase */
+	MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO12;
+
 	/* enable both LED and green LED */
 	PIOA->PIO_PER |= PIO_LED_RED | PIO_LED_GREEN;
 	PIOA->PIO_OER |= PIO_LED_RED | PIO_LED_GREEN;

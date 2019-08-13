@@ -62,6 +62,7 @@ enum strDescNum {
 	CARDEM_USIM4_INTF_STR,
 	// runtime strings
 	SERIAL_STR,
+	VERSION_CONF_STR,
 	VERSION_STR,
 	// count
 	STRING_DESC_CNT
@@ -69,7 +70,7 @@ enum strDescNum {
 
 /** array of static (from usb_strings) and runtime (serial, version) USB strings
  */
-static const unsigned char *usb_strings_extended[ARRAY_SIZE(usb_strings) + 2];
+static const unsigned char *usb_strings_extended[ARRAY_SIZE(usb_strings) + 3];
 
 /* USB string for the serial (using 128-bit device ID) */
 static unsigned char usb_string_serial[] = {
@@ -110,6 +111,26 @@ static unsigned char usb_string_serial[] = {
 };
 
 /* USB string for the version */
+static const unsigned char usb_string_version_conf[] = {
+	USBStringDescriptor_LENGTH(16),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('f'),
+	USBStringDescriptor_UNICODE('i'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE('w'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('v'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('i'),
+	USBStringDescriptor_UNICODE('o'),
+	USBStringDescriptor_UNICODE('n'),
+};
 static const char git_version[] = GIT_VERSION;
 static unsigned char usb_string_version[2 + ARRAY_SIZE(git_version) * 2 - 2];
 
@@ -582,20 +603,33 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 typedef struct _SIMTraceDriverConfigurationDescriptorVersion {
 	/** Standard configuration descriptor. */
 	USBConfigurationDescriptor configuration;
+	USBInterfaceDescriptor version;
 } __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorVersion;
 
 static const SIMTraceDriverConfigurationDescriptorVersion
 				configurationDescriptorVersion = {
-	/* Standard configuration descriptor */
+	/* Standard configuration descriptor for the interface descriptor*/
 	.configuration = {
 		.bLength 		= sizeof(USBConfigurationDescriptor),
 		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
 		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorVersion),
-		.bNumInterfaces		= 0,
+		.bNumInterfaces		= 1,
 		.bConfigurationValue	= CFG_NUM_VERSION,
-		.iConfiguration		= VERSION_STR,
+		.iConfiguration		= VERSION_CONF_STR,
 		.bmAttributes		= USBD_BMATTRIBUTES,
 		.bMaxPower		= USBConfigurationDescriptor_POWER(100),
+	},
+	/* Interface standard descriptor just holding the version information */
+	.version = {
+		.bLength = sizeof(USBInterfaceDescriptor),
+		.bDescriptorType 	= USBGenericDescriptor_INTERFACE,
+		.bInterfaceNumber	= 0,
+		.bAlternateSetting	= 0,
+		.bNumEndpoints		= 0,
+		.bInterfaceClass	= USB_CLASS_PROPRIETARY,
+		.bInterfaceSubClass	= 0xff,
+		.bInterfaceProtocol	= 0,
+		.iInterface		= VERSION_STR,
 	},
 };
 
@@ -693,6 +727,7 @@ void SIMtrace_USB_Initialize(void)
 		usb_strings_extended[i] = usb_strings[i];
 	}
 	usb_strings_extended[SERIAL_STR] = usb_string_serial;
+	usb_strings_extended[VERSION_CONF_STR] = usb_string_version_conf;
 	usb_strings_extended[VERSION_STR] = usb_string_version;
 
 	// Initialize standard USB driver

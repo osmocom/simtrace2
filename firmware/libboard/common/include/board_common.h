@@ -112,9 +112,6 @@
 /* Interrupt request ID of USART peripheral connected to the phone */
 #define IRQ_USART_PHONE USART1_IRQn
 
-#define SIM_PWEN        PIO_PA5
-#define VCC_FWD         PIO_PA26
-
 // Board has UDP controller
 #define BOARD_USB_UDP
 

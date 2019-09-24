@@ -35,7 +35,7 @@
 /* Button to force bootloader start (shorted to ground when pressed */
 #define PIN_BOOTLOADER_SW      {PIO_PA31, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP}
 /* Enable powering the card using the second 3.3 V output of the LDO (active high) */
-#define SIM_PWEN_PIN           {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define SIM_PWEN_PIN           {PIO_PA5, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 /* Enable powering the SIM card */
 #define PWR_PINS                SIM_PWEN_PIN
 /* Card presence pin */
@@ -93,9 +93,9 @@
 /* Pins used to sniff phone-card communication */
 #define PINS_SIM_SNIFF          PIN_SIM_IO, PIN_SIM_CLK, PIN_SIM_RST_SNIFF
 /* Disable power converter 4.5-6V to 3.3V (active high) */
-#define PIN_SIM_PWEN_SNIFF     {SIM_PWEN, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
+#define PIN_SIM_PWEN_SNIFF     {PIO_PA5, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT}
 /* Enable power switch to forward VCC_PHONE to VCC_SIM (active high) */
-#define PIN_VCC_FWD_SNIFF      {VCC_FWD, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+#define PIN_VCC_FWD_SNIFF      {PIO_PA26, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
 /* Use phone VCC to power card */
 #define PINS_PWR_SNIFF          PIN_SIM_PWEN_SNIFF, PIN_VCC_FWD_SNIFF
 

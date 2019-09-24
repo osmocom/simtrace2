@@ -826,7 +826,7 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 {
 	if (ch->tpdu.state == new_ts)
 		return;
-	if (ISO_S_IN_TPDU != ch->state) {
+	if (ISO_S_IN_TPDU != ch->state && ISO_S_WAIT_TPDU != ch->state) {
 		TRACE_ERROR("%u: setting TPDU state in %s state\r\n", ch->num,
 			get_value_string(iso7816_3_card_state_names, ch->state));
 	}

@@ -1111,17 +1111,20 @@ int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len)
 	if (len > sizeof(ch->atr.atr))
 		return -1;
 
+/* ignore new ATR for now since we PPS has not been tested
 	memcpy(ch->atr.atr, atr, len);
 	ch->atr.len = len;
 	ch->atr.idx = 0;
+*/
 
 #if TRACE_LEVEL >= TRACE_LEVEL_INFO 
 	uint8_t i;
 	TRACE_INFO("%u: ATR set: ", ch->num);
-	for (i = 0; i < ch->atr.len; i++) {
+	for (i = 0; i < len; i++) {
 		TRACE_INFO_WP("%02x ", atr[i]);
 	}
 	TRACE_INFO_WP("\n\r");
+	TRACE_INFO("%u: ATR set currently ignored\n\r", ch->num);
 #endif
 	/* FIXME: race condition with transmitting ATR to reader? */
 

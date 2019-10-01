@@ -31,6 +31,22 @@
 #define BOARD_MCK 58982400 // 18.432 * 16 / 5
 
 /** Pin configuration **/
+
+/** there is no red LED, but the code needs this second LED, thus we provide an unused pin */
+#define PIO_LED_RED     PIO_PB13
+/** MCU pin connected to green LED, which is actually amber, and the logic is inverted since it is connected to an NPN transistor (used as open drain) */
+#define PIO_LED_GREEN   PIO_PA4
+/** red LED pin definition */
+#define PIN_LED_RED     {PIO_LED_RED, PIOB, ID_PIOB, PIO_OUTPUT_1, PIO_DEFAULT}
+/** green LED pin definition */
+#define PIN_LED_GREEN   {PIO_LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** LEDs pin definition */
+#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
+/** index for red LED in LEDs pin definition array */
+#define LED_NUM_RED     0
+/** index for green LED in LEDs pin definition array */
+#define LED_NUM_GREEN   1
+
 /* Button to force bootloader start (shorted to ground when pressed */
 #define PIN_BOOTLOADER_SW      {PIO_PA5, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP}
 

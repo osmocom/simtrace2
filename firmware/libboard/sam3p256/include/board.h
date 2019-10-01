@@ -30,6 +30,21 @@
 /** desired main clock frequency (in Hz, based on BOARD_MAINOSC) */
 #define BOARD_MCK 58000000
 
+/** MCU pin connected to yellow LED2 */
+#define PIO_LED_RED     PIO_PA17
+/** MCU pin connected to green LED1 */
+#define PIO_LED_GREEN   PIO_PA18
+/** red LED pin definition */
+#define PIN_LED_RED     {PIO_LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** green LED pin definition */
+#define PIN_LED_GREEN   {PIO_LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** LEDs pin definition */
+#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
+/** index for red LED in LEDs pin definition array */
+#define LED_NUM_RED     0
+/** index for green LED in LEDs pin definition array */
+#define LED_NUM_GREEN   1
+
 /** Pin configuration **/
 /* Button to force bootloader start (shorted to ground when pressed */
 #define PIN_BOOTLOADER_SW      {PIO_PA20, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}

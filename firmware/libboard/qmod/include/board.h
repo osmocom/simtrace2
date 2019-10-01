@@ -20,9 +20,6 @@
 #include "board_common.h"
 #include "simtrace_usb.h"
 
-#define LED_USIM1	LED_GREEN
-#define LED_USIM2	LED_RED
-
 /** Name of the board */
 #define BOARD_NAME "QMOD"
 /** Board definition */
@@ -32,6 +29,25 @@
 #define BOARD_MAINOSC 12000000
 /** desired main clock frequency (in Hz, based on BOARD_MAINOSC) */
 #define BOARD_MCK 58000000 // 18.432 * 29 / 6
+
+/** MCU pin connected to red LED */
+#define PIO_LED_RED     PIO_PA17
+/** MCU pin connected to green LED */
+#define PIO_LED_GREEN   PIO_PA18
+/** red LED pin definition */
+#define PIN_LED_RED     {PIO_LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** green LED pin definition */
+#define PIN_LED_GREEN   {PIO_LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** LEDs pin definition */
+#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
+/** index for red LED in LEDs pin definition array */
+#define LED_NUM_RED     0
+/** index for green LED in LEDs pin definition array */
+#define LED_NUM_GREEN   1
+/** the green LED is actually red and used as indication for USIM1 */
+#define LED_USIM1	LED_GREEN
+/** the green LED is actually red and used as indication for USIM2 */
+#define LED_USIM2	LED_RED
 
 /* USIM 2 interface (USART) */
 #define PIN_USIM2_CLK		{PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}

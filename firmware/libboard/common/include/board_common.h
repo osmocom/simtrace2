@@ -56,16 +56,12 @@
 /** Core definition */
 #define cortexm3
 
-#define PIO_LED_RED     PIO_PA17
-#define PIO_LED_GREEN   PIO_PA18
-
-#define PIN_LED_RED     {PIO_LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
-#define PIN_LED_GREEN   {PIO_LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
-#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
-
-#define LED_NUM_RED     0
-#define LED_NUM_GREEN   1
-
+/* LEDs are used to indicate the status
+ * the LED definition is board specific
+ * most boards have two LEDs, one green and one red
+ * the red LED indicates of the main firmware is ready (on) or if there is an error (blinking)
+ * the green LED indicates if the firmware is idling (on) or if there is activity (blinking)
+ */
 /** USART0 pin RX */
 #define PIN_USART0_RXD    {PIO_PA9A_URXD0, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /** USART0 pin TX */

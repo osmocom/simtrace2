@@ -31,6 +31,21 @@
 /** desired main clock frequency (in Hz, based on BOARD_MAINOSC) */
 #define BOARD_MCK 58982400 // 18.432 * 16 / 5
 
+/** MCU pin connected to red LED */
+#define PIO_LED_RED     PIO_PA17
+/** MCU pin connected to green LED */
+#define PIO_LED_GREEN   PIO_PA18
+/** red LED pin definition */
+#define PIN_LED_RED     {PIO_LED_RED, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** green LED pin definition */
+#define PIN_LED_GREEN   {PIO_LED_GREEN, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT}
+/** LEDs pin definition */
+#define PINS_LEDS       PIN_LED_RED, PIN_LED_GREEN 
+/** index for red LED in LEDs pin definition array */
+#define LED_NUM_RED     0
+/** index for green LED in LEDs pin definition array */
+#define LED_NUM_GREEN   1
+
 /* USIM 2 interface (USART) */
 #define PIN_USIM2_CLK		{PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_USIM2_IO		{PIO_PA6, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}

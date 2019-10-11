@@ -13,7 +13,9 @@
 #define PHONE_INT	2
 #define PHONE_DATAOUT	3
 
-/* stub functions required by card_emu.c */
+/***********************************************************************
+ * stub functions required by card_emu.c
+ ***********************************************************************/
 
 void card_emu_uart_wait_tx_idle(uint8_t uart_chan)
 {
@@ -30,18 +32,12 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 static uint8_t tx_debug_buf[1024];
 static unsigned int tx_debug_buf_idx;
 
+/* the card emulator wants to send some data to the host [reader] */
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 {
 	printf("UART_TX(%02x)\n", byte);
 	tx_debug_buf[tx_debug_buf_idx++] = byte;
 	return 1;
-}
-
-static void reader_check_and_clear(const uint8_t *data, unsigned int len)
-{
-	assert(len == tx_debug_buf_idx);
-	assert(!memcmp(tx_debug_buf, data, len));
-	tx_debug_buf_idx = 0;
 }
 
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
@@ -95,7 +91,21 @@ void tc_etu_disable(uint8_t chan_nr)
 	printf("tc_etu_disable(tc_chan=%u)\n", chan_nr);
 }
 
-const uint8_t atr[] = { 0x3b, 0x02, 0x14, 0x50 };
+
+
+/***********************************************************************
+ * test helper functions
+ ***********************************************************************/
+
+
+static void reader_check_and_clear(const uint8_t *data, unsigned int len)
+{
+	assert(len == tx_debug_buf_idx);
+	assert(!memcmp(tx_debug_buf, data, len));
+	tx_debug_buf_idx = 0;
+}
+
+static const uint8_t atr[] = { 0x3b, 0x02, 0x14, 0x50 };
 
 static int verify_atr(struct card_handle *ch)
 {
@@ -130,6 +140,7 @@ static void io_start_card(struct card_handle *ch)
 	verify_atr(ch);
 }
 
+/* emulate the host/reader sending some bytes to the [emulated] card */
 static void reader_send_bytes(struct card_handle *ch, const uint8_t *bytes, unsigned int len)
 {
 	unsigned int i;

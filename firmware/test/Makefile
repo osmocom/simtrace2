@@ -11,12 +11,12 @@ CFLAGS=-g -Wall $(LIBOSMOCORE_CFLAGS) \
 	-I../libboard/common/include \
 	-I../libboard/simtrace/include \
 	-I.
-LDFLAGS=$(LIBOSMOCORE_LIBS)
+LIBS=$(LIBOSMOCORE_LIBS)
 
 VPATH=../src_simtrace ../libcommon/source
 
 card_emu_test:	card_emu_tests.hobj card_emu.hobj usb_buf.hobj iso7816_fidi.hobj
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 %.hobj: %.c
 	$(CC) $(CFLAGS) -o $@ -c $^

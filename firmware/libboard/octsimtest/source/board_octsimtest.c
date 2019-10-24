@@ -32,11 +32,19 @@ void board_exec_dbg_cmd(int ch)
 	case '?':
 		printf("\t?\thelp\n\r");
 		printf("\tR\treset SAM3\n\r");
+		printf("\tm\trun mcp23017 test\n\r");
+		printf("\tR\ttoggle MSB of gpio on mcp23017\n\r");
 		break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");
 		USBD_Disconnect();
 		NVIC_SystemReset();
+		break;
+	case 'm':
+		mcp23017_test(MCP23017_ADDRESS);
+		break;
+	case 't':
+		mcp23017_toggle(MCP23017_ADDRESS);
 		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);
@@ -50,7 +58,8 @@ void board_main_top(void)
 	usb_buf_init();
 
 	i2c_pin_init();
-	mcp23017_init(MCP23017_ADDRESS);
+	if (!mcp23017_init(MCP23017_ADDRESS))
+		printf("mcp23017 not found!\n\r");
 	/* Initialize checking for card insert/remove events */
 	//card_present_init();
 #endif

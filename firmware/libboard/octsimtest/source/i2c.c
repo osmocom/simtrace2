@@ -96,7 +96,7 @@ static void i2c_start_cond(void)
 	i2c_started = true;
 }
 
-static void i2c_stop_cond(void)
+void i2c_stop_cond(void)
 {
 	clear_sda();
 	set_scl();

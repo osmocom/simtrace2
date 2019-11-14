@@ -29,8 +29,18 @@ enum card_io {
 	CARD_IO_CLK,
 };
 
-struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan,
-				  uint8_t in_ep, uint8_t irq_ep);
+/** initialise card slot
+ *  @param[in] slot_num slot number (arbitrary number)
+ *  @param[in] tc_chan timer counter channel (to measure the ETU)
+ *  @param[in] uart_chan UART peripheral channel
+ *  @param[in] in_ep USB IN end point number
+ *  @param[in] irq_ep USB INTerrupt end point number
+ *  @param[in] vcc_active initial VCC signal state (true = on)
+ *  @param[in] in_reset initial RST signal state (true = reset asserted)
+ *  @param[in] clocked initial CLK signat state (true = active)
+ *  @return main card handle reference
+ */
+struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan, uint8_t in_ep, uint8_t irq_ep, bool vcc_active, bool in_reset, bool clocked);
 
 /* process a single byte received from the reader */
 void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte);

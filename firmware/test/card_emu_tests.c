@@ -397,7 +397,7 @@ int main(int argc, char **argv)
 	struct card_handle *ch;
 	unsigned int i;
 
-	ch = card_emu_init(0, 23, 42, PHONE_DATAIN, PHONE_INT);
+	ch = card_emu_init(0, 23, 42, PHONE_DATAIN, PHONE_INT, false, true, false);
 	assert(ch);
 
 	usb_buf_init();

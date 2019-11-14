@@ -44,7 +44,7 @@ static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
 
 #ifdef CARDEMU_SECOND_UART
-static const Pin pins_usim2[]    = {PINS_USIM2};
+static const Pin pins_usim2[]	= {PINS_USIM2};
 static const Pin pin_usim2_rst	= PIN_USIM2_nRST;
 static const Pin pin_usim2_vcc	= PIN_USIM2_VCC;
 #endif
@@ -357,14 +357,14 @@ void ADC_IrqHandler(void)
 
 static void usim1_rst_irqhandler(const Pin *pPin)
 {
-	int active = PIO_Get(&pin_usim1_rst) ? 0 : 1;
+	bool active = PIO_Get(&pin_usim1_rst) ? false : true;
 	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_RST, active);
 }
 
 #ifndef DETECT_VCC_BY_ADC
 static void usim1_vcc_irqhandler(const Pin *pPin)
 {
-	int active = PIO_Get(&pin_usim1_vcc) ? 1 : 0;
+	bool active = PIO_Get(&pin_usim1_vcc) ? true : false;
 	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_VCC, active);
 	/* FIXME do this for real */
 	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_CLK, active);
@@ -374,14 +374,14 @@ static void usim1_vcc_irqhandler(const Pin *pPin)
 #ifdef CARDEMU_SECOND_UART
 static void usim2_rst_irqhandler(const Pin *pPin)
 {
-	int active = PIO_Get(&pin_usim2_rst) ? 0 : 1;
+	bool active = PIO_Get(&pin_usim2_rst) ? false : true;
 	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_RST, active);
 }
 
 #ifndef DETECT_VCC_BY_ADC
 static void usim2_vcc_irqhandler(const Pin *pPin)
 {
-	int active = PIO_Get(&pin_usim2_vcc) ? 1 : 0;
+	bool active = PIO_Get(&pin_usim2_vcc) ? true : false;
 	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_VCC, active);
 	/* FIXME do this for real */
 	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_CLK, active);
@@ -420,7 +420,7 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[0].ch = card_emu_init(0, 2, 0, SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM1_INT);
+	cardem_inst[0].ch = card_emu_init(0, 2, 0, SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM1_INT, PIO_Get(&pin_usim1_vcc) ? true : false, PIO_Get(&pin_usim1_rst) ? false : true, PIO_Get(&pin_usim1_vcc) ? true : false);
 	sim_switch_use_physical(0, 1);
 
 #ifdef CARDEMU_SECOND_UART
@@ -435,10 +435,9 @@ void mode_cardemu_init(void)
 	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim2_vcc);
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[1].ch = card_emu_init(1, 0, 1, SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM2_INT);
+	cardem_inst[1].ch = card_emu_init(1, 0, 1, SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM2_INT, PIO_Get(&pin_usim2_vcc) ? true : false, PIO_Get(&pin_usim2_rst) ? false : true, PIO_Get(&pin_usim2_vcc) ? true : false);
 	sim_switch_use_physical(1, 1);
 #endif /* CARDEMU_SECOND_UART */
-
 }
 
 /* called if config is deactivated */

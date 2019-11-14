@@ -182,9 +182,9 @@ struct card_handle {
 	enum iso7816_3_card_state state;
 
 	/* signal levels */
-	uint8_t vcc_active;	/* 1 = on, 0 = off */
-	uint8_t in_reset;	/* 1 = RST low, 0 = RST high */
-	uint8_t clocked;	/* 1 = active, 0 = inactive */
+	bool vcc_active;	/*< if VCC is active (true = active/ON) */
+	bool in_reset;	/*< if card is in reset (true = RST low/asserted, false = RST high/ released) */
+	bool clocked;	/*< if clock is active ( true = active, false = inactive) */
 
 	/* timing parameters, from PTS */
 	uint8_t fi;
@@ -1126,8 +1126,7 @@ static const uint8_t default_atr[] = { 0x3B, 0x02, 0x14, 0x50 };
 
 static struct card_handle card_handles[NUM_SLOTS];
 
-struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan,
-				  uint8_t in_ep, uint8_t irq_ep)
+struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan, uint8_t in_ep, uint8_t irq_ep, bool vcc_active, bool in_reset, bool clocked)
 {
 	struct card_handle *ch;
 
@@ -1140,14 +1139,13 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 
 	INIT_LLIST_HEAD(&ch->uart_tx_queue);
 
-	/* initialize the card_handle with reasonable defaults */
 	ch->num = slot_num;
 	ch->irq_ep = irq_ep;
 	ch->in_ep = in_ep;
 	ch->state = ISO_S_WAIT_POWER;
-	ch->vcc_active = 0;
-	ch->in_reset = 1;
-	ch->clocked = 0;
+	ch->vcc_active = vcc_active;
+	ch->in_reset = in_reset;
+	ch->clocked = clocked;
 
 	ch->fi = 0;
 	ch->di = 1;

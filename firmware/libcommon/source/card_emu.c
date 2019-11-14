@@ -380,6 +380,13 @@ static void card_set_state(struct card_handle *ch,
 	case ISO_S_WAIT_RST:
 		/* disable Rx and Tx of UART */
 		card_emu_uart_enable(ch->uart_chan, 0);
+		/* check end activation state (only necessary if the reader to not respect the activation sequence) */
+		if (ch->vcc_active && ch->clocked && !ch->in_reset) {
+			/* enable the TC/ETU counter once reset has been released */
+			tc_etu_enable(ch->tc_chan);
+			/* prepare to send the ATR */
+			card_set_state(ch, ISO_S_WAIT_ATR);
+		}
 		break;
 	case ISO_S_WAIT_ATR:
 		/* Reset to initial Fi / Di ratio */

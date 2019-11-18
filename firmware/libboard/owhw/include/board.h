@@ -46,6 +46,9 @@
 /** index for green LED in LEDs pin definition array */
 #define LED_NUM_GREEN   1
 
+/* pin connected to the SIMTRACE_BOOTLOADER signal. set high to force DFU bootloader start */
+#define PIN_BOOTLOADER		{PIO_PA31, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
+
 /* USIM 2 interface (USART) */
 #define PIN_USIM2_CLK		{PIO_PA2, PIOA, ID_PIOA, PIO_PERIPH_B, PIO_DEFAULT}
 #define PIN_USIM2_IO		{PIO_PA6, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}

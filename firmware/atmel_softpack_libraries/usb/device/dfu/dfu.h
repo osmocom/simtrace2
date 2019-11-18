@@ -101,7 +101,7 @@ struct dfudata {
 extern struct dfudata _g_dfu;
 extern struct dfudata *g_dfu;
 
-void set_usb_serial_str(const uint8_t *serial_usbstr);
+void set_usb_serial_str(void);
 
 void DFURT_SwitchToDFU(void);
 

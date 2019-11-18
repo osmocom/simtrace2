@@ -447,6 +447,7 @@ void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors)
 	/* We already start in DFU idle mode */
 	g_dfu->state = DFU_STATE_dfuIDLE;
 
+	set_usb_serial_str();
 	USBDDriver_Initialize(&usbdDriver, pDescriptors, if_altsettings);
 	USBD_Init();
 	USBD_Connect();

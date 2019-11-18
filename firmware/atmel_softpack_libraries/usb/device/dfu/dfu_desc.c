@@ -13,13 +13,86 @@
 #include <usb/common/dfu/usb_dfu.h>
 #include <usb/device/dfu/dfu.h>
 
+#include "usb_strings_generated.h"
+
 enum {
 	STR_MANUF	= 1,
 	STR_PROD,
 	STR_CONFIG,
 	_STR_FIRST_ALT,
+	// serial string
 	STR_SERIAL	= (_STR_FIRST_ALT+BOARD_DFU_NUM_IF),
+	// version string (on additional interface)
+	VERSION_CONF_STR,
+	VERSION_STR,
+	// count
+	STRING_DESC_CNT,
 };
+
+/* USB string for the serial (using 128-bit device ID) */
+static unsigned char usb_string_serial[] = {
+	USBStringDescriptor_LENGTH(32),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('0'),
+	USBStringDescriptor_UNICODE('0'),
+	USBStringDescriptor_UNICODE('1'),
+	USBStringDescriptor_UNICODE('1'),
+	USBStringDescriptor_UNICODE('2'),
+	USBStringDescriptor_UNICODE('2'),
+	USBStringDescriptor_UNICODE('3'),
+	USBStringDescriptor_UNICODE('3'),
+	USBStringDescriptor_UNICODE('4'),
+	USBStringDescriptor_UNICODE('4'),
+	USBStringDescriptor_UNICODE('5'),
+	USBStringDescriptor_UNICODE('5'),
+	USBStringDescriptor_UNICODE('6'),
+	USBStringDescriptor_UNICODE('6'),
+	USBStringDescriptor_UNICODE('7'),
+	USBStringDescriptor_UNICODE('7'),
+	USBStringDescriptor_UNICODE('8'),
+	USBStringDescriptor_UNICODE('8'),
+	USBStringDescriptor_UNICODE('9'),
+	USBStringDescriptor_UNICODE('9'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('c'),
+	USBStringDescriptor_UNICODE('d'),
+	USBStringDescriptor_UNICODE('d'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('f'),
+	USBStringDescriptor_UNICODE('f'),
+};
+
+/* USB string for the version */
+static const unsigned char usb_string_version_conf[] = {
+	USBStringDescriptor_LENGTH(16),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('f'),
+	USBStringDescriptor_UNICODE('i'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('m'),
+	USBStringDescriptor_UNICODE('w'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('v'),
+	USBStringDescriptor_UNICODE('e'),
+	USBStringDescriptor_UNICODE('r'),
+	USBStringDescriptor_UNICODE('s'),
+	USBStringDescriptor_UNICODE('i'),
+	USBStringDescriptor_UNICODE('o'),
+	USBStringDescriptor_UNICODE('n'),
+};
+
+static const char git_version[] = GIT_VERSION;
+static unsigned char usb_string_version[2 + ARRAY_SIZE(git_version) * 2 - 2];
+/** array of static (from usb_strings) and runtime (serial, version) USB strings */
+static const unsigned char *usb_strings_extended[STRING_DESC_CNT];
 
 static const USBDeviceDescriptor fsDevice = {
 	.bLength = 		sizeof(USBDeviceDescriptor),
@@ -34,12 +107,8 @@ static const USBDeviceDescriptor fsDevice = {
 	.bcdDevice = 		BOARD_USB_RELEASE,
 	.iManufacturer =	STR_MANUF,
 	.iProduct =		STR_PROD,
-#ifdef BOARD_USB_SERIAL
 	.iSerialNumber =	STR_SERIAL,
-#else
-	.iSerialNumber =	0,
-#endif
-	.bNumConfigurations =	1,
+	.bNumConfigurations =	2, // DFU + version configurations
 };
 
 /* Alternate Interface Descriptor, we use one per partition/memory type */
@@ -85,17 +154,74 @@ const struct dfu_desc dfu_cfg_descriptor = {
 	.func_dfu = DFU_FUNC_DESC
 };
 
-#include "usb_strings_generated.h"
-
-#if 0
-void set_usb_serial_str(const uint8_t *serial_usbstr)
+void set_usb_serial_str(void)
 {
-	usb_strings[STR_SERIAL] = serial_usbstr;
+	unsigned int i;
+
+	// put device ID into USB serial number description
+	unsigned int device_id[4];
+	EEFC_ReadUniqueID(device_id);
+	char device_id_string[32 + 1];
+	snprintf(device_id_string, ARRAY_SIZE(device_id_string), "%08x%08x%08x%08x",
+		device_id[0], device_id[1], device_id[2], device_id[3]);
+	for (i = 0; i < ARRAY_SIZE(device_id_string) - 1; i++) {
+		usb_string_serial[2 + 2 * i] = device_id_string[i];
+	}
+
+	// put version into USB string
+	usb_string_version[0] = USBStringDescriptor_LENGTH(ARRAY_SIZE(git_version) - 1);
+	usb_string_version[1] = USBGenericDescriptor_STRING;
+	for (i = 0; i < ARRAY_SIZE(git_version) - 1; i++) {
+		usb_string_version[2 + i * 2 + 0] = git_version[i];
+		usb_string_version[2 + i * 2 + 1] = 0;
+	}
+
+	// fill extended USB strings
+	for (i = 0; i < ARRAY_SIZE(usb_strings) && i < ARRAY_SIZE(usb_strings_extended); i++) {
+		usb_strings_extended[i] = usb_strings[i];
+	}
+	usb_strings_extended[STR_SERIAL] = usb_string_serial;
+	usb_strings_extended[VERSION_CONF_STR] = usb_string_version_conf;
+	usb_strings_extended[VERSION_STR] = usb_string_version;
 }
-#endif
+
+/* USB descriptor just to show the version */
+typedef struct _SIMTraceDriverConfigurationDescriptorVersion {
+	/** Standard configuration descriptor. */
+	USBConfigurationDescriptor configuration;
+	USBInterfaceDescriptor version;
+} __attribute__ ((packed)) SIMTraceDriverConfigurationDescriptorVersion;
+
+static const SIMTraceDriverConfigurationDescriptorVersion
+				configurationDescriptorVersion = {
+	/* Standard configuration descriptor for the interface descriptor*/
+	.configuration = {
+		.bLength 		= sizeof(USBConfigurationDescriptor),
+		.bDescriptorType	= USBGenericDescriptor_CONFIGURATION,
+		.wTotalLength		= sizeof(SIMTraceDriverConfigurationDescriptorVersion),
+		.bNumInterfaces		= 1,
+		.bConfigurationValue	= 2,
+		.iConfiguration		= VERSION_CONF_STR,
+		.bmAttributes		= USBD_BMATTRIBUTES,
+		.bMaxPower		= USBConfigurationDescriptor_POWER(100),
+	},
+	/* Interface standard descriptor just holding the version information */
+	.version = {
+		.bLength = sizeof(USBInterfaceDescriptor),
+		.bDescriptorType 	= USBGenericDescriptor_INTERFACE,
+		.bInterfaceNumber	= 0,
+		.bAlternateSetting	= 0,
+		.bNumEndpoints		= 0,
+		.bInterfaceClass	= USB_CLASS_PROPRIETARY,
+		.bInterfaceSubClass	= 0xff,
+		.bInterfaceProtocol	= 0,
+		.iInterface		= VERSION_STR,
+	},
+};
 
 static const USBConfigurationDescriptor *conf_desc_arr[] = {
 	&dfu_cfg_descriptor.ucfg,
+	&configurationDescriptorVersion.configuration,
 };
 
 const USBDDriverDescriptors dfu_descriptors = {
@@ -108,6 +234,6 @@ const USBDDriverDescriptors dfu_descriptors = {
 	.pHsConfiguration = NULL,
 	.pHsQualifier = NULL,
 	.pHsOtherSpeed = NULL,
-	.pStrings = usb_strings,
-	.numStrings = ARRAY_SIZE(usb_strings),
+	.pStrings = usb_strings_extended,
+	.numStrings = ARRAY_SIZE(usb_strings_extended),
 };

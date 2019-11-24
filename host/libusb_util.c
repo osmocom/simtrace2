@@ -1,4 +1,4 @@
-/* libisb utilities
+/* libusb utilities
  * 
  * (C) 2010-2016 by Harald Welte <hwelte@hmw-consulting.de>
  *

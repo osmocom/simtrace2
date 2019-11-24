@@ -50,9 +50,15 @@ make clean
 echo
 echo "=============== HOST START  =============="
 cd $TOPDIR/host
-make clean
-make
-make clean
+autoreconf --install --force
+./configure --enable-sanitize --enable-werror
+$MAKE $PARALLEL_MAKE
+#$MAKE distcheck || cat-testlogs.sh
+make dist
+
+#if [ "$WITH_MANUALS" = "1" ] && [ "$PUBLISH" = "1" ]; then
+#	make -C "$base/doc/manuals" publish
+#fi
 
 if [ "x$publish" = "x--publish" ]; then
 	echo
@@ -67,6 +73,10 @@ EOF
 	rsync --archive --verbose --compress --delete --rsh "$SSH_COMMAND" $TOPDIR/firmware/bin/*-latest.{bin,elf} binaries@rita.osmocom.org:web-files/simtrace2/firmware/latest/
 	rsync --archive --verbose --compress --rsh "$SSH_COMMAND" --exclude $TOPDIR/firmware/bin/*-latest.{bin,elf} $TOPDIR/firmware/bin/*-*-*-*.{bin,elf} binaries@rita.osmocom.org:web-files/simtrace2/firmware/all/
 fi
+
+echo
+echo "=============== HOST CLEAN  =============="
+$MAKE maintainer-clean
 
 echo
 echo "=============== FIRMWARE CLEAN  =============="

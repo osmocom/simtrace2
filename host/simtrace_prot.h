@@ -1,1 +1,0 @@
-../firmware/libcommon/include/simtrace_prot.h

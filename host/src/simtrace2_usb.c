@@ -23,8 +23,8 @@
 
 #include <osmocom/core/utils.h>
 
-#include "libusb_util.h"
-#include "simtrace_usb.h"
+#include <osmocom/simtrace2/libusb_util.h>
+#include <osmocom/simtrace2/simtrace_usb.h>
 
 static const struct dev_id compatible_dev_ids[] = {
 	{ USB_VENDOR_OPENMOKO, USB_PRODUCT_OWHW_SAM3 },

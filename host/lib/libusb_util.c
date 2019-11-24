@@ -1,6 +1,6 @@
 /* libusb utilities
  * 
- * (C) 2010-2016 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2010-2019 by Harald Welte <hwelte@hmw-consulting.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@
 
 #include <libusb.h>
 
-#include "libusb_util.h"
+#include <osmocom/simtrace2/libusb_util.h>
 
 static char path_buf[USB_MAX_PATH_LEN];
 

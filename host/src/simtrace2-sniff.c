@@ -37,32 +37,18 @@
 
 #include <libusb.h>
 
-#include "libusb_util.h"
-#include "simtrace.h"
-#include "simtrace_usb.h"
-#include "simtrace_prot.h"
+#include <osmocom/simtrace2/libusb_util.h>
+#include <osmocom/simtrace2/simtrace_usb.h>
+#include <osmocom/simtrace2/simtrace_prot.h>
 #include "simtrace2-discovery.h"
 
-#include <osmocom/core/gsmtap.h>
-#include <osmocom/core/gsmtap_util.h>
+#include <osmocom/simtrace2/gsmtap.h>
+
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
 #include <osmocom/core/msgb.h>
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
-
-/* as of August 26, 2018 we don't have any released libosmocore version which includes those
- * definitions yet.  Let's ensure some backwards compatibility: */
-#ifndef GSMTAP_SIM_APDU
-#define GSMTAP_SIM_APDU		0x00 /* APDU data (complete APDU) */
-#define GSMTAP_SIM_ATR		0x01 /* card ATR data */
-#define GSMTAP_SIM_PPS_REQ		0x02 /* PPS request data */
-#define GSMTAP_SIM_PPS_RSP		0x03 /* PPS response data */
-#define GSMTAP_SIM_TPDU_HDR		0x04 /* TPDU command header */
-#define GSMTAP_SIM_TPDU_CMD		0x05 /* TPDU command body */
-#define GSMTAP_SIM_TPDU_RSP		0x06 /* TPDU response body */
-#define GSMTAP_SIM_TPDU_SW		0x07 /* TPDU response trailer */
-#endif
 
 /* transport to a SIMtrace device */
 struct st_transport {
@@ -74,39 +60,6 @@ struct st_transport {
 		uint8_t irq_in;
 	} usb_ep;
 };
-
-/* global GSMTAP instance */
-static struct gsmtap_inst *g_gti;
-
-static int gsmtap_send_sim(uint8_t sub_type, const uint8_t *data, unsigned int len)
-{
-	struct gsmtap_hdr *gh;
-	unsigned int gross_len = len + sizeof(*gh);
-	uint8_t *buf = malloc(gross_len);
-	int rc;
-
-	if (!buf)
-		return -ENOMEM;
-
-	memset(buf, 0, sizeof(*gh));
-	gh = (struct gsmtap_hdr *) buf;
-	gh->version = GSMTAP_VERSION;
-	gh->hdr_len = sizeof(*gh)/4;
-	gh->type = GSMTAP_TYPE_SIM;
-	gh->sub_type = sub_type;
-
-	memcpy(buf + sizeof(*gh), data, len);
-
-	rc = write(gsmtap_inst_fd(g_gti), buf, gross_len);
-	if (rc < 0) {
-		perror("write gsmtap");
-		free(buf);
-		return rc;
-	}
-
-	free(buf);
-	return 0;
-}
 
 const struct value_string change_flags[] = {
 	{
@@ -252,11 +205,11 @@ static int process_data(enum simtrace_msg_type_sniff type, const uint8_t *buf, i
 	/* Send message as GSNTAP */
 	switch (type) {
 	case SIMTRACE_MSGT_SNIFF_ATR:
-		gsmtap_send_sim(GSMTAP_SIM_ATR, data->data, data->length);
+		osmo_st2_gsmtap_send_apdu(GSMTAP_SIM_ATR, data->data, data->length);
 		break;
 	case SIMTRACE_MSGT_SNIFF_TPDU:
 		/* TPDU is now considered as APDU since SIMtrace sends complete TPDU */
-		gsmtap_send_sim(GSMTAP_SIM_APDU, data->data, data->length);
+		osmo_st2_gsmtap_send_apdu(GSMTAP_SIM_APDU, data->data, data->length);
 		break;
 	default:
 		break;
@@ -542,12 +495,11 @@ int main(int argc, char **argv)
 	}
 	printf("(%s)\n", strbuf);
 
-	g_gti = gsmtap_source_init(gsmtap_host, GSMTAP_UDP_PORT, 0);
-	if (!g_gti) {
+	rc = osmo_st2_gsmtap_init(gsmtap_host);
+	if (rc < 0) {
 		perror("unable to open GSMTAP");
 		goto close_exit;
 	}
-	gsmtap_source_add_sink(g_gti);
 
 	signal(SIGINT, &signal_handler);
 

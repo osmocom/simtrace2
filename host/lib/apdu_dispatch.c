@@ -27,7 +27,7 @@
 #include <osmocom/sim/sim.h>
 #include <osmocom/sim/class_tables.h>
 
-#include "apdu_dispatch.h"
+#include <osmocom/simtrace2/apdu_dispatch.h>
 
 /*! \brief Has the command-data phase been completed yet? */
 static inline bool is_dc_complete(struct apdu_context *ac)

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Osmocom SIMtrace2 library
+Description: Library for SIM Card / Smart Card tracing + emulation
+Version: @VERSION@
+Libs: -L${libdir} -losmo-simtrace2
+Cflags: -I${includedir}/

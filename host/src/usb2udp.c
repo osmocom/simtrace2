@@ -35,9 +35,8 @@
 
 #include <libusb.h>
 
-#include "simtrace_usb.h"
-#include "simtrace_prot.h"
-#include "apdu_dispatch.h"
+#include <osmocom/simtrace2/simtrace_usb.h>
+#include <osmocom/simtrace2/simtrace_prot.h>
 #include "simtrace2-discovery.h"
 
 #include <osmocom/core/utils.h>

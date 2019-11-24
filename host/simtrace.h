@@ -1,7 +1,0 @@
-#ifndef _SIMTRACE_H
-#define _SIMTRACE_H
-
-#define SIMTRACE_USB_VENDOR	0x1d50
-#define SIMTRACE_USB_PRODUCT	0x60e3
-
-#endif

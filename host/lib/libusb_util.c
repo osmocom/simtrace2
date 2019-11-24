@@ -295,3 +295,44 @@ libusb_device_handle *usb_open_claim_interface(libusb_context *ctx,
 
 	return usb_devh;
 }
+
+/*! \brief obtain the endpoint addresses for a given USB interface */
+int get_usb_ep_addrs(libusb_device_handle *devh, unsigned int if_num,
+		     uint8_t *out, uint8_t *in, uint8_t *irq)
+{
+	libusb_device *dev = libusb_get_device(devh);
+	struct libusb_config_descriptor *cdesc;
+	const struct libusb_interface_descriptor *idesc;
+	const struct libusb_interface *iface;
+	int rc, l;
+
+	rc = libusb_get_active_config_descriptor(dev, &cdesc);
+	if (rc < 0)
+		return rc;
+
+	iface = &cdesc->interface[if_num];
+	/* FIXME: we assume there's no altsetting */
+	idesc = &iface->altsetting[0];
+
+	for (l = 0; l < idesc->bNumEndpoints; l++) {
+		const struct libusb_endpoint_descriptor *edesc = &idesc->endpoint[l];
+		switch (edesc->bmAttributes & 3) {
+		case LIBUSB_TRANSFER_TYPE_BULK:
+			if (edesc->bEndpointAddress & 0x80) {
+				if (in)
+					*in = edesc->bEndpointAddress;
+			} else {
+				if (out)
+					*out = edesc->bEndpointAddress;
+			}
+			break;
+		case LIBUSB_TRANSFER_TYPE_INTERRUPT:
+			if (irq)
+				*irq = edesc->bEndpointAddress;
+			break;
+		default:
+			break;
+		}
+	}
+	return 0;
+}

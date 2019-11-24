@@ -44,8 +44,6 @@
 #include <osmocom/simtrace2/apdu_dispatch.h>
 #include <osmocom/simtrace2/gsmtap.h>
 
-#include "simtrace2-discovery.h"
-
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
 #include <osmocom/core/msgb.h>

@@ -68,3 +68,6 @@ int usb_match_interfaces(libusb_context *ctx, const struct dev_id *dev_ids,
 
 libusb_device_handle *usb_open_claim_interface(libusb_context *ctx,
 					       const struct usb_interface_match *ifm);
+
+int get_usb_ep_addrs(libusb_device_handle *devh, unsigned int if_num,
+		     uint8_t *out, uint8_t *in, uint8_t *irq);

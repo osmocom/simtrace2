@@ -40,7 +40,6 @@
 #include <osmocom/simtrace2/libusb_util.h>
 #include <osmocom/simtrace2/simtrace_usb.h>
 #include <osmocom/simtrace2/simtrace_prot.h>
-#include "simtrace2-discovery.h"
 
 #include <osmocom/simtrace2/gsmtap.h>
 

@@ -385,19 +385,6 @@ static int process_do_pts(struct cardem_inst *ci, uint8_t *buf, int len)
 	return 0;
 }
 
-/*! \brief Process a ERROR indication message from the SIMtrace2 */
-static int process_do_error(struct cardem_inst *ci, uint8_t *buf, int len)
-{
-	struct cardemu_usb_msg_error *err;
-	err = (struct cardemu_usb_msg_error *) buf;
-
-	printf("=> ERROR: %u/%u/%u: %s\n",
-		err->severity, err->subsystem, err->code,
-		err->msg_len ? (char *)err->msg : "");
-
-	return 0;
-}
-
 /*! \brief Process a RX-DATA indication message from the SIMtrace2 */
 static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 {
@@ -446,12 +433,6 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 	}
 	return 0;
 }
-
-#if 0
-	case SIMTRACE_CMD_DO_ERROR
-		rc = process_do_error(ci, buf, len);
-		break;
-#endif
 
 /*! \brief Process an incoming message from the SIMtrace2 */
 static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)

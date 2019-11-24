@@ -68,7 +68,7 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
  ***********************************************************************/
 
 /*! \brief Process a STATUS message from the SIMtrace2 */
-static int process_do_status(struct cardem_inst *ci, uint8_t *buf, int len)
+static int process_do_status(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_status *status;
 	status = (struct cardemu_usb_msg_status *) buf;
@@ -81,7 +81,7 @@ static int process_do_status(struct cardem_inst *ci, uint8_t *buf, int len)
 }
 
 /*! \brief Process a PTS indication message from the SIMtrace2 */
-static int process_do_pts(struct cardem_inst *ci, uint8_t *buf, int len)
+static int process_do_pts(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct cardemu_usb_msg_pts_info *pts;
 	pts = (struct cardemu_usb_msg_pts_info *) buf;
@@ -92,9 +92,9 @@ static int process_do_pts(struct cardem_inst *ci, uint8_t *buf, int len)
 }
 
 /*! \brief Process a RX-DATA indication message from the SIMtrace2 */
-static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
+static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
-	static struct apdu_context ac;
+	static struct osmo_apdu_context ac;
 	struct cardemu_usb_msg_rx_data *data;
 	int rc;
 
@@ -103,8 +103,8 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 	printf("=> DATA: flags=%x, %s: ", data->flags,
 		osmo_hexdump(data->data, data->data_len));
 
-	rc = apdu_segment_in(&ac, data->data, data->data_len,
-			     data->flags & CEMU_DATA_F_TPDU_HDR);
+	rc = osmo_apdu_segment_in(&ac, data->data, data->data_len,
+				  data->flags & CEMU_DATA_F_TPDU_HDR);
 
 	if (rc & APDU_ACT_TX_CAPDU_TO_CARD) {
 		struct msgb *tmsg = msgb_alloc(1024, "TPDU");
@@ -132,16 +132,16 @@ static int process_do_rx_da(struct cardem_inst *ci, uint8_t *buf, int len)
 		ac.sw[1] = msgb_apdu_sw(tmsg) & 0xff;
 		printf("SW=0x%04x, len_rx=%d\n", msgb_apdu_sw(tmsg), msgb_l3len(tmsg));
 		if (msgb_l3len(tmsg))
-			cardem_request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
-		cardem_request_sw_tx(ci, ac.sw);
+			osmo_st2_cardem_request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
+		osmo_st2_cardem_request_sw_tx(ci, ac.sw);
 	} else if (ac.lc.tot > ac.lc.cur) {
-		cardem_request_pb_and_rx(ci, ac.hdr.ins, ac.lc.tot - ac.lc.cur);
+		osmo_st2_cardem_request_pb_and_rx(ci, ac.hdr.ins, ac.lc.tot - ac.lc.cur);
 	}
 	return 0;
 }
 
 /*! \brief Process an incoming message from the SIMtrace2 */
-static int process_usb_msg(struct cardem_inst *ci, uint8_t *buf, int len)
+static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
 	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *)buf;
 	int rc;
@@ -212,9 +212,9 @@ static const struct option opts[] = {
 	{ NULL, 0, 0, 0 }
 };
 
-static void run_mainloop(struct cardem_inst *ci)
+static void run_mainloop(struct osmo_st2_cardem_inst *ci)
 {
-	struct st_transport *transp = ci->slot->transp;
+	struct osmo_st2_transport *transp = ci->slot->transp;
 	unsigned int msg_count, byte_count = 0;
 	uint8_t buf[16*265];
 	int xfer_len;
@@ -251,24 +251,24 @@ static void run_mainloop(struct cardem_inst *ci)
 	}
 }
 
-static struct st_transport _transp;
+static struct osmo_st2_transport _transp;
 
-static struct st_slot _slot = {
+static struct osmo_st2_slot _slot = {
 	.transp = &_transp,
 	.slot_nr = 0,
 };
 
-struct cardem_inst _ci = {
+struct osmo_st2_cardem_inst _ci = {
 	.slot = &_slot,
 };
 
-struct cardem_inst *ci = &_ci;
+struct osmo_st2_cardem_inst *ci = &_ci;
 
 static void signal_handler(int signal)
 {
 	switch (signal) {
 	case SIGINT:
-		cardem_request_card_insert(ci, false);
+		osmo_st2_cardem_request_card_insert(ci, false);
 		exit(0);
 		break;
 	default:
@@ -278,7 +278,7 @@ static void signal_handler(int signal)
 
 int main(int argc, char **argv)
 {
-	struct st_transport *transp = ci->slot->transp;
+	struct osmo_st2_transport *transp = ci->slot->transp;
 	char *gsmtap_host = "127.0.0.1";
 	int rc;
 	int c, ret = 1;
@@ -427,10 +427,10 @@ int main(int argc, char **argv)
 		}
 
 		/* simulate card-insert to modem (owhw, not qmod) */
-		cardem_request_card_insert(ci, true);
+		osmo_st2_cardem_request_card_insert(ci, true);
 
 		/* select remote (forwarded) SIM */
-		st_modem_sim_select_remote(ci->slot);
+		osmo_st2_modem_sim_select_remote(ci->slot);
 
 		if (!skip_atr) {
 			/* set the ATR */
@@ -438,11 +438,11 @@ int main(int argc, char **argv)
 						0xA0, 0x73, 0xBE, 0x21, 0x13, 0x67, 0x43, 0x20,
 						0x07, 0x18, 0x00, 0x00, 0x01, 0xA5 };
 			atr_update_csum(real_atr, sizeof(real_atr));
-			cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
+			osmo_st2_cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
 		}
 
 		/* select remote (forwarded) SIM */
-		st_modem_reset_pulse(ci->slot, 300);
+		osmo_st2_modem_reset_pulse(ci->slot, 300);
 
 		run_mainloop(ci);
 		ret = 0;

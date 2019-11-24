@@ -8,9 +8,10 @@
 #include <unistd.h>
 #include <stdio.h>
 
-/* global GSMTAP instance */
+/*! global GSMTAP instance */
 static struct gsmtap_inst *g_gti;
 
+/*! initialize the global GSMTAP instance for SIM traces */
 int osmo_st2_gsmtap_init(const char *gsmtap_host)
 {
 	if (g_gti)
@@ -26,6 +27,11 @@ int osmo_st2_gsmtap_init(const char *gsmtap_host)
 	return 0;
 }
 
+/*! log one APDU via the global GSMTAP instance.
+ *  \param[in] sub_type GSMTAP sub-type (GSMTAP_SIM_* constant)
+ *  \param[in] apdu User-provided buffer with APDU to log
+ *  \param[in] len Length of apdu in bytes
+ */
 int osmo_st2_gsmtap_send_apdu(uint8_t sub_type, const uint8_t *apdu, unsigned int len)
 {
 	struct gsmtap_hdr *gh;

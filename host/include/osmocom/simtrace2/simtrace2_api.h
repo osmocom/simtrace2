@@ -4,7 +4,7 @@
 #include <osmocom/sim/sim.h>
 
 /* transport to a SIMtrace device */
-struct st_transport {
+struct osmo_st2_transport {
 	/* USB */
 	struct libusb_device_handle *usb_devh;
 	struct {
@@ -18,35 +18,41 @@ struct st_transport {
 };
 
 /* a SIMtrace slot; communicates over a transport */
-struct st_slot {
+struct osmo_st2_slot {
 	/* transport through which the slot can be reached */
-	struct st_transport *transp;
+	struct osmo_st2_transport *transp;
 	/* number of the slot within the transport */
 	uint8_t slot_nr;
 };
 
 /* One istance of card emulation */
-struct cardem_inst {
+struct osmo_st2_cardem_inst {
 	/* slot on which this card emulation instance runs */
-	struct st_slot *slot;
+	struct osmo_st2_slot *slot;
 	/* libosmosim SIM card profile */
 	const struct osim_cla_ins_card_profile *card_prof;
 	/* libosmosim SIM card channel */
 	struct osim_chan_hdl *chan;
 };
 
+int osmo_st2_transp_tx_msg(struct osmo_st2_transport *transp, struct msgb *msg);
 
-int cardem_request_card_insert(struct cardem_inst *ci, bool inserted);
-int cardem_request_pb_and_rx(struct cardem_inst *ci, uint8_t pb, uint8_t le);
-int cardem_request_pb_and_tx(struct cardem_inst *ci, uint8_t pb,
-			     const uint8_t *data, uint16_t data_len_in);
-int cardem_request_sw_tx(struct cardem_inst *ci, const uint8_t *sw);
-int cardem_request_set_atr(struct cardem_inst *ci, const uint8_t *atr, unsigned int atr_len);
+int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
+                         uint8_t msg_class, uint8_t msg_type);
 
 
-int st_modem_reset_pulse(struct st_slot *slot, uint16_t duration_ms);
-int st_modem_reset_active(struct st_slot *slot);
-int st_modem_reset_inactive(struct st_slot *slot);
-int st_modem_sim_select_local(struct st_slot *slot);
-int st_modem_sim_select_remote(struct st_slot *slot);
-int st_modem_get_status(struct st_slot *slot);
+int osmo_st2_cardem_request_card_insert(struct osmo_st2_cardem_inst *ci, bool inserted);
+int osmo_st2_cardem_request_pb_and_rx(struct osmo_st2_cardem_inst *ci, uint8_t pb, uint8_t le);
+int osmo_st2_cardem_request_pb_and_tx(struct osmo_st2_cardem_inst *ci, uint8_t pb,
+				      const uint8_t *data, uint16_t data_len_in);
+int osmo_st2_cardem_request_sw_tx(struct osmo_st2_cardem_inst *ci, const uint8_t *sw);
+int osmo_st2_cardem_request_set_atr(struct osmo_st2_cardem_inst *ci, const uint8_t *atr,
+				    unsigned int atr_len);
+
+
+int osmo_st2_modem_reset_pulse(struct osmo_st2_slot *slot, uint16_t duration_ms);
+int osmo_st2_modem_reset_active(struct osmo_st2_slot *slot);
+int osmo_st2_modem_reset_inactive(struct osmo_st2_slot *slot);
+int osmo_st2_modem_sim_select_local(struct osmo_st2_slot *slot);
+int osmo_st2_modem_sim_select_remote(struct osmo_st2_slot *slot);
+int osmo_st2_modem_get_status(struct osmo_st2_slot *slot);

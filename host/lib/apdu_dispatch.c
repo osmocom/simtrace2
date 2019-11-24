@@ -30,13 +30,13 @@
 #include <osmocom/simtrace2/apdu_dispatch.h>
 
 /*! \brief Has the command-data phase been completed yet? */
-static inline bool is_dc_complete(struct apdu_context *ac)
+static inline bool is_dc_complete(struct osmo_apdu_context *ac)
 {
 	return (ac->lc.tot == ac->lc.cur);
 }
 
 /*! \brief Has the expected-data phase been completed yet? */
-static inline bool is_de_complete(struct apdu_context *ac)
+static inline bool is_de_complete(struct osmo_apdu_context *ac)
 {
 	return (ac->le.tot == ac->le.cur);
 }
@@ -50,7 +50,7 @@ static const char *dump_apdu_hdr(const struct osim_apdu_cmd_hdr *h)
 	return buf;
 }
 
-static void dump_apdu_ctx(const struct apdu_context *ac)
+static void dump_apdu_ctx(const struct osmo_apdu_context *ac)
 {
 	printf("%s; case=%d, lc=%d(%d), le=%d(%d)\n",
 		dump_apdu_hdr(&ac->hdr), ac->apdu_case,
@@ -71,8 +71,8 @@ static void dump_apdu_ctx(const struct apdu_context *ac)
  *  The function retunrs APDU_ACT_RX_MORE_CAPDU_FROM_READER when there
  *  is more data to be received from the card reader (GSM Phone).
  */
-int apdu_segment_in(struct apdu_context *ac, const uint8_t *apdu_buf,
-		    unsigned int apdu_len, bool new_apdu)
+int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
+			 unsigned int apdu_len, bool new_apdu)
 {
 	int rc = 0;
 

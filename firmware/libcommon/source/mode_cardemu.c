@@ -309,7 +309,7 @@ static int card_vcc_adc_init(void)
 }
 
 #define VCC_UV_THRESH_1V8	1500000
-#define VCC_UV_THRESH_3V	2800000
+#define VCC_UV_THRESH_3V	2500000
 
 static void process_vcc_adc(struct cardem_inst *ci)
 {

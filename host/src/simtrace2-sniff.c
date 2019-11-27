@@ -110,7 +110,7 @@ static void print_flags(const struct value_string* flag_meanings, uint32_t nb_fl
 	uint32_t i;
 	for (i = 0; i < nb_flags; i++) {
 		if (flags & flag_meanings[i].value) {
-			printf(flag_meanings[i].str);
+			printf("%s", flag_meanings[i].str);
 			flags &= ~flag_meanings[i].value;
 			if (flags) {
 				printf(", ");

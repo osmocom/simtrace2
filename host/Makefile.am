@@ -5,6 +5,9 @@ SUBDIRS = include lib src contrib #tests examples doc
 
 EXTRA_DIST = .version git-version-gen
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libosmo-simtrace2.pc
+
 @RELMAKE@
 
 BUILT_SOURCES = $(top_srcdir)/.version

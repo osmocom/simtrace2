@@ -3,6 +3,13 @@ Maintainer: Harald Welte <laforge@gnumonks.org>
 Section: devel
 Priority: optional
 Build-Depends: debhelper (>= 9),
+               autotools-dev,
+               autoconf,
+               automake,
+               libtool,
+               pkg-config,
+               git,
+               dh-autoreconf,
                libosmocore-dev,
                libpcsclite-dev,
                libnewlib-arm-none-eabi,
@@ -26,6 +33,33 @@ Package: simtrace2-utils
 Section: devel
 Architecture: any
 Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libosmo-simtrace2-0
 Recommends: simtrace2-firmware
 Description: Host utilities to communicate with SIMtrace2 USB Devices.
+
+Package: libosmo-simtrace2-0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Osmocom SIMtrace2 library
+  This library contains core "driver" functionality to interface with the
+  Osmocom SIMtrace2 (and compatible) USB device firmware.  It enables
+  applications to implement SIM card / smart card tracing as well as
+  SIM / smart card emulation functions.
+
+Package: libosmo-simtrace2-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libosmo-simtrace2-0, ${misc:Depends}
+Description: Development headers for Osmocom SIMtrace2 library
+  This library contains core "driver" functionality to interface with the
+  Osmocom SIMtrace2 (and compatible) USB device firmware.  It enables
+  applications to implement SIM card / smart card tracing as well as
+  SIM / smart card emulation functions.
+  .
+  The header files provided by this package may be used to develop
+  with any of the libosmocore libraries.
+  .
+  Also static libraries are installed with this package.

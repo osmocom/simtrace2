@@ -17,10 +17,15 @@ fw-clean: fw-simtrace-dfu-clean fw-simtrace-trace-clean fw-simtrace-cardem-clean
 fw: fw-simtrace-dfu fw-simtrace-trace fw-simtrace-cardem fw-qmod-dfu fw-qmod-cardem
 
 utils:
-	make -C host
+	(cd host && \
+	 autoreconf -fi && \
+	 ./configure --prefix=/usr --disable-werror && \
+	 make)
 
 clean: fw-clean
-	make -C host clean
+	if [ -e host/Makefile ]; then \
+		make -C host clean; \
+	fi
 
 install:
 	make -C firmware install

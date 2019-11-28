@@ -1,4 +1,19 @@
 #!/usr/bin/make -f
 
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+DEBIAN  := $(shell dpkg-parsechangelog | grep ^Version: | cut -d' ' -f2)
+DEBVERS := $(shell echo '$(DEBIAN)' | cut -d- -f1)
+VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/[+-].*//' -e 's/~//g')
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+export DEB_LDFLAGS_MAINT_STRIP = -Wl,-Bsymbolic-functions
+
+
 %:
 	dh $@
+
+override_dh_autoreconf:
+	cd host && dh_autoreconf

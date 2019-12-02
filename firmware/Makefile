@@ -231,7 +231,7 @@ program:
 
 SERIAL ?= /dev/ttyUSB0
 log:
-	stty -F $(SERIAL) 115200
+	stty -F $(SERIAL) 921600
 	lsof $(SERIAL) && echo "log is already opened" || ( sed -u "s/\r//" $(SERIAL) | ts )
 
 clean:

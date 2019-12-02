@@ -38,11 +38,8 @@
 
 #include <libusb.h>
 
-//#include <osmocom/simtrace2/libusb_util.h>
 #include <osmocom/simtrace2/simtrace_prot.h>
 #include <osmocom/simtrace2/simtrace2_api.h>
-//#include "apdu_dispatch.h"
-//#include "simtrace2-discovery.h"
 
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
@@ -59,14 +56,6 @@ static struct msgb *st_msgb_alloc(void)
 {
 	return msgb_alloc_headroom(1024+32, 32, "SIMtrace");
 }
-
-#if 0
-static void apdu_out_cb(uint8_t *buf, unsigned int len, void *user_data)
-{
-	printf("APDU: %s\n", osmo_hexdump(buf, len));
-	gsmtap_send_sim(buf, len);
-}
-#endif
 
 /*! \brief Transmit a given command to the SIMtrace2 device */
 int osmo_st2_transp_tx_msg(struct osmo_st2_transport *transp, struct msgb *msg)

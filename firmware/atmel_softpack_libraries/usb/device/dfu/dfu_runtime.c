@@ -208,7 +208,7 @@ void DFURT_SwitchToDFU(void)
 	 * activate itself, rather than boot into the application */
 	g_dfu->magic = USB_DFU_MAGIC;
 
-	/* Disconnect the USB by remoting the pull-up */
+	/* Disconnect the USB by removing the pull-up */
 	USBD_Disconnect();
 	__disable_irq();
 

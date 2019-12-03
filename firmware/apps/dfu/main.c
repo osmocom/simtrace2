@@ -300,17 +300,16 @@ extern int main(void)
 
 	TRACE_INFO("USB init...\n\r");
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
+	USBD_Disconnect();
 #ifdef PIN_USB_PULLUP
 	const Pin usb_dp_pullup = PIN_USB_PULLUP;
 	PIO_Configure(&usb_dp_pullup, 1);
 	PIO_Set(&usb_dp_pullup);
 #endif
-	USBD_HAL_Suspend();
-	mdelay(20);
+	mdelay(50);
 #ifdef PIN_USB_PULLUP
 	PIO_Clear(&usb_dp_pullup);
 #endif
-	USBD_HAL_Activate();
 
 	USBDFU_Initialize(&dfu_descriptors);
 

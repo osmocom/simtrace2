@@ -318,8 +318,8 @@ extern int main(void)
 		check_exec_dbg_cmd();
 #if 1
 		if (i >= MAX_USB_ITER * 3) {
-			TRACE_ERROR("Resetting board (USB could "
-				    "not be configured)\n\r");
+			TRACE_ERROR("Resetting board (USB could not be configured)\n\r");
+			g_dfu->magic = USB_DFU_MAGIC; // start the bootloader after reboot
 			USBD_Disconnect();
 			NVIC_SystemReset();
 		}

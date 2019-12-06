@@ -37,12 +37,14 @@ GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 # (can be overriden by adding CHIP=chip and BOARD=board to the command-line)
 CHIP  ?= sam3s4
 BOARD ?= qmod
+APP ?= dfu
 
 # Defines which are the available memory targets for the SAM3S-EK board.
-MEMORIES ?= flash dfu
-
-# Output file basename
-APP ?= dfu
+ifeq ($(APP), dfu)
+MEMORIES ?= flash
+else
+MEMORIES ?= dfu
+endif
 
 # Output directories and filename
 OUTPUT = $(BOARD)-$(APP)

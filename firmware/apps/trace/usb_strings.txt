@@ -1,5 +1,5 @@
 sysmocom - s.f.m.c. GmbH
-SIMtrace 2 compatible device
+PRODUCT_STRING
 SIMtrace Sniffer
 SIMtrace CCID
 SIMtrace Card Emulation

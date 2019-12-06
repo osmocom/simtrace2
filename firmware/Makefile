@@ -195,7 +195,11 @@ $(BIN) $(OBJ):
 usbstring/usbstring: usbstring/usbstring.c
 	gcc $^ -o $@
 
-apps/$(APP)/usb_strings_generated.h: apps/$(APP)/usb_strings.txt usbstring/usbstring
+.PHONY: apps/$(APP)/usb_strings.txt.patched
+apps/$(APP)/usb_strings.txt.patched: apps/$(APP)/usb_strings.txt
+	sed "s/PRODUCT_STRING/$(shell cat libboard/$(BOARD)/product_string.txt)/" $< > $@
+
+apps/$(APP)/usb_strings_generated.h: apps/$(APP)/usb_strings.txt.patched usbstring/usbstring
 	cat $< | usbstring/usbstring > $@
 
 define RULES
@@ -235,6 +239,7 @@ log:
 	lsof $(SERIAL) && echo "log is already opened" || ( sed -u "s/\r//" $(SERIAL) | ts )
 
 clean:
+	-rm -f apps/$(APP)/usb_strings.txt.patched
 	-rm -fR $(OBJ)/*.o $(BIN)/*.bin $(BIN)/*.elf $(BIN)/*.elf.txt $(BIN)/*.map $(BIN)/*.lst `find . -name \*.p`
 
 install:

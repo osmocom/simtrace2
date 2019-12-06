@@ -332,11 +332,13 @@ void board_main_top(void)
 		TRACE_INFO("Detected Quad-Modem ST12\n\r");
 	} else {
 		TRACE_INFO("Detected Quad-Modem ST34\n\r");
+#ifndef APPLICATION_dfu
 		/* make sure we use the second set of USB Strings
 		 * calling the interfaces "Modem 3" and "Modem 4" rather
 		 * than 1+2 */
 		usb_strings[7] = usb_strings[9];
 		usb_strings[8] = usb_strings[10];
+#endif
 	}
 
 	/* Obtain the circuit board version (currently just prints voltage */

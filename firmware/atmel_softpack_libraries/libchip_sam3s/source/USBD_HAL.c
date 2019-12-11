@@ -45,11 +45,6 @@
  *      Headers
  *---------------------------------------------------------------------------*/
 
-#ifdef TRACE_LEVEL
-#undef TRACE_LEVEL
-#endif
-#define TRACE_LEVEL TRACE_LEVEL_WARNING
-
 #include "chip.h"
 #include "USBD_HAL.h"
 #include <usb/device/dfu/dfu.h>
@@ -1138,7 +1133,7 @@ void USBD_IrqHandler(void)
     /* Resume (Wakeup) */
     if ((status & (UDP_ISR_WAKEUP | UDP_ISR_RXRSM)) != 0) {
 
-        TRACE_INFO_WP("Res ");
+        TRACE_DEBUG_WP("Res ");
         /* Clear and disable resume interrupts */
         UDP->UDP_ICR = UDP_ICR_WAKEUP | UDP_ICR_RXRSM | UDP_ICR_RXSUSP;
         UDP->UDP_IDR = UDP_IDR_WAKEUP | UDP_IDR_RXRSM;
@@ -1150,7 +1145,7 @@ void USBD_IrqHandler(void)
        This interrupt is always treated last (hence the '==') */
     if (status == UDP_ISR_RXSUSP) {
 
-        TRACE_INFO_WP("Susp ");
+        TRACE_DEBUG_WP("Susp ");
         /* Enable wakeup */
         UDP->UDP_IER = UDP_IER_WAKEUP | UDP_IER_RXRSM;
         /* Acknowledge interrupt */
@@ -1161,7 +1156,7 @@ void USBD_IrqHandler(void)
     /* End of bus reset */
     else if ((status & UDP_ISR_ENDBUSRES) != 0) {
 
-        TRACE_INFO_WP("EoBRes ");
+        TRACE_DEBUG_WP("EoBRes ");
 
 #if defined(BOARD_USB_DFU)
 #if defined(APPLICATION_dfu)
@@ -1202,7 +1197,7 @@ void USBD_IrqHandler(void)
 
                 if (status != 0) {
 
-                    TRACE_INFO_WP("\n\r  - ");
+                    TRACE_DEBUG_WP("\n\r  - ");
                 }
             }
             eptnum++;
@@ -1211,7 +1206,7 @@ void USBD_IrqHandler(void)
 
     /* Toggle LED back to its previous state */
     TRACE_DEBUG_WP("!");
-    TRACE_INFO_WP("\n\r");
+    TRACE_DEBUG_WP("\n\r");
     if (USBD_GetState() >= USBD_STATE_POWERED) {
 
         //LED_Clear(USBD_LEDUSB);
@@ -1361,7 +1356,7 @@ uint8_t USBD_HAL_ConfigureEP(const USBEndpointDescriptor *pDescriptor)
         UDP->UDP_IER = (1 << bEndpoint);
     }
 
-    TRACE_INFO_WP("CfgEp%d ", bEndpoint);
+    TRACE_DEBUG_WP("CfgEp%d ", bEndpoint);
     return bEndpoint;
 }
 
@@ -1529,7 +1524,7 @@ void USBD_HAL_RemoteWakeUp(void)
     UDP_EnableUsbClock();
     UDP_EnableTransceiver();
 
-    TRACE_INFO_WP("RWUp ");
+    TRACE_DEBUG_WP("RWUp ");
 
     // Activates a remote wakeup (edge on ESR), then clear ESR
     UDP->UDP_GLB_STAT |= UDP_GLB_STAT_ESR;

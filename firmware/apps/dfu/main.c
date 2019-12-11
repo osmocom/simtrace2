@@ -257,11 +257,24 @@ extern int main(void)
 		"=============================================================================\n\r",
 		manifest_revision, manifest_board);
 
-	TRACE_INFO("Chip ID: 0x%08x (Ext 0x%08x)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
+#if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
+	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
 	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
-	TRACE_INFO("Reset Cause: 0x%lx\n\r", reset_cause);
+	static const char* reset_causes[] = {
+		"general reset (first power-up reset)",
+		"backup reset (return from backup mode)",
+		"watchdog reset (watchdog fault occurred)",
+		"software reset (processor reset required by the software)",
+		"user reset (NRST pin detected low)",
+	};
+	if (reset_cause < ARRAY_SIZE(reset_causes)) {
+		TRACE_INFO("Reset Cause: %s\n\r", reset_causes[reset_cause]);
+	} else {
+		TRACE_INFO("Reset Cause: 0x%lx\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+	}
+#endif
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
 	/* Find out why we are in the DFU bootloader, and not the main application */

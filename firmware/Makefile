@@ -170,7 +170,7 @@ CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
 CFLAGS += -DAPPLICATION=\"$(APP)\" -DAPPLICATION_$(APP)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols $(LIB)
+LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols -Wl,--print-memory-usage $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
 
 # Append BIN directories to output filename

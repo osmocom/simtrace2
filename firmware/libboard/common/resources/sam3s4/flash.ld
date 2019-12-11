@@ -38,8 +38,8 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-	rom (rx)  : ORIGIN = 0x00400000, LENGTH = 0x00040000 /* flash, 256K */
-	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x0000c000 /* sram, 48K */
+	rom (rx)  : ORIGIN = 0x00400000, LENGTH = 16K /* flash, 256K, but only the first 16K should be used for the bootloader */
+	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 48K /* SRAM, 48K */
 }
 
 /* Section Definitions */ 

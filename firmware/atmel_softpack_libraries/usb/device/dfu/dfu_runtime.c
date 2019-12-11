@@ -36,7 +36,12 @@
 #include <usb/common/dfu/usb_dfu.h>
 #include <usb/device/dfu/dfu.h>
 
-struct dfudata *g_dfu = (struct dfudata *) IRAM_ADDR;
+/** specific memory location shared across bootloader and application */
+#define __dfudata __attribute__ ((section (".dfudata")))
+/** structure containing the magic value to know if DFU or application should be started */
+__dfudata struct dfudata _g_dfu;
+/** variable to structure containing the magic value to know if DFU or application should be started */
+struct dfudata *g_dfu = &_g_dfu;
 
 /* FIXME: this was used for a special ELF section which then got called
  * by DFU code and Application code, across flash partitions */

@@ -39,9 +39,9 @@ SEARCH_DIR(.)
 MEMORY
 {
 	/* reserve the first 16k (= 0x4000) for the DFU bootloader */
-	rom (rx)  : ORIGIN = 0x00404000, LENGTH = 0x0003c000 /* flash, 256K */
-	/* reserve the first 32 (= 0x20) bytes for the _g_dfu struct */
-	ram (rwx) : ORIGIN = 0x20000020, LENGTH = 0x0000bfe0 /* sram, 48K */
+	rom (rx)  : ORIGIN = 0x00400000 + 16K, LENGTH = 256K - 16K /* flash, 256K */
+	/* note: dfudata will be at the start */
+	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 48K /* SRAM, 48K */
 }
 
 /* Section Definitions */ 
@@ -111,6 +111,8 @@ SECTIONS
     {
         . = ALIGN(4);
         _srelocate = .;
+        /* we must make sure the .dfudata is linked to start of RAM */
+        *(.dfudata .dfudata.*);
         *(.ramfunc .ramfunc.*);
         *(.data .data.*);
         . = ALIGN(4);

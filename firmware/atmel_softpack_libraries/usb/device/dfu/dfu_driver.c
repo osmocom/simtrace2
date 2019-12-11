@@ -33,8 +33,7 @@
 #include <usb/common/dfu/usb_dfu.h>
 #include <usb/device/dfu/dfu.h>
 
-/* FIXME: this was used for a special ELF section which then got called
- * by DFU code and Application code, across flash partitions */
+/** specific memory location shared across bootloader and application */
 #define __dfudata __attribute__ ((section (".dfudata")))
 #define __dfufunc
 
@@ -42,11 +41,14 @@
 static USBDDriver usbdDriver;
 static unsigned char if_altsettings[1];
 
+/** structure containing the DFU state and magic value to know if DFU or application should be started */
 __dfudata struct dfudata _g_dfu = {
   	.state = DFU_STATE_appIDLE,
 	.past_manifest = 0,
 	.total_bytes = 0,
 };
+
+/** variable to structure containing DFU state */
 struct dfudata *g_dfu = &_g_dfu;
 
 WEAK void dfu_drv_updstatus(void)

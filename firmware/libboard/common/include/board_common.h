@@ -112,10 +112,13 @@
 #define BOARD_USB_UDP
 
 #define BOARD_USB_DFU
+
+
 #define BOARD_DFU_BOOT_SIZE	(16 * 1024)
 #define BOARD_DFU_RAM_SIZE	(2 * 1024)
 #define BOARD_DFU_PAGE_SIZE	512
-#define BOARD_DFU_NUM_IF	2
+/** number of DFU interfaces (used to flash specific partitions) */
+#define BOARD_DFU_NUM_IF	3
 
 extern void board_exec_dbg_cmd(int ch);
 extern void board_main_top(void);

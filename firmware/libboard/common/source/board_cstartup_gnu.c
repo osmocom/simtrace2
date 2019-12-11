@@ -126,7 +126,7 @@ IntFunc exception_table[] = {
 	IrqHandlerNotUsed   /* 35 not used */
 };
 
-#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
+#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu) && defined(ENVIRONMENT_flash)
 #include "usb/device/dfu/dfu.h"
 static void BootIntoApp(void)
 {
@@ -159,8 +159,9 @@ void ResetException( void )
 	LowLevelInit() ;
 
 
-#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu)
-	if (!USBDFU_OverrideEnterDFU()) {
+#if defined(BOARD_USB_DFU) && defined(APPLICATION_dfu) && defined(ENVIRONMENT_flash)
+	// boot application if there is not DFU override
+	if (!USBDFU_OverrideEnterDFU() && SCB->VTOR < IFLASH_ADDR + BOARD_DFU_BOOT_SIZE) {
 		UART_Exit();
 		__disable_irq();
 		BootIntoApp();

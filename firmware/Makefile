@@ -41,7 +41,7 @@ APP ?= dfu
 
 # Defines which are the available memory targets for the SAM3S-EK board.
 ifeq ($(APP), dfu)
-MEMORIES ?= flash
+MEMORIES ?= flash dfu
 else
 MEMORIES ?= dfu
 endif

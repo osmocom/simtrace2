@@ -26,8 +26,15 @@
 
 #include <osmocom/core/timer.h>
 
+/* USB alternate interface index used to identify which partition to flash */
+/** USB alternate interface index indicating RAM partition */
 #define ALTIF_RAM 0
+/** USB alternate interface index indicating flash partition */
+#if defined(ENVIRONMENT_flash)
 #define ALTIF_FLASH 1
+#elif defined(ENVIRONMENT_dfu)
+#define ALTIF_FLASH 2
+#endif
 
 unsigned int g_unique_id[4];
 /* remember if the watchdog has been configured in the main loop so we can kick it in the ISR */
@@ -44,10 +51,18 @@ static const Pin pinsLeds[] = { PINS_LEDS } ;
  *----------------------------------------------------------------------------*/
 
 #define RAM_ADDR(offset) (IRAM_ADDR + BOARD_DFU_RAM_SIZE + offset)
+#if defined(ENVIRONMENT_flash)
 #define FLASH_ADDR(offset) (IFLASH_ADDR + BOARD_DFU_BOOT_SIZE + offset)
+#elif defined(ENVIRONMENT_dfu)
+#define FLASH_ADDR(offset) (IFLASH_ADDR + offset)
+#endif
 
-#define IFLASH_END	((uint8_t *)IFLASH_ADDR + IFLASH_SIZE)
-#define IRAM_END	((uint8_t *)IRAM_ADDR + IRAM_SIZE)
+#define IRAM_END ((uint8_t *)IRAM_ADDR + IRAM_SIZE)
+#if defined(ENVIRONMENT_flash)
+#define IFLASH_END ((uint8_t *)IFLASH_ADDR + IFLASH_SIZE)
+#elif defined(ENVIRONMENT_dfu)
+#define IFLASH_END ((uint8_t *)IFLASH_ADDR + BOARD_DFU_BOOT_SIZE)
+#endif
 
 /* incoming call-back: Host has transferred 'len' bytes (stored at
  * 'data'), which we shall write to 'offset' into the partition
@@ -90,7 +105,11 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		break;
 	case ALTIF_FLASH:
 		addr = FLASH_ADDR(offset);
+#if defined(ENVIRONMENT_flash)
 		if (addr < IFLASH_ADDR || addr + len >= IFLASH_ADDR + IFLASH_SIZE) {
+#elif defined(ENVIRONMENT_dfu)
+		if (addr < IFLASH_ADDR || addr + len >= IFLASH_ADDR + BOARD_DFU_BOOT_SIZE) {
+#endif
 			g_dfu->state = DFU_STATE_dfuERROR;
 			g_dfu->status = DFU_STATUS_errADDRESS;
 			rc = DFU_RET_STALL;
@@ -281,12 +300,12 @@ extern int main(void)
 	TRACE_INFO("DFU bootloader start reason: ");
 	switch (USBDFU_OverrideEnterDFU()) {
 	case 0:
-		/* 0 normally means that there is no override, but we are in the bootloader,
-		 * thus the first check in board_cstartup_gnu did return something else than 0.
-		 * this can only be g_dfu->magic which is erased when the segment are
-		 * relocated, which happens in board_cstartup_gnu just after USBDFU_OverrideEnterDFU.
-		 * no static variable can be used to store this case since this will also be overwritten
-		 */
+		if (SCB->VTOR < IFLASH_ADDR + BOARD_DFU_BOOT_SIZE) {
+			TRACE_INFO_WP("unknown\n\r");
+		} else {
+			TRACE_INFO_WP("DFU is the main application\n\r");
+		}
+		break;
 	case 1:
 		TRACE_INFO_WP("DFU switch requested by main application\n\r");
 		break;

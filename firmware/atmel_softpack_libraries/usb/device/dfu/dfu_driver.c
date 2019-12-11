@@ -43,7 +43,7 @@ static unsigned char if_altsettings[1];
 
 /** structure containing the DFU state and magic value to know if DFU or application should be started */
 __dfudata struct dfudata _g_dfu = {
-  	.state = DFU_STATE_appIDLE,
+	.state = DFU_STATE_dfuIDLE,
 	.past_manifest = 0,
 	.total_bytes = 0,
 };
@@ -463,7 +463,20 @@ void USBDFU_SwitchToApp(void)
 	/* make sure the MAGIC is not set to enter DFU again */
 	g_dfu->magic = 0;
 
-	printf("switching to app\r\n");
+	/* disconnect from USB to ensure re-enumeration */
+	USBD_Disconnect();
+
+	/* disable any interrupts during transition */
+	__disable_irq();
+
+	/* Tell the hybrid to execute FTL JUMP! */
+	NVIC_SystemReset();
+}
+
+void USBDFU_SwitchToDFU(void)
+{
+	/* make sure the MAGIC is not set to enter DFU again */
+	g_dfu->magic = USB_DFU_MAGIC;
 
 	/* disconnect from USB to ensure re-enumeration */
 	USBD_Disconnect();

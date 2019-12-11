@@ -19,14 +19,34 @@ enum {
 	STR_MANUF	= 1,
 	STR_PROD,
 	STR_CONFIG,
+	// strings for the first alternate interface (e.g. DFU)
 	_STR_FIRST_ALT,
 	// serial string
-	STR_SERIAL	= (_STR_FIRST_ALT+BOARD_DFU_NUM_IF),
+	STR_SERIAL	= (_STR_FIRST_ALT + BOARD_DFU_NUM_IF),
 	// version string (on additional interface)
 	VERSION_CONF_STR,
 	VERSION_STR,
 	// count
 	STRING_DESC_CNT,
+};
+
+/* string used to replace one of both DFU flash partition atlsettings */
+static const unsigned char usb_string_notavailable[] = {
+	USBStringDescriptor_LENGTH(13),
+	USBGenericDescriptor_STRING,
+	USBStringDescriptor_UNICODE('n'),
+	USBStringDescriptor_UNICODE('o'),
+	USBStringDescriptor_UNICODE('t'),
+	USBStringDescriptor_UNICODE(' '),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('v'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('i'),
+	USBStringDescriptor_UNICODE('l'),
+	USBStringDescriptor_UNICODE('a'),
+	USBStringDescriptor_UNICODE('b'),
+	USBStringDescriptor_UNICODE('l'),
+	USBStringDescriptor_UNICODE('e'),
 };
 
 /* USB string for the serial (using 128-bit device ID) */
@@ -121,7 +141,7 @@ static const USBDeviceDescriptor fsDevice = {
 		.bNumEndpoints =	0,					\
 		.bInterfaceClass =	0xfe,					\
 		.bInterfaceSubClass =	1,					\
-		.iInterface =		(_STR_FIRST_ALT+ALT),			\
+		.iInterface =		(_STR_FIRST_ALT + ALT),			\
 		.bInterfaceProtocol =	2,					\
 	}
 
@@ -180,6 +200,11 @@ void set_usb_serial_str(void)
 	for (i = 0; i < ARRAY_SIZE(usb_strings) && i < ARRAY_SIZE(usb_strings_extended); i++) {
 		usb_strings_extended[i] = usb_strings[i];
 	}
+#if defined(ENVIRONMENT_dfu)
+	usb_strings_extended[_STR_FIRST_ALT + 1] = usb_string_notavailable;
+#elif defined(ENVIRONMENT_flash)
+	usb_strings_extended[_STR_FIRST_ALT + 2] = usb_string_notavailable;
+#endif
 	usb_strings_extended[STR_SERIAL] = usb_string_serial;
 	usb_strings_extended[VERSION_CONF_STR] = usb_string_version_conf;
 	usb_strings_extended[VERSION_STR] = usb_string_version;

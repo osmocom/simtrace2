@@ -124,6 +124,9 @@ void USBDFU_Initialize(const USBDDriverDescriptors *pDescriptors);
 /* USBD tells us to switch from DFU mode to application mode */
 void USBDFU_SwitchToApp(void);
 
+/* USBD tells us to switch from to DFU mode */
+void USBDFU_SwitchToDFU(void);
+
 /* Return values to be used by USBDFU_handle_{dn,up}load */
 #define DFU_RET_NOTHING	0
 #define DFU_RET_ZLP	1

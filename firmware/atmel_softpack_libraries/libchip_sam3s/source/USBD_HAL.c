@@ -1171,12 +1171,19 @@ void USBD_IrqHandler(void)
 	/* if we are currently in the DFU bootloader, and we are beyond
 	 * the MANIFEST stage, we shall switch to the normal
 	 * application */
-	if (g_dfu->past_manifest)
+	if (g_dfu->past_manifest) {
+#if defined(ENVIRONMENT_flash)
 		USBDFU_SwitchToApp();
+#elif defined(ENVIRONMENT_dfu)
+		USBDFU_SwitchToDFU();
+#endif
+	}
+
 #else
 	/* if we are currently in the main application, and we are in
-	 * appDETACH state, switch into the DFU bootloader */
-	if (g_dfu->state == DFU_STATE_appDETACH)
+	 * appDETACH state or past downloading, switch into the DFU bootloader.
+	 */
+	if (g_dfu->state == DFU_STATE_appDETACH || g_dfu->state == DFU_STATE_dfuMANIFEST)
 		DFURT_SwitchToDFU();
 #endif /* APPLICATION_dfu */
 #endif /* BOARD_USB_DFU */

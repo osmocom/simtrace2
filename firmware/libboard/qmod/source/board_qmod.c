@@ -230,6 +230,7 @@ void board_exec_dbg_cmd(int ch)
 		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
 		printf("\t!\tSwitch Channel A from physical -> remote\n\r");
 		printf("\t@\tSwitch Channel B from physical -> remote\n\r");
+		printf("\tt\t(pseudo)talloc report\n\r");
 		break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");
@@ -291,6 +292,9 @@ void board_exec_dbg_cmd(int ch)
 		break;
 	case '@':
 		sim_switch_use_physical(0, 0);
+		break;
+	case 't':
+		talloc_report(NULL, stdout);
 		break;
 	default:
 		if (!qmod_sam3_is_12())

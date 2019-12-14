@@ -17,6 +17,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 
 /* minimalistic emulation of core talloc API functions used by msgb.c */
@@ -39,3 +40,4 @@ void *talloc_named_const(const void *context, size_t size, const char *name);
 void talloc_set_name_const(const void *ptr, const char *name);
 char *talloc_strdup(const void *t, const char *p);
 void *talloc_pool(const void *context, size_t size);
+void talloc_report(const void *ptr, FILE *f);

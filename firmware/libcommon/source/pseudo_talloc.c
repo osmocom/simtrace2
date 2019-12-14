@@ -15,6 +15,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
  */
 #include <stdint.h>
+#include <stdio.h>
 
 #include "talloc.h"
 #include "trace.h"
@@ -74,6 +75,20 @@ int _talloc_free(void *ptr, const char *location)
 	local_irq_restore(x);
 	TRACE_ERROR("%s: invalid pointer %p from %s\r\n", __func__, ptr, location);
 	return -1;
+}
+
+void talloc_report(const void *ptr, FILE *f)
+{
+	unsigned int i;
+
+	fprintf(f, "talloc_report(): ");
+	for (i = 0; i < ARRAY_SIZE(msgb_inuse); i++) {
+		if (msgb_inuse[i])
+			fputc('X', f);
+		else
+			fputc('_', f);
+	}
+	fprintf(f, "\r\n");
 }
 
 void talloc_set_name_const(const void *ptr, const char *name)

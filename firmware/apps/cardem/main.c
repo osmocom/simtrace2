@@ -159,7 +159,7 @@ extern int main(void)
 		printf("\n\r\n\r"
 		"=============================================================================\n\r"
 		"SIMtrace2 firmware " GIT_VERSION "\n\r"
-		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r"
+		"(C) 2010-2019 by Harald Welte, 2018-2019 by Kevin Redon\n\r"
 		"=============================================================================\n\r");
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)

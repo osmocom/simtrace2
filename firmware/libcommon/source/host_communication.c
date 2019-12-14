@@ -40,7 +40,7 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	local_irq_save(x);
 	bep->in_progress--;
 	local_irq_restore(x);
-	TRACE_DEBUG("%u: in_progress=%d\n", bep->ep, bep->in_progress);
+	TRACE_DEBUG("%u: in_progress=%lu\n", bep->ep, bep->in_progress);
 
 	if (status != USBD_STATUS_SUCCESS)
 		TRACE_ERROR("%s error, status=%d\n", __func__, status);
@@ -79,7 +79,7 @@ int usb_refill_to_host(uint8_t ep)
 
 	local_irq_restore(x);
 
-	TRACE_DEBUG("%s (EP=0x%02x), in_progress=%d\r\n", __func__, ep, bep->in_progress);
+	TRACE_DEBUG("%s (EP=0x%02x), in_progress=%lu\r\n", __func__, ep, bep->in_progress);
 
 	msg->dst = bep;
 
@@ -92,7 +92,7 @@ int usb_refill_to_host(uint8_t ep)
 		local_irq_save(x);
 		bep->in_progress--;
 		local_irq_restore(x);
-		TRACE_DEBUG("%02x: in_progress=%d\n", bep->ep, bep->in_progress);
+		TRACE_DEBUG("%02x: in_progress=%lu\n", bep->ep, bep->in_progress);
 		return 0;
 	}
 
@@ -106,7 +106,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	struct msgb *msg = (struct msgb *) arg;
 	struct usb_buffered_ep *bep = msg->dst;
 
-	TRACE_DEBUG("%s (EP=%u, len=%u, q=%p)\r\n", __func__,
+	TRACE_DEBUG("%s (EP=%u, len=%lu, q=%p)\r\n", __func__,
 			bep->ep, transferred, &bep->queue);
 
 	bep->in_progress = 0;

@@ -68,7 +68,7 @@ static void __dfufunc handle_getstate(void)
 {
 	uint8_t u8 = g_dfu->state;
 
-	TRACE_DEBUG("handle_getstate(%u)\n\r", g_dfu->state);
+	TRACE_DEBUG("handle_getstate(%lu)\n\r", g_dfu->state);
 
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }

@@ -109,7 +109,7 @@ void mode_trace_usart1_irq(void)
 			/* Fill char into buffer */
 			rbuf_write(&sim_rcv_buf, c);
 		} else {
-			TRACE_DEBUG("e %x st: %x\n", c, stat);
+			TRACE_DEBUG("e %x st: %lx\n", c, stat);
 		}		/* else: error occurred */
 
 		char_stat = stat;

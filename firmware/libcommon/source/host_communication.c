@@ -27,7 +27,7 @@
  * USBD Integration API
  ***********************************************************************/
 
-/* call-back after (successful?) transfer of a buffer */
+/* call-back after (successful?) transfer of a write buffer on IN EP */
 static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			 uint32_t remaining)
 {
@@ -48,6 +48,7 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	usb_buf_free(msg);
 }
 
+/* check if the spcified IN endpoint is idle and submit the next buffer from queue */
 int usb_refill_to_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
@@ -99,7 +100,7 @@ int usb_refill_to_host(uint8_t ep)
 	return 1;
 }
 
-/* call-back after (successful?) transfer of a buffer */
+/* call-back after (successful?) read transfer of a buffer on OUT EP */
 static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 			uint32_t remaining)
 {
@@ -120,6 +121,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	llist_add_tail_irqsafe(&msg->list, &bep->queue);
 }
 
+/* refill the read queue for data received from host PC on OUT EP, if needed */
 int usb_refill_from_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
@@ -158,6 +160,7 @@ int usb_refill_from_host(uint8_t ep)
 	return 1;
 }
 
+/* drain any buffers from the queue of the endpoint and release their memory */
 int usb_drain_queue(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);

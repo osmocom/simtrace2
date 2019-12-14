@@ -24,6 +24,7 @@
 #include <errno.h>
 
 #define USB_ALLOC_SIZE	280
+#define USB_MAX_QLEN	3
 
 static struct usb_buffered_ep usb_buffered_ep[BOARD_USB_NUMENDPOINTS];
 
@@ -78,6 +79,17 @@ int usb_buf_submit(struct msgb *msg)
 
 	/* no need for irqsafe operation, as the usb_tx_queue is
 	 * processed only by the main loop context */
+
+	if (ep->queue_len > USB_MAX_QLEN) {
+		struct msgb *evict;
+		/* free the first pending buffer in the queue */
+		TRACE_INFO("EP%02x: dropping first queue element (qlen=%u)\r\n",
+			   ep->ep, ep->queue_len);
+		evict = msgb_dequeue_count(&ep->queue, &ep->queue_len);
+		OSMO_ASSERT(evict);
+		usb_buf_free(evict);
+	}
+
 	msgb_enqueue_count(&ep->queue, msg, &ep->queue_len);
 	return 0;
 }

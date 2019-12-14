@@ -236,8 +236,25 @@ struct card_handle {
 /* reset all the 'dynamic' state of the card handle to the initial/default values */
 static void card_handle_reset(struct card_handle *ch)
 {
+	struct msgb *msg;
+
+	tc_etu_disable(ch->tc_chan);
+
 	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
 	ch->tpdu.state = TPDU_S_WAIT_CLA;
+
+	/* release any buffers we may still own */
+	if (ch->uart_tx_msg) {
+		usb_buf_free(ch->uart_tx_msg);
+		ch->uart_tx_msg = NULL;
+	}
+	if (ch->uart_rx_msg) {
+		usb_buf_free(ch->uart_rx_msg);
+		ch->uart_rx_msg = NULL;
+	}
+	while ((msg = msgb_dequeue(&ch->uart_tx_queue))) {
+		usb_buf_free(msg);
+	}
 }
 
 struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch)
@@ -1062,7 +1079,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	case CARD_IO_VCC:
 		if (active == 0 && ch->vcc_active == 1) {
 			TRACE_INFO("%u: VCC deactivated\r\n", ch->num);
-			tc_etu_disable(ch->tc_chan);
+			card_handle_reset(ch);
 			card_set_state(ch, ISO_S_WAIT_POWER);
 		} else if (active == 1 && ch->vcc_active == 0) {
 			TRACE_INFO("%u: VCC activated\r\n", ch->num);
@@ -1091,7 +1108,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			}
 		} else if (active && !ch->in_reset) {
 			TRACE_INFO("%u: RST asserted\r\n", ch->num);
-			tc_etu_disable(ch->tc_chan);
+			card_handle_reset(ch);
 		}
 		ch->in_reset = active;
 		break;

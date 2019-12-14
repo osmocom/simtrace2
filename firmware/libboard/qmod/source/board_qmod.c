@@ -205,13 +205,17 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tg\tswitch off LED 2\n\r");
 		printf("\tG\tswitch off LED 2\n\r");
 		if (qmod_sam3_is_12()) {
+#if (ALLOW_PEER_ERASE > 0)
 			printf("\tE\tprogram EEPROM\n\r");
 			printf("\te\tErase EEPROM\n\r");
+#endif
 			printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
 			printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
+#if (ALLOW_PEER_ERASE > 0)
 			printf("\tH\tRelease HUB RESET (high)\n\r");
 			printf("\th\tAssert HUB RESET (low)\n\r");
 			printf("\tw\tWrite single byte in EEPROM\n\r");
+#endif
 			printf("\tr\tRead single byte from EEPROM\n\r");
 		}
 		printf("\tX\tRelease peer SAM3 from reset\n\r");

@@ -78,7 +78,7 @@ int usb_buf_submit(struct msgb *msg)
 
 	/* no need for irqsafe operation, as the usb_tx_queue is
 	 * processed only by the main loop context */
-	msgb_enqueue(&ep->queue, msg);
+	msgb_enqueue_count(&ep->queue, msg, &ep->queue_len);
 	return 0;
 }
 

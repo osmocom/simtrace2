@@ -260,18 +260,18 @@ struct msgb *usb_buf_alloc_st(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
 	while (!msg) {
 		msg = usb_buf_alloc(ep); // try to allocate some memory
 		if (!msg) { // allocation failed, we might be out of memory
-			struct llist_head *queue = usb_get_queue(ep);
-			if (!queue) {
+			struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
+			if (!bep) {
 				TRACE_ERROR("ep %u: %s queue does not exist\n\r",
 				            ep, __func__);
 				return NULL;
 			}
-			if (llist_empty(queue)) {
+			if (llist_empty(&bep->queue)) {
 				TRACE_ERROR("ep %u: %s EOMEM (queue already empty)\n\r",
 				            ep, __func__);
 				return NULL;
 			}
-			msg = msgb_dequeue(queue);
+			msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
 			if (!msg) {
 				TRACE_ERROR("ep %u: %s no msg in non-empty queue\n\r",
 				            ep, __func__);

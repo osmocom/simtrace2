@@ -177,14 +177,14 @@ static void dump_rctx(struct msgb *msg)
 
 static void get_and_verify_rctx(uint8_t ep, const uint8_t *data, unsigned int len)
 {
-	struct llist_head *queue = usb_get_queue(ep);
+	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
 	struct cardemu_usb_msg_tx_data *td;
 	struct cardemu_usb_msg_rx_data *rd;
 	struct simtrace_msg_hdr *mh;
 
-	assert(queue);
-	msg = msgb_dequeue(queue);
+	assert(bep);
+	msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
 	assert(msg);
 	dump_rctx(msg);
 	assert(msg->l1h);
@@ -214,13 +214,13 @@ static void get_and_verify_rctx(uint8_t ep, const uint8_t *data, unsigned int le
 
 static void get_and_verify_rctx_pps(const uint8_t *data, unsigned int len)
 {
-	struct llist_head *queue = usb_get_queue(PHONE_DATAIN);
+	struct usb_buffered_ep *bep = usb_get_buf_ep(PHONE_DATAIN);
 	struct msgb *msg;
 	struct simtrace_msg_hdr *mh;
 	struct cardemu_usb_msg_pts_info *ptsi;
 
-	assert(queue);
-	msg = msgb_dequeue(queue);
+	assert(bep);
+	msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
 	assert(msg);
 	dump_rctx(msg);
 	assert(msg->l1h);

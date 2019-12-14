@@ -76,7 +76,7 @@ int usb_refill_to_host(uint8_t ep)
 
 	bep->in_progress++;
 
-	msg = msgb_dequeue(&bep->queue);
+	msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
 
 	local_irq_restore(x);
 
@@ -180,7 +180,7 @@ int usb_drain_queue(uint8_t ep)
 	}
 
 	/* free all queued msgbs */
-	while ((msg = msgb_dequeue(&bep->queue))) {
+	while ((msg = msgb_dequeue_count(&bep->queue, &bep->queue_len))) {
 		usb_buf_free(msg);
 		ret++;
 	}

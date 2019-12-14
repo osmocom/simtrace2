@@ -29,6 +29,8 @@ struct usb_buffered_ep {
 	volatile uint32_t in_progress;
 	/* Tx queue (IN) / Rx queue (OUT) */
 	struct llist_head queue;
+	/* current length of queue */
+	unsigned int queue_len;
 };
 
 struct msgb *usb_buf_alloc(uint8_t ep);

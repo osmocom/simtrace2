@@ -505,6 +505,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 		if (!ci->pin_insert.pio) {
 			TRACE_INFO("%u: skipping unsupported card_insert to %s\r\n",
 				   ci->num, cardins->card_insert ? "INSERTED" : "REMOVED");
+			usb_buf_free(msg);
 			break;
 		}
 		TRACE_INFO("%u: set card_insert to %s\r\n", ci->num,

@@ -1,6 +1,6 @@
 /* ISO7816-3 state machine for the card side
  *
- * (C) 2010-2017 by Harald Welte <laforge@gnumonks.org>
+ * (C) 2010-2019 by Harald Welte <laforge@gnumonks.org>
  * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -232,6 +232,13 @@ struct card_handle {
 		uint32_t pps;
 	} stats;
 };
+
+/* reset all the 'dynamic' state of the card handle to the initial/default values */
+static void card_handle_reset(struct card_handle *ch)
+{
+	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
+	ch->tpdu.state = TPDU_S_WAIT_CLA;
+}
 
 struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch)
 {
@@ -1189,8 +1196,7 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 	ch->atr.len = sizeof(default_atr);
 	memcpy(ch->atr.atr, default_atr, ch->atr.len);
 
-	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
-	ch->tpdu.state = TPDU_S_WAIT_CLA;
+	card_handle_reset(ch);
 
 	tc_etu_init(ch->tc_chan, ch);
 

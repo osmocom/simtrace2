@@ -228,6 +228,8 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tU\tProceed to USB Initialization\n\r");
 		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
 		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
+		printf("\t!\tSwitch Channel A from physical -> remote\n\r");
+		printf("\t@\tSwitch Channel B from physical -> remote\n\r");
 		break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");

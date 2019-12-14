@@ -60,8 +60,13 @@ struct cardem_inst {
 	uint8_t ep_in;
 	uint8_t ep_int;
 	const Pin pin_insert;
+#ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
-	uint32_t vcc_uv_last;
+#endif
+	bool vcc_active;
+	bool vcc_active_last;
+	bool rst_active;
+	bool rst_active_last;
 };
 
 struct cardem_inst cardem_inst[] = {
@@ -261,7 +266,7 @@ void card_emu_uart_interrupt(uint8_t uart_chan)
 
 #ifdef DETECT_VCC_BY_ADC
 
-static int adc_triggered = 0;
+static volatile int adc_triggered = 0;
 static int adc_sam3s_reva_errata = 0;
 
 static int card_vcc_adc_init(void)
@@ -313,18 +318,10 @@ static int card_vcc_adc_init(void)
 
 static void process_vcc_adc(struct cardem_inst *ci)
 {
-	if (ci->vcc_uv >= VCC_UV_THRESH_3V &&
-	    ci->vcc_uv_last < VCC_UV_THRESH_3V) {
-		card_emu_io_statechg(ci->ch, CARD_IO_VCC, 1);
-		/* FIXME do this for real */
-		card_emu_io_statechg(ci->ch, CARD_IO_CLK, 1);
-	} else if (ci->vcc_uv < VCC_UV_THRESH_3V &&
-		 ci->vcc_uv_last >= VCC_UV_THRESH_3V) {
-		/* FIXME do this for real */
-		card_emu_io_statechg(ci->ch, CARD_IO_CLK, 0);
-		card_emu_io_statechg(ci->ch, CARD_IO_VCC, 0);
-	}
-	ci->vcc_uv_last = ci->vcc_uv;
+	if (ci->vcc_uv >= VCC_UV_THRESH_3V)
+		ci->vcc_active = true;
+	else
+		ci->vcc_active = false;
 }
 
 void ADC_IrqHandler(void)
@@ -347,9 +344,27 @@ void ADC_IrqHandler(void)
 		cardem_inst[0].vcc_uv = adc2uv(val);
 		process_vcc_adc(&cardem_inst[0]);
 		ADC->ADC_CR |= ADC_CR_START;
+		adc_triggered = 1;
 	}
 }
 #endif /* DETECT_VCC_BY_ADC */
+
+
+/* called from main loop; dispatches card I/O state changes to card_emu from main loop */
+static void process_io_statechg(struct cardem_inst *ci)
+{
+	if (ci->vcc_active != ci->vcc_active_last) {
+		card_emu_io_statechg(ci->ch, CARD_IO_VCC, ci->vcc_active);
+		/* FIXME do this for real */
+		card_emu_io_statechg(ci->ch, CARD_IO_CLK, ci->vcc_active);
+		ci->vcc_active_last = ci->vcc_active;
+	}
+
+	if (ci->rst_active != ci->rst_active_last) {
+		card_emu_io_statechg(ci->ch, CARD_IO_RST, ci->rst_active);
+		ci->rst_active_last = ci->rst_active;
+	}
+}
 
 /***********************************************************************
  * Core USB  / main loop integration
@@ -357,34 +372,26 @@ void ADC_IrqHandler(void)
 
 static void usim1_rst_irqhandler(const Pin *pPin)
 {
-	bool active = PIO_Get(&pin_usim1_rst) ? false : true;
-	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_RST, active);
+	cardem_inst[0].rst_active = PIO_Get(&pin_usim1_rst) ? false : true;
 }
 
 #ifndef DETECT_VCC_BY_ADC
 static void usim1_vcc_irqhandler(const Pin *pPin)
 {
-	bool active = PIO_Get(&pin_usim1_vcc) ? true : false;
-	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_VCC, active);
-	/* FIXME do this for real */
-	card_emu_io_statechg(cardem_inst[0].ch, CARD_IO_CLK, active);
+	cardem_inst[0].vcc_active = PIO_Get(&pin_usim1_vcc) ? true : false;
 }
 #endif /* !DETECT_VCC_BY_ADC */
 
 #ifdef CARDEMU_SECOND_UART
 static void usim2_rst_irqhandler(const Pin *pPin)
 {
-	bool active = PIO_Get(&pin_usim2_rst) ? false : true;
-	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_RST, active);
+	cardem_inst[1].rst_active = PIO_Get(&pin_usim2_rst) ? false : true;
 }
 
 #ifndef DETECT_VCC_BY_ADC
 static void usim2_vcc_irqhandler(const Pin *pPin)
 {
-	bool active = PIO_Get(&pin_usim2_vcc) ? true : false;
-	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_VCC, active);
-	/* FIXME do this for real */
-	card_emu_io_statechg(cardem_inst[1].ch, CARD_IO_CLK, active);
+	cardem_inst[1].vcc_active = PIO_Get(&pin_usim2_vcc) ? true : false;
 }
 #endif /* !DETECT_VCC_BY_ADC */
 #endif /* CARDEMU_SECOND_UART */
@@ -416,11 +423,18 @@ void mode_cardemu_init(void)
 	NVIC_EnableIRQ(USART1_IRQn);
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
+	usim1_rst_irqhandler(&pin_usim1_rst); /* obtain current RST state */
 #ifndef DETECT_VCC_BY_ADC
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
+	usim1_vcc_irqhandler(&pin_usim1_vcc); /* obtain current VCC state */
+#else
+	do {} while (!adc_triggered); /* wait for first ADC reading */
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[0].ch = card_emu_init(0, 2, 0, SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM1_INT, PIO_Get(&pin_usim1_vcc) ? true : false, PIO_Get(&pin_usim1_rst) ? false : true, PIO_Get(&pin_usim1_vcc) ? true : false);
+
+	cardem_inst[0].ch = card_emu_init(0, 2, 0, SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN,
+					  SIMTRACE_CARDEM_USB_EP_USIM1_INT, cardem_inst[0].vcc_active,
+					  cardem_inst[0].rst_active, cardem_inst[0].vcc_active);
 	sim_switch_use_physical(0, 1);
 
 #ifdef CARDEMU_SECOND_UART
@@ -431,11 +445,18 @@ void mode_cardemu_init(void)
 	NVIC_EnableIRQ(USART0_IRQn);
 	PIO_ConfigureIt(&pin_usim2_rst, usim2_rst_irqhandler);
 	PIO_EnableIt(&pin_usim2_rst);
+	usim2_rst_irqhandler(&pin_usim2_rst); /* obtain current RST state */
 #ifndef DETECT_VCC_BY_ADC
 	PIO_ConfigureIt(&pin_usim2_vcc, usim2_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim2_vcc);
+	usim2_vcc_irqhandler(&pin_usim2_vcc); /* obtain current VCC state */
+#else
+	do {} while (!adc_triggered); /* wait for first ADC reading */
 #endif /* DETECT_VCC_BY_ADC */
-	cardem_inst[1].ch = card_emu_init(1, 0, 1, SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN, SIMTRACE_CARDEM_USB_EP_USIM2_INT, PIO_Get(&pin_usim2_vcc) ? true : false, PIO_Get(&pin_usim2_rst) ? false : true, PIO_Get(&pin_usim2_vcc) ? true : false);
+
+	cardem_inst[1].ch = card_emu_init(1, 0, 1, SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN,
+					  SIMTRACE_CARDEM_USB_EP_USIM2_INT, cardem_inst[1].vcc_active,
+					  cardem_inst[1].rst_active, cardem_inst[1].vcc_active);
 	sim_switch_use_physical(1, 1);
 #endif /* CARDEMU_SECOND_UART */
 }
@@ -714,6 +735,8 @@ void mode_cardemu_run(void)
 			card_emu_process_rx_byte(ci->ch, byte);
 			//TRACE_ERROR("%uRx%02x\r\n", i, byte);
 		}
+
+		process_io_statechg(ci);
 
 		/* first try to send any pending messages on IRQ */
 		usb_refill_to_host(ci->ep_int);

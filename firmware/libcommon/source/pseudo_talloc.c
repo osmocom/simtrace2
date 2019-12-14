@@ -66,6 +66,7 @@ int _talloc_free(void *ptr, const char *location)
 		if (ptr == msgb_data[i]) {
 			if (!msgb_inuse[i]) {
 				TRACE_ERROR("%s: double_free by %s\r\n", __func__, location);
+				OSMO_ASSERT(0);
 			} else {
 				msgb_inuse[i] = 0;
 			}
@@ -76,6 +77,7 @@ int _talloc_free(void *ptr, const char *location)
 
 	local_irq_restore(x);
 	TRACE_ERROR("%s: invalid pointer %p from %s\r\n", __func__, ptr, location);
+	OSMO_ASSERT(0);
 	return -1;
 }
 

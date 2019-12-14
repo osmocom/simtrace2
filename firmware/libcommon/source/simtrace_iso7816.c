@@ -71,7 +71,7 @@ void ISR_PhoneRST(const Pin * pPin)
 	     USBD_Write(SIMTRACE_USB_EP_PHONE_INT, "R", 1,
 			(TransferCallback) & Callback_PhoneRST_ISR,
 			0)) != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("USB err status: %d (%s)\n", ret, __FUNCTION__);
+		TRACE_ERROR("USB err status: %d (%s)\r\n", ret, __FUNCTION__);
 		return;
 	}
 
@@ -109,7 +109,7 @@ void mode_trace_usart1_irq(void)
 			/* Fill char into buffer */
 			rbuf_write(&sim_rcv_buf, c);
 		} else {
-			TRACE_DEBUG("e %x st: %lx\n", c, stat);
+			TRACE_DEBUG("e %x st: %lx\r\n", c, stat);
 		}		/* else: error occurred */
 
 		char_stat = stat;

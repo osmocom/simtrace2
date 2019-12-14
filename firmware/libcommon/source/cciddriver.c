@@ -428,7 +428,7 @@ static void PCtoRDRXfrBlock( void )
 	uint16_t msglen = 0;
 	uint32_t ret;
 
-	TRACE_DEBUG("PCtoRDRXfrBlock\n");
+	TRACE_DEBUG("PCtoRDRXfrBlock\n\r");
 
 	// Check the block length
 	if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
@@ -921,7 +921,7 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 void CCID_SmartCardRequest( void )
 {
 	unsigned char bStatus;
-	TRACE_DEBUG("CCID_req\n");
+	TRACE_DEBUG("CCID_req\n\r");
 
 	do {
 

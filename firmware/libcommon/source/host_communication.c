@@ -40,10 +40,10 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	local_irq_save(x);
 	bep->in_progress--;
 	local_irq_restore(x);
-	TRACE_DEBUG("%u: in_progress=%lu\n", bep->ep, bep->in_progress);
+	TRACE_DEBUG("%u: in_progress=%lu\r\n", bep->ep, bep->in_progress);
 
 	if (status != USBD_STATUS_SUCCESS)
-		TRACE_ERROR("%s error, status=%d\n", __func__, status);
+		TRACE_ERROR("%s error, status=%d\r\n", __func__, status);
 
 	usb_buf_free(msg);
 }
@@ -86,13 +86,13 @@ int usb_refill_to_host(uint8_t ep)
 	rc = USBD_Write(ep, msgb_data(msg), msgb_length(msg),
 			(TransferCallback) &usb_write_cb, msg);
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %x\n", __func__, rc);
+		TRACE_ERROR("%s error %x\r\n", __func__, rc);
 		/* re-insert to head of queue */
 		llist_add_irqsafe(&msg->list, &bep->queue);
 		local_irq_save(x);
 		bep->in_progress--;
 		local_irq_restore(x);
-		TRACE_DEBUG("%02x: in_progress=%lu\n", bep->ep, bep->in_progress);
+		TRACE_DEBUG("%02x: in_progress=%lu\r\n", bep->ep, bep->in_progress);
 		return 0;
 	}
 
@@ -112,7 +112,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 	bep->in_progress = 0;
 
 	if (status != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error, status=%d\n", __func__, status);
+		TRACE_ERROR("%s error, status=%d\r\n", __func__, status);
 		usb_buf_free(msg);
 		return;
 	}
@@ -150,7 +150,7 @@ int usb_refill_from_host(uint8_t ep)
 	rc = USBD_Read(ep, msg->head, msgb_tailroom(msg),
 			(TransferCallback) &usb_read_cb, msg);
 	if (rc != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("%s error %d\n", __func__, rc);
+		TRACE_ERROR("%s error %d\r\n", __func__, rc);
 		usb_buf_free(msg);
 		bep->in_progress = 0;
 	}

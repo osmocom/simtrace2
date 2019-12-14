@@ -194,7 +194,7 @@ void board_exec_dbg_cmd(int ch)
 	   this is done to prevent accidental ERASE on noisy serial input since only one character can trigger the ERASE.
 	 */
 	static bool allow_erase = false;
-#endif
+#endif /* ALLOW_PEER_ERASE */
 
 	switch (ch) {
 	case '?':
@@ -208,14 +208,14 @@ void board_exec_dbg_cmd(int ch)
 #if (ALLOW_PEER_ERASE > 0)
 			printf("\tE\tprogram EEPROM\n\r");
 			printf("\te\tErase EEPROM\n\r");
-#endif
+#endif /* ALLOW_PEER_ERASE */
 			printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
 			printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
 #if (ALLOW_PEER_ERASE > 0)
 			printf("\tH\tRelease HUB RESET (high)\n\r");
 			printf("\th\tAssert HUB RESET (low)\n\r");
 			printf("\tw\tWrite single byte in EEPROM\n\r");
-#endif
+#endif /* ALLOW_PEER_ERASE */
 			printf("\tr\tRead single byte from EEPROM\n\r");
 		}
 		printf("\tX\tRelease peer SAM3 from reset\n\r");
@@ -224,7 +224,7 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
 		printf("\ta\tAllow asserting peer SAM3 ERASE signal\n\r");
 		printf("\ty\tAssert peer SAM3 ERASE signal\n\r");
-#endif
+#endif /* ALLOW_PEER_ERASE */
 		printf("\tU\tProceed to USB Initialization\n\r");
 		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
 		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
@@ -275,7 +275,7 @@ void board_exec_dbg_cmd(int ch)
 			printf("Please first allow setting SIMTRACExx_ERASE\n\r");
 		}
 		break;
-#endif
+#endif /* ALLOW_PEER_ERASE */
 	case '1':
 		printf("Resetting Modem 1 (of this SAM3)\n\r");
 		wwan_perst_do_reset_pulse(0, 300);
@@ -303,7 +303,7 @@ void board_exec_dbg_cmd(int ch)
 	if ('a' != ch) {
 		allow_erase = false;
 	}
-#endif
+#endif /* ALLOW_PEER_ERASE */
 }
 
 void board_main_top(void)

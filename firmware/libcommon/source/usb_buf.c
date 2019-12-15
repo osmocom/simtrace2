@@ -101,5 +101,6 @@ void usb_buf_init(void)
 	for (i = 0; i < ARRAY_SIZE(usb_buffered_ep); i++) {
 		struct usb_buffered_ep *ep = &usb_buffered_ep[i];
 		INIT_LLIST_HEAD(&ep->queue);
+		ep->ep = i;
 	}
 }

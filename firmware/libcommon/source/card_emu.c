@@ -453,7 +453,7 @@ static void card_set_state(struct card_handle *ch,
 		 * since the initial ETU is Fd=372/Dd=1 clock cycles long, we have to wait 2-107 ETU.
 		 */
 		tc_etu_set_wtime(ch->tc_chan, 2);
-		/* ensure the TC_ETU timer is enabled */
+		/* enable the TC/ETU counter once reset has been released */
 		tc_etu_enable(ch->tc_chan);
 		break;
 	case ISO_S_IN_ATR:
@@ -1129,8 +1129,6 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 		/* check end activation state (even if the reader does
 		 * not respect the activation sequence) */
 		if (ch->vcc_active && ch->clocked && !ch->in_reset) {
-			/* enable the TC/ETU counter once reset has been released */
-			tc_etu_enable(ch->tc_chan);
 			/* prepare to send the ATR */
 			card_set_state(ch, ISO_S_WAIT_ATR);
 		}

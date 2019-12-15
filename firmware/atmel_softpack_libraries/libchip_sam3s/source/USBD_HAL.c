@@ -1687,7 +1687,10 @@ void USBD_HAL_Suspend(void)
     /* The device enters the Suspended state */
     UDP_DisableTransceiver();
     UDP_DisableUsbClock();
-    UDP_DisablePeripheralClock();
+    /* Don't disable peripheral clock; this somehow breaks completion of any IN transfers
+     * that have already been written to the peripheral, and which we expect to complete
+     * after resume */
+    //UDP_DisablePeripheralClock();
 }
 
 /**

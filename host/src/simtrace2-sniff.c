@@ -37,7 +37,7 @@
 
 #include <libusb.h>
 
-#include <osmocom/simtrace2/libusb_util.h>
+#include <osmocom/usb/libusb.h>
 #include <osmocom/simtrace2/simtrace_usb.h>
 #include <osmocom/simtrace2/simtrace_prot.h>
 
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 		goto do_exit;
 	}
 	struct usb_interface_match ifm_scan[16];
-	int num_interfaces = usb_match_interfaces(NULL, compatible_dev_ids,
+	int num_interfaces = osmo_libusb_find_matching_interfaces(NULL, compatible_dev_ids,
 				 USB_CLASS_PROPRIETARY, SIMTRACE_SNIFFER_USB_SUBCLASS, -1, ifm_scan, ARRAY_SIZE(ifm_scan));
 	if (num_interfaces <= 0) {
 		perror("No compatible USB devices found");
@@ -473,7 +473,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, &signal_handler);
 
 	do {
-		_transp.usb_devh = usb_open_claim_interface(NULL, &ifm_selected);
+		_transp.usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, &ifm_selected);
 		if (!_transp.usb_devh) {
 			fprintf(stderr, "can't open USB device\n");
 			goto close_exit;
@@ -485,8 +485,8 @@ int main(int argc, char **argv)
 			goto close_exit;
 		}
 
-		rc = get_usb_ep_addrs(_transp.usb_devh, ifm_selected.interface, &_transp.usb_ep.out,
-				      &_transp.usb_ep.in, &_transp.usb_ep.irq_in);
+		rc = osmo_libusb_get_ep_addrs(_transp.usb_devh, ifm_selected.interface, &_transp.usb_ep.out,
+					      &_transp.usb_ep.in, &_transp.usb_ep.irq_in);
 		if (rc < 0) {
 			fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
 			goto close_exit;

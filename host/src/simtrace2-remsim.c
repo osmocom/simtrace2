@@ -38,7 +38,7 @@
 
 #include <libusb.h>
 
-#include <osmocom/simtrace2/libusb_util.h>
+#include <osmocom/usb/libusb.h>
 #include <osmocom/simtrace2/simtrace2_api.h>
 #include <osmocom/simtrace2/simtrace_prot.h>
 #include <osmocom/simtrace2/apdu_dispatch.h>
@@ -404,7 +404,7 @@ int main(int argc, char **argv)
 			ifm->addr = addr;
 			if (path)
 				osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
-			transp->usb_devh = usb_open_claim_interface(NULL, ifm);
+			transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
 			if (!transp->usb_devh) {
 				fprintf(stderr, "can't open USB device\n");
 				goto close_exit;
@@ -416,7 +416,7 @@ int main(int argc, char **argv)
 				goto close_exit;
 			}
 
-			rc = get_usb_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
+			rc = osmo_libusb_get_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
 					      &transp->usb_ep.in, &transp->usb_ep.irq_in);
 			if (rc < 0) {
 				fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);

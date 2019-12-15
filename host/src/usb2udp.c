@@ -35,9 +35,9 @@
 
 #include <libusb.h>
 
+#include <osmocom/usb/libusb.h>
 #include <osmocom/simtrace2/simtrace_usb.h>
 #include <osmocom/simtrace2/simtrace_prot.h>
-#include <osmocom/simtrace2/libusb_util.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
 	g_udp_ofd.cb = ofd_udp_cb;
 	osmo_sock_init_ofd(&g_udp_ofd, AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, local_udp_port + if_num, OSMO_SOCK_F_BIND);
 
-	rc = get_usb_ep_addrs(g_devh, if_num, &g_buf_out.ep, &g_buf_in.ep, NULL);
+	rc = osmo_libusb_get_ep_addrs(g_devh, if_num, &g_buf_out.ep, &g_buf_in.ep, NULL);
 	if (rc < 0) {
 		fprintf(stderr, "couldn't find enpdoint addresses; rc=%d\n", rc);
 		goto close_exit;

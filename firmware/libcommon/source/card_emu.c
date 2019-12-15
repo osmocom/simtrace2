@@ -256,8 +256,6 @@ static void card_handle_reset(struct card_handle *ch)
 
 	tc_etu_disable(ch->tc_chan);
 
-	ch->tpdu.state = TPDU_S_WAIT_CLA;
-
 	/* release any buffers we may still own */
 	if (ch->uart_tx_msg) {
 		usb_buf_free(ch->uart_tx_msg);

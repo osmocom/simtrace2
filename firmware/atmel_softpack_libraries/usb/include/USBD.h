@@ -214,6 +214,8 @@ typedef void (*MblTransferCallback)(void *pArg,
  *         Exported functions
  *------------------------------------------------------------------------------*/
 
+extern uint16_t USBD_GetEndpointSize(uint8_t bEndpoint);
+
 //extern void USBD_IrqHandler(void);
 
 extern void USBD_Init(void);

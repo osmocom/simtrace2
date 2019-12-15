@@ -33,9 +33,17 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 {
 	struct msgb *msg = (struct msgb *) arg;
 	struct usb_buffered_ep *bep = msg->dst;
+	uint16_t ep_size = USBD_GetEndpointSize(bep->ep);
 	unsigned long x;
 
 	TRACE_DEBUG("%s (EP=0x%02x)\r\n", __func__, bep->ep);
+
+	if (((msgb_length(msg) % ep_size) == 0) && (transferred == ep_size)) {
+		/* terminate with ZLP; pass in 'msg' again as 'arg' so we get
+		 * called the second time and proceed with usb_buf_free below */
+		USBD_Write(bep->ep, 0, 0, (TransferCallback) &usb_write_cb, msg);
+		return;
+	}
 
 	local_irq_save(x);
 	bep->in_progress--;

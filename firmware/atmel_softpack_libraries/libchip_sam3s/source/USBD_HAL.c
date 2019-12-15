@@ -1077,6 +1077,14 @@ static inline uint8_t UDP_Read(uint8_t  bEndpoint,
  *      Exported functions
  *---------------------------------------------------------------------------*/
 
+
+uint16_t USBD_GetEndpointSize(uint8_t bEndpoint)
+{
+    Endpoint *pEndpoint = &(endpoints[bEndpoint]);
+
+    return pEndpoint->size;
+}
+
 /**
  * USBD (UDP) interrupt handler
  * Manages device resume, suspend, end of bus reset.

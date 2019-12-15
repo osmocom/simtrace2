@@ -22,7 +22,9 @@
 #include "utils.h"
 #include <osmocom/core/utils.h>
 
-#define NUM_RCTX_SMALL 10
+/* TODO: this number should dynamically scale. We need at least one per IN/IRQ endpoint,
+ * as well as at least 3 for every OUT endpoint.  Plus some more depending on the application */
+#define NUM_RCTX_SMALL 20
 #define RCTX_SIZE_SMALL 348
 
 static uint8_t msgb_data[NUM_RCTX_SMALL][RCTX_SIZE_SMALL] __attribute__((aligned(sizeof(long))));

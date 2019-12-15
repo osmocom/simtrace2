@@ -80,7 +80,7 @@ int usb_buf_submit(struct msgb *msg)
 	/* no need for irqsafe operation, as the usb_tx_queue is
 	 * processed only by the main loop context */
 
-	if (ep->queue_len > USB_MAX_QLEN) {
+	if (ep->queue_len >= USB_MAX_QLEN) {
 		struct msgb *evict;
 		/* free the first pending buffer in the queue */
 		TRACE_INFO("EP%02x: dropping first queue element (qlen=%u)\r\n",

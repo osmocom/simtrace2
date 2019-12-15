@@ -240,7 +240,6 @@ static void card_handle_reset(struct card_handle *ch)
 
 	tc_etu_disable(ch->tc_chan);
 
-	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
 	ch->tpdu.state = TPDU_S_WAIT_CLA;
 
 	/* release any buffers we may still own */
@@ -534,8 +533,6 @@ static int tx_byte_atr(struct card_handle *ch)
 		/* update waiting time (see ISO 7816-3 10.2) */
 		ch->waiting_time = ch->wi * 960 * ch->fi;
 		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
-		/* reset PTS to initial state */
-		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		return 0;
@@ -701,7 +698,6 @@ static int tx_byte_pts(struct card_handle *ch)
 		emu_update_fidi(ch);
 		/* Wait for the next TPDU */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
-		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 		break;
 	default:
 		/* calculate the next state and set it */
@@ -979,6 +975,8 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 	switch (ch->state) {
 	case ISO_S_WAIT_TPDU:
 		if (byte == 0xff) {
+			/* reset PTS to initial state */
+			set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);
 			new_state = process_byte_pts(ch, byte);
 			ch->stats.pps++;
 			goto out_silent;

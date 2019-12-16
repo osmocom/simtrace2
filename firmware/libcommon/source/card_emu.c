@@ -38,7 +38,7 @@
 #define NUM_SLOTS		2
 
 /* bit-mask of supported CEMU_FEAT_F_ flags */
-#define SUPPORTED_FEATURES	0
+#define SUPPORTED_FEATURES	(CEMU_FEAT_F_STATUS_IRQ)
 
 #define	ISO7816_3_INIT_WTIME	9600
 #define ISO7816_3_DEFAULT_WI	10
@@ -1106,15 +1106,19 @@ static void card_emu_report_config(struct card_handle *ch)
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 {
+	uint32_t chg_mask = 0;
+
 	switch (io) {
 	case CARD_IO_VCC:
 		if (active == 0 && ch->vcc_active == 1) {
 			TRACE_INFO("%u: VCC deactivated\r\n", ch->num);
 			card_handle_reset(ch);
 			card_set_state(ch, ISO_S_WAIT_POWER);
+			chg_mask |= CEMU_STATUS_F_VCC_PRESENT;
 		} else if (active == 1 && ch->vcc_active == 0) {
 			TRACE_INFO("%u: VCC activated\r\n", ch->num);
 			card_set_state(ch, ISO_S_WAIT_CLK);
+			chg_mask |= CEMU_STATUS_F_VCC_PRESENT;
 		}
 		ch->vcc_active = active;
 		break;
@@ -1123,8 +1127,10 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			TRACE_INFO("%u: CLK activated\r\n", ch->num);
 			if (ch->state == ISO_S_WAIT_CLK)
 				card_set_state(ch, ISO_S_WAIT_RST);
+			chg_mask |= CEMU_STATUS_F_CLK_ACTIVE;
 		} else if (active == 0 && ch->clocked == 1) {
 			TRACE_INFO("%u: CLK deactivated\r\n", ch->num);
+			chg_mask |= CEMU_STATUS_F_CLK_ACTIVE;
 		}
 		ch->clocked = active;
 		break;
@@ -1137,9 +1143,11 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 				/* prepare to send the ATR */
 				card_set_state(ch, ISO_S_WAIT_ATR);
 			}
+			chg_mask |= CEMU_STATUS_F_RESET_ACTIVE;
 		} else if (active && !ch->in_reset) {
 			TRACE_INFO("%u: RST asserted\r\n", ch->num);
 			card_handle_reset(ch);
+			chg_mask |= CEMU_STATUS_F_RESET_ACTIVE;
 		}
 		ch->in_reset = active;
 		break;
@@ -1159,6 +1167,10 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	default:
 		break;
 	}
+
+	/* notify the host about the state change */
+	if ((ch->features & CEMU_FEAT_F_STATUS_IRQ) && chg_mask)
+		card_emu_report_status(ch, true);
 }
 
 /* User sets a new ATR to be returned during next card reset */

@@ -42,7 +42,7 @@ static inline bool is_de_complete(struct osmo_apdu_context *ac)
 	return (ac->le.tot == ac->le.cur);
 }
 
-static const char *dump_apdu_hdr(const struct osim_apdu_cmd_hdr *h)
+static const char *stringify_apdu_hdr(const struct osim_apdu_cmd_hdr *h)
 {
 	static char buf[256];
 	sprintf(buf, "CLA=%02x INS=%02x P1=%02x P2=%02x P3=%02x",
@@ -51,12 +51,19 @@ static const char *dump_apdu_hdr(const struct osim_apdu_cmd_hdr *h)
 	return buf;
 }
 
-static void dump_apdu_ctx(const struct osmo_apdu_context *ac)
+/*! generate string representation of APDU context in specified output buffer.
+ *  \param[in] buf output string buffer provided by caller
+ *  \param[in] buf_len size of buf in bytes
+ *  \param[in] ac APDU context to dump in buffer
+ *  \returns pointer to buf on success */
+const char *osmo_apdu_dump_context_buf(char *buf, unsigned int buf_len,
+				       const struct osmo_apdu_context *ac)
 {
-	printf("%s; case=%d, lc=%d(%d), le=%d(%d)\n",
-		dump_apdu_hdr(&ac->hdr), ac->apdu_case,
-		ac->lc.tot, ac->lc.cur,
-		ac->le.tot, ac->le.cur);
+	snprintf(buf, buf_len, "%s; case=%d, lc=%d(%d), le=%d(%d)\n",
+		 stringify_apdu_hdr(&ac->hdr), ac->apdu_case,
+		 ac->lc.tot, ac->lc.cur,
+		 ac->le.tot, ac->le.cur);
+	return buf;
 }
 
 /*! \brief input function for APDU segmentation
@@ -167,8 +174,6 @@ int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 		LOGP(DLGLOBAL, LOGL_ERROR, "Unknown APDU case %d\n", ac->apdu_case);
 		return -1;
 	}
-
-	dump_apdu_ctx(ac);
 
 	return rc;
 }

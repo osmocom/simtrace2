@@ -1,6 +1,6 @@
 /* apdu_dispatch - State machine to determine Rx/Tx phases of APDU
  *
- * (C) 2016 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2019 by Harald Welte <hwelte@hmw-consulting.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -44,6 +44,8 @@ enum osmo_apdu_action {
 	APDU_ACT_RX_MORE_CAPDU_FROM_READER	= 0x0002,
 };
 
+const char *osmo_apdu_dump_context_buf(char *buf, unsigned int buf_len,
+					const struct osmo_apdu_context *ac);
 
 int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 			 unsigned int apdu_len, bool new_apdu);

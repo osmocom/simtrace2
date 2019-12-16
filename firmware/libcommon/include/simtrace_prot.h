@@ -62,6 +62,8 @@ enum simtrace_msg_type_cardem {
 	SIMTRACE_MSGT_DO_CEMU_RX_DATA,
 	/* Indicate PTS request from phone */
 	SIMTRACE_MSGT_DO_CEMU_PTS,
+	/* Set configurable parameters */
+	SIMTRACE_MSGT_BD_CEMU_CONFIG,
 };
 
 /* SIMTRACE_MSGC_MODEM */
@@ -252,6 +254,15 @@ struct cardemu_usb_msg_error {
 	uint8_t msg_len;
 	/* human-readable error message */
 	uint8_t msg[0];
+} __attribute__ ((packed));
+
+/* enable/disable the generation of DO_STATUS on IRQ endpoint */
+#define CEMU_FEAT_F_STATUS_IRQ	0x00000001
+
+/* SIMTRACE_MSGT_BD_CEMU_CONFIG */
+struct cardemu_usb_msg_config {
+	/* bit-mask of CEMU_FEAT_F flags */
+	uint32_t features;
 } __attribute__ ((packed));
 
 /***********************************************************************

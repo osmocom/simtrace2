@@ -507,6 +507,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	struct simtrace_msg_hdr *hdr;
 	struct cardemu_usb_msg_set_atr *atr;
 	struct cardemu_usb_msg_cardinsert *cardins;
+	struct cardemu_usb_msg_config *cfg;
 	struct llist_head *queue;
 
 	hdr = (struct simtrace_msg_hdr *) msg->l1h;
@@ -540,6 +541,10 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	case SIMTRACE_MSGT_BD_CEMU_STATUS:
 		card_emu_report_status(ci->ch, false);
 		usb_buf_free(msg);
+		break;
+	case SIMTRACE_MSGT_BD_CEMU_CONFIG:
+		cfg = (struct cardemu_usb_msg_config *) msg->l2h;
+		card_emu_set_config(ci->ch, cfg, msgb_l2len(msg));
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_STATS:
 	default:

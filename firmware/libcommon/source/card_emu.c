@@ -37,6 +37,9 @@
 
 #define NUM_SLOTS		2
 
+/* bit-mask of supported CEMU_FEAT_F_ flags */
+#define SUPPORTED_FEATURES	0
+
 #define	ISO7816_3_INIT_WTIME	9600
 #define ISO7816_3_DEFAULT_WI	10
 #define ISO7816_3_ATR_LEN_MAX	(1+32)	/* TS plus 32 chars */
@@ -194,6 +197,9 @@ const struct value_string tpdu_state_names[] = {
 
 struct card_handle {
 	unsigned int num;
+
+	/* bit-mask of enabled optional features (CEMU_FEAT_F_*) */
+	uint32_t features;
 
 	enum iso7816_3_card_state state;
 
@@ -1081,6 +1087,22 @@ void card_emu_report_status(struct card_handle *ch, bool report_on_irq)
 	usb_buf_upd_len_and_submit(msg);
 }
 
+static void card_emu_report_config(struct card_handle *ch)
+{
+	struct msgb *msg;
+	struct cardemu_usb_msg_config *cfg;
+	uint8_t ep = ch->in_ep;
+
+	msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_BD_CEMU_CONFIG);
+	if (!msg)
+		return;
+
+	cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*cfg));
+	cfg->features = ch->features;
+
+	usb_buf_upd_len_and_submit(msg);
+}
+
 /* hardware driver informs us that a card I/O signal has changed */
 void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 {
@@ -1203,6 +1225,18 @@ void tc_etu_wtime_expired(void *handle)
 static const uint8_t default_atr[] = { 0x3B, 0x00 };
 
 static struct card_handle card_handles[NUM_SLOTS];
+
+int card_emu_set_config(struct card_handle *ch, const struct cardemu_usb_msg_config *scfg,
+			unsigned int scfg_len)
+{
+	if (scfg_len >= sizeof(uint32_t))
+		ch->features = (scfg->features & SUPPORTED_FEATURES);
+
+	/* send back a report of our current configuration */
+	card_emu_report_config(ch);
+
+	return 0;
+}
 
 struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uart_chan, uint8_t in_ep, uint8_t irq_ep, bool vcc_active, bool in_reset, bool clocked)
 {

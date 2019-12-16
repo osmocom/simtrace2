@@ -1,6 +1,6 @@
 /* apdu_dispatch - State machine to determine Rx/Tx phases of APDU
  *
- * (C) 2016 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2019 by Harald Welte <hwelte@hmw-consulting.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #include <errno.h>
 
 #include <osmocom/core/utils.h>
+#include <osmocom/core/logging.h>
 #include <osmocom/sim/sim.h>
 #include <osmocom/sim/class_tables.h>
 
@@ -105,7 +106,7 @@ int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 			break;
 		case 0:
 		default:
-			fprintf(stderr, "Unknown APDU case %d\n", ac->apdu_case);
+			LOGP(DLGLOBAL, LOGL_ERROR, "Unknown APDU case %d\n", ac->apdu_case);
 			return -1;
 		}
 	} else {
@@ -124,8 +125,8 @@ int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 			ac->lc.cur += cpy_len;
 			break;
 		default:
-			fprintf(stderr, "Unknown APDU case %d\n", ac->apdu_case);
-			break;
+			LOGP(DLGLOBAL, LOGL_ERROR, "Unknown APDU case %d\n", ac->apdu_case);
+			return -1;
 		}
 	}
 
@@ -163,8 +164,8 @@ int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 		break;
 	case 0:
 	default:
-		fprintf(stderr, "Unknown APDU case %d\n", ac->apdu_case);
-		break;
+		LOGP(DLGLOBAL, LOGL_ERROR, "Unknown APDU case %d\n", ac->apdu_case);
+		return -1;
 	}
 
 	dump_apdu_ctx(ac);

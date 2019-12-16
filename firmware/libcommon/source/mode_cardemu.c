@@ -538,7 +538,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 		usb_buf_free(msg);
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_STATUS:
-		card_emu_report_status(ci->ch);
+		card_emu_report_status(ci->ch, false);
 		usb_buf_free(msg);
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_STATS:

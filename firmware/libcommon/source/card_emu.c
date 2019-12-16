@@ -1051,13 +1051,16 @@ void card_emu_have_new_uart_tx(struct card_handle *ch)
 	}
 }
 
-void card_emu_report_status(struct card_handle *ch)
+void card_emu_report_status(struct card_handle *ch, bool report_on_irq)
 {
 	struct msgb *msg;
 	struct cardemu_usb_msg_status *sts;
+	uint8_t ep = ch->in_ep;
 
-	msg = usb_buf_alloc_st(ch->in_ep, SIMTRACE_MSGC_CARDEM,
-				SIMTRACE_MSGT_BD_CEMU_STATUS);
+	if (report_on_irq)
+		ep = ch->irq_ep;
+
+	msg = usb_buf_alloc_st(ep, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_BD_CEMU_STATUS);
 	if (!msg)
 		return;
 

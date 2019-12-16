@@ -64,4 +64,4 @@
 #define SIMTRACE_CARDEM_USB_EP_USIM2_INT		3
 
 /*! Maximum number of endpoints */
-#define BOARD_USB_NUMENDPOINTS		6
+#define BOARD_USB_NUMENDPOINTS		7 /* 0 (control) + 2 (interfaces) * 3 (endpoints) */

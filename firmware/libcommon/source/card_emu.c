@@ -110,6 +110,22 @@ enum pts_state {
 	PTS_S_WAIT_RESP_PCK = PTS_S_WAIT_REQ_PCK | 0x10,
 };
 
+const struct value_string pts_state_names[] = {
+	{ PTS_S_WAIT_REQ_PTSS,	"WAIT_REQ_PTSS" },
+	{ PTS_S_WAIT_REQ_PTS0,	"WAIT_REQ_PTS0" },
+	{ PTS_S_WAIT_REQ_PTS1,	"WAIT_REQ_PTS1" },
+	{ PTS_S_WAIT_REQ_PTS2,	"WAIT_REQ_PTS2" },
+	{ PTS_S_WAIT_REQ_PTS3,	"WAIT_REQ_PTS3" },
+	{ PTS_S_WAIT_REQ_PCK,	"WAIT_REQ_PCK" },
+	{ PTS_S_WAIT_RESP_PTSS,	"WAIT_RESP_PTSS" },
+	{ PTS_S_WAIT_RESP_PTS0,	"WAIT_RESP_PTS0" },
+	{ PTS_S_WAIT_RESP_PTS1,	"WAIT_RESP_PTS1" },
+	{ PTS_S_WAIT_RESP_PTS2,	"WAIT_RESP_PTS2" },
+	{ PTS_S_WAIT_RESP_PTS3,	"WAIT_RESP_PTS3" },
+	{ PTS_S_WAIT_RESP_PCK,	"WAIT_RESP_PCK" },
+	{ 0, NULL }
+};
+
 /* PTS field byte index */
 #define _PTSS	0
 #define _PTS0	1
@@ -542,8 +558,9 @@ static int tx_byte_atr(struct card_handle *ch)
 /* Update the PTS sub-state */
 static void set_pts_state(struct card_handle *ch, enum pts_state new_ptss)
 {
-	TRACE_DEBUG("%u: 7816 PTS state %u -> %u\r\n",
-		    ch->num, ch->pts.state, new_ptss);
+	TRACE_DEBUG("%u: 7816 PTS state %s -> %s\r\n", ch->num,
+		    get_value_string(pts_state_names, ch->pts.state),
+		    get_value_string(pts_state_names, new_ptss));
 	ch->pts.state = new_ptss;
 }
 
@@ -623,8 +640,8 @@ process_byte_pts(struct card_handle *ch, uint8_t byte)
 		memcpy(ch->pts.resp, ch->pts.req, sizeof(ch->pts.resp));
 		break;
 	default:
-		TRACE_ERROR("%u: process_byte_pts() in invalid state %u\r\n",
-			    ch->num, ch->pts.state);
+		TRACE_ERROR("%u: process_byte_pts() in invalid PTS state %s\r\n", ch->num,
+			    get_value_string(pts_state_names, ch->pts.state));
 		break;
 	}
 	/* calculate the next state and set it */
@@ -674,8 +691,8 @@ static int tx_byte_pts(struct card_handle *ch)
 		byte = ch->pts.resp[_PCK];
 		break;
 	default:
-		TRACE_ERROR("%u: get_byte_pts() in invalid state %u\r\n",
-			    ch->num, ch->pts.state);
+		TRACE_ERROR("%u: get_byte_pts() in invalid PTS state %s\r\n", ch->num,
+			    get_value_string(pts_state_names, ch->pts.state));
 		return 0;
 	}
 
@@ -880,8 +897,8 @@ process_byte_tpdu(struct card_handle *ch, uint8_t byte)
 		add_tpdu_byte(ch, byte);
 		break;
 	default:
-		TRACE_ERROR("%u: process_byte_tpdu() in invalid state %u\r\n",
-			    ch->num, ch->tpdu.state);
+		TRACE_ERROR("%u: process_byte_tpdu() in invalid TPDU state %s\r\n", ch->num,
+			    get_value_string(tpdu_state_names, ch->tpdu.state));
 	}
 
 	/* ensure we stay in TPDU ISO state */
@@ -982,8 +999,8 @@ void card_emu_process_rx_byte(struct card_handle *ch, uint8_t byte)
 		new_state = process_byte_pts(ch, byte);
 		goto out_silent;
 	default:
-		TRACE_ERROR("%u: Received UART char in invalid 7816 state "
-			    "%u\r\n", ch->num, ch->state);
+		TRACE_ERROR("%u: Received UART char in invalid 7816 state %s\r\n", ch->num,
+			    get_value_string(iso7816_3_card_state_names, ch->state));
 		break;
 	}
 

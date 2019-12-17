@@ -61,49 +61,19 @@ struct st_transport {
 };
 
 const struct value_string change_flags[] = {
-	{
-		.value = SNIFF_CHANGE_FLAG_CARD_INSERT,
-		.str = "card inserted",
-	},
-	{
-		.value = SNIFF_CHANGE_FLAG_CARD_EJECT,
-		.str = "card ejected",
-	},
-	{
-		.value = SNIFF_CHANGE_FLAG_RESET_ASSERT,
-		.str = "reset asserted",
-	},
-	{
-		.value = SNIFF_CHANGE_FLAG_RESET_DEASSERT,
-		.str = "reset de-asserted",
-	},
-	{
-		.value = SNIFF_CHANGE_FLAG_TIMEOUT_WT,
-		.str = "data transfer timeout",
-	},
-	{
-		.value = 0,
-		.str = NULL,
-	},
+	{ SNIFF_CHANGE_FLAG_CARD_INSERT, "card inserted" },
+	{ SNIFF_CHANGE_FLAG_CARD_EJECT, "card ejected" },
+	{ SNIFF_CHANGE_FLAG_RESET_ASSERT, "reset asserted" },
+	{ SNIFF_CHANGE_FLAG_RESET_DEASSERT, "reset de-asserted" },
+	{ SNIFF_CHANGE_FLAG_TIMEOUT_WT, "data transfer timeout" },
+	{ 0, NULL }
 };
 
 const struct value_string data_flags[] = {
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_INCOMPLETE,
-		.str = "incomplete",
-	},
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_MALFORMED,
-		.str = "malformed",
-	},
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_CHECKSUM,
-		.str = "checksum error",
-	},
-	{
-		.value = 0,
-		.str = NULL,
-	},
+	{ SNIFF_DATA_FLAG_ERROR_INCOMPLETE, "incomplete" },
+	{ SNIFF_DATA_FLAG_ERROR_MALFORMED, "malformed" },
+	{ SNIFF_DATA_FLAG_ERROR_CHECKSUM, "checksum error" },
+	{ 0, NULL }
 };
 
 static void print_flags(const struct value_string* flag_meanings, uint32_t nb_flags, uint32_t flags) {

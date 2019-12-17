@@ -303,22 +303,10 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 }
 
 const struct value_string data_flags[] = {
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_INCOMPLETE,
-		.str = "incomplete",
-	},
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_MALFORMED,
-		.str = "malformed",
-	},
-	{
-		.value = SNIFF_DATA_FLAG_ERROR_CHECKSUM,
-		.str = "checksum error",
-	},
-	{
-		.value = 0,
-		.str = NULL,
-	},
+	{ SNIFF_DATA_FLAG_ERROR_INCOMPLETE,	"incomplete" },
+	{ SNIFF_DATA_FLAG_ERROR_MALFORMED,	"malformed" },
+	{ SNIFF_DATA_FLAG_ERROR_CHECKSUM,	"checksum error" },
+	{ 0, NULL }
 };
 
 static void print_flags(const struct value_string* flag_meanings, uint32_t nb_flags, uint32_t flags) {

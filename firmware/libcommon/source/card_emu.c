@@ -58,42 +58,15 @@ enum iso7816_3_card_state {
 };
 
 const struct value_string iso7816_3_card_state_names[] = {
-	{
-		.value = ISO_S_WAIT_POWER,
-		.str = "WAIT_POWER",
-	},
-	{
-		.value = ISO_S_WAIT_CLK,
-		.str = "WAIT_CLK",
-	},
-	{
-		.value = ISO_S_WAIT_RST,
-		.str = "WAIT_RST",
-	},
-	{
-		.value = ISO_S_WAIT_ATR,
-		.str = "WAIT_ATR",
-	},
-	{
-		.value = ISO_S_IN_ATR,
-		.str = "IN_ATR",
-	},
-	{
-		.value = ISO_S_IN_PTS,
-		.str = "IN_PTS",
-	},
-	{
-		.value = ISO_S_WAIT_TPDU,
-		.str = "WAIT_TPDU",
-	},
-	{
-		.value = ISO_S_IN_TPDU,
-		.str = "IN_TPDU",
-	},
-	{
-		.value = 0,
-		.str = NULL,
-	},
+	{ ISO_S_WAIT_POWER,	"WAIT_POWER" },
+	{ ISO_S_WAIT_CLK,	"WAIT_CLK" },
+	{ ISO_S_WAIT_RST,	"WAIT_RST" },
+	{ ISO_S_WAIT_ATR,	"WAIT_ATR" },
+	{ ISO_S_IN_ATR,		"IN_ATR" },
+	{ ISO_S_IN_PTS,		"IN_PTS" },
+	{ ISO_S_WAIT_TPDU,	"WAIT_TPDU" },
+	{ ISO_S_IN_TPDU,	"IN_TPDU" },
+	{ 0, NULL }
 };
 
 
@@ -150,42 +123,15 @@ enum tpdu_state {
 };
 
 const struct value_string tpdu_state_names[] = {
-	{
-		.value = TPDU_S_WAIT_CLA,
-		.str = "WAIT_CLA",
-	},
-	{
-		.value = TPDU_S_WAIT_INS,
-		.str = "WAIT_INS",
-	},
-	{
-		.value = TPDU_S_WAIT_P1,
-		.str = "WAIT_P1",
-	},
-	{
-		.value = TPDU_S_WAIT_P2,
-		.str = "WAIT_P2",
-	},
-	{
-		.value = TPDU_S_WAIT_P3,
-		.str = "WAIT_P3",
-	},
-	{
-		.value = TPDU_S_WAIT_PB,
-		.str = "WAIT_PB",
-	},
-	{
-		.value = TPDU_S_WAIT_RX,
-		.str = "WAIT_RX",
-	},
-	{
-		.value = TPDU_S_WAIT_TX,
-		.str = "WAIT_TX",
-	},
-	{
-		.value = 0,
-		.str = NULL,
-	},
+	{ TPDU_S_WAIT_CLA,	"WAIT_CLA" },
+	{ TPDU_S_WAIT_INS,	"WAIT_INS" },
+	{ TPDU_S_WAIT_P1,	"WAIT_P1" },
+	{ TPDU_S_WAIT_P2,	"WAIT_P2" },
+	{ TPDU_S_WAIT_P3,	"WAIT_P3" },
+	{ TPDU_S_WAIT_PB,	"WAIT_PB" },
+	{ TPDU_S_WAIT_RX, 	"WAIT_RX" },
+	{ TPDU_S_WAIT_TX,	"WAIT_TX" },
+	{ 0, NULL }
 };
 
 /* TPDU field byte index */

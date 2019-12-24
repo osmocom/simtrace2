@@ -15,4 +15,6 @@ libosmo_simtrace2_la_LIBADD = $(COMMONLIBS)
 libosmo_simtrace2_la_SOURCES = \
 	apdu_dispatch.c \
 	gsmtap.c \
-	simtrace2_api.c
+	simtrace2_api.c \
+	usb_util.c \
+	$(NULL)

@@ -20,6 +20,7 @@ depcomp
 install-sh
 missing
 stamp-h1
+m4
 
 #libtool
 ltmain.sh
@@ -30,3 +31,8 @@ libtool
 .version
 
 *.pc
+
+simtrace2-list
+simtrace2-sniff
+simtrace2-remsim
+simtrace2-remsim-usb2udp

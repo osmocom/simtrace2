@@ -26,8 +26,6 @@
 #include "req_ctx.h"
 #include <osmocom/core/timer.h>
 
-unsigned int g_unique_id[4];
-
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
@@ -149,17 +147,7 @@ extern int main(void)
 
 	PIO_InitializeInterrupts(0);
 
-	EEFC_ReadUniqueID(g_unique_id);
-
-		printf("\r\n\r\n"
-		"=============================================================================\r\n"
-		"SIMtrace2 firmware " GIT_REVISION " (C) 2010-2017 by Harald Welte\r\n"
-		"=============================================================================\r\n");
-
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
-		   g_unique_id[0], g_unique_id[1],
-		   g_unique_id[2], g_unique_id[3]);
-
+	print_banner();
 	board_main_top();
 
 	TRACE_INFO("USB init...\r\n");

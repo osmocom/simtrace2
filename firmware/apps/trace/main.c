@@ -24,9 +24,8 @@
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
+#include "main_common.h"
 #include "osmocom/core/timer.h"
-
-unsigned int g_unique_id[4];
 
 /*------------------------------------------------------------------------------
  *         Internal variables
@@ -158,20 +157,7 @@ extern int main(void)
 
 	PIO_InitializeInterrupts(0);
 
-	EEFC_ReadUniqueID(g_unique_id);
-
-		printf("\n\r\n\r"
-		"=============================================================================\n\r"
-		"SIMtrace2 firmware " GIT_VERSION " (C) 2010-2016 by Harald Welte\n\r"
-		"=============================================================================\n\r");
-
-	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
-		   g_unique_id[0], g_unique_id[1],
-		   g_unique_id[2], g_unique_id[3]);
-	TRACE_INFO("Reset Cause: 0x%lx\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
-	TRACE_INFO("USB configuration used: %d\n\r", simtrace_config);
-
+	print_banner();
 	board_main_top();
 
 	TRACE_INFO("USB init...\n\r");

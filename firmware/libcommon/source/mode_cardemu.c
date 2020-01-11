@@ -34,6 +34,8 @@
 
 #define TRACE_ENTRY()	TRACE_DEBUG("%s entering\r\n", __func__)
 
+static void dispatch_received_usb_msg(struct msgb *msg, const struct usb_if *usb_if);
+
 #ifdef PINS_CARDSIM
 static const Pin pins_cardsim[] = PINS_CARDSIM;
 #endif
@@ -68,9 +70,7 @@ struct cardem_inst {
 		bool half_time_notified;
 	} wt;
 	int usb_pending_old;
-	uint8_t ep_out;
-	uint8_t ep_in;
-	uint8_t ep_int;
+	struct usb_if usb_if;
 	const Pin pin_insert;
 #ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
@@ -90,9 +90,16 @@ struct cardem_inst cardem_inst[] = {
 			.id = ID_USART1,
 			.state = USART_RCV
 		},
-		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM1_DATAOUT,
-		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN,
-		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM1_INT,
+		.usb_if = {
+			.if_num = 0,
+			.ep_out = SIMTRACE_CARDEM_USB_EP_USIM1_DATAOUT,
+			.ep_in = SIMTRACE_CARDEM_USB_EP_USIM1_DATAIN,
+			.ep_int = SIMTRACE_CARDEM_USB_EP_USIM1_INT,
+			.data = &cardem_inst[0],
+			.ops = {
+				.rx_out = dispatch_received_usb_msg,
+			},
+		},
 #ifdef PIN_SET_USIM1_PRES
 		.pin_insert = PIN_SET_USIM1_PRES,
 #endif
@@ -105,9 +112,16 @@ struct cardem_inst cardem_inst[] = {
 			.id = ID_USART0,
 			.state = USART_RCV
 		},
-		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM2_DATAOUT,
-		.ep_in = SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN,
-		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM2_INT,
+		.usb_if = {
+			.if_num = 1,
+			.ep_out = SIMTRACE_CARDEM_USB_EP_USIM2_DATAOUT,
+			.ep_in = SIMTRACE_CARDEM_USB_EP_USIM2_DATAIN,
+			.ep_int = SIMTRACE_CARDEM_USB_EP_USIM2_INT,
+			.data = &cardem_inst[1],
+			.ops = {
+				.rx_out = dispatch_received_usb_msg,
+			},
+		},
 #ifdef PIN_SET_USIM2_PRES
 		.pin_insert = PIN_SET_USIM2_PRES,
 #endif
@@ -787,8 +801,9 @@ static void dispatch_usb_command_modem(struct msgb *msg, struct cardem_inst *ci)
 }
 
 /* handle a single USB command as received from the USB host */
-static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
+static void dispatch_usb_command(struct msgb *msg, const struct usb_if *usb_if)
 {
+	struct cardem_inst *ci = usb_if->data;
 	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->l1h;
 
 	if (msgb_length(msg) < sizeof(*sh)) {
@@ -817,7 +832,8 @@ static void dispatch_usb_command(struct msgb *msg, struct cardem_inst *ci)
 	}
 }
 
-static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
+/* handle a single USB transfer as received from the USB host */
+static void dispatch_received_usb_msg(struct msgb *msg, const struct usb_if *usb_if)
 {
 	struct msgb *segm;
 	struct simtrace_msg_hdr *mh;
@@ -828,7 +844,7 @@ static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 	mh = (struct simtrace_msg_hdr *) msg->data;
 	if (mh->msg_len == msgb_length(msg)) {
 		/* fast path: only one message in buffer */
-		dispatch_usb_command(msg, ci);
+		dispatch_usb_command(msg, usb_if);
 		return;
 	}
 
@@ -837,23 +853,23 @@ static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 	while (1) {
 		mh = (struct simtrace_msg_hdr *) msg->data;
 
-		segm = usb_buf_alloc(ci->ep_out);
+		segm = usb_buf_alloc(usb_if->ep_out);
 		if (!segm) {
 			TRACE_ERROR("%u: ENOMEM during msg segmentation\r\n",
-				    ci->num);
+				    usb_if->if_num);
 			break;
 		}
 
 		if (mh->msg_len > msgb_length(msg)) {
 			TRACE_ERROR("%u: Unexpected large message (%u bytes)\r\n",
-					ci->num, mh->msg_len);
+					usb_if->if_num, mh->msg_len);
 			usb_buf_free(segm);
 			break;
 		} else {
 			uint8_t *cur = msgb_put(segm, mh->msg_len);
 			segm->l1h = segm->head;
 			memcpy(cur, mh, mh->msg_len);
-			dispatch_usb_command(segm, ci);
+			dispatch_usb_command(segm, usb_if);
 		}
 		/* pull this message */
 		msgb_pull(msg, mh->msg_len);
@@ -865,35 +881,14 @@ static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 	usb_buf_free(msg);
 }
 
-/* iterate over the queue of incoming USB commands and dispatch/execute
- * them */
-static void process_any_usb_commands(struct llist_head *main_q,
-				     struct cardem_inst *ci)
-{
-	struct llist_head *lh;
-	struct msgb *msg;
-	int i;
-
-	/* limit the number of iterations to 10, to ensure we don't get
-	 * stuck here without returning to main loop processing */
-	for (i = 0; i < 10; i++) {
-		/* de-queue the list head in an irq-safe way */
-		lh = llist_head_dequeue_irqsafe(main_q);
-		if (!lh)
-			break;
-		msg = llist_entry(lh, struct msgb, list);
-		dispatch_received_msg(msg, ci);
-	}
-}
-
 /* main loop function, called repeatedly */
 void mode_cardemu_run(void)
 {
-	struct llist_head *queue;
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(cardem_inst); i++) {
 		struct cardem_inst *ci = &cardem_inst[i];
+		struct usb_if *usb_if = &ci->usb_if;
 
 		/* drain the ring buffer from UART into card_emu */
 		while (1) {
@@ -910,16 +905,6 @@ void mode_cardemu_run(void)
 
 		process_io_statechg(ci);
 
-		/* first try to send any pending messages on IRQ */
-		usb_refill_to_host(ci->ep_int);
-
-		/* then try to send any pending messages on IN */
-		usb_refill_to_host(ci->ep_in);
-
-		/* ensure we can handle incoming USB messages from the
-		 * host */
-		usb_refill_from_host(ci->ep_out);
-		queue = usb_get_queue(ci->ep_out);
-		process_any_usb_commands(queue, ci);
+		usb_process(&ci->usb_if);
 	}
 }

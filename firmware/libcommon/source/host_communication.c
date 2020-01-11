@@ -57,7 +57,7 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 }
 
 /* check if the spcified IN endpoint is idle and submit the next buffer from queue */
-int usb_refill_to_host(uint8_t ep)
+static int usb_refill_to_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
@@ -130,7 +130,7 @@ static void usb_read_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 }
 
 /* refill the read queue for data received from host PC on OUT EP, if needed */
-int usb_refill_from_host(uint8_t ep)
+static int usb_refill_from_host(uint8_t ep)
 {
 	struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 	struct msgb *msg;
@@ -197,4 +197,46 @@ int usb_drain_queue(uint8_t ep)
 	local_irq_restore(x);
 
 	return ret;
+}
+
+
+
+/* iterate over the queue of incoming USB commands and dispatch/execute
+ * them */
+static void process_any_usb_commands(const struct usb_if *usb_if)
+{
+	struct llist_head *queue = usb_get_queue(usb_if->ep_out);
+	struct llist_head *lh;
+	struct msgb *msg;
+	int i;
+
+	/* limit the number of iterations to 10, to ensure we don't get
+	 * stuck here without returning to main loop processing */
+	for (i = 0; i < 10; i++) {
+		/* de-queue the list head in an irq-safe way */
+		lh = llist_head_dequeue_irqsafe(queue);
+		if (!lh)
+			break;
+		msg = llist_entry(lh, struct msgb, list);
+		usb_if->ops.rx_out(msg, usb_if);
+	}
+}
+
+/* perform any action related to USB processing (IRQ/INT/OUT EP refill, handling OUT) */
+void usb_process(const struct usb_if *usb_if)
+{
+	/* first try to send any pending messages on IRQ */
+	if (usb_if->ep_int)
+		usb_refill_to_host(usb_if->ep_int);
+
+	/* then try to send any pending messages on IN */
+	if (usb_if->ep_in)
+		usb_refill_to_host(usb_if->ep_in);
+
+	/* ensure we can handle incoming USB messages from the
+	 * host */
+	if (usb_if->ep_out) {
+		usb_refill_from_host(usb_if->ep_out);
+		process_any_usb_commands(usb_if);
+	}
 }

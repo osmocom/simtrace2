@@ -39,7 +39,7 @@ typedef struct {
 	void (*exit) (void);
 	/* main loop content for given configuration */
 	void (*run) (void);
-	/* Interrupt handler for USART1 */
+	/* Interrupt handler for USART0 */
 	void (*usart0_irq) (void);
 	/* Interrupt handler for USART1 */
 	void (*usart1_irq) (void);
@@ -53,6 +53,8 @@ static const conf_func config_func_ptrs[] = {
 		.init = Sniffer_init,
 		.exit = Sniffer_exit,
 		.run = Sniffer_run,
+		.usart0_irq = Sniffer_usart0_irq,
+		.usart1_irq = Sniffer_usart1_irq,
 	},
 #endif
 #ifdef HAVE_CCID
@@ -174,8 +176,7 @@ extern int main(void)
 	}
 
 	TRACE_INFO("calling configure of all configurations...\n\r");
-	for (i = 1; i < sizeof(config_func_ptrs) / sizeof(config_func_ptrs[0]);
-	     ++i) {
+	for (i = 1; i < ARRAY_SIZE(config_func_ptrs); i++) {
 		if (config_func_ptrs[i].configure)
 			config_func_ptrs[i].configure();
 	}

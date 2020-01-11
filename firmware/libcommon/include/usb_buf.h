@@ -42,5 +42,15 @@ int usb_drain_queue(uint8_t ep);
 void usb_buf_init(void);
 struct usb_buffered_ep *usb_get_buf_ep(uint8_t ep);
 
-int usb_refill_to_host(uint8_t ep);
-int usb_refill_from_host(uint8_t ep);
+struct usb_if {
+	uint8_t if_num;		/* interface number */
+	uint8_t ep_out;		/* OUT endpoint (0 if none) */
+	uint8_t ep_in;		/* IN endpint (0 if none) */
+	uint8_t ep_int;		/* INT endpoint (0 if none) */
+	void *data;		/* opaque data, passed through */
+	struct {
+		/* call-back to be called for inclming messages on OUT EP */
+		void (*rx_out)(struct msgb *msg, const struct usb_if *usb_if);
+	} ops;
+};
+void usb_process(const struct usb_if *usb_if);

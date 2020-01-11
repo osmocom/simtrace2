@@ -974,20 +974,28 @@ static void usb_send_change(uint32_t flags)
 	usb_msg_upd_len_and_submit(usb_msg);
 }
 
+/* handle incoming message from USB OUT EP */
+static void dispatch_usb_out(struct msgb *msg, const struct usb_if *usb_if)
+{
+	/* currently we don't need any incoming data */
+	msgb_free(msg);
+}
+
+static const struct usb_if sniffer_usb_if = {
+	.if_num = 0,
+	.ep_in = SIMTRACE_USB_EP_CARD_DATAIN,
+	.ep_int = SIMTRACE_USB_EP_CARD_INT,
+	.ep_out = SIMTRACE_USB_EP_CARD_DATAOUT,
+	.ops = {
+		.rx_out = dispatch_usb_out,
+	}
+};
+
 /* Main (idle/busy) loop of this USB configuration */
 void Sniffer_run(void)
 {
 	/* Handle USB queue */
-	/* first try to send any pending messages on INT */
-	usb_refill_to_host(SIMTRACE_USB_EP_CARD_INT);
-	/* then try to send any pending messages on IN */
-	usb_refill_to_host(SIMTRACE_USB_EP_CARD_DATAIN);
-	/* ensure we can handle incoming USB messages from the host */
-	/* currently we don't need any incoming data
-	usb_refill_from_host(SIMTRACE_USB_EP_CARD_DATAOUT);
-	struct llist_head *queue = usb_get_queue(SIMTRACE_USB_EP_CARD_DATAOUT);
-	process_any_usb_commands(queue);
-	*/
+	usb_process(&sniffer_usb_if);
 
 	/* WARNING: the signal data and flags are not synchronized. We have to hope 
 	 * the processing is fast enough to not land in the wrong state while data

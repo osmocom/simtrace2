@@ -220,6 +220,7 @@ extern int main(void)
 			}
 			last_simtrace_config = simtrace_config;
 		} else {
+			//FIXME: usb_proces() for every interface in this configuration?
 			if (config_func_ptrs[simtrace_config].run) {
 				config_func_ptrs[simtrace_config].run();
 			}

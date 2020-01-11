@@ -978,8 +978,22 @@ static void usb_send_change(uint32_t flags)
 /* handle incoming message from USB OUT EP */
 static void dispatch_usb_out(struct msgb *msg, const struct usb_if *usb_if)
 {
-	/* currently we don't need any incoming data */
-	msgb_free(msg);
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *) msg->l1h;
+
+	if (msgb_length(msg) < sizeof(*sh)) {
+		usb_buf_free(msg);
+		return;
+	}
+	msg->l2h = msg->l1h + sizeof(*sh);
+
+	switch (sh->msg_class) {
+	case SIMTRACE_MSGC_GENERIC:
+		break;
+	default:
+		break;
+	}
+
+	usb_buf_free(msg);
 }
 
 static const struct usb_if sniffer_usb_if = {

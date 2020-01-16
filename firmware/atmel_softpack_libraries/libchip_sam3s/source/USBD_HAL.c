@@ -1672,6 +1672,10 @@ uint8_t USBD_HAL_Halt(uint8_t bEndpoint, uint8_t ctl)
             UDP->UDP_RST_EP |= 1 << bEndpoint;
             UDP->UDP_RST_EP &= ~(1 << bEndpoint);
         }
+
+        /* This fixes a weird bug with regard to ping-pong OUT endpoints */
+        UDP->UDP_RST_EP |= 1 << bEndpoint;
+        UDP->UDP_RST_EP &= ~(1 << bEndpoint);
     }
 
     /* Return Halt status */

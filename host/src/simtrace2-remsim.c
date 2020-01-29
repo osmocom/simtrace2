@@ -182,6 +182,7 @@ static void print_help(void)
 		"\t-i\t--gsmtap-ip\tA.B.C.D\n"
 		"\t-a\t--skip-atr\n"
 		"\t-k\t--keep-running\n"
+		"\t-n\t--pcsc-reader-num\n"
 		"\t-V\t--usb-vendor\tVENDOR_ID\n"
 		"\t-P\t--usb-product\tPRODUCT_ID\n"
 		"\t-C\t--usb-config\tCONFIG_ID\n"
@@ -200,6 +201,7 @@ static const struct option opts[] = {
 	{ "skip-atr", 0, 0, 'a' },
 	{ "help", 0, 0, 'h' },
 	{ "keep-running", 0, 0, 'k' },
+	{ "pcsc-reader-num", 1, 0, 'n' },
 	{ "usb-vendor", 1, 0, 'V' },
 	{ "usb-product", 1, 0, 'P' },
 	{ "usb-config", 1, 0, 'C' },
@@ -285,6 +287,7 @@ int main(int argc, char **argv)
 	int remote_udp_port = 52342;
 	int if_num = 0, vendor_id = -1, product_id = -1;
 	int config_id = -1, altsetting = 0, addr = -1;
+	int reader_num = 0;
 	char *remote_udp_host = NULL;
 	char *path = NULL;
 	struct osim_reader_hdl *reader;
@@ -295,7 +298,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:ak", opts, &option_index);
+		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:akn:", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -317,6 +320,9 @@ int main(int argc, char **argv)
 			break;
 		case 'k':
 			keep_running = 1;
+			break;
+		case 'n':
+			reader_num = atoi(optarg);
 			break;
 		case 'V':
 			vendor_id = strtol(optarg, NULL, 16);
@@ -373,7 +379,7 @@ int main(int argc, char **argv)
 		goto close_exit;
 	}
 
-	reader = osim_reader_open(OSIM_READER_DRV_PCSC, 0, "", NULL);
+	reader = osim_reader_open(OSIM_READER_DRV_PCSC, reader_num, "", NULL);
 	if (!reader) {
 		perror("unable to open PC/SC reader");
 		goto close_exit;

@@ -63,6 +63,8 @@ make dist
 #	make -C "$base/doc/manuals" publish
 #fi
 
+rm -rf $TOPDIR/firmware/bin/simtrace-cardem*
+
 if [ "x$publish" = "x--publish" ]; then
 	echo
 	echo "=============== UPLOAD BUILD  =============="

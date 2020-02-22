@@ -12,6 +12,8 @@ struct osmo_st2_transport {
 		uint8_t out;
 		uint8_t irq_in;
 	} usb_ep;
+	/* use non-blocking / asynchronous libusb I/O */
+	bool usb_async;
 
 	/* UDP */
 	int udp_fd;
@@ -38,8 +40,6 @@ struct osmo_st2_cardem_inst {
 	/* opaque data TBD by user */
 	void *priv;
 };
-
-int osmo_st2_transp_tx_msg(struct osmo_st2_transport *transp, struct msgb *msg);
 
 int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
                          uint8_t msg_class, uint8_t msg_type);

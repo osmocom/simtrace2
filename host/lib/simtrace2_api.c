@@ -57,23 +57,60 @@ static struct msgb *st_msgb_alloc(void)
 	return msgb_alloc_headroom(1024+32, 32, "SIMtrace");
 }
 
-/*! \brief Transmit a given command to the SIMtrace2 device */
-int osmo_st2_transp_tx_msg(struct osmo_st2_transport *transp, struct msgb *msg)
+
+static void usb_out_xfer_cb(struct libusb_transfer *xfer)
 {
-	int rc;
+	struct msgb *msg = xfer->user_data;
 
-	printf("<- %s\n", msgb_hexdump(msg));
-
-	if (transp->udp_fd < 0) {
-		int xfer_len;
-
-		rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.out,
-					  msgb_data(msg), msgb_length(msg),
-					  &xfer_len, 100000);
-	} else {
-		rc = write(transp->udp_fd, msgb_data(msg), msgb_length(msg));
+	switch (xfer->status) {
+	case LIBUSB_TRANSFER_COMPLETED:
+		break;
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		fprintf(stderr, "USB device disappeared\n");
+		exit(1);
+		break;
+	default:
+		fprintf(stderr, "USB OUT transfer failed, status=%u\n", xfer->status);
+		exit(1);
+		break;
 	}
 
+	msgb_free(msg);
+	libusb_free_transfer(xfer);
+}
+
+
+static int st2_transp_tx_msg_usb_async(struct osmo_st2_transport *transp, struct msgb *msg)
+{
+	struct libusb_transfer *xfer;
+	int rc;
+
+	xfer = libusb_alloc_transfer(0);
+	OSMO_ASSERT(xfer);
+	xfer->dev_handle = transp->usb_devh;
+	xfer->flags = 0;
+	xfer->type = LIBUSB_TRANSFER_TYPE_BULK;
+	xfer->endpoint = transp->usb_ep.out;
+	xfer->timeout = 100000;
+	xfer->user_data = msg;
+	xfer->length = msgb_length(msg);
+	xfer->buffer = msgb_data(msg);
+	xfer->callback = usb_out_xfer_cb;
+
+	rc = libusb_submit_transfer(xfer);
+	OSMO_ASSERT(rc == 0);
+
+	return rc;
+}
+
+/*! \brief Transmit a given command to the SIMtrace2 device */
+static int st2_transp_tx_msg_usb_sync(struct osmo_st2_transport *transp, struct msgb *msg)
+{
+	int rc;
+	int xfer_len;
+	rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.out,
+				  msgb_data(msg), msgb_length(msg),
+				  &xfer_len, 100000);
 	msgb_free(msg);
 	return rc;
 }
@@ -98,9 +135,24 @@ static struct simtrace_msg_hdr *st_push_hdr(struct msgb *msg, uint8_t msg_class,
 int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
 			 uint8_t msg_class, uint8_t msg_type)
 {
-	st_push_hdr(msg, msg_class, msg_type, slot->slot_nr);
+	struct osmo_st2_transport *transp = slot->transp;
+	int rc;
 
-	return osmo_st2_transp_tx_msg(slot->transp, msg);
+	OSMO_ASSERT(transp);
+
+	st_push_hdr(msg, msg_class, msg_type, slot->slot_nr);
+	printf("SIMtrace <- %s\n", msgb_hexdump(msg));
+
+	if (transp->udp_fd < 0) {
+		if (transp->usb_async)
+			rc = st2_transp_tx_msg_usb_async(transp, msg);
+		else
+			rc = st2_transp_tx_msg_usb_sync(transp, msg);
+	} else {
+		rc = write(transp->udp_fd, msgb_data(msg), msgb_length(msg));
+		msgb_free(msg);
+	}
+	return rc;
 }
 
 /***********************************************************************

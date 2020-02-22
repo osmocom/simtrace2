@@ -33,6 +33,10 @@ struct osmo_st2_cardem_inst {
 	const struct osim_cla_ins_card_profile *card_prof;
 	/* libosmosim SIM card channel */
 	struct osim_chan_hdl *chan;
+	/* path of the underlying USB device */
+	char *usb_path;
+	/* opaque data TBD by user */
+	void *priv;
 };
 
 int osmo_st2_transp_tx_msg(struct osmo_st2_transport *transp, struct msgb *msg);

@@ -204,6 +204,21 @@ int osmo_st2_cardem_request_set_atr(struct osmo_st2_cardem_inst *ci, const uint8
 	return osmo_st2_slot_tx_msg(ci->slot, msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_DT_CEMU_SET_ATR);
 }
 
+int osmo_st2_cardem_request_config(struct osmo_st2_cardem_inst *ci, uint32_t features)
+{
+	struct msgb *msg = st_msgb_alloc();
+	struct cardemu_usb_msg_config *cfg;
+
+	cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*cfg));
+
+	printf("<= %s(%08x)\n", __func__, features);
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->features = features;
+
+	return osmo_st2_slot_tx_msg(ci->slot, msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_BD_CEMU_CONFIG);
+}
+
 /***********************************************************************
  * Modem Control protocol
  ***********************************************************************/

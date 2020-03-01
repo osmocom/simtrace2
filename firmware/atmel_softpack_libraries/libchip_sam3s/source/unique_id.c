@@ -8,6 +8,11 @@ void EEFC_ReadUniqueID(unsigned int *pdwUniqueID)
 {
 	unsigned int status;
 
+	/* disable interrupts, as interrupt vectors are stored in flash,
+	 * and after STUI was issued, we can no longer access flassh until
+	 * SPUI complets */
+	__disable_irq();
+
 	/* Errata / Workaround: Set bit 16 of EEFC Flash Mode Register
 	 * to 1 */
 	EFC->EEFC_FMR |= (1 << 16);
@@ -40,4 +45,6 @@ void EEFC_ReadUniqueID(unsigned int *pdwUniqueID)
 	do {
 		status = EFC->EEFC_FSR;
 	} while ((status & EEFC_FSR_FRDY) != EEFC_FSR_FRDY);
+
+	__enable_irq();
 }

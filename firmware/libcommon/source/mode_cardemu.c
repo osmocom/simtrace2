@@ -679,7 +679,7 @@ static void dispatch_received_msg(struct msgb *msg, struct cardem_inst *ci)
 		}
 
 		if (mh->msg_len > msgb_length(msg)) {
-			TRACE_ERROR("%u: Unexpected large message (%u bytes)\n",
+			TRACE_ERROR("%u: Unexpected large message (%u bytes)\r\n",
 					ci->num, mh->msg_len);
 			usb_buf_free(segm);
 			break;

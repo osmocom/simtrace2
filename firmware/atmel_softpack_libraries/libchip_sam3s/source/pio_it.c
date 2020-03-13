@@ -211,6 +211,16 @@ extern void PIO_InitializeInterrupts( uint32_t dwPriority )
     NVIC_EnableIRQ( PIOC_IRQn ) ;
 }
 
+static InterruptSource *find_intsource4pin(const Pin *pPin)
+{
+    unsigned int i ;
+    for (i = 0; i < _dwNumSources; i++) {
+        if (_aIntSources[i].pPin == pPin)
+	    return &_aIntSources[i];
+    }
+    return NULL;
+}
+
 /**
  * Configures a PIO or a group of PIO to generate an interrupt on status
  * change. The provided interrupt handler will be called with the triggering
@@ -228,15 +238,17 @@ extern void PIO_ConfigureIt( const Pin *pPin, void (*handler)( const Pin* ) )
 
     assert( pPin ) ;
     pio = pPin->pio ;
-    assert( _dwNumSources < MAX_INTERRUPT_SOURCES ) ;
 
-    /* Define new source */
-    TRACE_DEBUG( "PIO_ConfigureIt: Defining new source #%" PRIu32 ".\n\r",  _dwNumSources ) ;
-
-    pSource = &(_aIntSources[_dwNumSources]) ;
-    pSource->pPin = pPin ;
+    pSource = find_intsource4pin(pPin);
+    if (!pSource) {
+        /* Define new source */
+        TRACE_DEBUG( "PIO_ConfigureIt: Defining new source #%" PRIu32 ".\n\r",  _dwNumSources ) ;
+        assert( _dwNumSources < MAX_INTERRUPT_SOURCES ) ;
+        pSource = &(_aIntSources[_dwNumSources]) ;
+        pSource->pPin = pPin ;
+        _dwNumSources++ ;
+    }
     pSource->handler = handler ;
-    _dwNumSources++ ;
 
     /* PIO3 with additional interrupt support
      * Configure additional interrupt mode registers */

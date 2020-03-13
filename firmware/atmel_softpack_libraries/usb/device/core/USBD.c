@@ -300,7 +300,7 @@ void USBD_SetConfiguration(uint8_t cfgnum)
     else {
         deviceState = USBD_STATE_ADDRESS;
         /* Reset all endpoints */
-        USBD_HAL_ResetEPs(0xFFFFFFFF, USBD_STATUS_RESET, 0);
+        USBD_HAL_ResetEPs(0xFFFFFFFE, USBD_STATUS_RESET, 0);
     }
 }
 

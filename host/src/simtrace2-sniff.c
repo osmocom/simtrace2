@@ -342,7 +342,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		char c = getopt_long(argc, argv, "hi:kV:P:C:I:S:A:", opts, &option_index);
+		int c = getopt_long(argc, argv, "hi:kV:P:C:I:S:A:", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {

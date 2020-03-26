@@ -62,6 +62,7 @@ struct cardem_inst {
 	const Pin pin_insert;
 #ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
+	uint32_t vcc_uv_last;
 #endif
 	bool vcc_active;
 	bool vcc_active_last;
@@ -197,6 +198,7 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 /* FIXME: integrate this with actual irq handler */
 static void usart_irq_rx(uint8_t inst_num)
 {
+	OSMO_ASSERT(inst_num < ARRAY_SIZE(cardem_inst));
 	Usart *usart = get_usart_by_chan(inst_num);
 	struct cardem_inst *ci = &cardem_inst[inst_num];
 	uint32_t csr;
@@ -319,10 +321,14 @@ static int card_vcc_adc_init(void)
 
 static void process_vcc_adc(struct cardem_inst *ci)
 {
-	if (ci->vcc_uv >= VCC_UV_THRESH_3V)
+	if (ci->vcc_uv >= VCC_UV_THRESH_3V &&
+	    ci->vcc_uv_last < VCC_UV_THRESH_3V) {
 		ci->vcc_active = true;
-	else
+	} else if (ci->vcc_uv < VCC_UV_THRESH_3V &&
+		 ci->vcc_uv_last >= VCC_UV_THRESH_3V) {
 		ci->vcc_active = false;
+	}
+	ci->vcc_uv_last = ci->vcc_uv;
 }
 
 void ADC_IrqHandler(void)

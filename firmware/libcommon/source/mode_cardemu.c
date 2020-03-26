@@ -1,7 +1,7 @@
 /* card emulation mode
  *
  * (C) 2015-2017 by Harald Welte <laforge@gnumonks.org>
- * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
+ * (C) 2018-2019 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,32 +202,33 @@ static void usart_irq_rx(uint8_t inst_num)
 	uint32_t csr;
 	uint8_t byte = 0;
 
-	csr = usart->US_CSR & usart->US_IMR;
+	csr = usart->US_CSR & usart->US_IMR; // save state/flags before they get changed
 
-	if (csr & US_CSR_RXRDY) {
-		byte = (usart->US_RHR) & 0xFF;
-		if (rbuf_write(&ci->rb, byte) < 0)
-			TRACE_ERROR("rbuf overrun\r\n");
+	if (csr & US_CSR_RXRDY) { // bytes has been received
+		byte = (usart->US_RHR) & 0xFF; // ready out byte
+		if (rbuf_write(&ci->rb, byte) < 0) // store byte in buffer
+			TRACE_ERROR("rbuf overrun\r\n"); // error if could not store in buffer
 	}
 
-	if (csr & US_CSR_TXRDY) {
-		if (card_emu_tx_byte(ci->ch) == 0)
-			USART_DisableIt(usart, US_IER_TXRDY);
+	if (csr & US_CSR_TXRDY) { // ready to transmit the next byte
+		if (card_emu_tx_byte(ci->ch) == 0) // transmit next byte, and check if a byte is being transmitted
+			USART_DisableIt(usart, US_IER_TXRDY); // stop the TX ready signal if not byte has been transmitted
 	}
 
-	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|
-		   US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) {
-		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-		TRACE_ERROR("%u e 0x%x st: 0x%lx\n", ci->num, byte, csr);
+	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) { // error flag set
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK; // reset UART state to clear flag
+		TRACE_ERROR("%u USART error on 0x%x status: 0x%lx\n", ci->num, byte, csr); // warn user about error
 	}
 }
 
+/*! ISR called for USART0 */
 void mode_cardemu_usart0_irq(void)
 {
 	/* USART0 == Instance 1 == USIM 2 */
 	usart_irq_rx(1);
 }
 
+/*! ISR called for USART1 */
 void mode_cardemu_usart1_irq(void)
 {
 	/* USART1 == Instance 0 == USIM 1 */
@@ -419,15 +420,21 @@ void mode_cardemu_init(void)
 	INIT_LLIST_HEAD(&cardem_inst[0].usb_out_queue);
 	rbuf_reset(&cardem_inst[0].rb);
 	PIO_Configure(pins_usim1, PIO_LISTSIZE(pins_usim1));
+
+	/* configure USART as ISO-7816 slave (e.g. card) */
 	ISO7816_Init(&cardem_inst[0].usart_info, CLK_SLAVE);
 	NVIC_EnableIRQ(USART1_IRQn);
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
-	usim1_rst_irqhandler(&pin_usim1_rst); /* obtain current RST state */
+
+	/* obtain current RST state */
+	usim1_rst_irqhandler(&pin_usim1_rst);
 #ifndef DETECT_VCC_BY_ADC
 	PIO_ConfigureIt(&pin_usim1_vcc, usim1_vcc_irqhandler);
 	PIO_EnableIt(&pin_usim1_vcc);
-	usim1_vcc_irqhandler(&pin_usim1_vcc); /* obtain current VCC state */
+
+	/* obtain current VCC state */
+	usim1_vcc_irqhandler(&pin_usim1_vcc);
 #else
 	do {} while (!adc_triggered); /* wait for first ADC reading */
 #endif /* DETECT_VCC_BY_ADC */
@@ -442,6 +449,7 @@ void mode_cardemu_init(void)
 	rbuf_reset(&cardem_inst[1].rb);
 	PIO_Configure(pins_usim2, PIO_LISTSIZE(pins_usim2));
 	ISO7816_Init(&cardem_inst[1].usart_info, CLK_SLAVE);
+	// TODO enable timeout
 	NVIC_EnableIRQ(USART0_IRQn);
 	PIO_ConfigureIt(&pin_usim2_rst, usim2_rst_irqhandler);
 	PIO_EnableIt(&pin_usim2_rst);
@@ -458,6 +466,7 @@ void mode_cardemu_init(void)
 					  SIMTRACE_CARDEM_USB_EP_USIM2_INT, cardem_inst[1].vcc_active,
 					  cardem_inst[1].rst_active, cardem_inst[1].vcc_active);
 	sim_switch_use_physical(1, 1);
+	// TODO check rst and vcc
 #endif /* CARDEMU_SECOND_UART */
 }
 

@@ -440,7 +440,20 @@ void mode_cardemu_init(void)
 
 	/* configure USART as ISO-7816 slave (e.g. card) */
 	ISO7816_Init(&cardem_inst[0].usart_info, CLK_SLAVE);
+#ifdef BOARD_simtrace
+	/* simtrace board uses uart timeouts */
+
+	/*  don't use receive timeout timer for now */
+	cardem_inst[0].usart_info.base->US_RTOR = 0;
+	/* enable interrupts to indicate when data has been received or timeout occurred */
+	USART_EnableIt(cardem_inst[0].usart_info.base, US_IER_RXRDY | US_IER_TIMEOUT);
+#else
+	/* enable interrupts to indicate when data has been received */
+	USART_EnableIt(cardem_inst[0].usart_info.base, US_IER_RXRDY );
+#endif
+	/*  enable interrupt requests for the USART peripheral */
 	NVIC_EnableIRQ(USART1_IRQn);
+
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
 

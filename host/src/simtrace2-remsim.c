@@ -50,6 +50,26 @@
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
+/*
+reasonable ATR offering all protocols and voltages
+smartphones might not care, but other readers do
+
+TS = 0x3B	Direct Convention
+T0 = 0x80	Y(1): b1000, K: 0 (historical bytes)
+TD(1) = 0x80	Y(i+1) = b1000, Protocol T=0
+----
+TD(2) = 0x81	Y(i+1) = b1000, Protocol T=1
+----
+TD(3) = 0x1F	Y(i+1) = b0001, Protocol T=15
+----
+TA(4) = 0xC7	Clock stop: no preference - Class accepted by the card: (3G) A 5V B 3V C 1.8V
+----
+Historical bytes
+TCK = 0x59 	correct checksum
+*/
+static uint8_t real_atr[] = { 0x3B, 0x80, 0x80, 0x81 , 0x1F, 0xC7, 0x59};
+
+
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 {
 	uint8_t csum = 0;
@@ -437,8 +457,6 @@ int main(int argc, char **argv)
 		osmo_st2_modem_sim_select_remote(ci->slot);
 
 		if (!skip_atr) {
-			/* set the ATR */
-			uint8_t real_atr[] = {  0x3B, 0x00 }; // the simplest ATR
 			atr_update_csum(real_atr, sizeof(real_atr));
 			osmo_st2_cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
 		}

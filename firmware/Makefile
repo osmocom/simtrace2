@@ -33,6 +33,14 @@ GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
 #        User-modifiable options
 #-------------------------------------------------------------------------------
 
+# verbosity
+V ?= 0
+ifneq ("$(V)","0")
+SILENT :=
+else
+SILENT := @
+endif
+
 # Chip & board used for compilation
 # (can be overriden by adding CHIP=chip and BOARD=board to the command-line)
 CHIP  ?= sam3s4
@@ -210,22 +218,22 @@ C_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(C_OBJECTS))
 ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
 
 $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
-	@$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
+	$(SILENT)$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
 	cp $(OUTPUT)-$$@.elf $(OUTPUT)-$$@-$(GIT_VERSION).elf
 	cp $(OUTPUT)-$$@.elf $(OUTPUT)-$$@-latest.elf
-	@$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
-	@$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
+	$(SILENT)$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
+	$(SILENT)$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
 	cp $(OUTPUT)-$$@.bin $(OUTPUT)-$$@-$(GIT_VERSION).bin
 	cp $(OUTPUT)-$$@.bin $(OUTPUT)-$$@-latest.bin
-	@$(SIZE) $$^ $(OUTPUT)-$$@.elf
+	$(SILENT)$(SIZE) $$^ $(OUTPUT)-$$@.elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
-	@$(CC) $(CFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<
+	$(SILENT)$(CC) $(CFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]
-	@$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
+	$(SILENT)@$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
 debug_$(1): $(1)
 	$(GDB) -x "$(BOARD_LIB)/resources/gcc/$(BOARD)_$(1).gdb" -ex "reset" -readnow -se $(OUTPUT)-$(1).elf

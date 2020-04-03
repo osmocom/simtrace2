@@ -52,6 +52,26 @@
 
 #define ATR_MAX_LEN 33
 
+
+/* reasonable ATR offering all protocols and voltages
+ * smartphones might not care, but other readers do
+ *
+ * TS =		0x3B	Direct Convention
+ * T0 =		0x80	Y(1): b1000, K: 0 (historical bytes)
+ * TD(1) =	0x80	Y(i+1) = b1000, Protocol T=0
+ * ----
+ * TD(2) =	0x81	Y(i+1) = b1000, Protocol T=1
+ * ----
+ * TD(3) =	0x1F	Y(i+1) = b0001, Protocol T=15
+ * ----
+ * TA(4) =	0xC7	Clock stop: no preference - Class accepted by the card: (3G) A 5V B 3V C 1.8V
+ * ----
+ * Historical bytes
+ * TCK =	0x59 	correct checksum
+ */
+#define DEFAULT_ATR_STR "3B8080811FC759"
+
+
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 {
 	uint8_t csum = 0;
@@ -274,7 +294,7 @@ int main(int argc, char **argv)
 	int rc;
 	int c, ret = 1;
 	int skip_atr = 0;
-	char *atr = "3b00";
+	char *atr = DEFAULT_ATR_STR;
 	uint8_t real_atr[ATR_MAX_LEN];
 	int atr_len;
 	int keep_running = 0;

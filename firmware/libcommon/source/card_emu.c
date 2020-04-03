@@ -1179,8 +1179,23 @@ void tc_etu_wtime_expired(void *handle)
 	}
 }
 
-/* shortest ATR possible (uses default speed and no options) */
-static const uint8_t default_atr[] = { 0x3B, 0x00 };
+/* reasonable ATR offering all protocols and voltages
+ * smartphones might not care, but other readers do
+ *
+ * TS =		0x3B	Direct Convention
+ * T0 =		0x80	Y(1): b1000, K: 0 (historical bytes)
+ * TD(1) =	0x80	Y(i+1) = b1000, Protocol T=0
+ * ----
+ * TD(2) =	0x81	Y(i+1) = b1000, Protocol T=1
+ * ----
+ * TD(3) =	0x1F	Y(i+1) = b0001, Protocol T=15
+ * ----
+ * TA(4) =	0xC7	Clock stop: no preference - Class accepted by the card: (3G) A 5V B 3V C 1.8V
+ * ----
+ * Historical bytes
+ * TCK =	0x59 	correct checksum
+ */
+static const uint8_t default_atr[] = { 0x3B, 0x80, 0x80, 0x81 , 0x1F, 0xC7, 0x59 };
 
 static struct card_handle card_handles[NUM_SLOTS];
 

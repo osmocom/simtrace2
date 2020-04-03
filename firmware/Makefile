@@ -100,7 +100,7 @@ C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.
 C_LIBUSB_RT  = dfu.c dfu_runtime.c
 C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
 C_LIBCOMMON  = string.c stdio.c fputs.c usb_buf.c ringbuffer.c pseudo_talloc.c host_communication.c \
-	       main_common.c
+	       main_common.c tc_etu.c
 
 C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
 C_BOARD     += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))
@@ -164,14 +164,14 @@ CFLAGS += -Wno-suggest-attribute=noreturn
 # -mlong-calls  -Wall
 #CFLAGS += -save-temps -fverbose-asm
 #CFLAGS += -Wa,-a,-ad
-CFLAGS += -D__ARM
+CFLAGS += -D__ARM -fno-builtin
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DALLOW_PEER_ERASE=$(ALLOW_PEER_ERASE)
 CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
 CFLAGS += -DAPPLICATION=\"$(APP)\" -DAPPLICATION_$(APP)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols -Wl,--print-memory-usage $(LIB)
+LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--print-memory-usage -Wl,--no-undefined $(LIB)
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
 
 # Append BIN directories to output filename

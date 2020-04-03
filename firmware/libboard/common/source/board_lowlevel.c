@@ -218,3 +218,8 @@ void mdelay(unsigned int msecs)
 	do {
 	} while ((jiffies - jiffies_start) < msecs);
 }
+
+void abort() {
+	NVIC_SystemReset();
+	while(1) {};
+}

@@ -12,11 +12,8 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
-#
-
 Name:           simtrace2
-Version:        0.7.0.57
+Version:        @VERSION@
 Release:        0
 Summary:        Osmocom SIMtrace host utility
 License:        GPL-2.0-or-later

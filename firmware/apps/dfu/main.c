@@ -243,6 +243,17 @@ static void check_exec_dbg_cmd(void)
 	//board_exec_dbg_cmd(ch);
 }
 
+/* print a horizontal line of '=' characters; Doing this in a loop vs. using a 'const'
+ * string saves us ~60 bytes of executable size (matters particularly for DFU loader) */
+static void print_line(void)
+{
+	int i;
+	for (i = 0; i < 78; i++)
+		fputc('=', stdout);
+	fputc('\n', stdout);
+	fputc('\r', stdout);
+}
+
 /*------------------------------------------------------------------------------
  *        Main
  *------------------------------------------------------------------------------*/
@@ -267,12 +278,12 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-	printf("\n\r\n\r"
-		"=============================================================================\n\r"
-		"DFU bootloader %s for board %s\n\r"
-		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r"
-		"=============================================================================\n\r",
+	printf("\n\r\n\r");
+	print_line();
+	printf("DFU bootloader %s for board %s\n\r"
+		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r",
 		manifest_revision, manifest_board);
+	print_line();
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
 	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);

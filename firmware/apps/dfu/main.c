@@ -265,8 +265,6 @@ extern int main(void)
 	PIO_Clear(&pinsLeds[LED_NUM_GREEN]);
 #endif
 
-	PIO_InitializeInterrupts(0);
-
 	EEFC_ReadUniqueID(g_unique_id);
 
 	printf("\n\r\n\r"

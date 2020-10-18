@@ -88,7 +88,7 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 			libusb_submit_transfer(xfer);
 		} else if (xfer->endpoint == g_buf_out.ep) {
 			/* re-enable reading from the UDP side */
-			g_udp_ofd.when |= BSC_FD_READ;
+			g_udp_ofd.when |= OSMO_FD_READ;
 		}
 		break;
 	default:
@@ -131,9 +131,9 @@ static void libusb_fd_added_cb(int fd, short events, void *user_data)
 	ofd->fd = fd;
 	ofd->cb = &ofd_libusb_cb;
 	if (events & POLLIN)
-		ofd->when |= BSC_FD_READ;
+		ofd->when |= OSMO_FD_READ;
 	if (events & POLLOUT)
-		ofd->when |= BSC_FD_WRITE;
+		ofd->when |= OSMO_FD_WRITE;
 
 	osmo_fd_register(ofd);
 }
@@ -171,7 +171,7 @@ static int ofd_udp_cb(struct osmo_fd *ofd, unsigned int what)
 	g_buf_out.xfer->length = rc;
 
 	/* disable further READ interest for the UDP socket */
-	ofd->when &= ~BSC_FD_READ;
+	ofd->when &= ~OSMO_FD_READ;
 
 	/* submit the URB on the OUT end point */
 	libusb_submit_transfer(g_buf_out.xfer);

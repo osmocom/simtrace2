@@ -82,7 +82,6 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %files
 %doc README.md
 %{_bindir}/simtrace2-remsim
-%{_bindir}/simtrace2-remsim-usb2udp
 %{_bindir}/simtrace2-list
 %{_bindir}/simtrace2-sniff
 %{_udevrulesdir}/99-simtrace2.rules

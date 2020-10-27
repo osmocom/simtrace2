@@ -178,9 +178,7 @@ static void print_welcome(void)
 
 static void print_help(void)
 {
-	printf( "\t-r\t--remote-udp-host HOST\n"
-		"\t-p\t--remote-udp-port PORT\n"
-		"\t-h\t--help\n"
+	printf( "\t-h\t--help\n"
 		"\t-i\t--gsmtap-ip\tA.B.C.D\n"
 		"\t-a\t--skip-atr\n"
 		"\t-t\t--set-atr\tATR-STRING in HEX\n"
@@ -198,8 +196,6 @@ static void print_help(void)
 }
 
 static const struct option opts[] = {
-	{ "remote-udp-host", 1, 0, 'r' },
-	{ "remote-udp-port", 1, 0, 'p' },
 	{ "gsmtap-ip", 1, 0, 'i' },
 	{ "skip-atr", 0, 0, 'a' },
 	{ "set-atr", 1, 0, 't' },
@@ -228,22 +224,13 @@ static void run_mainloop(struct osmo_st2_cardem_inst *ci)
 
 	while (1) {
 		/* read data from SIMtrace2 device (local or via USB) */
-		if (transp->udp_fd < 0) {
-			rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
-						  buf, sizeof(buf), &xfer_len, 100);
-			if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT &&
-				      rc != LIBUSB_ERROR_INTERRUPTED &&
-				      rc != LIBUSB_ERROR_IO) {
-				fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
-				return;
-			}
-		} else {
-			rc = read(transp->udp_fd, buf, sizeof(buf));
-			if (rc <= 0) {
-				fprintf(stderr, "shor read from UDP\n");
-				return;
-			}
-			xfer_len = rc;
+		rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
+					  buf, sizeof(buf), &xfer_len, 100);
+		if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT &&
+			      rc != LIBUSB_ERROR_INTERRUPTED &&
+			      rc != LIBUSB_ERROR_IO) {
+			fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
+			return;
 		}
 		/* dispatch any incoming data */
 		if (xfer_len > 0) {
@@ -291,11 +278,9 @@ int main(int argc, char **argv)
 	uint8_t real_atr[ATR_MAX_LEN];
 	int atr_len;
 	int keep_running = 0;
-	int remote_udp_port = 52342;
 	int if_num = 0, vendor_id = -1, product_id = -1;
 	int config_id = -1, altsetting = 0, addr = -1;
 	int reader_num = 0;
-	char *remote_udp_host = NULL;
 	char *path = NULL;
 	struct osim_reader_hdl *reader;
 	struct osim_card_hdl *card;
@@ -305,16 +290,10 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:akn:t:", opts, &option_index);
+		c = getopt_long(argc, argv, "hi:V:P:C:I:S:A:H:akn:t:", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
-		case 'r':
-			remote_udp_host = optarg;
-			break;
-		case 'p':
-			remote_udp_port = atoi(optarg);
-			break;
 		case 'h':
 			print_help();
 			exit(0);
@@ -365,29 +344,17 @@ int main(int argc, char **argv)
 		goto do_exit;
 	}
 
-	if (!remote_udp_host && (vendor_id < 0 || product_id < 0)) {
+	if (vendor_id < 0 || product_id < 0) {
 		fprintf(stderr, "You have to specify the vendor and product ID\n");
 		goto do_exit;
 	}
 
-	transp->udp_fd = -1;
-
 	ci->card_prof = &osim_uicc_sim_cic_profile;
 
-	if (!remote_udp_host) {
-		rc = libusb_init(NULL);
-		if (rc < 0) {
-			fprintf(stderr, "libusb initialization failed\n");
-			goto do_exit;
-		}
-	} else {
-		transp->udp_fd = osmo_sock_init(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
-						remote_udp_host, remote_udp_port+if_num,
-						OSMO_SOCK_F_CONNECT);
-		if (transp->udp_fd < 0) {
-			fprintf(stderr, "error binding UDP port\n");
-			goto do_exit;
-		}
+	rc = libusb_init(NULL);
+	if (rc < 0) {
+		fprintf(stderr, "libusb initialization failed\n");
+		goto do_exit;
 	}
 
 	rc = osmo_st2_gsmtap_init(gsmtap_host);
@@ -417,34 +384,32 @@ int main(int argc, char **argv)
 	signal(SIGINT, &signal_handler);
 
 	do {
-		if (transp->udp_fd < 0) {
-			struct usb_interface_match _ifm, *ifm = &_ifm;
-			ifm->vendor = vendor_id;
-			ifm->product = product_id;
-			ifm->configuration = config_id;
-			ifm->interface = if_num;
-			ifm->altsetting = altsetting;
-			ifm->addr = addr;
-			if (path)
-				osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
-			transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
-			if (!transp->usb_devh) {
-				fprintf(stderr, "can't open USB device\n");
-				goto close_exit;
-			}
+		struct usb_interface_match _ifm, *ifm = &_ifm;
+		ifm->vendor = vendor_id;
+		ifm->product = product_id;
+		ifm->configuration = config_id;
+		ifm->interface = if_num;
+		ifm->altsetting = altsetting;
+		ifm->addr = addr;
+		if (path)
+			osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
+		transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
+		if (!transp->usb_devh) {
+			fprintf(stderr, "can't open USB device\n");
+			goto close_exit;
+		}
 
-			rc = libusb_claim_interface(transp->usb_devh, if_num);
-			if (rc < 0) {
-				fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
-				goto close_exit;
-			}
+		rc = libusb_claim_interface(transp->usb_devh, if_num);
+		if (rc < 0) {
+			fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
+			goto close_exit;
+		}
 
-			rc = osmo_libusb_get_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
-					      &transp->usb_ep.in, &transp->usb_ep.irq_in);
-			if (rc < 0) {
-				fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
-				goto close_exit;
-			}
+		rc = osmo_libusb_get_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
+				      &transp->usb_ep.in, &transp->usb_ep.irq_in);
+		if (rc < 0) {
+			fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
+			goto close_exit;
 		}
 
 		/* simulate card-insert to modem (owhw, not qmod) */
@@ -465,8 +430,7 @@ int main(int argc, char **argv)
 		run_mainloop(ci);
 		ret = 0;
 
-		if (transp->udp_fd < 0)
-			libusb_release_interface(transp->usb_devh, 0);
+		libusb_release_interface(transp->usb_devh, 0);
 close_exit:
 		if (transp->usb_devh)
 			libusb_close(transp->usb_devh);
@@ -474,8 +438,7 @@ close_exit:
 			sleep(1);
 	} while (keep_running);
 
-	if (transp->udp_fd < 0)
-		libusb_exit(NULL);
+	libusb_exit(NULL);
 do_exit:
 	return ret;
 }

@@ -5,9 +5,9 @@ AM_LDFLAGS=$(COVERAGE_LDFLAGS)
 LDADD= $(top_builddir)/lib/libosmo-simtrace2.la \
        $(LIBOSMOCORE_LIBS) $(LIBOSMOSIM_LIBS) $(LIBOSMOUSB_LIBS) $(LIBUSB_LIBS)
 
-bin_PROGRAMS = simtrace2-remsim simtrace2-list simtrace2-sniff
+bin_PROGRAMS = simtrace2-cardem-pcsc simtrace2-list simtrace2-sniff
 
-simtrace2_remsim_SOURCES = simtrace2-remsim.c
+simtrace2_cardem_pcsc_SOURCES = simtrace2-cardem-pcsc.c
 
 simtrace2_list_SOURCES = simtrace2_usb.c
 

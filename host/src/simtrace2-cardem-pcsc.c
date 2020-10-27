@@ -1,7 +1,7 @@
-/* simtrace2-remsim - main program for the host PC to provide a remote SIM
+/* simtrace2-cardem-pcsc - main program for the host PC to provide a remote SIM
  * using the SIMtrace 2 firmware in card emulation mode
  *
- * (C) 2016-2017 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2020 by Harald Welte <hwelte@hmw-consulting.de>
  * (C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or
@@ -171,8 +171,8 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 
 static void print_welcome(void)
 {
-	printf("simtrace2-remsim - Remote SIM card forwarding\n"
-	       "(C) 2010-2017, Harald Welte <laforge@gnumonks.org>\n"
+	printf("simtrace2-cardem-pcsc - Using PC/SC reader as SIM\n"
+	       "(C) 2010-2020, Harald Welte <laforge@gnumonks.org>\n"
 	       "(C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>\n\n");
 }
 

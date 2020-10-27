@@ -50,6 +50,8 @@
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
+#define ATR_MAX_LEN 33
+
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 {
 	uint8_t csum = 0;
@@ -181,6 +183,7 @@ static void print_help(void)
 		"\t-h\t--help\n"
 		"\t-i\t--gsmtap-ip\tA.B.C.D\n"
 		"\t-a\t--skip-atr\n"
+		"\t-t\t--set-atr\tATR-STRING in HEX\n"
 		"\t-k\t--keep-running\n"
 		"\t-n\t--pcsc-reader-num\n"
 		"\t-V\t--usb-vendor\tVENDOR_ID\n"
@@ -199,6 +202,7 @@ static const struct option opts[] = {
 	{ "remote-udp-port", 1, 0, 'p' },
 	{ "gsmtap-ip", 1, 0, 'i' },
 	{ "skip-atr", 0, 0, 'a' },
+	{ "set-atr", 1, 0, 't' },
 	{ "help", 0, 0, 'h' },
 	{ "keep-running", 0, 0, 'k' },
 	{ "pcsc-reader-num", 1, 0, 'n' },
@@ -283,6 +287,9 @@ int main(int argc, char **argv)
 	int rc;
 	int c, ret = 1;
 	int skip_atr = 0;
+	char *atr = "3b00";
+	uint8_t real_atr[ATR_MAX_LEN];
+	int atr_len;
 	int keep_running = 0;
 	int remote_udp_port = 52342;
 	int if_num = 0, vendor_id = -1, product_id = -1;
@@ -298,7 +305,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:akn:", opts, &option_index);
+		c = getopt_long(argc, argv, "r:p:hi:V:P:C:I:S:A:H:akn:t:", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -317,6 +324,9 @@ int main(int argc, char **argv)
 			break;
 		case 'a':
 			skip_atr = 1;
+			break;
+		case 't':
+		        atr = optarg;
 			break;
 		case 'k':
 			keep_running = 1;
@@ -346,6 +356,13 @@ int main(int argc, char **argv)
 			path = optarg;
 			break;
 		}
+	}
+
+	atr_len = osmo_hexparse(atr,real_atr,ATR_MAX_LEN);
+	if (atr_len < 2) {
+		fprintf(stderr, "Invalid ATR - please omit a leading 0x and only use valid hex "
+			"digits and whitespace. ATRs need to be between 2 and 33 bytes long.\n");
+		goto do_exit;
 	}
 
 	if (!remote_udp_host && (vendor_id < 0 || product_id < 0)) {
@@ -438,9 +455,8 @@ int main(int argc, char **argv)
 
 		if (!skip_atr) {
 			/* set the ATR */
-			uint8_t real_atr[] = {  0x3B, 0x00 }; // the simplest ATR
-			atr_update_csum(real_atr, sizeof(real_atr));
-			osmo_st2_cardem_request_set_atr(ci, real_atr, sizeof(real_atr));
+			atr_update_csum(real_atr, atr_len);
+			osmo_st2_cardem_request_set_atr(ci, real_atr, atr_len);
 		}
 
 		/* select remote (forwarded) SIM */

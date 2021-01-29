@@ -165,6 +165,8 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 			 * will then trigger DFURT_SwitchToDFU() below */
 			TRACE_DEBUG("\r\n====dfu_detach\n\r");
 			g_dfu->state = DFU_STATE_appDETACH;
+			USBD_Write(0, 0, 0, 0, 0);
+			DFURT_SwitchToDFU();
 			ret = DFU_RET_ZLP;
 			goto out;
 			break;
@@ -209,13 +211,14 @@ out:
 
 void DFURT_SwitchToDFU(void)
 {
+	__disable_irq();
+
 	/* store the magic value that the DFU loader can detect and
 	 * activate itself, rather than boot into the application */
 	g_dfu->magic = USB_DFU_MAGIC;
-
+	__DMB();
 	/* Disconnect the USB by removing the pull-up */
 	USBD_Disconnect();
-	__disable_irq();
 
 	/* reset the processor, we will start execution with the
 	 * ResetVector of the bootloader */

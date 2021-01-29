@@ -39,8 +39,8 @@ struct dfu_desc {
 #define DFU_FUNC_DESC  {						\
 	.bLength		= USB_DT_DFU_SIZE,			\
 	.bDescriptorType	= USB_DT_DFU,				\
-	.bmAttributes		= USB_DFU_CAN_UPLOAD | USB_DFU_CAN_DOWNLOAD, \
-	.wDetachTimeOut		= 0xff00,				\
+	.bmAttributes		= USB_DFU_CAN_UPLOAD | USB_DFU_CAN_DOWNLOAD | USB_DFU_WILL_DETACH, \
+	.wDetachTimeOut		= 0x00,				\
 	.wTransferSize		= BOARD_DFU_PAGE_SIZE,			\
 	.bcdDFUVersion		= 0x0100,				\
 }

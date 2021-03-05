@@ -211,12 +211,8 @@ ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
 
 $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
 	@$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
-	cp $(OUTPUT)-$$@.elf $(OUTPUT)-$$@-$(GIT_VERSION).elf
-	cp $(OUTPUT)-$$@.elf $(OUTPUT)-$$@-latest.elf
 	@$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
 	@$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
-	cp $(OUTPUT)-$$@.bin $(OUTPUT)-$$@-$(GIT_VERSION).bin
-	cp $(OUTPUT)-$$@.bin $(OUTPUT)-$$@-latest.bin
 	@$(SIZE) $$^ $(OUTPUT)-$$@.elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)

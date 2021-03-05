@@ -22,3 +22,4 @@ host/simtrace2-cardem-pcsc
 host/contrib/simtrace2.spec
 usb_strings_generated.h
 firmware/usbstring/usbstring
+firmware/apps/*/usb_strings.txt.patched

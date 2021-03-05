@@ -1,5 +1,5 @@
 AC_INIT([simtrace2],
-	m4_esyscmd([./git-version-gen .tarball-version]),
+	m4_esyscmd([../git-version-gen ../.tarball-version]),
 	[simtrace@lists.osmocom.org])
 
 dnl *This* is the root dir, even if an install-sh exists in ../ or ../../

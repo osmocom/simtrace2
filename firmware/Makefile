@@ -28,7 +28,7 @@
 
 #   Makefile for compiling the Getting Started with SAM3S Microcontrollers project
 
-GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarvers)
+GIT_VERSION=$(shell $(TOP)/git-version-gen $(TOP)/.tarball-version)
 #-------------------------------------------------------------------------------
 #        User-modifiable options
 #-------------------------------------------------------------------------------

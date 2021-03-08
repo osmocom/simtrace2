@@ -68,7 +68,7 @@ rm -rf $TOPDIR/firmware/bin/simtrace-cardem*
 if [ "x$publish" = "x--publish" ]; then
 	echo
 	echo "=============== UPLOAD BUILD  =============="
-	contrib/prepare_upload.sh
+	$TOPDIR/contrib/prepare_upload.sh
 
 	cat > "/build/known_hosts" <<EOF
 [rita.osmocom.org]:48 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDgQ9HntlpWNmh953a2Gc8NysKE4orOatVT1wQkyzhARnfYUerRuwyNr1GqMyBKdSI9amYVBXJIOUFcpV81niA7zQRUs66bpIMkE9/rHxBd81SkorEPOIS84W4vm3SZtuNqa+fADcqe88Hcb0ZdTzjKILuwi19gzrQyME2knHY71EOETe9Yow5RD2hTIpB5ecNxI0LUKDq+Ii8HfBvndPBIr0BWYDugckQ3Bocf+yn/tn2/GZieFEyFpBGF/MnLbAAfUKIdeyFRX7ufaiWWz5yKAfEhtziqdAGZaXNaLG6gkpy3EixOAy6ZXuTAk3b3Y0FUmDjhOHllbPmTOcKMry9

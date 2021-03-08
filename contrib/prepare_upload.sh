@@ -1,5 +1,7 @@
 #!/bin/sh -e
 # Create copies of binaries with -latest, -$GIT_VERSION (OS#4413, OS#3452)
+cd "$(dirname "$0")/.."
+
 GIT_VERSION="$(./git-version-gen .tarball-version)"
 
 echo "Copying binaries with "-latest" and "-$GIT_VERSION" appended..."

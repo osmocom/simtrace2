@@ -212,6 +212,23 @@ int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte)
 	return 1;
 }
 
+static uint16_t compute_next_timeout(struct cardem_inst *ci)
+{
+	uint32_t want_to_expire;
+
+	if (ci->wt.total == 0)
+		return 0;
+
+	if (!ci->wt.half_time_notified) {
+		/* we need to make sure to expire after half the total waiting time */
+		OSMO_ASSERT(ci->wt.remaining > (ci->wt.total / 2));
+		want_to_expire = ci->wt.remaining - (ci->wt.total / 2);
+	} else
+		want_to_expire = ci->wt.remaining;
+	TRACE_INFO("want_to_expire=%u (total=%u, remaining=%u)\r\n", want_to_expire, ci->wt.total, ci->wt.remaining);
+	/* if value exceeds the USART TO range, use the maximum possible value for one round */
+	return OSMO_MIN(want_to_expire, 0xffff);
+}
 
 /*! common handler if interrupt was received.
  *  \param[in] inst_num Instance number, range 0..1 (some boards only '0' permitted) */
@@ -254,6 +271,9 @@ static void usart_irq_rx(uint8_t inst_num)
 	 * how many etu have expired since we last sent a byte.  See section
 	 * 33.7.3.11 "Receiver Time-out" of the SAM3S8 Data Sheet */
 	if (csr & US_CSR_TIMEOUT) {
+		/* clear timeout flag (and stop timeout until next character is received) */
+		usart->US_CR |= US_CR_STTTO;
+
 		/* RX has been inactive for some time */
 		if (ci->wt.remaining <= (usart->US_RTOR & 0xffff)) {
 			/* waiting time is over; will stop the timer */
@@ -266,17 +286,26 @@ static void usart_irq_rx(uint8_t inst_num)
 		if (ci->wt.remaining == 0) {
 			/* let the FSM know that WT has expired */
 			card_emu_wtime_expired(ci->ch);
-		} else if (ci->wt.remaining <= ci->wt.total / 2 && !ci->wt.half_time_notified) {
-			/* let the FS know that half of the WT has expired */
-			card_emu_wtime_half_expired(ci->ch);
-			ci->wt.half_time_notified = true;
+			/* don't automatically re-start in this case */
+		} else {
+			bool half_time_just_reached = false;
+
+			if (ci->wt.remaining <= ci->wt.total / 2 && !ci->wt.half_time_notified) {
+				ci->wt.half_time_notified = true;
+				/* don't immediately call card_emu_wtime_half_expired(), as that
+				 * in turn may calls card_emu_uart_update_wt() which will change
+				 * the timeout but would be overridden 4 lines below */
+				half_time_just_reached = true;
+			}
+
+			/* update the counter no matter if we reached half time or not */
+			usart->US_RTOR = compute_next_timeout(ci);
+			/* restart the counter (if wt is 0, the timeout is not started) */
+			usart->US_CR |= US_CR_RETTO;
+
+			if (half_time_just_reached)
+				card_emu_wtime_half_expired(ci->ch);
 		}
-		/* if value exceeds the USART TO range, use the maximum for now */
-		usart->US_RTOR = OSMO_MIN(ci->wt.remaining, 0xffff);
-		/* clear timeout flag (and stop timeout until next character is received) */
-		usart->US_CR |= US_CR_STTTO;
-		/* restart the counter (it wt is 0, the timeout is not started) */
-		usart->US_CR |= US_CR_RETTO;
 	}
 }
 
@@ -336,8 +365,7 @@ void card_emu_uart_reset_wt(uint8_t uart_chan)
 	/* FIXME: guard against race with interrupt handler */
 	ci->wt.remaining = ci->wt.total;
 	ci->wt.half_time_notified = false;
-	/* if value exceeds the USART TO range, use the maximum for now */
-	usart->US_RTOR = OSMO_MIN(ci->wt.remaining, 0xffff);
+	usart->US_RTOR = compute_next_timeout(ci);
 	/* restart the counter (if wt is 0, the timeout is not started) */
 	usart->US_CR |= US_CR_RETTO;
 }

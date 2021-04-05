@@ -50,6 +50,9 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	case ENABLE_TX:
 		rts = "TX";
 		break;
+	case ENABLE_TX_TIMER_ONLY:
+		rts = "TX-TIMER-ONLY";
+		break;
 	case ENABLE_RX:
 		rts = "RX";
 		break;
@@ -66,29 +69,14 @@ void card_emu_uart_interrupt(uint8_t uart_chan)
 	printf("uart_interrupt(uart_chan=%u)\n", uart_chan);
 }
 
-void tc_etu_set_wtime(uint8_t tc_chan, uint16_t wtime)
+void card_emu_uart_update_wt(uint8_t uart_chan, uint32_t wt)
 {
-	printf("tc_etu_set_wtime(tc_chan=%u, wtime=%u)\n", tc_chan, wtime);
+	printf("%s(uart_chan=%u, wtime=%u)\n", __func__, uart_chan, wt);
 }
 
-void tc_etu_set_etu(uint8_t tc_chan, uint16_t etu)
+void card_emu_uart_reset_wt(uint8_t uart_chan)
 {
-	printf("tc_etu_set_etu(tc_chan=%u, etu=%u)\n", tc_chan, etu);
-}
-
-void tc_etu_init(uint8_t chan_nr, void *handle)
-{
-	printf("tc_etu_init(tc_chan=%u)\n", chan_nr);
-}
-
-void tc_etu_enable(uint8_t chan_nr)
-{
-	printf("tc_etu_enable(tc_chan=%u)\n", chan_nr);
-}
-
-void tc_etu_disable(uint8_t chan_nr)
-{
-	printf("tc_etu_disable(tc_chan=%u)\n", chan_nr);
+	printf("%s(uart_chan=%u\n", __func__, uart_chan);
 }
 
 
@@ -136,7 +124,7 @@ static void io_start_card(struct card_handle *ch)
 	/* release from reset and verify th ATR */
 	card_emu_io_statechg(ch, CARD_IO_RST, 0);
 	/* simulate waiting time before ATR expired */
-	tc_etu_wtime_expired(ch);
+	card_emu_wtime_expired(ch);
 	verify_atr(ch);
 }
 
@@ -408,7 +396,7 @@ int main(int argc, char **argv)
 	struct card_handle *ch;
 	unsigned int i;
 
-	ch = card_emu_init(0, 23, 42, PHONE_DATAIN, PHONE_INT, false, true, false);
+	ch = card_emu_init(0, 42, PHONE_DATAIN, PHONE_INT, false, true, false);
 	assert(ch);
 
 	usb_buf_init();

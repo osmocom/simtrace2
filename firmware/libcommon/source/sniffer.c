@@ -658,9 +658,10 @@ static void process_byte_pps(uint8_t byte)
 					fn = 1;
 					dn = 1;
 				}
-				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r", fi_table[fn], di_table[dn]);
+				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r",
+					   iso7816_3_fi_table[fn], iso7816_3_di_table[dn]);
 				update_fidi(&sniff_usart, pps_cur[2]);
-				update_wt(0, di_table[dn]);
+				update_wt(0, iso7816_3_di_table[dn]);
 				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");

@@ -377,7 +377,7 @@ static void emu_update_fidi(struct card_handle *ch)
 {
 	int rc;
 
-	rc = compute_fidi_ratio(ch->F_index, ch->D_index);
+	rc = iso7816_3_compute_fd_ratio(ch->F_index, ch->D_index);
 	if (rc > 0 && rc < 0x400) {
 		TRACE_INFO("%u: computed F(%u)/D(%u) ratio: %d\r\n", ch->num,
 			   ch->F_index, ch->D_index, rc);
@@ -508,7 +508,7 @@ static int tx_byte_atr(struct card_handle *ch)
 			}
 		}
 		/* update waiting time (see ISO 7816-3 10.2) */
-		ch->waiting_time = ch->wi * 960 * fi_table[ch->F_index];
+		ch->waiting_time = ch->wi * 960 * iso7816_3_fi_table[ch->F_index];
 		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
@@ -647,7 +647,7 @@ static int tx_byte_pts(struct card_handle *ch)
 		ch->F_index = byte >> 4;
 		ch->D_index = byte & 0xf;
 		TRACE_DEBUG("%u: found F=%u D=%u\r\n", ch->num,
-			    fi_table[ch->F_index], di_table[ch->D_index]);
+			    iso7816_3_fi_table[ch->F_index], iso7816_3_di_table[ch->D_index]);
 		/* FIXME: if F or D are 0, become unresponsive to signal error condition */
 		break;
 	case PTS_S_WAIT_RESP_PTS2:

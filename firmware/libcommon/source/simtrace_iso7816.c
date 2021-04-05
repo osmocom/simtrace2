@@ -125,7 +125,7 @@ void update_fidi(Usart_info *usart, uint8_t fidi)
 
 	uint8_t fi = fidi >> 4;
 	uint8_t di = fidi & 0xf;
-	int ratio = compute_fidi_ratio(fi, di);
+	int ratio = iso7816_3_compute_fd_ratio(fi, di);
 
 	if (ratio > 0 && ratio < 0x8000) {
 		/* make sure USART uses new F/D ratio */

@@ -55,6 +55,14 @@ struct cardem_inst {
 	struct llist_head usb_out_queue;
 	struct ringbuf rb;
 	struct Usart_info usart_info;
+	struct {
+		/*! receiver waiting time to trigger timeout (0 to deactivate it) */
+		uint32_t total;
+		/*! remaining waiting time (we may need multiple timer runs to reach total */
+		uint32_t remaining;
+		/*! did we already notify about half the time having expired? */
+		bool half_time_notified;
+	} wt;
 	int usb_pending_old;
 	uint8_t ep_out;
 	uint8_t ep_in;
@@ -141,12 +149,23 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 	Usart *usart = get_usart_by_chan(uart_chan);
 	switch (rxtx) {
 	case ENABLE_TX:
-		USART_DisableIt(usart, ~US_IER_TXRDY);
+		USART_DisableIt(usart, ~(US_IER_TXRDY | US_IER_TIMEOUT));
 		/* as irritating as it is, we actually want to keep the
 		 * receiver enabled during transmit */
 		USART_SetReceiverEnabled(usart, 1);
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
-		USART_EnableIt(usart, US_IER_TXRDY);
+		USART_EnableIt(usart, US_IER_TXRDY | US_IER_TIMEOUT);
+		USART_SetTransmitterEnabled(usart, 1);
+		break;
+	case ENABLE_TX_TIMER_ONLY:
+		/* enable the transmitter without generating TXRDY interrupts
+		 * just so that the timer can run */
+		USART_DisableIt(usart, ~US_IER_TIMEOUT);
+		/* as irritating as it is, we actually want to keep the
+		 * receiver enabled during transmit */
+		USART_SetReceiverEnabled(usart, 1);
+		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
+		USART_EnableIt(usart, US_IER_TIMEOUT);
 		USART_SetTransmitterEnabled(usart, 1);
 		break;
 	case ENABLE_RX:
@@ -227,10 +246,39 @@ static void usart_irq_rx(uint8_t inst_num)
 	}
 
 	/* check if any error flags are set */
-	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|US_CSR_TIMEOUT|US_CSR_NACK|(1<<10))) {
+	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE|US_CSR_NACK|(1<<10))) {
 		/* clear any error flags */
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		TRACE_ERROR("%u USART error on 0x%x status: 0x%lx\n", ci->num, byte, csr);
+	}
+
+	/* check if the timeout has expired. We "abuse" the receive timer for tracking
+	 * how many etu have expired since we last sent a byte.  See section
+	 * 33.7.3.11 "Receiver Time-out" of the SAM3S8 Data Sheet */
+	if (csr & US_CSR_TIMEOUT) {
+		/* RX has been inactive for some time */
+		if (ci->wt.remaining <= (usart->US_RTOR & 0xffff)) {
+			/* waiting time is over; will stop the timer */
+			ci->wt.remaining = 0;
+		} else {
+			/* subtract the actual timeout since the new might not have been set and
+			 * reloaded yet */
+			ci->wt.remaining -= (usart->US_RTOR & 0xffff);
+		}
+		if (ci->wt.remaining == 0) {
+			/* let the FSM know that WT has expired */
+			card_emu_wtime_expired(ci->ch);
+		} else if (ci->wt.remaining <= ci->wt.total / 2 && !ci->wt.half_time_notified) {
+			/* let the FS know that half of the WT has expired */
+			card_emu_wtime_half_expired(ci->ch);
+			ci->wt.half_time_notified = true;
+		}
+		/* if value exceeds the USART TO range, use the maximum for now */
+		usart->US_RTOR = OSMO_MIN(ci->wt.remaining, 0xffff);
+		/* clear timeout flag (and stop timeout until next character is received) */
+		usart->US_CR |= US_CR_STTTO;
+		/* restart the counter (it wt is 0, the timeout is not started) */
+		usart->US_CR |= US_CR_RETTO;
 	}
 }
 
@@ -258,6 +306,38 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	usart->US_FIDI = fidi & 0x3ff;
 	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
 	return 0;
+}
+
+/*! Update WT on USART peripheral.  Will automatically re-start timer with new value.
+ *  \param[in] usart USART peripheral to configure
+ *  \param[in] wt inactivity Waiting Time before card_emu_wtime_expired is called (0 to disable) */
+void card_emu_uart_update_wt(uint8_t uart_chan, uint32_t wt)
+{
+	OSMO_ASSERT(uart_chan < ARRAY_SIZE(cardem_inst));
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+	Usart *usart = get_usart_by_chan(uart_chan);
+
+	ci->wt.total = wt;
+	/* reset and start the timer */
+	card_emu_uart_reset_wt(uart_chan);
+	TRACE_INFO("%u: USART WT set to %lu ETU\r\n", uart_chan, wt);
+}
+
+/*! Reset and re-start waiting timeout count down on USART peripheral.
+ *  \param[in] usart USART peripheral to configure */
+void card_emu_uart_reset_wt(uint8_t uart_chan)
+{
+	OSMO_ASSERT(uart_chan < ARRAY_SIZE(cardem_inst));
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+	Usart *usart = get_usart_by_chan(uart_chan);
+
+	/* FIXME: guard against race with interrupt handler */
+	ci->wt.remaining = ci->wt.total;
+	ci->wt.half_time_notified = false;
+	/* if value exceeds the USART TO range, use the maximum for now */
+	usart->US_RTOR = OSMO_MIN(ci->wt.remaining, 0xffff);
+	/* restart the counter (if wt is 0, the timeout is not started) */
+	usart->US_CR |= US_CR_RETTO;
 }
 
 /* call-back from card_emu.c to force a USART interrupt */

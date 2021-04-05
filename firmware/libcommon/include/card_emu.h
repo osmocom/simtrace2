@@ -58,10 +58,17 @@ struct llist_head *card_emu_get_uart_tx_queue(struct card_handle *ch);
 void card_emu_have_new_uart_tx(struct card_handle *ch);
 void card_emu_report_status(struct card_handle *ch, bool report_on_irq);
 
-#define ENABLE_TX	0x01
-#define ENABLE_RX	0x02
+void card_emu_wtime_half_expired(void *ch);
+void card_emu_wtime_expired(void *ch);
+
+
+#define ENABLE_TX		0x01
+#define ENABLE_RX		0x02
+#define ENABLE_TX_TIMER_ONLY	0x03
 
 int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi);
+void card_emu_uart_update_wt(uint8_t uart_chan, uint32_t wt);
+void card_emu_uart_reset_wt(uint8_t uart_chan);
 int card_emu_uart_tx(uint8_t uart_chan, uint8_t byte);
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx);
 void card_emu_uart_wait_tx_idle(uint8_t uart_chan);

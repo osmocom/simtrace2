@@ -165,7 +165,7 @@ struct card_handle {
 	uint8_t in_ep;		/* USB IN EP */
 	uint8_t irq_ep;		/* USB IN EP */
 
-	uint32_t waiting_time;	/* in clocks */
+	uint32_t waiting_time;	/* in etu */
 
 	/* ATR state machine */
 	struct {

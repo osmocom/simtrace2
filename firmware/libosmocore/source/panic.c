@@ -46,7 +46,7 @@ static osmo_panic_handler_t osmo_panic_handler = (void*)0;
 __attribute__ ((format (printf, 1, 0)))
 static void osmo_panic_default(const char *fmt, va_list args)
 {
-	vfprintf(stderr, fmt, args);
+	vfprintf_sync(stderr, fmt, args);
 	osmo_generate_backtrace();
 	assert(0);
 }

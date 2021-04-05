@@ -47,11 +47,13 @@
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
 #include <osmocom/core/msgb.h>
+#include <osmocom/core/select.h>
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
 #define ATR_MAX_LEN 33
 
+#define LOGCI(ci, lvl, fmt, args ...) printf(fmt, ## args)
 
 /* reasonable ATR offering all protocols and voltages
  * smartphones might not care, but other readers do
@@ -180,6 +182,9 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 	case SIMTRACE_MSGT_DO_CEMU_RX_DATA:
 		rc = process_do_rx_da(ci, buf, len);
 		break;
+	case SIMTRACE_MSGT_BD_CEMU_CONFIG:
+		/* firmware confirms configuration change; ignore */
+		break;
 	default:
 		printf("unknown simtrace msg type 0x%02x\n", sh->msg_type);
 		rc = -1;
@@ -188,6 +193,144 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 
 	return rc;
 }
+
+/*! \brief Process a STATUS message on IRQ endpoint from the SIMtrace2 */
+static int process_irq_status(struct osmo_st2_cardem_inst *ci, const uint8_t *buf, int len)
+{
+	const struct cardemu_usb_msg_status *status = (struct cardemu_usb_msg_status *) buf;
+
+	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u\n",
+		status->flags, status->fi, status->di, status->wi,
+		status->waiting_time);
+
+	return 0;
+}
+
+static int process_usb_msg_irq(struct osmo_st2_cardem_inst *ci, const uint8_t *buf, unsigned int len)
+{
+	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *)buf;
+	int rc;
+
+	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ %s\n", osmo_hexdump(buf, len));
+
+	buf += sizeof(*sh);
+
+	switch (sh->msg_type) {
+	case SIMTRACE_MSGT_BD_CEMU_STATUS:
+		rc = process_irq_status(ci, buf, len);
+		break;
+	default:
+		LOGCI(ci, LOGL_ERROR, "unknown simtrace msg type 0x%02x\n", sh->msg_type);
+		rc = -1;
+		break;
+	}
+
+	return rc;
+}
+
+static void usb_in_xfer_cb(struct libusb_transfer *xfer)
+{
+	struct osmo_st2_cardem_inst *ci = xfer->user_data;
+	int rc;
+
+	switch (xfer->status) {
+	case LIBUSB_TRANSFER_COMPLETED:
+		/* hand the message up the stack */
+		process_usb_msg(ci, xfer->buffer, xfer->actual_length);
+		break;
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		LOGCI(ci, LOGL_FATAL, "USB device disappeared\n");
+		exit(1);
+		break;
+	default:
+		LOGCI(ci, LOGL_FATAL, "USB IN transfer failed, status=%u\n", xfer->status);
+		exit(1);
+		break;
+	}
+
+	/* re-submit the IN transfer */
+	rc = libusb_submit_transfer(xfer);
+	OSMO_ASSERT(rc == 0);
+}
+
+
+static void allocate_and_submit_in(struct osmo_st2_cardem_inst *ci)
+{
+	struct osmo_st2_transport *transp = ci->slot->transp;
+	struct libusb_transfer *xfer;
+	int rc;
+
+	xfer = libusb_alloc_transfer(0);
+	OSMO_ASSERT(xfer);
+	xfer->dev_handle = transp->usb_devh;
+	xfer->flags = 0;
+	xfer->type = LIBUSB_TRANSFER_TYPE_BULK;
+	xfer->endpoint = transp->usb_ep.in;
+	xfer->timeout = 0;
+	xfer->user_data = ci;
+	xfer->length = 16*256;
+
+	xfer->buffer = libusb_dev_mem_alloc(xfer->dev_handle, xfer->length);
+	OSMO_ASSERT(xfer->buffer);
+	xfer->callback = usb_in_xfer_cb;
+
+	/* submit the IN transfer */
+	rc = libusb_submit_transfer(xfer);
+	OSMO_ASSERT(rc == 0);
+}
+
+
+static void usb_irq_xfer_cb(struct libusb_transfer *xfer)
+{
+	struct osmo_st2_cardem_inst *ci = xfer->user_data;
+	int rc;
+
+	switch (xfer->status) {
+	case LIBUSB_TRANSFER_COMPLETED:
+		process_usb_msg_irq(ci, xfer->buffer, xfer->actual_length);
+		break;
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		LOGCI(ci, LOGL_FATAL, "USB device disappeared\n");
+		exit(1);
+		break;
+	default:
+		LOGCI(ci, LOGL_FATAL, "USB IN transfer failed, status=%u\n", xfer->status);
+		exit(1);
+		break;
+	}
+
+	/* re-submit the IN transfer */
+	rc = libusb_submit_transfer(xfer);
+	OSMO_ASSERT(rc == 0);
+}
+
+
+static void allocate_and_submit_irq(struct osmo_st2_cardem_inst *ci)
+{
+	struct osmo_st2_transport *transp = ci->slot->transp;
+	struct libusb_transfer *xfer;
+	int rc;
+
+	xfer = libusb_alloc_transfer(0);
+	OSMO_ASSERT(xfer);
+	xfer->dev_handle = transp->usb_devh;
+	xfer->flags = 0;
+	xfer->type = LIBUSB_TRANSFER_TYPE_INTERRUPT;
+	xfer->endpoint = transp->usb_ep.irq_in;
+	xfer->timeout = 0;
+	xfer->user_data = ci;
+	xfer->length = 64;
+
+	xfer->buffer = libusb_dev_mem_alloc(xfer->dev_handle, xfer->length);
+	OSMO_ASSERT(xfer->buffer);
+	xfer->callback = usb_irq_xfer_cb;
+
+	/* submit the IN transfer */
+	rc = libusb_submit_transfer(xfer);
+	OSMO_ASSERT(rc == 0);
+}
+
+
 
 static void print_welcome(void)
 {
@@ -234,31 +377,9 @@ static const struct option opts[] = {
 
 static void run_mainloop(struct osmo_st2_cardem_inst *ci)
 {
-	struct osmo_st2_transport *transp = ci->slot->transp;
-	unsigned int msg_count, byte_count = 0;
-	uint8_t buf[16*265];
-	int xfer_len;
-	int rc;
-
 	printf("Entering main loop\n");
-
 	while (1) {
-		/* read data from SIMtrace2 device (local or via USB) */
-		rc = libusb_bulk_transfer(transp->usb_devh, transp->usb_ep.in,
-					  buf, sizeof(buf), &xfer_len, 100);
-		if (rc < 0 && rc != LIBUSB_ERROR_TIMEOUT &&
-			      rc != LIBUSB_ERROR_INTERRUPTED &&
-			      rc != LIBUSB_ERROR_IO) {
-			fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
-			return;
-		}
-		/* dispatch any incoming data */
-		if (xfer_len > 0) {
-			printf("URB: %s\n", osmo_hexdump(buf, xfer_len));
-			process_usb_msg(ci, buf, xfer_len);
-			msg_count++;
-			byte_count += xfer_len;
-		}
+		osmo_select_main(0);
 	}
 }
 
@@ -306,6 +427,12 @@ int main(int argc, char **argv)
 	struct osim_card_hdl *card;
 
 	print_welcome();
+
+	rc = osmo_libusb_init(NULL);
+	if (rc < 0) {
+		fprintf(stderr, "libusb initialization failed\n");
+		return rc;
+	}
 
 	while (1) {
 		int option_index = 0;
@@ -413,6 +540,8 @@ int main(int argc, char **argv)
 		ifm->addr = addr;
 		if (path)
 			osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
+		transp->udp_fd = -1;
+		transp->usb_async = true;
 		transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
 		if (!transp->usb_devh) {
 			fprintf(stderr, "can't open USB device\n");
@@ -431,6 +560,13 @@ int main(int argc, char **argv)
 			fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
 			goto close_exit;
 		}
+
+		allocate_and_submit_irq(ci);
+		for (int i = 0; i < 4; i++)
+			allocate_and_submit_in(ci);
+
+		/* request firmware to generate STATUS on IRQ endpoint */
+		osmo_st2_cardem_request_config(ci, CEMU_FEAT_F_STATUS_IRQ);
 
 		/* simulate card-insert to modem (owhw, not qmod) */
 		osmo_st2_cardem_request_card_insert(ci, true);

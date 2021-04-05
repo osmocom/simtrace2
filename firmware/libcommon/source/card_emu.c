@@ -505,8 +505,11 @@ static int tx_byte_atr(struct card_handle *ch)
 				}
 			}
 		}
-		/* update waiting time (see ISO 7816-3 10.2) */
-		ch->waiting_time = ch->wi * 960 * iso7816_3_fi_table[ch->F_index];
+		/* update waiting time (see ISO 7816-3 10.2). We can drop the Fi
+		 * multiplier as we store the waiting time in units of 'etu', and
+		 * don't really care what the number of clock cycles or the absolute
+		 * wall clock time is */
+		ch->waiting_time = ch->wi * 960;
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		return 0;

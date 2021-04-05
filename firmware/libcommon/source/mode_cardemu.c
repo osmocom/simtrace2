@@ -225,7 +225,6 @@ static uint16_t compute_next_timeout(struct cardem_inst *ci)
 		want_to_expire = ci->wt.remaining - (ci->wt.total / 2);
 	} else
 		want_to_expire = ci->wt.remaining;
-	TRACE_INFO("want_to_expire=%u (total=%u, remaining=%u)\r\n", want_to_expire, ci->wt.total, ci->wt.remaining);
 	/* if value exceeds the USART TO range, use the maximum possible value for one round */
 	return OSMO_MIN(want_to_expire, 0xffff);
 }

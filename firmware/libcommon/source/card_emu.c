@@ -1102,7 +1102,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 	case CARD_IO_RST:
 		if (active == 0 && ch->in_reset) {
 			TRACE_INFO("%u: RST released\r\n", ch->num);
-			if (ch->vcc_active && ch->clocked) {
+			if (ch->vcc_active && ch->clocked && ch->state == ISO_S_WAIT_RST) {
 				/* enable the TC/ETU counter once reset has been released */
 				tc_etu_enable(ch->tc_chan);
 				/* prepare to send the ATR */
@@ -1113,6 +1113,7 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			TRACE_INFO("%u: RST asserted\r\n", ch->num);
 			card_handle_reset(ch);
 			chg_mask |= CEMU_STATUS_F_RESET_ACTIVE;
+			card_set_state(ch, ISO_S_WAIT_RST);
 		}
 		ch->in_reset = active;
 		break;

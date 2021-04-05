@@ -13,6 +13,20 @@
 #define PHONE_INT	2
 #define PHONE_DATAOUT	3
 
+/* stub for stdio */
+signed int printf_sync(const char *pFormat, ...)
+{
+	va_list ap;
+	signed int result;
+
+	va_start(ap, pFormat);
+	result = vprintf(pFormat, ap);
+	va_end(ap);
+
+	return result;
+}
+
+
 /***********************************************************************
  * stub functions required by card_emu.c
  ***********************************************************************/

@@ -1264,6 +1264,9 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 	ch->atr.len = sizeof(default_atr);
 	memcpy(ch->atr.atr, default_atr, ch->atr.len);
 
+	ch->pts.state = PTS_S_WAIT_REQ_PTSS;
+	ch->tpdu.state = TPDU_S_WAIT_CLA;
+
 	card_handle_reset(ch);
 
 	tc_etu_init(ch->tc_chan, ch);

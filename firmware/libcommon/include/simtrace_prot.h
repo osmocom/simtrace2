@@ -230,11 +230,17 @@ struct cardemu_usb_msg_status {
 	uint32_t flags;
 	/* phone-applied target voltage in mV */
 	uint16_t voltage_mv;
-	/* Fi/Di related information */
-	uint8_t fi;
-	uint8_t di;
-	uint8_t wi;
-	uint32_t waiting_time;
+	/* F/D related information. Not actual Fn/Dn values but indexes into tables! */
+	union {
+		uint8_t F_index;	/* <! Index to ISO7816-3 Table 7 (F and f_max values) */
+		uint8_t fi;		/* <! old, wrong name for API compatibility */
+	};
+	union {
+		uint8_t D_index;	/* <! Index to ISO7816-3 Table 8 (D value) */
+		uint8_t di;		/* <! old, wrong name for API compatibility */
+	};
+	uint8_t wi;		/* <! Waiting Integer as defined in ISO7816-3 Section 10.2 */
+	uint32_t waiting_time;	/* <! Waiting Time in etu as defined in ISO7816-3 Section 8.1 */
 } __attribute__ ((packed));
 
 /* CEMU_USB_MSGT_DO_PTS */

@@ -155,8 +155,8 @@ struct card_handle {
 	bool clocked;	/*< if clock is active ( true = active, false = inactive) */
 
 	/* timing parameters, from PTS */
-	uint8_t fi;
-	uint8_t di;
+	uint8_t Fi;
+	uint8_t Di;
 	uint8_t wi;
 
 	uint8_t tc_chan;	/* TC channel number */
@@ -361,10 +361,10 @@ static void emu_update_fidi(struct card_handle *ch)
 {
 	int rc;
 
-	rc = compute_fidi_ratio(ch->fi, ch->di);
+	rc = compute_fidi_ratio(ch->Fi, ch->Di);
 	if (rc > 0 && rc < 0x400) {
 		TRACE_INFO("%u: computed Fi(%u) Di(%u) ratio: %d\r\n",
-			    ch->num, ch->fi, ch->di, rc);
+			    ch->num, ch->Fi, ch->Di, rc);
 		/* make sure UART uses new F/D ratio */
 		card_emu_uart_update_fidi(ch->uart_chan, rc);
 		/* notify ETU timer about this */
@@ -395,8 +395,8 @@ static void card_set_state(struct card_handle *ch,
 		break;
 	case ISO_S_WAIT_ATR:
 		/* Reset to initial Fi / Di ratio */
-		ch->fi = 1;
-		ch->di = 1;
+		ch->Fi = 1;
+		ch->Di = 1;
 		emu_update_fidi(ch);
 		/* the ATR should only be sent 400 to 40k clock cycles after the RESET.
 		 * we use the tc_etu mechanism to wait this time.
@@ -490,7 +490,7 @@ static int tx_byte_atr(struct card_handle *ch)
 			}
 		}
 		/* update waiting time (see ISO 7816-3 10.2) */
-		ch->waiting_time = ch->wi * 960 * ch->fi;
+		ch->waiting_time = ch->wi * 960 * ch->Fi;
 		tc_etu_set_wtime(ch->tc_chan, ch->waiting_time);
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
@@ -626,10 +626,9 @@ static int tx_byte_pts(struct card_handle *ch)
 	case PTS_S_WAIT_RESP_PTS1:
 		byte = ch->pts.resp[_PTS1];
 		/* This must be TA1 */
-		ch->fi = byte >> 4;
-		ch->di = byte & 0xf;
-		TRACE_DEBUG("%u: found Fi=%u Di=%u\r\n", ch->num,
-			    ch->fi, ch->di);
+		ch->Fi = byte >> 4;
+		ch->Di = byte & 0xf;
+		TRACE_DEBUG("%u: found Fi=%u Di=%u\r\n", ch->num, ch->Fi, ch->Di);
 		break;
 	case PTS_S_WAIT_RESP_PTS2:
 		byte = ch->pts.resp[_PTS2];
@@ -1025,8 +1024,8 @@ void card_emu_report_status(struct card_handle *ch, bool report_on_irq)
 	if (ch->in_reset)
 		sts->flags |= CEMU_STATUS_F_RESET_ACTIVE;
 	/* FIXME: voltage + card insert */
-	sts->fi = ch->fi;
-	sts->di = ch->di;
+	sts->fi = ch->Fi;
+	sts->di = ch->Di;
 	sts->wi = ch->wi;
 	sts->waiting_time = ch->waiting_time;
 
@@ -1232,8 +1231,8 @@ struct card_handle *card_emu_init(uint8_t slot_num, uint8_t tc_chan, uint8_t uar
 	ch->in_reset = in_reset;
 	ch->clocked = clocked;
 
-	ch->fi = 0;
-	ch->di = 1;
+	ch->Fi = 0;
+	ch->Di = 1;
 	ch->wi = ISO7816_3_DEFAULT_WI;
 
 	ch->tc_chan = tc_chan;

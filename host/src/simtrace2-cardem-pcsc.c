@@ -545,20 +545,20 @@ int main(int argc, char **argv)
 		transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
 		if (!transp->usb_devh) {
 			fprintf(stderr, "can't open USB device\n");
-			goto close_exit;
+			goto close;
 		}
 
 		rc = libusb_claim_interface(transp->usb_devh, if_num);
 		if (rc < 0) {
 			fprintf(stderr, "can't claim interface %d; rc=%d\n", if_num, rc);
-			goto close_exit;
+			goto close;
 		}
 
 		rc = osmo_libusb_get_ep_addrs(transp->usb_devh, if_num, &transp->usb_ep.out,
 				      &transp->usb_ep.in, &transp->usb_ep.irq_in);
 		if (rc < 0) {
 			fprintf(stderr, "can't obtain EP addrs; rc=%d\n", rc);
-			goto close_exit;
+			goto close;
 		}
 
 		allocate_and_submit_irq(ci);
@@ -587,12 +587,19 @@ int main(int argc, char **argv)
 		ret = 0;
 
 		libusb_release_interface(transp->usb_devh, 0);
-close_exit:
-		if (transp->usb_devh)
+
+close:
+		if (transp->usb_devh) {
 			libusb_close(transp->usb_devh);
+			transp->usb_devh = NULL;
+		}
 		if (keep_running)
 			sleep(1);
 	} while (keep_running);
+
+close_exit:
+	if (transp->usb_devh)
+		libusb_close(transp->usb_devh);
 
 	libusb_exit(NULL);
 do_exit:

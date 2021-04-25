@@ -1,7 +1,7 @@
 /* simtrace2-cardem-pcsc - main program for the host PC to provide a remote SIM
  * using the SIMtrace 2 firmware in card emulation mode
  *
- * (C) 2016-2020 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2021 by Harald Welte <hwelte@hmw-consulting.de>
  * (C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or
@@ -51,28 +51,7 @@
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
-#define ATR_MAX_LEN 33
-
 #define LOGCI(ci, lvl, fmt, args ...) printf(fmt, ## args)
-
-/* reasonable ATR offering all protocols and voltages
- * smartphones might not care, but other readers do
- *
- * TS =		0x3B	Direct Convention
- * T0 =		0x80	Y(1): b1000, K: 0 (historical bytes)
- * TD(1) =	0x80	Y(i+1) = b1000, Protocol T=0
- * ----
- * TD(2) =	0x81	Y(i+1) = b1000, Protocol T=1
- * ----
- * TD(3) =	0x1F	Y(i+1) = b0001, Protocol T=15
- * ----
- * TA(4) =	0xC7	Clock stop: no preference - Class accepted by the card: (3G) A 5V B 3V C 1.8V
- * ----
- * Historical bytes
- * TCK =	0x59 	correct checksum
- */
-#define DEFAULT_ATR_STR "3B8080811FC759"
-
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 {
@@ -415,9 +394,9 @@ int main(int argc, char **argv)
 	int rc;
 	int c, ret = 1;
 	int skip_atr = 0;
-	char *atr = DEFAULT_ATR_STR;
-	uint8_t real_atr[ATR_MAX_LEN];
-	int atr_len;
+	char *atr = NULL;
+	uint8_t override_atr[OSIM_MAX_ATR_LEN];
+	int override_atr_len = 0;
 	int keep_running = 0;
 	int if_num = 0, vendor_id = -1, product_id = -1;
 	int config_id = -1, altsetting = 0, addr = -1;
@@ -484,11 +463,13 @@ int main(int argc, char **argv)
 		}
 	}
 
-	atr_len = osmo_hexparse(atr,real_atr,ATR_MAX_LEN);
-	if (atr_len < 2) {
-		fprintf(stderr, "Invalid ATR - please omit a leading 0x and only use valid hex "
-			"digits and whitespace. ATRs need to be between 2 and 33 bytes long.\n");
-		goto do_exit;
+	if (atr) {
+		override_atr_len = osmo_hexparse(atr, override_atr, sizeof(override_atr));
+		if (override_atr_len < 2) {
+			fprintf(stderr, "Invalid ATR - please omit a leading 0x and only use valid hex "
+				"digits and whitespace. ATRs need to be between 2 and 33 bytes long.\n");
+			goto do_exit;
+		}
 	}
 
 	if (vendor_id < 0 || product_id < 0) {
@@ -576,8 +557,14 @@ int main(int argc, char **argv)
 
 		if (!skip_atr) {
 			/* set the ATR */
-			atr_update_csum(real_atr, atr_len);
-			osmo_st2_cardem_request_set_atr(ci, real_atr, atr_len);
+			if (override_atr_len) {
+				/* user has specified an override-ATR */
+				atr_update_csum(override_atr, override_atr_len);
+				osmo_st2_cardem_request_set_atr(ci, override_atr, override_atr_len);
+			} else {
+				/* use the real ATR of the card */
+				osmo_st2_cardem_request_set_atr(ci, card->atr, card->atr_len);
+			}
 		}
 
 		/* select remote (forwarded) SIM */

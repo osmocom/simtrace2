@@ -74,6 +74,27 @@ static void cemu_flags2str(char *out, unsigned int out_len, uint32_t flags)
 		 flags & CEMU_STATUS_F_RCEMU_ACTIVE ? "RCEMU " : "");
 }
 
+static uint32_t last_flags = 0;
+
+static void update_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
+{
+	struct osim_card_hdl *card = ci->chan->card;
+
+	if ((flags & CEMU_STATUS_F_VCC_PRESENT) && (flags & CEMU_STATUS_F_CLK_ACTIVE) &&
+	    !(flags & CEMU_STATUS_F_RESET_ACTIVE)) {
+		if (last_flags & CEMU_STATUS_F_RESET_ACTIVE) {
+			/* a reset has just ended, forward it to the real card */
+			bool cold_reset = true;
+			if (last_flags & CEMU_STATUS_F_VCC_PRESENT)
+				cold_reset = false;
+			LOGCI(ci, LOGL_NOTICE, "%s Resetting card in reader...\n",
+				cold_reset ? "Cold" : "Warm");
+			osim_card_reset(card, cold_reset);
+		}
+	}
+	last_flags = flags;
+}
+
 /***********************************************************************
  * Incoming Messages
  ***********************************************************************/
@@ -88,6 +109,8 @@ static int process_do_status(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int 
 	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
+
+	update_flags(ci, status->flags);
 
 	return 0;
 }
@@ -194,6 +217,8 @@ static int process_irq_status(struct osmo_st2_cardem_inst *ci, const uint8_t *bu
 	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
+
+	update_flags(ci, status->flags);
 
 	return 0;
 }

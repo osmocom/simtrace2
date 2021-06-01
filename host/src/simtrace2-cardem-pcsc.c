@@ -64,6 +64,16 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 	atr[atr_len-1] = csum;
 }
 
+static void cemu_flags2str(char *out, unsigned int out_len, uint32_t flags)
+{
+	snprintf(out, out_len, "%s%s%s%s%s",
+		 flags & CEMU_STATUS_F_RESET_ACTIVE ? "RESET " : "",
+		 flags & CEMU_STATUS_F_VCC_PRESENT ? "VCC " : "",
+		 flags & CEMU_STATUS_F_CLK_ACTIVE ? "CLK " : "",
+		 flags & CEMU_STATUS_F_CARD_INSERT ? "CARD_PRES " : "",
+		 flags & CEMU_STATUS_F_RCEMU_ACTIVE ? "RCEMU " : "");
+}
+
 /***********************************************************************
  * Incoming Messages
  ***********************************************************************/
@@ -71,12 +81,13 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 /*! \brief Process a STATUS message from the SIMtrace2 */
 static int process_do_status(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
-	struct cardemu_usb_msg_status *status;
-	status = (struct cardemu_usb_msg_status *) buf;
+	struct cardemu_usb_msg_status *status = (struct cardemu_usb_msg_status *) buf;
+	char fbuf[80];
 
-	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u\n",
+	cemu_flags2str(fbuf, sizeof(fbuf), status->flags);
+	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
-		status->waiting_time);
+		status->waiting_time, fbuf);
 
 	return 0;
 }
@@ -177,10 +188,12 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 static int process_irq_status(struct osmo_st2_cardem_inst *ci, const uint8_t *buf, int len)
 {
 	const struct cardemu_usb_msg_status *status = (struct cardemu_usb_msg_status *) buf;
+	char fbuf[80];
 
-	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u\n",
+	cemu_flags2str(fbuf, sizeof(fbuf), status->flags);
+	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
-		status->waiting_time);
+		status->waiting_time, fbuf);
 
 	return 0;
 }

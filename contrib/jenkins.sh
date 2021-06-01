@@ -28,7 +28,7 @@ export PKG_CONFIG_PATH="$inst/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LD_LIBRARY_PATH="$inst/lib"
 
 BUILDS=""
-BUILDS+="simtrace/dfu simtrace/trace "
+BUILDS+="simtrace/dfu simtrace/trace simtrace/cardem "
 BUILDS+="qmod/dfu qmod/cardem "
 BUILDS+="owhw/dfu owhw/cardem "
 

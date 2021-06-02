@@ -44,8 +44,12 @@
 #include <osmocom/core/utils.h>
 #include <osmocom/core/socket.h>
 #include <osmocom/core/msgb.h>
+#include <osmocom/core/logging.h>
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
+
+#define LOGSLOT(slot, lvl, fmt, args...) \
+	LOGP(DLINP, lvl, "[%u] " fmt, (slot)->slot_nr, ## args)
 
 /***********************************************************************
  * SIMTRACE core protocol
@@ -141,7 +145,6 @@ int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
 	OSMO_ASSERT(transp);
 
 	st_push_hdr(msg, msg_class, msg_type, slot->slot_nr);
-	printf("SIMtrace <- %s\n", msgb_hexdump(msg));
 
 	if (transp->udp_fd < 0) {
 		if (transp->usb_async)
@@ -166,6 +169,8 @@ int osmo_st2_cardem_request_card_insert(struct osmo_st2_cardem_inst *ci, bool in
 	struct msgb *msg = st_msgb_alloc();
 	struct cardemu_usb_msg_cardinsert *cins;
 
+	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(inserted=%d)\n", __func__, inserted);
+
 	cins = (struct cardemu_usb_msg_cardinsert *) msgb_put(msg, sizeof(*cins));
 	memset(cins, 0, sizeof(*cins));
 	if (inserted)
@@ -181,7 +186,7 @@ int osmo_st2_cardem_request_pb_and_rx(struct osmo_st2_cardem_inst *ci, uint8_t p
 	struct cardemu_usb_msg_tx_data *txd;
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= %s(%02x, %d)\n", __func__, pb, le);
+	LOGSLOT(ci->slot, LOGL_DEBUG, "<= %s(pb=%02x, le=%u)\n", __func__, pb, le);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 1;
@@ -202,7 +207,7 @@ int osmo_st2_cardem_request_pb_and_tx(struct osmo_st2_cardem_inst *ci, uint8_t p
 
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= %s(%02x, %s, %d)\n", __func__, pb,
+	LOGSLOT(ci->slot, LOGL_DEBUG, "<= %s(pb=%02x, tx=%s, len=%d)\n", __func__, pb,
 		osmo_hexdump(data, data_len_in), data_len_in);
 
 	memset(txd, 0, sizeof(*txd));
@@ -226,7 +231,7 @@ int osmo_st2_cardem_request_sw_tx(struct osmo_st2_cardem_inst *ci, const uint8_t
 
 	txd = (struct cardemu_usb_msg_tx_data *) msgb_put(msg, sizeof(*txd));
 
-	printf("<= %s(%02x %02x)\n", __func__, sw[0], sw[1]);
+	LOGSLOT(ci->slot, LOGL_DEBUG, "<= %s(sw=%02x%02x)\n", __func__, sw[0], sw[1]);
 
 	memset(txd, 0, sizeof(*txd));
 	txd->data_len = 2;
@@ -246,7 +251,7 @@ int osmo_st2_cardem_request_set_atr(struct osmo_st2_cardem_inst *ci, const uint8
 
 	satr = (struct cardemu_usb_msg_set_atr *) msgb_put(msg, sizeof(*satr));
 
-	printf("<= %s(%s)\n", __func__, osmo_hexdump(atr, atr_len));
+	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(%s)\n", __func__, osmo_hexdump(atr, atr_len));
 
 	memset(satr, 0, sizeof(*satr));
 	satr->atr_len = atr_len;
@@ -263,7 +268,7 @@ int osmo_st2_cardem_request_config(struct osmo_st2_cardem_inst *ci, uint32_t fea
 
 	cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*cfg));
 
-	printf("<= %s(%08x)\n", __func__, features);
+	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(features=%08x)\n", __func__, features);
 
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->features = features;
@@ -279,6 +284,9 @@ static int _modem_reset(struct osmo_st2_slot *slot, uint8_t asserted, uint16_t p
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct st_modem_reset *sr ;
+
+	LOGSLOT(slot, LOGL_NOTICE, "<= %s(asserted=%u, pulse_ms=%u)\n", __func__,
+		asserted, pulse_ms);
 
 	sr = (struct st_modem_reset *) msgb_put(msg, sizeof(*sr));
 	sr->asserted = asserted;
@@ -309,6 +317,8 @@ static int _modem_sim_select(struct osmo_st2_slot *slot, uint8_t remote_sim)
 {
 	struct msgb *msg = st_msgb_alloc();
 	struct st_modem_sim_select *ss;
+
+	LOGSLOT(slot, LOGL_NOTICE, "<= %s(remote_sim=%u)\n", __func__, remote_sim);
 
 	ss = (struct st_modem_sim_select *) msgb_put(msg, sizeof(*ss));
 	ss->remote_sim = remote_sim;

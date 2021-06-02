@@ -48,6 +48,8 @@
 #include <osmocom/core/socket.h>
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/select.h>
+#include <osmocom/core/logging.h>
+#include <osmocom/core/application.h>
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
@@ -425,6 +427,8 @@ static void signal_handler(int signal)
 	}
 }
 
+static struct log_info log_info = {};
+
 int main(int argc, char **argv)
 {
 	struct osmo_st2_transport *transp = ci->slot->transp;
@@ -450,6 +454,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "libusb initialization failed\n");
 		return rc;
 	}
+
+	osmo_init_logging2(NULL, &log_info);
 
 	while (1) {
 		int option_index = 0;

@@ -149,9 +149,9 @@
 /* OpenMoko SIMtrace 2 USB vendor ID */
 #define BOARD_USB_VENDOR_ID	USB_VENDOR_OPENMOKO
 /* OpenMoko SIMtrace 2 USB product ID (main application/runtime mode) */
-#define BOARD_USB_PRODUCT_ID	USB_PRODUCT_SIMTRACE2
+#define BOARD_USB_PRODUCT_ID	USB_PRODUCT_OCTSIMTEST
 /* OpenMoko SIMtrace 2 DFU USB product ID (DFU bootloader/DFU mode) */
-#define BOARD_DFU_USB_PRODUCT_ID USB_PRODUCT_SIMTRACE2_DFU
+#define BOARD_DFU_USB_PRODUCT_ID USB_PRODUCT_OCTSIMTEST
 /* USB release number (bcdDevice, shown as 0.00) */
 #define BOARD_USB_RELEASE	0x000
 /* Indicate SIMtrace is bus power in USB attributes */

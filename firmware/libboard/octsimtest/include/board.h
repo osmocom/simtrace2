@@ -62,8 +62,10 @@
 #define PIN_PHONE_IO           {PIO_PA22A_TXD1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /* Phone CLK clock input (CLK_PHONE in schematic) */
 #define PIN_PHONE_CLK          {PIO_PA23A_SCK1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
+/* Pin used to switch level shifter in I/O line between rx (0) and tx (1) */
+#define PIN_USIM1_IO_DIR	{PIO_PA16, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_OUTPUT_0}
 /* Pin used for phone USIM slot 1 communication */
-#define PINS_USIM1              PIN_PHONE_IO, PIN_PHONE_CLK, PIN_PHONE_CLK_INPUT, PIN_USIM1_VCC, PIN_PHONE_IO_INPUT, PIN_USIM1_nRST
+#define PINS_USIM1              PIN_PHONE_IO, PIN_PHONE_CLK, PIN_PHONE_CLK_INPUT, PIN_USIM1_VCC, PIN_PHONE_IO_INPUT, PIN_USIM1_nRST, PIN_USIM1_IO_DIR
 /* Phone I/O data signal input/output (unused USART RX input; connected to I/O_PHONE in schematic) */
 #define PIN_PHONE_IO_INPUT     {PIO_PA21A_RXD1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /* Pin used as clock input (to measure the ETU duration; connected to CLK_PHONE in schematic) */

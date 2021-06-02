@@ -42,6 +42,10 @@ static const Pin pins_cardsim[] = PINS_CARDSIM;
 static const Pin pins_usim1[]	= {PINS_USIM1};
 static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
+#ifdef PIN_USIM1_IO_DIR
+static const Pin pin_io_dir 	= PIN_USIM1_IO_DIR;
+#endif
+
 
 #ifdef CARDEMU_SECOND_UART
 static const Pin pins_usim2[]	= {PINS_USIM2};
@@ -142,12 +146,27 @@ void card_emu_uart_wait_tx_idle(uint8_t uart_chan)
 	wait_tx_idle(usart);
 }
 
+static void card_emu_uart_set_direction(uint8_t uart_chan, bool tx)
+{
+	/* only on some boards (octsimtest) we hae an external level
+	 * shifter that requires us to switch the direction between RX and TX */
+#ifdef PIN_USIM1_IO_DIR
+	if (uart_chan == 0) {
+		if (tx)
+			PIO_Set(&pin_io_dir);
+		else
+			PIO_Clear(&pin_io_dir);
+	}
+#endif
+}
+
 /* call-back from card_emu.c to enable/disable transmit and/or receive */
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 {
 	Usart *usart = get_usart_by_chan(uart_chan);
 	switch (rxtx) {
 	case ENABLE_TX:
+		card_emu_uart_set_direction(uart_chan, true);
 		USART_DisableIt(usart, ~(US_IER_TXRDY | US_IER_TIMEOUT));
 		/* as irritating as it is, we actually want to keep the
 		 * receiver enabled during transmit */
@@ -173,6 +192,7 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 		 * transmitter enabled during receive */
 		USART_SetTransmitterEnabled(usart, 1);
 		wait_tx_idle(usart);
+		card_emu_uart_set_direction(uart_chan, false);;
 		usart->US_CR = US_CR_RSTSTA | US_CR_RSTIT | US_CR_RSTNACK;
 		USART_EnableIt(usart, US_IER_RXRDY);
 		USART_SetReceiverEnabled(usart, 1);

@@ -408,6 +408,9 @@ void card_emu_uart_interrupt(uint8_t uart_chan)
  ***********************************************************************/
 
 #ifdef DETECT_VCC_BY_ADC
+#if !defined(VCC_UV_THRESH_1V8) || !defined(VCC_UV_THRESH_3V)
+#error "You must define VCC_UV_THRESH_{1V1,3V} if you use ADC VCC detection"
+#endif
 
 static volatile int adc_triggered = 0;
 static int adc_sam3s_reva_errata = 0;
@@ -455,9 +458,6 @@ static int card_vcc_adc_init(void)
 
 	return 0;
 }
-
-#define VCC_UV_THRESH_1V8	1500000
-#define VCC_UV_THRESH_3V	2500000
 
 static void process_vcc_adc(struct cardem_inst *ci)
 {

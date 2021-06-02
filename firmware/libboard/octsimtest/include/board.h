@@ -105,6 +105,9 @@
 #define BOARD_USB_BMATTRIBUTES	USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
 
 #define DETECT_VCC_BY_ADC
+/* we have a resistive voltage divider of 47 + 30 kOhms to also detect 5V supply power */
+#define VCC_UV_THRESH_1V8	(1500000*47)/(47+30)
+#define VCC_UV_THRESH_3V	(2500000*47)/(47+30)
 
 /** Supported modes */
 /* SIMtrace board supports sniffer mode */

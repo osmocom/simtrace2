@@ -25,6 +25,7 @@
 #include "usb_buf.h"
 #include "i2c.h"
 #include "mcp23017.h"
+#include "mux.h"
 
 void board_exec_dbg_cmd(int ch)
 {
@@ -34,7 +35,16 @@ void board_exec_dbg_cmd(int ch)
 		printf("\tR\treset SAM3\n\r");
 		printf("\tm\trun mcp23017 test\n\r");
 		printf("\tR\ttoggle MSB of gpio on mcp23017\n\r");
+		printf("\t0-8\tselect physical SIM slot\n\r");
 		break;
+	case '0': mux_set_slot(0); break;
+	case '1': mux_set_slot(1); break;
+	case '2': mux_set_slot(2); break;
+	case '3': mux_set_slot(3); break;
+	case '4': mux_set_slot(4); break;
+	case '5': mux_set_slot(5); break;
+	case '6': mux_set_slot(6); break;
+	case '7': mux_set_slot(7); break;
 	case 'R':
 		printf("Asking NVIC to reset us\n\r");
 		USBD_Disconnect();
@@ -57,6 +67,7 @@ void board_main_top(void)
 #ifndef APPLICATION_dfu
 	usb_buf_init();
 
+	mux_init();
 	i2c_pin_init();
 	if (!mcp23017_init(MCP23017_ADDRESS))
 		printf("mcp23017 not found!\n\r");

@@ -57,7 +57,7 @@
 /* Phone USIM slot 1 VCC pin (VCC_PHONE in schematic) */
 #define PIN_USIM1_VCC          {PIO_PA25, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
 /* Phone USIM slot 1 RST pin (active low; RST_PHONE in schematic) */
-#define PIN_USIM1_nRST         {PIO_PA24, PIOA, ID_PIOA, PIO_INPUT, PIO_IT_RISE_EDGE | PIO_DEGLITCH }
+#define PIN_USIM1_nRST         {PIO_PA24, PIOA, ID_PIOA, PIO_INPUT, PIO_IT_EDGE | PIO_DEGLITCH }
 /* Phone I/O data signal input/output (I/O_PHONE in schematic) */
 #define PIN_PHONE_IO           {PIO_PA22A_TXD1, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT}
 /* Phone CLK clock input (CLK_PHONE in schematic) */
@@ -102,13 +102,15 @@
 /* Indicate SIMtrace is bus power in USB attributes */
 #define BOARD_USB_BMATTRIBUTES	USBConfigurationDescriptor_BUSPOWERED_NORWAKEUP
 
+#define DETECT_VCC_BY_ADC
+
 /** Supported modes */
 /* SIMtrace board supports sniffer mode */
 //#define HAVE_SNIFFER
 /* SIMtrace board supports CCID mode */
 //#define HAVE_CCID
 /* SIMtrace board supports card emulation mode */
-//#define HAVE_CARDEM
+#define HAVE_CARDEM
 /* SIMtrace board supports man-in-the-middle mode */
 //#define HAVE_MITM
 /* octsimtest board supports gpio_test mode */

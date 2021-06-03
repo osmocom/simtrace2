@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
  */
+#include <stdbool.h>
 #include "board.h"
 #include "simtrace.h"
 #include "utils.h"
@@ -26,6 +27,8 @@
 #include "i2c.h"
 #include "mcp23017.h"
 #include "mux.h"
+
+static bool mcp2317_present = false;
 
 void board_exec_dbg_cmd(int ch)
 {
@@ -69,8 +72,9 @@ void board_main_top(void)
 
 	mux_init();
 	i2c_pin_init();
-	if (!mcp23017_init(MCP23017_ADDRESS))
-		printf("mcp23017 not found!\n\r");
+	/* PORT A: all outputs, Port B0 output, B1..B7 unused */
+	if (mcp23017_init(MCP23017_ADDRESS, 0x00, 0xfe) == 0)
+		mcp2317_present = true;
 	/* Initialize checking for card insert/remove events */
 	//card_present_init();
 #endif

@@ -92,19 +92,25 @@ out_stop:
 		return 0;
 }
 
-int mcp23017_init(uint8_t slave)
+int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb)
 {
 	printf("mcp23017_init\n\r");
+
 	// all gpio input
-	if (mcp23017_write_byte(slave, MCP23017_IODIRA, 0xff))
-		return false;
+	if (mcp23017_write_byte(slave, MCP23017_IODIRA, iodira))
+		goto out_err;
 	// msb of portb output, rest input
-	if (mcp23017_write_byte(slave, MCP23017_IODIRB, 0x7f))
-		return false;
+	if (mcp23017_write_byte(slave, MCP23017_IODIRB, iodirb))
+		goto out_err;
 	if (mcp23017_write_byte(slave, MCP23017_IOCONA, 0x20)) //disable SEQOP (autoinc addressing)
-		return false;
+		goto out_err;
+
 	printf("mcp23017 found\n\r");
-	return true;
+	return 0;
+
+out_err:
+	printf("mcp23017 NOT found!\n\r");
+	return -1;
 }
 
 int mcp23017_test(uint8_t slave)

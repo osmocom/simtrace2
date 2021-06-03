@@ -20,6 +20,7 @@
 #include "board.h"
 #include "mux.h"
 #include <stdbool.h>
+#include <errno.h>
 
 /* 3-bit S0..S2 signal for slot selection */
 static const Pin pin_in_sel[3] = {
@@ -38,6 +39,8 @@ static const Pin pin_freq_sel[3] = {
 /* low-active output enable for all muxes */
 static const Pin pin_oe = { PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT };
 
+static uint8_t g_mux_slot = 0;
+
 /* initialize the external 1:8 multiplexers */
 void mux_init(void)
 {
@@ -49,9 +52,12 @@ void mux_init(void)
 }
 
 /* set the slot selection mux */
-void mux_set_slot(uint8_t s)
+int mux_set_slot(uint8_t s)
 {
 	printf("%s(%u)\r\n", __func__, s);
+
+	if (s > 7)
+		return -EINVAL;
 
 	/* !OE = H: disconnect input and output of muxes */
 	PIO_Set(&pin_oe);
@@ -71,6 +77,14 @@ void mux_set_slot(uint8_t s)
 
 	/* !OE = L: (re-)enable the output of muxes */
 	PIO_Clear(&pin_oe);
+
+	g_mux_slot = s;
+	return s;
+}
+
+int mux_get_slot(void)
+{
+	return g_mux_slot;
 }
 
 /* set the frequency divider mux */

@@ -269,6 +269,8 @@ struct cardemu_usb_msg_error {
 struct cardemu_usb_msg_config {
 	/* bit-mask of CEMU_FEAT_F flags */
 	uint32_t features;
+	/* the selected slot number (if an external mux is present) */
+	uint8_t slot_mux_nr;
 } __attribute__ ((packed));
 
 /***********************************************************************

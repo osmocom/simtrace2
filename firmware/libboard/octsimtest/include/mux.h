@@ -1,7 +1,8 @@
 #pragma once
 
 void mux_init(void);
-void mux_set_slot(uint8_t s);
+int mux_set_slot(uint8_t s);
+int mux_get_slot(void);
 void mux_set_freq(uint8_t s);
 
 /* this reflects the wiring between U5 and U4 */

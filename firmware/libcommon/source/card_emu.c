@@ -33,6 +33,9 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/core/msgb.h>
 
+#ifdef HAVE_SLOT_MUX
+#include "mux.h"
+#endif
 
 #define NUM_SLOTS		2
 
@@ -1079,6 +1082,12 @@ static void card_emu_report_config(struct card_handle *ch)
 
 	cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*cfg));
 	cfg->features = ch->features;
+#ifdef HAVE_SLOT_MUX
+	cfg->slot_mux_nr = mux_get_slot();
+#else
+	cfg->slot_mux_nr = 0;
+#endif
+
 
 	usb_buf_upd_len_and_submit(msg);
 }
@@ -1240,6 +1249,12 @@ int card_emu_set_config(struct card_handle *ch, const struct cardemu_usb_msg_con
 {
 	if (scfg_len >= sizeof(uint32_t))
 		ch->features = (scfg->features & SUPPORTED_FEATURES);
+
+#ifdef HAVE_SLOT_MUX
+	if (scfg_len >= sizeof(uint32_t)+sizeof(uint8_t)) {
+		mux_set_slot(scfg->slot_mux_nr);
+	}
+#endif
 
 	/* send back a report of our current configuration */
 	card_emu_report_config(ch);

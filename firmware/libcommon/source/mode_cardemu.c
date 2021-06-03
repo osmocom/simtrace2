@@ -652,6 +652,22 @@ static void dispatch_usb_command_generic(struct msgb *msg, struct cardem_inst *c
 	usb_buf_free(msg);
 }
 
+static void process_card_insert(struct cardem_inst *ci, bool card_insert)
+{
+	TRACE_INFO("%u: set card_insert to %s\r\n", ci->num, card_insert ? "INSERTED" : "REMOVED");
+
+	if (!ci->pin_insert.pio) {
+		TRACE_INFO("%u: skipping unsupported card_insert to %s\r\n",
+			   ci->num, card_insert ? "INSERTED" : "REMOVED");
+		return;
+	}
+
+	if (card_insert)
+		PIO_Set(&ci->pin_insert);
+	else
+		PIO_Clear(&ci->pin_insert);
+}
+
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci)
 {
@@ -675,18 +691,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 		break;
 	case SIMTRACE_MSGT_DT_CEMU_CARDINSERT:
 		cardins = (struct cardemu_usb_msg_cardinsert *) msg->l2h;
-		if (!ci->pin_insert.pio) {
-			TRACE_INFO("%u: skipping unsupported card_insert to %s\r\n",
-				   ci->num, cardins->card_insert ? "INSERTED" : "REMOVED");
-			usb_buf_free(msg);
-			break;
-		}
-		TRACE_INFO("%u: set card_insert to %s\r\n", ci->num,
-			   cardins->card_insert ? "INSERTED" : "REMOVED");
-		if (cardins->card_insert)
-			PIO_Set(&ci->pin_insert);
-		else
-			PIO_Clear(&ci->pin_insert);
+		process_card_insert(ci, cardins->card_insert);
 		usb_buf_free(msg);
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_STATUS:

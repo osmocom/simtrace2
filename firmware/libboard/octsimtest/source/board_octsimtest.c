@@ -103,8 +103,13 @@ void board_set_card_insert(struct cardem_inst *ci, bool card_insert)
 	 * the sim-present signal of the respective slot */
 
 	if (mcp2317_present) {
-		/* we must enable card-presence of the active slot and disable it on all others */
-		mcp23017_set_output_a(MCP23017_ADDRESS, (1 << s));
+		if (card_insert) {
+			/* we must enable card-presence of the active slot and disable it on all others */
+			mcp23017_set_output_a(MCP23017_ADDRESS, (1 << s));
+		} else {
+			/* we disable all card insert signals */
+			mcp23017_set_output_a(MCP23017_ADDRESS, 0);
+		}
 	} else {
 		TRACE_WARNING("No MCP23017 present; cannot set CARD_INSERT\r\n");
 	}

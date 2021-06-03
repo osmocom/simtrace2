@@ -94,7 +94,7 @@ out_stop:
 
 int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb)
 {
-	printf("mcp23017_init\n\r");
+	TRACE_DEBUG("mcp23017_init\n\r");
 
 	// all gpio input
 	if (mcp23017_write_byte(slave, MCP23017_IODIRA, iodira))
@@ -105,11 +105,11 @@ int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb)
 	if (mcp23017_write_byte(slave, MCP23017_IOCONA, 0x20)) //disable SEQOP (autoinc addressing)
 		goto out_err;
 
-	printf("mcp23017 found\n\r");
+	TRACE_DEBUG("mcp23017 found\n\r");
 	return 0;
 
 out_err:
-	printf("mcp23017 NOT found!\n\r");
+	TRACE_WARNING("mcp23017 NOT found!\n\r");
 	return -1;
 }
 

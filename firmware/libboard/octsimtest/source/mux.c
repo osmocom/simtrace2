@@ -54,7 +54,7 @@ void mux_init(void)
 /* set the slot selection mux */
 int mux_set_slot(uint8_t s)
 {
-	printf("%s(%u)\r\n", __func__, s);
+	TRACE_INFO("%s(%u)\r\n", __func__, s);
 
 	if (s > 7)
 		return -EINVAL;
@@ -90,7 +90,7 @@ int mux_get_slot(void)
 /* set the frequency divider mux */
 void mux_set_freq(uint8_t s)
 {
-	printf("%s(%u)\r\n", __func__, s);
+	TRACE_INFO("%s(%u)\r\n", __func__, s);
 
 	/* no need for 'break before make' here, this would also affect
 	 * the SIM card I/O signals which we don't want to disturb */

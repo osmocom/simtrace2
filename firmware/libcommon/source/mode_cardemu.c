@@ -656,6 +656,9 @@ static void process_card_insert(struct cardem_inst *ci, bool card_insert)
 {
 	TRACE_INFO("%u: set card_insert to %s\r\n", ci->num, card_insert ? "INSERTED" : "REMOVED");
 
+#ifdef HAVE_BOARD_CARDINSERT
+	board_set_card_insert(ci, card_insert);
+#else
 	if (!ci->pin_insert.pio) {
 		TRACE_INFO("%u: skipping unsupported card_insert to %s\r\n",
 			   ci->num, card_insert ? "INSERTED" : "REMOVED");
@@ -666,6 +669,7 @@ static void process_card_insert(struct cardem_inst *ci, bool card_insert)
 		PIO_Set(&ci->pin_insert);
 	else
 		PIO_Clear(&ci->pin_insert);
+#endif
 }
 
 /* handle a single USB command as received from the USB host */

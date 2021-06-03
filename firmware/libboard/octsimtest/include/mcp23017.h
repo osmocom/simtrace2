@@ -21,5 +21,7 @@
 int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb);
 int mcp23017_test(uint8_t slave);
 int mcp23017_toggle(uint8_t slave);
+int mcp23017_set_output_a(uint8_t slave, uint8_t val);
+int mcp23017_set_output_b(uint8_t slave, uint8_t val);
 //int mcp23017_write_byte(uint8_t slave, uint8_t addr, uint8_t byte);
 //int mcp23017_read_byte(uint8_t slave, uint8_t addr);

@@ -126,6 +126,16 @@ int mcp23017_test(uint8_t slave)
 	return 0;
 }
 
+int mcp23017_set_output_a(uint8_t slave, uint8_t val)
+{
+	return mcp23017_write_byte(slave, MCP23017_OLATA, val);
+}
+
+int mcp23017_set_output_b(uint8_t slave, uint8_t val)
+{
+	return mcp23017_write_byte(slave, MCP23017_OLATB, val);
+}
+
 int mcp23017_toggle(uint8_t slave)
 {
 	// example writing MSB of gpio

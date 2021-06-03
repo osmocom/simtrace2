@@ -94,3 +94,18 @@ int board_override_enter_dfu(void)
 	} else
 		return 0;
 }
+
+void board_set_card_insert(struct cardem_inst *ci, bool card_insert)
+{
+	int s = mux_get_slot();
+
+	/* A0 .. A7 of the MCP are each connected to the gate of a FET which closes
+	 * the sim-present signal of the respective slot */
+
+	if (mcp2317_present) {
+		/* we must enable card-presence of the active slot and disable it on all others */
+		mcp23017_set_output_a(MCP23017_ADDRESS, (1 << s));
+	} else {
+		TRACE_WARNING("No MCP23017 present; cannot set CARD_INSERT\r\n");
+	}
+}

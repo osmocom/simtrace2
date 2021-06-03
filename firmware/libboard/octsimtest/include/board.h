@@ -111,6 +111,10 @@
 
 #define HAVE_SLOT_MUX
 
+#define HAVE_BOARD_CARDINSERT
+struct cardem_inst;
+void board_set_card_insert(struct cardem_inst *ci, bool card_insert);
+
 /** Supported modes */
 /* SIMtrace board supports sniffer mode */
 //#define HAVE_SNIFFER

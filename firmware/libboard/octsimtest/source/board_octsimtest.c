@@ -79,8 +79,10 @@ void board_main_top(void)
 	mux_init();
 	i2c_pin_init();
 	/* PORT A: all outputs, Port B0 output, B1..B7 unused */
-	if (mcp23017_init(MCP23017_ADDRESS, 0x00, 0xfe) == 0)
+	if (mcp23017_init(MCP23017_ADDRESS, 0x00, 0xfe) == 0) {
 		mcp2317_present = true;
+		mcp23017_set_output_a(MCP23017_ADDRESS, 0);
+	}
 	/* Initialize checking for card insert/remove events */
 	//card_present_init();
 #endif

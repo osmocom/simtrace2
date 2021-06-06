@@ -35,10 +35,11 @@ void board_exec_dbg_cmd(int ch)
 	switch (ch) {
 	case '?':
 		printf("\t?\thelp\n\r");
+		printf("\t0-8\tselect physical SIM slot\n\r");
 		printf("\tR\treset SAM3\n\r");
 		printf("\tm\trun mcp23017 test\n\r");
-		printf("\tR\ttoggle MSB of gpio on mcp23017\n\r");
-		printf("\t0-8\tselect physical SIM slot\n\r");
+		printf("\ti\tset card insert via I2C\n\r");
+		printf("\tI\tdisable card insert\n\r");
 		break;
 	case '0': mux_set_slot(0); break;
 	case '1': mux_set_slot(1); break;
@@ -56,8 +57,13 @@ void board_exec_dbg_cmd(int ch)
 	case 'm':
 		mcp23017_test(MCP23017_ADDRESS);
 		break;
-	case 't':
-		mcp23017_toggle(MCP23017_ADDRESS);
+	case 'i':
+		printf("Setting card insert (slot=%u)\r\n", mux_get_slot());
+		mcp23017_set_output_a(MCP23017_ADDRESS, (1 << mux_get_slot()));
+		break;
+	case 'I':
+		printf("Releasing card insert (slot=%u)\r\n", mux_get_slot());
+		mcp23017_set_output_a(MCP23017_ADDRESS, 0);
 		break;
 	default:
 		printf("Unknown command '%c'\n\r", ch);

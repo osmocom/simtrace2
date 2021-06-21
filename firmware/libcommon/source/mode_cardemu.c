@@ -705,6 +705,7 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	case SIMTRACE_MSGT_BD_CEMU_CONFIG:
 		cfg = (struct cardemu_usb_msg_config *) msg->l2h;
 		card_emu_set_config(ci->ch, cfg, msgb_l2len(msg));
+		usb_buf_free(msg);
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_STATS:
 	default:

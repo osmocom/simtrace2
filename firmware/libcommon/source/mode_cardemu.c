@@ -461,7 +461,11 @@ static int card_vcc_adc_init(void)
 
 static void process_vcc_adc(struct cardem_inst *ci)
 {
+#ifdef octsimtest
+	if (ci->vcc_uv >= VCC_UV_THRESH_1V8)
+#else
 	if (ci->vcc_uv >= VCC_UV_THRESH_3V)
+#endif
 		ci->vcc_active = true;
 	else
 		ci->vcc_active = false;

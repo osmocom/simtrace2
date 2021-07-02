@@ -28,7 +28,8 @@ DEVICE_SIMTRACE = Device(usb_vendor_id=0x1d50, usb_product_id=0x60e3, name="SIMt
 DEVICE_QMOD = Device(usb_vendor_id=0x1d50, usb_product_id=0x4004, name="sysmoQMOD (Quad Modem)", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/qmod-cardem-dfu-latest.bin"})
 DEVICE_OWHW = Device(usb_vendor_id=0x1d50, usb_product_id=0x4001, name="OWHW", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/owhw-cardem-dfu-latest.bin"})
 DEVICE_OCTSIMTEST = Device(usb_vendor_id=0x1d50, usb_product_id=0x616d, name="OCTSIMTEST", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/octsimtest-cardem-dfu-latest.bin"})
-DEVICES = [DEVICE_SIMTRACE, DEVICE_QMOD, DEVICE_OCTSIMTEST]
+DEVICE_NGFF_CARDEM = Device(usb_vendor_id=0x1d50, usb_product_id=0x616e, name="ngff-cardem", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/ngff_cardem-cardem-dfu-latest.bin"})
+DEVICES = [DEVICE_SIMTRACE, DEVICE_QMOD, DEVICE_OCTSIMTEST, DEVICE_NGFF_CARDEM]
 
 # which firmware does the SIMtrace USN interface subclass correspond
 FIRMWARE_SUBCLASS = {1: "trace", 2: "cardem"}

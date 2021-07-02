@@ -26,6 +26,7 @@
 #define USB_PRODUCT_SIMTRACE2_DFU	0x60e3	/* was 0x60e2 */
 #define USB_PRODUCT_SIMTRACE2		0x60e3
 #define USB_PRODUCT_OCTSIMTEST		0x616d
+#define USB_PRODUCT_NGFF_CARDEM		0x616e
 
 /* USB proprietary class */
 #define USB_CLASS_PROPRIETARY			0xff

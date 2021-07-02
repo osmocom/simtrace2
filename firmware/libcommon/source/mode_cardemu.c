@@ -39,9 +39,21 @@ static const Pin pins_cardsim[] = PINS_CARDSIM;
 #endif
 
 /* UART pins */
+#if defined(ngff_cardem)
+static const Pin pins_usim1[]	= {PINS_USIM2};
+static const Pin pin_usim1_rst	= PIN_USIM2_nRST;
+#define FIRST_USART_BASE USART0
+#define FIRST_USART_ID ID_USART0
+#define FIRST_USART_IRQ USART0_IRQn
+#else
 static const Pin pins_usim1[]	= {PINS_USIM1};
 static const Pin pin_usim1_rst	= PIN_USIM1_nRST;
+#define FIRST_USART_BASE USART1
+#define FIRST_USART_ID ID_USART1
+#define FIRST_USART_IRQ USART1_IRQn
+#endif
 static const Pin pin_usim1_vcc	= PIN_USIM1_VCC;
+
 #ifdef PIN_USIM1_IO_DIR
 static const Pin pin_io_dir 	= PIN_USIM1_IO_DIR;
 #endif
@@ -85,8 +97,8 @@ struct cardem_inst cardem_inst[] = {
 	{
 		.num = 0,
 		.usart_info = 	{
-			.base = USART1,
-			.id = ID_USART1,
+			.base = FIRST_USART_BASE,
+			.id = FIRST_USART_ID,
 			.state = USART_RCV
 		},
 		.ep_out = SIMTRACE_CARDEM_USB_EP_USIM1_DATAOUT,
@@ -569,7 +581,7 @@ void mode_cardemu_init(void)
 
 	/* configure USART as ISO-7816 slave (e.g. card) */
 	ISO7816_Init(&cardem_inst[0].usart_info, CLK_SLAVE);
-	NVIC_EnableIRQ(USART1_IRQn);
+	NVIC_EnableIRQ(FIRST_USART_IRQ);
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
 
@@ -627,9 +639,9 @@ void mode_cardemu_exit(void)
 	PIO_DisableIt(&pin_usim1_rst);
 	PIO_DisableIt(&pin_usim1_vcc);
 
-	NVIC_DisableIRQ(USART1_IRQn);
-	USART_SetTransmitterEnabled(USART1, 0);
-	USART_SetReceiverEnabled(USART1, 0);
+	NVIC_DisableIRQ(FIRST_USART_IRQ);
+	USART_SetTransmitterEnabled(FIRST_USART_BASE, 0);
+	USART_SetReceiverEnabled(FIRST_USART_BASE, 0);
 
 #ifdef CARDEMU_SECOND_UART
 	PIO_DisableIt(&pin_usim2_rst);

@@ -315,6 +315,7 @@ static const struct option opts[] = {
 /* Known USB device with SIMtrace firmware supporting sniffer */
 static const struct dev_id compatible_dev_ids[] = {
 	{ USB_VENDOR_OPENMOKO, USB_PRODUCT_SIMTRACE2 },
+	{ USB_VENDOR_OPENMOKO, USB_PRODUCT_NGFF_CARDEM },
 	{ 0, 0 }
 };
 

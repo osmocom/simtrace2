@@ -71,8 +71,13 @@ static const conf_func config_func_ptrs[] = {
 		.init = mode_cardemu_init,
 		.exit = mode_cardemu_exit,
 		.run = mode_cardemu_run,
+#if defined (ngff_cardem)
+		.usart0_irq = mode_cardemu_usart1_irq,
+		.usart1_irq = mode_cardemu_usart0_irq,
+#else
 		.usart0_irq = mode_cardemu_usart0_irq,
 		.usart1_irq = mode_cardemu_usart1_irq,
+#endif
 	},
 #endif
 #ifdef HAVE_MITM

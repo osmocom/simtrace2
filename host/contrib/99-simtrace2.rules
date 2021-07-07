@@ -16,6 +16,8 @@ ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="4002", GROUP="plugdev"
 # sysmocom QMOD SAM3 (DFU and runtime)
 ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="4003", GROUP="plugdev"
 ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="4004", GROUP="plugdev"
+# sysmocom OCTSIMTEST
+ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="616d", GROUP="plugdev"
 
 # All done
 LABEL="simtrace2_rules_end"

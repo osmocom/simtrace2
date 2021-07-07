@@ -27,7 +27,8 @@ class Device(NamedTuple):
 DEVICE_SIMTRACE = Device(usb_vendor_id=0x1d50, usb_product_id=0x60e3, name="SIMtrace 2", url={"trace": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/simtrace-trace-dfu-latest.bin", "cardem": "https://osmocom.org/attachments/download/3868/simtrace-cardem-dfu.bin"})
 DEVICE_QMOD = Device(usb_vendor_id=0x1d50, usb_product_id=0x4004, name="sysmoQMOD (Quad Modem)", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/qmod-cardem-dfu-latest.bin"})
 DEVICE_OWHW = Device(usb_vendor_id=0x1d50, usb_product_id=0x4001, name="OWHW", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/owhw-cardem-dfu-latest.bin"})
-DEVICES = [DEVICE_SIMTRACE, DEVICE_QMOD]
+DEVICE_OCTSIMTEST = Device(usb_vendor_id=0x1d50, usb_product_id=0x616d, name="OCTSIMTEST", url={"cardem": "https://ftp.osmocom.org/binaries/simtrace2/firmware/latest/octsimtest-cardem-dfu-latest.bin"})
+DEVICES = [DEVICE_SIMTRACE, DEVICE_QMOD, DEVICE_OCTSIMTEST]
 
 # which firmware does the SIMtrace USN interface subclass correspond
 FIRMWARE_SUBCLASS = {1: "trace", 2: "cardem"}

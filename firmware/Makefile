@@ -174,7 +174,7 @@ CFLAGS += -Wno-suggest-attribute=noreturn
 #CFLAGS += -Wa,-a,-ad
 CFLAGS += -D__ARM -fno-builtin
 CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
-CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DALLOW_PEER_ERASE=$(ALLOW_PEER_ERASE)
+CFLAGS += -fdata-sections -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DALLOW_PEER_ERASE=$(ALLOW_PEER_ERASE)
 CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
 CFLAGS += -DAPPLICATION=\"$(APP)\" -DAPPLICATION_$(APP)

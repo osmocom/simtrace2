@@ -197,7 +197,7 @@ OUTPUT := $(BIN)/$(OUTPUT)
 #		Rules
 #-------------------------------------------------------------------------------
 
-all: apps/$(APP)/usb_strings_generated.h $(BIN) $(OBJ) $(MEMORIES)
+all: $(BIN) $(OBJ) $(MEMORIES)
 
 combined: $(OUTPUT)-combined.bin
 
@@ -208,7 +208,7 @@ $(BIN)/$(BOARD)-dfu-flash-padded.bin: $(BIN)/$(BOARD)-dfu-flash.bin
 $(OUTPUT)-combined.bin: $(BIN)/$(BOARD)-dfu-flash-padded.bin $(OUTPUT)-dfu.bin
 	cat $^ > $@
 
-$(BIN) $(OBJ):
+$(BIN) $(OBJ): apps/$(APP)/usb_strings_generated.h
 	mkdir -p $@
 
 usbstring/usbstring: usbstring/usbstring.c

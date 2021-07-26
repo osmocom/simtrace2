@@ -31,7 +31,8 @@ enum led_pattern {
 	BLINK_200O_F		= 7,
 	BLINK_600O_F		= 8,
 	BLINK_CUSTOM		= 9,
-	BLINK_2F_O,
+	BLINK_2F_O		= 10,
+	BLINK_5O_5F		= 11,
 	_NUM_LED_BLINK
 };
 

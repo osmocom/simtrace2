@@ -61,7 +61,7 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 	} else {
 		TRACE_INFO("%u: Use remote/emulated SIM\r\n", nr);
 		PIO_Configure(pins_cem, PIO_LISTSIZE(pins_cem));
-		led_blink(led, BLINK_ALWAYS_OFF);
+		led_blink(led, BLINK_5O_5F);
 	}
 
 	/* just power cycle the modem because this circumvents weird issues with unreliable signals */

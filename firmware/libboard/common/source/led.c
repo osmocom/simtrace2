@@ -58,6 +58,10 @@ static const struct blink_state bs_on[] = {
 	{ 0, 1 }
 };
 
+static const struct blink_state bs_5on_5off[] = {
+	{ 500, 1 }, { 500, 0 }
+};
+
 static const struct blink_state bs_3on_5off[] = {
 	{ 300, 1 }, { 500, 0 }
 };
@@ -106,6 +110,10 @@ static const struct blink_pattern patterns[] = {
 	[BLINK_ALWAYS_ON] = {
 		.states = bs_on,
 		.size = ARRAY_SIZE(bs_on),
+	},
+	[BLINK_5O_5F] = {
+		.states = bs_5on_5off,
+		.size = ARRAY_SIZE(bs_5on_5off),
 	},
 	[BLINK_3O_5F] = {
 		.states = bs_3on_5off,

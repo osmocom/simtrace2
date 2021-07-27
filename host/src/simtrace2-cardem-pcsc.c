@@ -420,6 +420,7 @@ static void signal_handler(int signal)
 	switch (signal) {
 	case SIGINT:
 		osmo_st2_cardem_request_card_insert(ci, false);
+		osmo_st2_modem_sim_select_local(ci->slot);
 		exit(0);
 		break;
 	default:

@@ -36,9 +36,29 @@ local reserved  = ProtoField.uint16("usb_simtrace.reserved", "reserved", base.HE
 local payloadlen  = ProtoField.uint16("usb_simtrace.length", "length", base.HEX_DEC)
 local payload  = ProtoField.bytes("usb_simtrace.payload", "Data")
 
+local pb_and_rx  = ProtoField.uint32("usb_simtrace.pb_and_rx", "pb_and_rx", base.HEX_DEC, NULL, 0x8)
+local pb_and_tx  = ProtoField.uint32("usb_simtrace.pb_and_tx", "pb_and_tx", base.HEX_DEC, NULL, 0x4)
+local final  = ProtoField.uint32("usb_simtrace.final", "final", base.HEX_DEC, NULL, 0x2)
+local tpdu_hdr  = ProtoField.uint32("usb_simtrace.tpdu_hdr", "tpdu_hdr", base.HEX_DEC, NULL, 0x1)
+local rxtxdatalen  = ProtoField.uint16("usb_simtrace.rxtxdatalen", "rx/tx data length", base.HEX_DEC)
+local rxtxdata  = ProtoField.bytes("usb_simtrace.rxtxdata", "rx/tx (data)")
 usb_simtrace_protocol.fields = {
-  msgtype, seqnr, slotnr, reserved, payloadlen, payload
+  msgtype, seqnr, slotnr, reserved, payloadlen, payload, pb_and_rx, pb_and_tx, final, tpdu_hdr, rxtxdatalen, rxtxdata
 }
+function dissect_rxtx(payload_data,pinfo,tree)
+
+  local headerSubtree = tree:add(usb_simtrace_protocol, payload_data, "rx/tx data")
+  local len  = payload_data(8+4,2):le_uint();
+  local cmd32 =  payload_data(8+0,4):le_uint();
+
+  headerSubtree:add(pb_and_rx, cmd32)
+  headerSubtree:add(pb_and_tx, cmd32)
+  headerSubtree:add(final, cmd32)
+  headerSubtree:add(tpdu_hdr, cmd32)
+
+  headerSubtree:add(rxtxdatalen, len)
+  headerSubtree:add_le(rxtxdata, payload_data(8+6,len))
+end
 
 function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
   length = buffer:len()
@@ -54,7 +74,12 @@ function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
   subtree:add(slotnr, buffer(3,1))
   subtree:add_le(payloadlen, buffer(6,2))
   pinfo.cols.info = string.format("Cmd 0x%04X : %s", command, control_commands[command])
-  subtree:add(payload, buffer(8,length-8))
+  local payload_data = buffer(8,length-8)
+  if(command == 0x0101 or command == 0x0106) then
+    return dissect_rxtx(buffer(),pinfo,subtree)
+  else
+    subtree:add(payload, payload_data)
+  end
 
 end
 

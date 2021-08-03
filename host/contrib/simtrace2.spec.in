@@ -84,6 +84,7 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %{_bindir}/simtrace2-cardem-pcsc
 %{_bindir}/simtrace2-list
 %{_bindir}/simtrace2-sniff
+%{_bindir}/simtrace2-tool
 %{_udevrulesdir}/99-simtrace2.rules
 
 %files -n libosmo-simtrace2-0

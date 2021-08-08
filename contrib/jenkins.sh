@@ -32,6 +32,7 @@ BUILDS+="simtrace/dfu simtrace/trace simtrace/cardem "
 BUILDS+="qmod/dfu qmod/cardem "
 BUILDS+="owhw/dfu owhw/cardem "
 BUILDS+="octsimtest/cardem "
+BUILDS+="ngff_cardem/cardem "
 
 cd $TOPDIR/firmware
 for build in $BUILDS; do

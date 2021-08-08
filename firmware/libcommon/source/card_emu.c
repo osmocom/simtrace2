@@ -922,6 +922,7 @@ static int tx_byte_tpdu(struct card_handle *ch)
 	byte = msgb_pull_u8(msg);
 
 	card_emu_uart_tx(ch->uart_chan, byte);
+	card_emu_uart_reset_wt(ch->uart_chan);
 
 	/* this must happen _after_ the byte has been transmitted */
 	switch (ch->tpdu.state) {

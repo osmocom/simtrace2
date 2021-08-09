@@ -32,7 +32,7 @@ BUILDS+="simtrace/dfu simtrace/trace simtrace/cardem "
 BUILDS+="qmod/dfu qmod/cardem "
 BUILDS+="owhw/dfu owhw/cardem "
 BUILDS+="octsimtest/cardem "
-BUILDS+="ngff_cardem/cardem "
+BUILDS+="ngff_cardem/dfu ngff_cardem/cardem "
 
 cd $TOPDIR/firmware
 for build in $BUILDS; do
@@ -40,7 +40,12 @@ for build in $BUILDS; do
 	app=`echo $build | cut -d "/" -f 2`
 	echo
 	echo "=============== $board / $app START  =============="
-	make BOARD="$board" APP="$app"
+	# reduce the trace level so the bl fits
+	if [ $board = "ngff_cardem" ] && [ $app = "dfu" ]; then
+		make BOARD="$board" APP="$app" TRACE_LEVEL=2
+	else
+		make BOARD="$board" APP="$app"
+	fi
 	echo "=============== $board / $app RES:$? =============="
 done
 

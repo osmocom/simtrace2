@@ -88,6 +88,5 @@ function usb_simtrace_protocol.init()
 local usb_product_dissectors = DissectorTable.get("usb.product")
 usb_product_dissectors:add(0x1d50616d, usb_simtrace_protocol)
 usb_product_dissectors:add(0x1d50616e, usb_simtrace_protocol)
-
--- DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
+DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
 end

@@ -40,12 +40,7 @@ for build in $BUILDS; do
 	app=`echo $build | cut -d "/" -f 2`
 	echo
 	echo "=============== $board / $app START  =============="
-	# reduce the trace level so the bl fits
-	if [ $board = "ngff_cardem" ] && [ $app = "dfu" ]; then
-		make BOARD="$board" APP="$app" TRACE_LEVEL=2
-	else
-		make BOARD="$board" APP="$app"
-	fi
+	make BOARD="$board" APP="$app"
 	echo "=============== $board / $app RES:$? =============="
 done
 

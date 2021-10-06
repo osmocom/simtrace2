@@ -524,12 +524,6 @@ int main(int argc, char **argv)
 
 	ci->card_prof = &osim_uicc_sim_cic_profile;
 
-	rc = libusb_init(NULL);
-	if (rc < 0) {
-		fprintf(stderr, "libusb initialization failed\n");
-		goto do_exit;
-	}
-
 	rc = osmo_st2_gsmtap_init(gsmtap_host);
 	if (rc < 0) {
 		perror("unable to open GSMTAP");

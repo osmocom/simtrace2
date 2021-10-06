@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Scan for available SIMtrace USB devices supporting sniffing */
-	rc = libusb_init(NULL);
+	rc = osmo_libusb_init(NULL);
 	if (rc < 0) {
 		fprintf(stderr, "libusb initialization failed\n");
 		goto do_exit;
@@ -505,7 +505,7 @@ close_exit:
 			sleep(1);
 	} while (keep_running);
 
-	libusb_exit(NULL);
+	osmo_libusb_exit(NULL);
 do_exit:
 	return ret;
 }

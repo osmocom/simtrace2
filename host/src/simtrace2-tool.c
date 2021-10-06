@@ -265,7 +265,7 @@ int main(int argc, char **argv)
 
 	transp->udp_fd = -1;
 
-	rc = libusb_init(NULL);
+	rc = osmo_libusb_init(NULL);
 	if (rc < 0) {
 		fprintf(stderr, "libusb initialization failed\n");
 		goto do_exit;
@@ -326,7 +326,7 @@ close_exit:
 			libusb_close(transp->usb_devh);
 	} while (0);
 
-	libusb_exit(NULL);
+	osmo_libusb_exit(NULL);
 do_exit:
 	return ret;
 }

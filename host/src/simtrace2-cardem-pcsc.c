@@ -633,7 +633,7 @@ close_exit:
 	if (transp->usb_devh)
 		libusb_close(transp->usb_devh);
 
-	libusb_exit(NULL);
+	osmo_libusb_exit(NULL);
 do_exit:
 	return ret;
 }

@@ -77,7 +77,7 @@ static int find_devices(void)
 
 int main(int argc, char **argv)
 {
-	libusb_init(NULL);
+	osmo_libusb_init(NULL);
 	find_devices();
 	return 0;
 }

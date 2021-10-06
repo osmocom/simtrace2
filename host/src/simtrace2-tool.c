@@ -39,6 +39,8 @@
 
 #include <osmocom/core/utils.h>
 #include <osmocom/core/msgb.h>
+#include <osmocom/core/logging.h>
+#include <osmocom/core/application.h>
 
 /***********************************************************************
  * Incoming Messages
@@ -213,6 +215,7 @@ static int do_command(int argc, char **argv)
 	return rc;
 }
 
+static struct log_info log_info = {};
 
 int main(int argc, char **argv)
 {
@@ -264,6 +267,8 @@ int main(int argc, char **argv)
 	}
 
 	transp->udp_fd = -1;
+
+	osmo_init_logging2(NULL, &log_info);
 
 	rc = osmo_libusb_init(NULL);
 	if (rc < 0) {

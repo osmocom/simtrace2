@@ -73,12 +73,20 @@ AT91LIB_USB_DFU_PATH = $(AT91LIB)/usb/device/dfu
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
 
-LIBS = -Wl,--start-group -lgcc -Wl,--end-group -nostdlib
-
-# Compilation tools
+USE_CLANG ?= 0
+ifneq ("$(USE_CLANG)","0")
+# --target=thumbv7m-none-eabi
+CC = clang
+LD = ld.lld
+SIZE = llvm-size
+LIBS = -nostdlib
+else
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 SIZE = $(CROSS_COMPILE)size
+LIBS = -Wl,--start-group -lgcc -Wl,--end-group -nostdlib
+endif
+
 STRIP = $(CROSS_COMPILE)strip
 OBJCOPY = $(CROSS_COMPILE)objcopy
 GDB = $(CROSS_COMPILE)gdb
@@ -139,7 +147,11 @@ ALLOW_PEER_ERASE?=0
 #CFLAGS+=-DUSB_NO_DEBUG=1
 
 # Optimization level, put in comment for debugging
+ifneq ("$(USE_CLANG)","0")
+OPTIMIZATION ?= -Oz
+else
 OPTIMIZATION ?= -Os
+endif
 
 # Flags
 INCLUDES_USB = -I$(AT91LIB)/usb/include -I$(AT91LIB)
@@ -153,6 +165,11 @@ INCLUDES += -Ilibosmocore/include
 INCLUDES += -Isrc_simtrace -Iinclude
 INCLUDES += -Iapps/$(APP)
 
+ifneq ("$(USE_CLANG)","0")
+CFLAGS += -Wno-unknown-warning-option -Wno-empty-body -fno-exceptions -fno-unwind-tables --config armv7em_soft_nofp_nosys
+else
+CFLAGS += -Wno-suggest-attribute=noreturn --param max-inline-insns-single=500
+endif
 CFLAGS += -Wall -Wchar-subscripts -Wcomment -Wimplicit-int -Wformat=2
 CFLAGS += -Werror-implicit-function-declaration -Wmain -Wparentheses
 CFLAGS += -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs #-Wunused
@@ -165,16 +182,16 @@ CFLAGS += -Wredundant-decls -Wnested-externs #-Winline -Wlong-long
 CFLAGS += -Wunreachable-code
 #CFLAGS += -Wcast-align
 #CFLAGS += -std=c11
-CFLAGS += -Wmissing-noreturn
+#CFLAGS += -Wmissing-noreturn
 #CFLAGS += -Wconversion
 CFLAGS += -Wno-unused-but-set-variable -Wno-unused-variable
-CFLAGS += -Wno-suggest-attribute=noreturn
+
 
 # -mlong-calls  -Wall
 #CFLAGS += -save-temps -fverbose-asm
 #CFLAGS += -Wa,-a,-ad
 CFLAGS += -D__ARM -fno-builtin
-CFLAGS += --param max-inline-insns-single=500 -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
+CFLAGS += -mcpu=cortex-m3 -mthumb # -mfix-cortex-m3-ldrd
 CFLAGS += -ffunction-sections -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL) -DALLOW_PEER_ERASE=$(ALLOW_PEER_ERASE)
 CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
 CFLAGS += -DBOARD=\"$(BOARD)\" -DBOARD_$(BOARD)
@@ -188,7 +205,10 @@ CFLAGS += -fno-stack-protector
 endif
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--print-memory-usage -Wl,--no-undefined $(LIB)
+LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--no-undefined $(LIB)
+ifeq ("$(USE_CLANG)","0")
+LDFLAGS += -Wl,--warn-section-align -Wl,--print-memory-usage
+endif
 #LD_OPTIONAL=-Wl,--print-gc-sections -Wl,--stats
 
 # Append BIN directories to output filename
@@ -227,14 +247,14 @@ C_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(C_OBJECTS))
 ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
 
 $(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
-	$(SILENT)$(CC) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
+	$(SILENT)$(CC) $(CFLAGS) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
 	$(SILENT)$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
 	$(SILENT)$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
 	$(SILENT)$(SIZE) $$^ $(OUTPUT)-$$@.elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
-	$(SILENT)$(CC) $(CFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -Wa,-ahlms=$(BIN)/$$*.lst -c -o $$@ $$<
+	$(SILENT)$(CC) $(CFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]

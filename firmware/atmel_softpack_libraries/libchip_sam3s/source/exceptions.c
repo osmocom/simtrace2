@@ -151,8 +151,7 @@ WEAK void HardFault_Handler( void )
 		" mrseq r0, msp		\n"
 		" mrsne r0, psp		\n"
 		//" ldr r1, [r0, #24] 	\n"
-		" b hard_fault_handler_c\n"
-		".syntax divided	\n");
+		" b hard_fault_handler_c\n");
 }
 
 /**

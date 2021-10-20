@@ -96,13 +96,10 @@ SECTIONS
         _efixed = .;            /* End of text section */
     } > rom
 
-    /* .ARM.exidx is sorted, so has to go in its own output section.  */
-    PROVIDE_HIDDEN (__exidx_start = .);
-    .ARM.exidx :
+    /DISCARD/ :
     {
-      *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > rom
-    PROVIDE_HIDDEN (__exidx_end = .);
+        *(.ARM.exidx)
+    }
 
     . = ALIGN(4); 
     _etext = .;

@@ -271,7 +271,7 @@ extern int main(void)
 
 #ifdef PINS_LEDS
 	/* Configure LED */
-	PIO_Configure(pinsLeds, sizeof(pinsLeds));
+	PIO_Configure(pinsLeds, PIO_LISTSIZE(pinsLeds));
 	PIO_Set(&pinsLeds[LED_NUM_RED]);
 	PIO_Clear(&pinsLeds[LED_NUM_GREEN]);
 #endif

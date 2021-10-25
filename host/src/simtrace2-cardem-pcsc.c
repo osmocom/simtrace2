@@ -199,6 +199,7 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 		break;
 	case SIMTRACE_MSGT_BD_CEMU_CONFIG:
 		/* firmware confirms configuration change; ignore */
+		rc = 0;
 		break;
 	default:
 		printf("unknown simtrace msg type 0x%02x\n", sh->msg_type);

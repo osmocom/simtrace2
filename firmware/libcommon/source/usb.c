@@ -689,16 +689,8 @@ void SIMtrace_USB_Initialize(void)
 {
 	unsigned int i;
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
-#ifdef PIN_USB_PULLUP
-	const Pin usb_dp_pullup = PIN_USB_PULLUP;
-	PIO_Configure(&usb_dp_pullup, 1);
-	PIO_Set(&usb_dp_pullup);
-#endif
 	USBD_HAL_Suspend();
 	mdelay(20);
-#ifdef PIN_USB_PULLUP
-	PIO_Clear(&usb_dp_pullup);
-#endif
 	USBD_HAL_Activate();
 
 	// Get std USB driver

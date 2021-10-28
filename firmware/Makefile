@@ -245,12 +245,13 @@ apps/$(APP)/usb_strings_generated.h: apps/$(APP)/usb_strings.txt.patched usbstri
 define RULES
 C_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(C_OBJECTS))
 ASM_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(ASM_OBJECTS))
+EXTRA_OBJECTS_$(1) = $(addprefix $(OBJ)/$(1)_, $(EXTRA_OBJECTS))
 
-$(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1))
-	$(SILENT)$(CC) $(CFLAGS) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$$@.ld" -Wl,-Map,$(OUTPUT)-$$@.map -o $(OUTPUT)-$$@.elf $$^ $(LIBS)
-	$(SILENT)$(NM) $(OUTPUT)-$$@.elf >$(OUTPUT)-$$@.elf.txt
-	$(SILENT)$(OBJCOPY) -O binary $(OUTPUT)-$$@.elf $(OUTPUT)-$$@.bin
-	$(SILENT)$(SIZE) $$^ $(OUTPUT)-$$@.elf
+build_$(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1)) $$(EXTRA_OBJECTS_$(1))
+	$(SILENT)$(CC) $(CFLAGS) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$(1).ld" -Wl,-Map,$(OUTPUT)-$(1).map -o $(OUTPUT)-$(1).elf $$^ $(LIBS)
+	$(SILENT)$(NM) $(OUTPUT)-$(1).elf >$(OUTPUT)-$(1).elf.txt
+	$(SILENT)$(OBJCOPY) -O binary $(OUTPUT)-$(1).elf $(OUTPUT)-$(1).bin
+	$(SILENT)$(SIZE) $$^ $(OUTPUT)-$(1).elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
@@ -258,13 +259,34 @@ $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 
 $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]
-	$(SILENT)@$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
+	$(SILENT)$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
 debug_$(1): $(1)
 	$(GDB) -x "$(BOARD_LIB)/resources/gcc/$(BOARD)_$(1).gdb" -ex "reset" -readnow -se $(OUTPUT)-$(1).elf
 endef
 
-$(foreach MEMORY, $(MEMORIES), $(eval $(call RULES,$(MEMORY))))
+ALL_MEMORIES = dfu flash ram
+$(foreach MEMORY, $(ALL_MEMORIES), $(eval $(call RULES,$(MEMORY))))
+
+# files with those names do exist..
+.PHONY: ram
+.PHONY: dfu
+.PHONY: flash
+ram: build_ram
+dfu: build_dfu
+ifeq ($(APP), blupdate)
+	$(info updating updater section with padded bootloader file..)
+	$(SILENT)dd if=/dev/zero bs=16384 count=1 of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
+	$(SILENT)dd if=$(BIN)/$(BOARD)-dfu-flash.bin conv=notrunc of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
+	$(SILENT)$(OBJCOPY) --update-section .blupdate=bin/$(BOARD)-dfu-flash-padded.bin bin/$(BOARD)-blupdate-dfu.elf
+	$(SILENT)$(OBJCOPY) -O binary bin/$(BOARD)-blupdate-dfu.elf bin/$(BOARD)-blupdate-dfu.bin
+endif
+flash: build_flash
+#alternate way of embedding: obj file
+#ifeq ($(APP), dfu)
+#	$(info bootloader bin file to obj..)
+#	$(SILENT)$(OBJCOPY) --rename-section .data=.fwupdate -I binary -O elf32-littlearm bin/$(BOARD)-dfu-flash.bin $(OBJ)/flash_fwupdate.o
+#endif
 
 program:
 	openocd -f openocd/openocd.cfg -c "init" -c "halt" -c "flash write_bank 0 ./bin/project-flash.bin 0" -c "reset" -c "shutdown"

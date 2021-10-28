@@ -101,6 +101,14 @@ SECTIONS
         *(.ARM.exidx)
     }
 
+    .blupdate :
+    {
+        . = ALIGN(4);
+        _blupdate_start = .;
+        KEEP(*(.fwupdate .fwupdate.*));
+        _blupdate_end = .;
+    } > rom
+
     . = ALIGN(4); 
     _etext = .;
 

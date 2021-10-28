@@ -342,7 +342,7 @@ extern int main(void)
 	TRACE_INFO("USB init...\n\r");
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
 	USBD_Disconnect();
-	mdelay(50);
+	mdelay(500);
 	USBDFU_Initialize(&dfu_descriptors);
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {

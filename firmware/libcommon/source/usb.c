@@ -690,7 +690,7 @@ void SIMtrace_USB_Initialize(void)
 	unsigned int i;
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
 	USBD_HAL_Suspend();
-	mdelay(20);
+	mdelay(500);
 	USBD_HAL_Activate();
 
 	// Get std USB driver

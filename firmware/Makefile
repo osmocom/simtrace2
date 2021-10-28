@@ -205,7 +205,7 @@ CFLAGS += -fno-stack-protector
 endif
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--no-undefined $(LIB)
+LDFLAGS = -mcpu=cortex-m3 -mthumb -Wl,--check-sections -Wl,--gc-sections -Wl,--entry=ResetException -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--no-undefined $(LIB)
 ifeq ("$(USE_CLANG)","0")
 LDFLAGS += -Wl,--warn-section-align -Wl,--print-memory-usage
 endif

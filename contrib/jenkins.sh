@@ -28,11 +28,11 @@ export PKG_CONFIG_PATH="$inst/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LD_LIBRARY_PATH="$inst/lib"
 
 BUILDS=""
-BUILDS+="simtrace/dfu simtrace/trace simtrace/cardem "
-BUILDS+="qmod/dfu qmod/cardem "
-BUILDS+="owhw/dfu owhw/cardem "
+BUILDS+="simtrace/dfu simtrace/blupdate simtrace/trace simtrace/cardem "
+BUILDS+="qmod/dfu qmod/blupdate qmod/cardem "
+BUILDS+="owhw/dfu owhw/blupdate owhw/cardem "
 BUILDS+="octsimtest/cardem "
-BUILDS+="ngff_cardem/dfu ngff_cardem/cardem ngff_cardem/trace "
+BUILDS+="ngff_cardem/dfu ngff_cardem/blupdate ngff_cardem/cardem ngff_cardem/trace "
 
 cd $TOPDIR/firmware
 for build in $BUILDS; do

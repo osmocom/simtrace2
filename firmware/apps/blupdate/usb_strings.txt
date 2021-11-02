@@ -1,0 +1,6 @@
+sysmocom - s.f.m.c. GmbH
+PRODUCT_STRING
+bootloader updater
+RAM
+Flash (Application Partition)
+Flash (Bootloader Partition)

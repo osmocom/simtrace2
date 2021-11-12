@@ -17,3 +17,9 @@ export DEB_LDFLAGS_MAINT_STRIP = -Wl,-Bsymbolic-functions
 
 override_dh_autoreconf:
 	cd host && dh_autoreconf
+
+override_dh_auto_build:
+	dh_auto_build -- utils
+
+override_dh_auto_install:
+	dh_auto_build -- -C host

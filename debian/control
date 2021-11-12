@@ -12,29 +12,17 @@ Build-Depends: debhelper (>= 9),
                dh-autoreconf,
                libosmocore-dev,
                libpcsclite-dev,
-               libnewlib-arm-none-eabi,
-               libusb-1.0-0-dev,
-               gcc-arm-none-eabi
+               libusb-1.0-0-dev
 Standards-Version: 3.9.8
 Vcs-Git: git://git.osmocom.org/simtrace2.git
 Vcs-Browser: http://git.osmocom.org/simtrace2/
 Homepage: http://osmocom.org/projects/simtrace2/wiki
-
-Package: simtrace2-firmware
-Section: devel
-Architecture: all
-Recommends: dfu-util
-Description: Firmware for SAM3 based SIMtrace2 USB Devices.
- Open Source firmware for the Cortex-M3 microcontroller in the
- "Osmocom SIMtrace2" USB-attached peripheral device.  Will only work in
- SAM3S-based SIMtrace2, not in its SAM7S-based predecessor SIMtrace!
 
 Package: simtrace2-utils
 Section: devel
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, libosmo-simtrace2-0
-Recommends: simtrace2-firmware
 Description: Host utilities to communicate with SIMtrace2 USB Devices.
 
 Package: libosmo-simtrace2-0

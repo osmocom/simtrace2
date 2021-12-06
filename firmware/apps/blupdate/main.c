@@ -89,8 +89,14 @@ __attribute__((section(".ramfunc"), noinline, noreturn)) static void erase_first
 	flash_cmd(EFC_FCMD_EA, 0);
 #endif
 	flash_wait_ready();
-	for (;;)
-		NVIC_SystemReset();
+	for (;;) {
+		/* no functon call, since NVIC_SystemReset() might not be inlined! */
+		SCB->AIRCR = ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | (SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk) |
+			      SCB_AIRCR_SYSRESETREQ_Msk);
+		__DSB();
+		while (1)
+			;
+	}
 }
 
 #define MAX_USB_ITER BOARD_MCK / 72 // This should be around a second

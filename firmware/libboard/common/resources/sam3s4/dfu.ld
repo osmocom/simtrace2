@@ -39,7 +39,8 @@ SEARCH_DIR(.)
 MEMORY
 {
 	/* reserve the first 16k (= 0x4000) for the DFU bootloader */
-	rom (rx)  : ORIGIN = 0x00400000 + 16K, LENGTH = 256K - 16K /* flash, 256K */
+	crcstub (rx)  : ORIGIN = 0x00400000 + 16K, LENGTH = 512 /* crcstub part */
+	rom (rx)  : ORIGIN = 0x00400000 + 16K + 512, LENGTH = 256K - 16K - 512 /* flash, 256K */
 	/* note: dfudata will be at the start */
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 48K /* SRAM, 48K */
 }
@@ -47,9 +48,17 @@ MEMORY
 /* Section Definitions */ 
 SECTIONS 
 { 
-    .text : 
-    { 
+    .crcstub :
+    {
         . = ALIGN(4);
+        KEEP(*(.crcstub_table))
+        KEEP(*(.crcstub_code))
+    } > crcstub = 0xff
+
+    .text :
+    {
+
+        . = ALIGN(512);
         _sfixed = .;
         KEEP(*(.vectors .vectors.*))
         *(.text .text.* .gnu.linkonce.t.*) 	      
@@ -94,7 +103,7 @@ SECTIONS
 
         . = ALIGN(4);
         _efixed = .;            /* End of text section */
-    } > rom
+    } > rom = 0xff
 
     /DISCARD/ :
     {

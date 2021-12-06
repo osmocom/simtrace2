@@ -97,6 +97,8 @@ SECTIONS
     /DISCARD/ :
     {
         *(.ARM.exidx)
+        *(.crcstub_table)
+        *(.crcstub_code)
     }
 
     . = ALIGN(4); 

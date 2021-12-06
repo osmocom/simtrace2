@@ -117,7 +117,7 @@ C_LIBUSB     = USBDescriptors.c USBRequests.c USBD.c USBDCallbacks.c USBDDriver.
 C_LIBUSB_RT  = dfu.c dfu_runtime.c
 C_LIBUSB_DFU = dfu.c dfu_desc.c dfu_driver.c
 C_LIBCOMMON  = string.c stdio.c fputs.c usb_buf.c ringbuffer.c pseudo_talloc.c host_communication.c \
-	       main_common.c stack_check.c
+	       main_common.c stack_check.c crcstub.c
 
 C_BOARD      = $(notdir $(wildcard libboard/common/source/*.c))
 C_BOARD     += $(notdir $(wildcard libboard/$(BOARD)/source/*.c))
@@ -229,10 +229,13 @@ $(BIN)/$(BOARD)-dfu-flash-padded.bin: $(BIN)/$(BOARD)-dfu-flash.bin
 $(OUTPUT)-combined.bin: $(BIN)/$(BOARD)-dfu-flash-padded.bin $(OUTPUT)-dfu.bin
 	cat $^ > $@
 
-$(BIN) $(OBJ): apps/$(APP)/usb_strings_generated.h
+$(BIN) $(OBJ): apps/$(APP)/usb_strings_generated.h misc/crctool
 	mkdir -p $@
 
 usbstring/usbstring: usbstring/usbstring.c
+	gcc $^ -o $@
+
+misc/crctool: misc/crctool.c
 	gcc $^ -o $@
 
 .PHONY: apps/$(APP)/usb_strings.txt.patched
@@ -251,7 +254,6 @@ build_$(1): $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1)) $$(EXTRA_OBJECTS_$(1))
 	$(SILENT)$(CC) $(CFLAGS) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/$(1).ld" -Wl,-Map,$(OUTPUT)-$(1).map -o $(OUTPUT)-$(1).elf $$^ $(LIBS)
 	$(SILENT)$(NM) $(OUTPUT)-$(1).elf >$(OUTPUT)-$(1).elf.txt
 	$(SILENT)$(OBJCOPY) -O binary $(OUTPUT)-$(1).elf $(OUTPUT)-$(1).bin
-	$(SILENT)$(SIZE) $$^ $(OUTPUT)-$(1).elf
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile $(OBJ) $(BIN)
 	@echo [COMPILING $$<]
@@ -261,26 +263,17 @@ $$(ASM_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.S Makefile $(OBJ) $(BIN)
 	@echo [ASSEMBLING $$@]
 	$(SILENT)$(CC) $(ASFLAGS) -DENVIRONMENT_$(1) -DENVIRONMENT=\"$(1)\" -c -o $$@ $$<
 
-debug_$(1): $(1)
-	$(GDB) -x "$(BOARD_LIB)/resources/gcc/$(BOARD)_$(1).gdb" -ex "reset" -readnow -se $(OUTPUT)-$(1).elf
 endef
 
-ALL_MEMORIES = dfu flash ram
+ALL_MEMORIES = flash ram
 $(foreach MEMORY, $(ALL_MEMORIES), $(eval $(call RULES,$(MEMORY))))
 
 # files with those names do exist..
-.PHONY: ram
 .PHONY: dfu
-.PHONY: flash
+dfu: $(OUTPUT)-dfu.bin
+.PHONY: ram
 ram: build_ram
-dfu: build_dfu
-ifeq ($(APP), blupdate)
-	$(info updating updater section with padded bootloader file..)
-	$(SILENT)dd if=/dev/zero bs=16384 count=1 of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
-	$(SILENT)dd if=$(BIN)/$(BOARD)-dfu-flash.bin conv=notrunc of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
-	$(SILENT)$(OBJCOPY) --update-section .blupdate=bin/$(BOARD)-dfu-flash-padded.bin bin/$(BOARD)-blupdate-dfu.elf
-	$(SILENT)$(OBJCOPY) -O binary bin/$(BOARD)-blupdate-dfu.elf bin/$(BOARD)-blupdate-dfu.bin
-endif
+.PHONY: flash
 flash: build_flash
 #alternate way of embedding: obj file
 #ifeq ($(APP), dfu)
@@ -288,8 +281,37 @@ flash: build_flash
 #	$(SILENT)$(OBJCOPY) --rename-section .data=.fwupdate -I binary -O elf32-littlearm bin/$(BOARD)-dfu-flash.bin $(OBJ)/flash_fwupdate.o
 #endif
 
-program:
-	openocd -f openocd/openocd.cfg -c "init" -c "halt" -c "flash write_bank 0 ./bin/project-flash.bin 0" -c "reset" -c "shutdown"
+C_OBJECTS_dfu = $(addprefix $(OBJ)/dfu_, $(C_OBJECTS))
+ASM_OBJECTS_dfu = $(addprefix $(OBJ)/dfu_, $(ASM_OBJECTS))
+EXTRA_OBJECTS_dfu = $(addprefix $(OBJ)/dfu_, $(EXTRA_OBJECTS))
+
+$(OUTPUT)-dfu.bin: $(OUTPUT)-dfu_nocrcstub.bin
+	$(info updating app with crc..)
+	$(SILENT)cp $< $@.temp
+	$(SILENT)misc/crctool 512 $@.temp
+	$(SILENT)mv $@.temp $@
+
+$(OUTPUT)-dfu_nocrcstub.bin: $(OUTPUT)-dfu_nocrcstub.elf
+ifeq ($(APP), blupdate)
+	$(info updating updater section with padded bootloader file..)
+	$(SILENT)dd status=none if=/dev/zero bs=16384 count=1 of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
+	$(SILENT)dd status=none if=$(BIN)/$(BOARD)-dfu-flash.bin conv=notrunc of=$(BIN)/$(BOARD)-dfu-flash-padded.bin
+	$(SILENT)$(OBJCOPY) --update-section .blupdate=bin/$(BOARD)-dfu-flash-padded.bin $<
+endif
+	$(SILENT)$(OBJCOPY) -O binary $< $@
+
+$(OUTPUT)-dfu_nocrcstub.elf: $(ASM_OBJECTS_dfu) $(C_OBJECTS_dfu) $(EXTRA_OBJECTS_dfu)
+	$(SILENT)$(CC) $(CFLAGS) $(LDFLAGS) $(LD_OPTIONAL) -T"libboard/common/resources/$(CHIP)/dfu.ld" -Wl,-Map,$(OUTPUT)-dfu_nocrcstub.map -o $@ $^ $(LIBS)
+	$(SILENT)$(NM) $@ >$@.txt
+
+$(C_OBJECTS_dfu): $(OBJ)/dfu_%.o: %.c Makefile $(OBJ) $(BIN)
+	@echo [COMPILING $<]
+	$(SILENT)$(CC) $(CFLAGS) -DENVIRONMENT_dfu -DENVIRONMENT=\"dfu\" -c -o $@ $<
+
+$(ASM_OBJECTS_dfu): $(OBJ)/dfu_%.o: %.S Makefile $(OBJ) $(BIN)
+	@echo [ASSEMBLING $@]
+	$(SILENT)$(CC) $(ASFLAGS) -DENVIRONMENT_dfu -DENVIRONMENT=\"dfu\" -c -o$@ $<
+
 
 SERIAL ?= /dev/ttyUSB0
 log:

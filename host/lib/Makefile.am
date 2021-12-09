@@ -1,7 +1,7 @@
 # This is _NOT_ the library release version, it's an API version.
 # Please read chapter "Library interface versions" of the libtool documentation
 # before making any modifications: https://www.gnu.org/software/libtool/manual/html_node/Versioning.html
-ST2_LIBVERSION=0:0:0
+ST2_LIBVERSION=1:0:0
 
 AM_CPPFLAGS = $(all_includes) -I$(top_srcdir)/include -I$(top_builddir)
 AM_CFLAGS= -Wall $(LIBOSMOCORE_CFLAGS) $(LIBOSMOSIM_CFLAGS) $(LIBUSB_CFLAGS) $(COVERAGE_CFLAGS)

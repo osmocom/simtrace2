@@ -1,8 +1,205 @@
-simtrace2 (0.5.2) UNRELEASED; urgency=medium
+simtrace2 (0.8.0) unstable; urgency=medium
 
+  [ Harald Welte ]
   * adapt to host tools in autotools
+  * simtrace2_api: Remove dead code
+  * fix baudrate of 'make log'
+  * qmod DFU: Don't overwrite memory beyond end of usb_strings[]
+  * usb_strings.txt: s/SIMtrace Phone/SIMtrace Card Emulation/
+  * Patch actual board name into the USB iProduct string descriptor
+  * Build only 'reasonable' combinations of APP/MEMORY
+  * stdio: Add support for %p format string (pointer address)
+  * Fix format string related warnings (int vs. long)
+  * Add missing CR to achieve CRLF at end of log lines
+  * more comments in host_communication.c.
+  * usb_buf: count number of elements in queue
+  * usb_buf: Limit the maximum queue length to 3 elements
+  * qmod: Don't print EEPROM operations in help when not supported
+  * cosmetic: board_qmod: Annotate #endif with comments
+  * qmod: Document '!' and '@' commands on UART
+  * implement minimalistic talloc_report(); add 't' command on UART
+  * update copyright statement
+  * cardem: Fix memory leak on unsupported SIMTRACE_MSGT_DT_CEMU_CARDINSERT
+  * usb_buf: Actually limit queue to 3 elements, not 4
+  * USBD_HAL: Don't disable UDP peripheral clock on suspend
+  * usb_buf: Properly initialize buffered_endpoint->ep number
+  * pseudo_talloc: Increment number of buffers from 10 to 20
+  * card_emu: Factor out card_handle_reset() from card_emu_init()
+  * cardem: Move card_emu_io_statechg() calls out of interrupt context
+  * cardem: RST resets all state (including release of buffers)
+  * host_communication: Send zero-length-packet on wMaxPacketSize
+  * card_emu: Initialize PTSS state every time we start PTS
+  * card_emu: Avoid recursive calls to card_set_state()
+  * card_emu: Always print state names in string representation
+  * card_emu: Remove extraneous code
+  * card_emu: Remove extraneous initialization of ch->pts.state
+  * cardem: Make card_emu_report_status() optionally use IRQ endpoint
+  * cardem: Add SIMTRACE_MSGT_BD_CEMU_CONFIG
+  * cardem: Implement support for CEMU_FEAT_F_STATUS_IRQ
+  * simtrace2-sniff: Reformat value_string to pass our validation scripts
+  * firmware: Reformat value_string to pass our validation scripts
+  * jenkins.sh: Add verify_value_string_arrays_are_terminated.py
+  * [lib] apdu_dispatch: Use DLGLOBAL and don't printf() directly
+  * [lib] apdu_dispatch: Don't print APDU state to stdout
+  * OSMO_ASSERT() on double-free or invalid pointer
+  * Update .gitignore file for host
+  * migrate to libosmousb
+  * library: Add osmo_st2_compatible_dev_idsp[]
+  * firmware: move printing of welcome banner to common function print_banner()
+  * firmware: apps/cardem/main.c: Synchronize with apps/trace/main.c
+  * host: Add COPYING file for host software (GPLv2)
+  * host/lib/gsmtap.c: Add GPLv2 disclaimer
+  * increase ringbuffer size from 512 to 1024 bytes
+  * simtrace2_api: Add osmo_st2_cardem_request_config()
+  * Disable interrupts during EEFC_ReadUniqueID()
+  * cardem: Fix infinite loop + watchdog reset on long OUT message
+  * extend osmo_st2_cardem_inst with fields required by osmo-remsim
+  * cosmetic: Add missing CR to LF in dispatch_received_usb_msg()
+  * USBD.c: Don't reset EP0 on SetConfiguration(0)
+  * pio_it.c: Permit repeated calls to PIO_ConfigureIt()
+  * simtrace2_siff: getopt_long() returns int, not char
+  * Introduce support for asynchronous USB transmission
+  * firmware: fix builds with gcc stack smashing protection enabled
+  * dfu: Shrink code by 144 bytes (by not calling PIO_InitializeInterrupts)
+  * dfu: Save another 60 bytes by changing the way we print horizontal lines
+  * migrate from BSC_FD_* to OSMO_FD_*
+  * remove usb2udp
+  * rename simtrace2-remsim to simtrace2-cardem-pcsc
+  * Update README
+  * remove old pre-autoconf makefile
+  * simtrace2-cardem-pcsc: Make it work again
+  * Revert "add ISO 7816-3 library to remsim project"
+  * Revert "add library providing ISO 7816-3 utilities"
+  * card_emu: waiting_time is stored in etu, not clocks.
+  * card_emu: Rename fi to Fi and di to Di
+  * card_emu: Clarify and differentiate F/Fi/F_index/Fi_index
+  * iso7816_fidi: Add iso7816_3_ prefix to symbols; fix terminology
+  * card_emu: improve reset detection conditions
+  * card_emu: explicitly initialize PTS and TPDU states
+  * card_emu: Use USART timeout for waiting time
+  * card_emu: Fix USART timer, particularly in re-start situations
+  * card_emu: Fix computation of waiting time
+  * contrib/jenkins.sh: Switch from rita -> ftp.osmocom.org
+  * st2-cardem-pcsc: Fix goto-in-while mess
+  * st2-cardem-pcsc: Use ATR of real card by default
+  * simtrace board.h: Enable HAVE_CARDEM if we build the cardem firmware
+  * jenkins.sh: build 'cardem' firmware also for simtrace board
+  * Revert "cardem: disable upload for simtrace2"
+  * simtrace2-cardem-pcsc: Decode STATUS flags to strings
+  * simtrace2-cardem-pcsc: Reset the real card if reader resets cardem
+  * assert: Use printf_sync() to ensure printing of assert / panic
+  * Add usb product ID of sysmoOCTSIMTEST
+  * octsimtest: remove lots of unused #defines
+  * octsimtest: most code for support of this new board
+  * octsimtest: Switch direction of I/O level shifter depending on uart tx / rx
+  * cardem-pcsc: initialize libosmocore logging
+  * octsimtest: Adjust VCC voltage thresholds (resistive VCC divider)
+  * contrib/jenkins.sh: Build 'cardem' app for 'octsimtest' board
+  * firmware: octsimtest: Fix IO_DIR pin definition
+  * firmware: octsimtest: Make slot mux configurable via USB
+  * firmware: octsimtest: mcp23017 initializaiton
+  * firmware: cardem: re-factor CARDINSERT command processing
+  * firmware: octsimtest: Support SIMTRACE_MSGT_DT_CEMU_CARDINSERT
+  * firmware: octsimtest: use TRACE_* macros instead of direct printf
+  * firmware: octsimtest: Fix disabling the card_insert signal
+  * firmware: octsimtest: Add i/I command for setting card-insert via I2C GPIO
+  * firmware: octsimtest: ensure all card_insert GPIO are 0 after reset
+  * don't printf() directly from library code, go via libosmocore logging
+  * simtrace2-list: Use osmo_st2_compatible_dev_ids[]
+  * board_gpio.gnumeric: Add ngff-cardem pin-out
+  * 99-simtrace2.rules: Add OCTSIMTEST
+  * contrib/flash.py: Add OCTSIMTEST support
+  * Introduce simtrace2-tool
+  * introduce support for new ngff_cardem board
+  * simtrace2.spec: Add simtrace2-tool binary to package
+  * contrib/jenkins.sh: Build APP=cardem for BOARD=ngff_cardem
+  * jenkins.sh: Build 'trace' firmware for ngff_cardem
+  * Use osmo_libusb_{init,exit}() instead of libusb_{init,exit}()
+  * simtrace2-cardem-pcsc: Remove double libusb initialization
+  * simtrace2-tool: Initialize logging to avoid error on first log output
+  * cardem-pcsc: Fix return of uninitialized variable
+  * host: Upgrade libosmocore dependency to 1.4.0
 
- -- Harald Welte <lafore@gnumonks.org>  Thu, 28 Nov 2019 00:44:57 +0100
+  [ Kévin Redon ]
+  * minor: fix spacing
+  * minor: updated copyright years
+  * dfu: minor: make debug output only verbose in info level
+  * minor: move USB debug output from info to debug level
+  * minor: improve debug output
+  * minor : fix typo in comment
+  * better detect VCC and nRST changes on simtrace2 board
+  * minor: ignore usbstring binary
+  * simtrace2-remsim: Use simplest ATR
+  * cardem: use simplest ATR as default ATR
+  * minor: fix typo
+  * DFU: increase USB reset duration to 50 ms
+  * DFU: restart bootloader when USB conf failed
+  * Makefile: add linker option showing memory usage
+  * improve shared bootloader/application memory
+  * minor: improve trace output
+  * DFU: add DFU application
+  * add script to flash latest firmware
+  * minor: use same LED pattern for cardem as other applications
+  * cardem: currently simtrace does not support cardem
+  * add library providing ISO 7816-3 utilities
+  * add ISO 7816-3 library to remsim project
+  * rename PIN_PHONE_{CLK,IO} to PIN_USIM1_{CLK,IO}
+  * minor add comments
+  * make sim switch board specific
+
+  [ Eric Wild ]
+  * remsim: allow selecting pcsc reader number
+  * cardem: disable upload for simtrace2
+  * firmware: do not allow undefined symbols
+  * firmware: allow verbose builds
+  * cardem: choose a more reasonable default ATR
+  * contrib: add a basic simtrace lua dissector for wireshark
+  * cardem: free the buf
+  * cardemu: support 1v8 for the tester
+  * firmware: data sections
+  * firmware: proper makefile deps
+  * firmware: make the ngff beakout blink
+  * simtrace2-cardem: use local sim on exit
+  * contrib: more cardem dissection
+  * firmware: trace for ngff
+  * cardem: fix spurious NULL bytes during transfers
+  * contrib/jenkins.sh: build ngff_Cardem dfu bootloader
+  * contrib: allow manually forcing bulk simtrace dissection
+  * contrib/jenkins.sh: lower trace to make bl fit
+  * Revert "firmware: data sections"
+  * add the ngff cardem to default build targets
+  * drop unused exidx sections when linking
+  * clang build support
+  * fix bootloader led config crash
+  * firmware: add bootloader update "app"
+  * firmware: remove usb pullup that dates back to simtrace1
+  * firmware: increase reset delay before usb reattach
+  * firmware: drop cref printing
+  * add our default clang-format file
+  * firmware: add missing usb strings to blupdate that prevented building it
+  * jenkins: build bootloader updater
+  * firmware: remove dfu-dfu default target
+
+  [ Oliver Smith ]
+  * contrib: import RPM spec
+  * contrib: integrate RPM spec
+  * d/source/format: new file
+  * firmware/Makefile: fix UNKNOWN in OBS packages
+  * host: use git-version-gen/tarball-v. from topdir
+  * gitignore: add firmware/apps/*/usb_strings.txt.patched
+  * firmware: create duplicate files for upload only
+  * contrib/prepare_upload.sh: fix cd problems
+  * firmware: qmod-dfu: disable stack protector
+  * firmware: disable stack protector by default
+  * gitreview: new file
+
+  [ Leonard Hübner ]
+  * remsim: adding cli argument to set the atr
+
+  [ Eric ]
+  * dfu: let the device reset itself
+
+ -- Harald Welte <laforge@osmocom.org>  Thu, 09 Dec 2021 08:12:56 +0100
 
 simtrace2 (0.5.1) unstable; urgency=medium
 

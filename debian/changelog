@@ -1,3 +1,9 @@
+simtrace2 (0.8.1) unstable; urgency=medium
+
+  * host/contrib/simtrace2.spec.in: fix soname
+
+ -- Oliver Smith <osmith@sysmocom.de>  Fri, 10 Dec 2021 10:04:28 +0100
+
 simtrace2 (0.8.0) unstable; urgency=medium
 
   [ Harald Welte ]

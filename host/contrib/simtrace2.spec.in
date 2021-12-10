@@ -38,11 +38,11 @@ and remote SIM operation.
 
 This package contains SIMtrace 2 host utility.
 
-%package -n libosmo-simtrace2-0
+%package -n libosmo-simtrace2-1
 Summary:        Shared Library part of libosmo-simtrace2
 Group:          System/Libraries
 
-%description -n libosmo-simtrace2-0
+%description -n libosmo-simtrace2-1
 This library contains core "driver" functionality to interface with the
 Osmocom SIMtrace2 (and compatible) USB device firmware.  It enables
 applications to implement SIM card / smart card tracing as well as
@@ -51,7 +51,7 @@ SIM / smart card emulation functions.
 %package -n libosmo-simtrace2-devel
 Summary:        Development files for the Osmocom SIMtrace2 library
 Group:          Development/Libraries/C and C++
-Requires:       libosmo-simtrace2-0 = %{version}
+Requires:       libosmo-simtrace2-1 = %{version}
 
 %description -n libosmo-simtrace2-devel
 Osmocom SIMtrace2 (and compatible) USB device firmware.  It enables
@@ -76,8 +76,8 @@ make %{?_smp_mflags}
 install -Dm0644 host/contrib/99-simtrace2.rules %{buildroot}/%{_udevrulesdir}/99-simtrace2.rules
 find %{buildroot} -type f -name "*.la" -delete -print
 
-%post   -n libosmo-simtrace2-0 -p /sbin/ldconfig
-%postun -n libosmo-simtrace2-0 -p /sbin/ldconfig
+%post   -n libosmo-simtrace2-1 -p /sbin/ldconfig
+%postun -n libosmo-simtrace2-1 -p /sbin/ldconfig
 
 %files
 %doc README.md
@@ -87,8 +87,8 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %{_bindir}/simtrace2-tool
 %{_udevrulesdir}/99-simtrace2.rules
 
-%files -n libosmo-simtrace2-0
-%{_libdir}/libosmo-simtrace2.so.0*
+%files -n libosmo-simtrace2-1
+%{_libdir}/libosmo-simtrace2.so.1*
 
 %files -n libosmo-simtrace2-devel
 %dir %{_includedir}/osmocom/

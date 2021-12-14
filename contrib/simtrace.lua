@@ -42,14 +42,38 @@ local final  = ProtoField.uint32("usb_simtrace.final", "final", base.HEX_DEC, NU
 local tpdu_hdr  = ProtoField.uint32("usb_simtrace.tpdu_hdr", "tpdu_hdr", base.HEX_DEC, NULL, 0x1)
 local rxtxdatalen  = ProtoField.uint16("usb_simtrace.rxtxdatalen", "rx/tx data length", base.HEX_DEC)
 local rxtxdata  = ProtoField.bytes("usb_simtrace.rxtxdata", "rx/tx (data)")
-usb_simtrace_protocol.fields = {
-  msgtype, seqnr, slotnr, reserved, payloadlen, payload, pb_and_rx, pb_and_tx, final, tpdu_hdr, rxtxdatalen, rxtxdata
+
+local CEMU_STATUS_F_VCC_PRESENT  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_VCC_PRESENT", "VCC_PRESENT", base.HEX_DEC, NULL, 0x00000001)
+local CEMU_STATUS_F_CLK_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_CLK_ACTIVE", "CLK_ACTIVE", base.HEX_DEC, NULL, 0x00000002)
+local CEMU_STATUS_F_RCEMU_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_RCEMU_ACTIVE", "CEMU_ACTIVE", base.HEX_DEC, NULL, 0x00000004)
+local CEMU_STATUS_F_CARD_INSERT  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_CARD_INSERT", "CARD_INSERT", base.HEX_DEC, NULL, 0x00000008)
+local CEMU_STATUS_F_RESET_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_RESET_ACTIVE", "RESET_ACTIVE", base.HEX_DEC, NULL, 0x00000010)
+
+local modem_reset_types = {
+    [0x00] = "de-assert",
+    [0x01] = "assert",
+    [0x02] = "pulse"
 }
+local modem_reset_status = ProtoField.uint8("usb_simtrace.modem.reset_type", "modem reset type", base.HEX, modem_reset_types, 0xf)
+local modem_reset_len = ProtoField.uint8("usb_simtrace.modem.reset_len", "modem reset length (ms)", base.DEC)
+
+usb_simtrace_protocol.fields = {
+  msgtype, seqnr, slotnr, reserved, payloadlen, payload,
+  pb_and_rx, pb_and_tx, final, tpdu_hdr, rxtxdatalen, rxtxdata,
+  CEMU_STATUS_F_VCC_PRESENT, CEMU_STATUS_F_CLK_ACTIVE, CEMU_STATUS_F_RCEMU_ACTIVE, CEMU_STATUS_F_CARD_INSERT, CEMU_STATUS_F_RESET_ACTIVE,
+  modem_reset_status, modem_reset_len
+}
+
+local is_hdr = Field.new("usb_simtrace.tpdu_hdr")
+local is_pbrx = Field.new("usb_simtrace.pb_and_rx")
+local is_pbtx = Field.new("usb_simtrace.pb_and_tx")
+local is_final= Field.new("usb_simtrace.final")
+
 function dissect_rxtx(payload_data,pinfo,tree)
 
   local headerSubtree = tree:add(usb_simtrace_protocol, payload_data, "rx/tx data")
-  local len  = payload_data(8+4,2):le_uint();
-  local cmd32 =  payload_data(8+0,4):le_uint();
+  local len  = payload_data(4,2):le_uint();
+  local cmd32 =  payload_data(0,4):le_uint();
 
   headerSubtree:add(pb_and_rx, cmd32)
   headerSubtree:add(pb_and_tx, cmd32)
@@ -57,7 +81,65 @@ function dissect_rxtx(payload_data,pinfo,tree)
   headerSubtree:add(tpdu_hdr, cmd32)
 
   headerSubtree:add(rxtxdatalen, len)
-  headerSubtree:add_le(rxtxdata, payload_data(8+6,len))
+  headerSubtree:add_le(rxtxdata, payload_data(6,len))
+
+  -- ghetto dissection does not work due to mixed in procedure bytes
+  --if pinfo.visited == false then
+  -- Dissector.get("iso7816"):call(payload_data(6):tvb(), pinfo, tree)
+
+-- local offs = 0
+-- if (is_pbrx().value == 1 or is_pbtx().value == 1) and is_final().value == 0 then
+--    offs = 1
+-- else
+--  offs = 0
+-- end
+--
+-- if is_hdr().value == 1 then
+--   Dissector.get("gsm_sim"):call(concatss:tvb(), pinfo, tree)
+--   concatss =  payload_data(6):bytes()
+--  else
+--   concatss = concatss .. payload_data(6+offs):bytes()
+--  end
+
+--end
+
+end
+
+function dissect_status(payload_data,pinfo,tree)
+
+  local headerSubtree = tree:add(usb_simtrace_protocol, payload_data, "status message")
+  local cmd32 =  payload_data(0,4):le_uint();
+
+  headerSubtree:add(CEMU_STATUS_F_VCC_PRESENT, cmd32)
+  headerSubtree:add(CEMU_STATUS_F_CLK_ACTIVE, cmd32)
+  headerSubtree:add(CEMU_STATUS_F_RCEMU_ACTIVE, cmd32)
+  headerSubtree:add(CEMU_STATUS_F_CARD_INSERT, cmd32)
+  headerSubtree:add(CEMU_STATUS_F_RESET_ACTIVE, cmd32)
+
+  pinfo.cols.info:append(" VCC:" .. payload_data(0,1):bitfield(7, 1) .. " CLK:" .. payload_data(0,1):bitfield(6, 1) .. " RESET:" .. payload_data(0,1):bitfield(3, 1))
+end
+
+function dissect_atr(payload_data,pinfo,tree)
+
+  local len  = payload_data(0,1):le_uint()
+  Dissector.get("iso7816.atr"):call(payload_data(1):tvb(), pinfo, tree)
+end
+
+function dissect_modem_reset(payload_data,pinfo,tree)
+
+  local headerSubtree = tree:add(usb_simtrace_protocol, payload_data, "modem reset")
+  local cmd8 =  payload_data(0,1):le_uint();
+
+  headerSubtree:add(modem_reset_status, cmd8)
+  pinfo.cols.info:append(" reset type:" .. modem_reset_types[cmd8]);
+
+  if(cmd8 == 2) then
+    local duration = payload_data(1,2):le_uint()
+    headerSubtree:add(modem_reset_len, duration)
+    pinfo.cols.info:append(" duration:" ..  duration .. "ms")
+  end
+
+
 end
 
 function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
@@ -76,7 +158,13 @@ function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
   pinfo.cols.info = string.format("Cmd 0x%04X : %s", command, control_commands[command])
   local payload_data = buffer(8,length-8)
   if(command == 0x0101 or command == 0x0106) then
-    return dissect_rxtx(buffer(),pinfo,subtree)
+    return dissect_rxtx(payload_data(),pinfo,subtree)
+  elseif(command == 0x0104) then
+	return dissect_status(payload_data(),pinfo,subtree)
+  elseif(command == 0x0102) then
+	return dissect_atr(payload_data(),pinfo,subtree)
+  elseif(command == 0x0201) then
+	return dissect_modem_reset(payload_data(),pinfo,subtree)
   else
     subtree:add(payload, payload_data)
   end
@@ -89,4 +177,6 @@ local usb_product_dissectors = DissectorTable.get("usb.product")
 usb_product_dissectors:add(0x1d50616d, usb_simtrace_protocol)
 usb_product_dissectors:add(0x1d50616e, usb_simtrace_protocol)
 DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
+DissectorTable.get("usb.interrupt"):add(0xffff, usb_simtrace_protocol)
+--concatss =  ByteArray.new()
 end

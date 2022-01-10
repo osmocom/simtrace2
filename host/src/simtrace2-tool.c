@@ -65,6 +65,7 @@ static void print_help(void)
 	printf( "Commands:\n"
 		"\tmodem reset (enable|disable|cycle)\n"
 		"\tmodem sim-switch (local|remote)\n"
+		"\tmodem sim-card (insert|remove)\n"
 		"\n");
 }
 
@@ -167,6 +168,29 @@ static int do_modem_sim_switch(int argc, char **argv)
 	return 0;
 }
 
+/* emulate SIM card insertion / removal from modem */
+static int do_modem_sim_card(int argc, char **argv)
+{
+	char *command;
+	if (argc < 1)
+		return -EINVAL;
+	command = argv[0];
+	argc--;
+	argv++;
+
+	if (!strcmp(command, "insert")) {
+		printf("Setting SIM=INSERTED; Modem reset recommended\n");
+		return osmo_st2_cardem_request_card_insert(ci, 1);
+	} else if (!strcmp(command, "remove")) {
+		printf("Setting SIM=REMOVED; Modem reset recommended\n");
+		return osmo_st2_cardem_request_card_insert(ci, 0);
+	} else {
+		fprintf(stderr, "Unsupported modem sim-card command: '%s'\n", command);
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static int do_subsys_modem(int argc, char **argv)
 {
 	char *command;
@@ -182,6 +206,8 @@ static int do_subsys_modem(int argc, char **argv)
 		rc = do_modem_reset(argc, argv);
 	} else if (!strcmp(command, "sim-switch")) {
 		rc = do_modem_sim_switch(argc, argv);
+	} else if (!strcmp(command, "sim-card")) {
+		rc = do_modem_sim_card(argc, argv);
 	} else {
 		fprintf(stderr, "Unsupported command for subsystem modem: '%s'\n", command);
 		return -EINVAL;

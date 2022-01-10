@@ -20,6 +20,9 @@ tags
 host/simtrace2-list
 host/simtrace2-cardem-pcsc
 host/contrib/simtrace2.spec
+host/src/simtrace2-tool
+host/tests
 usb_strings_generated.h
 firmware/usbstring/usbstring
 firmware/apps/*/usb_strings.txt.patched
+firmware/misc/crctool

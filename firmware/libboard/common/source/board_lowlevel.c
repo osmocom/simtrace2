@@ -147,7 +147,7 @@ extern WEAK void LowLevelInit( void )
 	}
 */
 
-#ifndef qmod
+#ifndef BOARD_MAINOSC_BYPASS
 	/* Initialize main oscillator */
 	if ( !(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL) )
 	{
@@ -165,11 +165,11 @@ extern WEAK void LowLevelInit( void )
 	timeout = 0;
 	while (!(PMC->PMC_SR & PMC_SR_MOSCSELS) && (timeout++ < CLOCK_TIMEOUT));
 #else
-	/* QMOD has external 12MHz clock source */
+	/* Board has external clock, not a crystal oscillator */
 	PIOB->PIO_PDR = (1 << 9);
 	PIOB->PIO_PUDR = (1 << 9);
 	PIOB->PIO_PPDDR = (1 << 9);
-	PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTBY| CKGR_MOR_MOSCSEL;
+	PMC->CKGR_MOR = CKGR_MOR_KEY(0x37) | CKGR_MOR_MOSCRCEN | CKGR_MOR_MOSCXTBY | CKGR_MOR_MOSCSEL;
 #endif
 
 	/* disable the red LED after main clock initialization */

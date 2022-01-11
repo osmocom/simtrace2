@@ -83,10 +83,21 @@ struct cardem_inst {
 #ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
 #endif
+
+	/*! real-time state of VCC I/O line, irrespective of enabled flag */
 	bool vcc_active;
+
+	/*! last VCC state we reported to the card emu state machine (conditioned by enabled flag) */
 	bool vcc_active_last;
+
+	/*! real-time state of RST I/O line, irrespective of enabled flag */
 	bool rst_active;
+
+	/*! last RST state we reported to the card emu state machine (conditioned by enabled flag) */
 	bool rst_active_last;
+
+	/*! flag indicating whether this instance should perform card emulation, or not */
+	bool enabled;
 };
 
 struct cardem_inst cardem_inst[] = {
@@ -515,19 +526,25 @@ void ADC_IrqHandler(void)
 #endif /* DETECT_VCC_BY_ADC */
 
 
-/* called from main loop; dispatches card I/O state changes to card_emu from main loop */
+/**
+ * called from main loop; dispatches card I/O state changes to card_emu from main loop.
+ * NOTE: conditions I/O state on the ci->enabled flag; if the instance is disabled, we assume VCC is
+ * disabled and the device is not in reset
+ */
 static void process_io_statechg(struct cardem_inst *ci)
 {
-	if (ci->vcc_active != ci->vcc_active_last) {
-		card_emu_io_statechg(ci->ch, CARD_IO_VCC, ci->vcc_active);
+	const bool vcc_active = ci->vcc_active && ci->enabled;
+	if (vcc_active != ci->vcc_active_last) {
+		card_emu_io_statechg(ci->ch, CARD_IO_VCC, vcc_active);
 		/* FIXME do this for real */
-		card_emu_io_statechg(ci->ch, CARD_IO_CLK, ci->vcc_active);
-		ci->vcc_active_last = ci->vcc_active;
+		card_emu_io_statechg(ci->ch, CARD_IO_CLK, vcc_active);
+		ci->vcc_active_last = vcc_active;
 	}
 
-	if (ci->rst_active != ci->rst_active_last) {
-		card_emu_io_statechg(ci->ch, CARD_IO_RST, ci->rst_active);
-		ci->rst_active_last = ci->rst_active;
+	const bool rst_active = ci->rst_active && ci->enabled;
+	if (rst_active != ci->rst_active_last) {
+		card_emu_io_statechg(ci->ch, CARD_IO_RST, rst_active);
+		ci->rst_active_last = rst_active;
 	}
 }
 
@@ -778,10 +795,8 @@ static int usb_command_sim_select(struct msgb *msg, struct cardem_inst *ci)
 	if (msgb_l2len(msg) < sizeof(*mss))
 		return -1;
 
-	if (mss->remote_sim)
-		sim_switch_use_physical(ci->num, 0);
-	else
-		sim_switch_use_physical(ci->num, 1);
+	ci->enabled = mss->remote_sim ? true : false;
+	sim_switch_use_physical(ci->num, !ci->enabled);
 
 	return 0;
 }
@@ -925,7 +940,10 @@ void mode_cardemu_run(void)
 			}
 			uint8_t byte = rbuf_read(&ci->rb);
 			__enable_irq();
-			card_emu_process_rx_byte(ci->ch, byte);
+
+			if (ci->enabled) {
+				card_emu_process_rx_byte(ci->ch, byte);
+			}
 			//TRACE_ERROR("%uRx%02x\r\n", i, byte);
 		}
 

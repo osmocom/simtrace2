@@ -92,7 +92,7 @@ uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart)
 	while( ((us_base->US_CSR & US_CSR_RXRDY) == 0) ) {
 	WDT_Restart(WDT);
 		if(timeout++ > 12000 * (BOARD_MCK/1000000)) {
-			TRACE_WARNING("TimeOut\n\r");
+			TRACE_WARNING("TimeOut\r\n");
 			return( 0 );
 		}
 	}
@@ -107,9 +107,9 @@ uint32_t ISO7816_GetChar( uint8_t *pCharToReceive, Usart_info *usart)
 					                  (1<<10)));
 
 	if (status != 0 ) {
-		TRACE_DEBUG("R:0x%" PRIX32 "\n\r", status); 
-		TRACE_DEBUG("R:0x%" PRIX32 "\n\r", us_base->US_CSR);
-		TRACE_DEBUG("Nb:0x%" PRIX32 "\n\r", us_base->US_NER );
+		TRACE_DEBUG("R:0x%" PRIX32 "\r\n", status); 
+		TRACE_DEBUG("R:0x%" PRIX32 "\r\n", us_base->US_CSR);
+		TRACE_DEBUG("Nb:0x%" PRIX32 "\r\n", us_base->US_NER );
 		us_base->US_CR = US_CR_RSTSTA;
 	}
 
@@ -159,11 +159,11 @@ uint32_t ISO7816_SendChar( uint8_t CharToSend, Usart_info *usart )
 
 	if (status != 0 ) {
 		TRACE_INFO("******* status: 0x%" PRIX32 " (Overrun: %" PRIX32
-					", NACK: %" PRIX32 ", Timeout: %" PRIX32 ", underrun: %" PRIX32 ")\n\r",
+					", NACK: %" PRIX32 ", Timeout: %" PRIX32 ", underrun: %" PRIX32 ")\r\n",
 					status, ((status & US_CSR_OVRE)>> 5), ((status & US_CSR_NACK) >> 13),
 					((status & US_CSR_TIMEOUT) >> 8), ((status & (1 << 10)) >> 10));
-		TRACE_INFO("E (USART CSR reg):0x%" PRIX32 "\n\r", us_base->US_CSR);
-		TRACE_INFO("Nb (Number of errors):0x%" PRIX32 "\n\r", us_base->US_NER );
+		TRACE_INFO("E (USART CSR reg):0x%" PRIX32 "\r\n", us_base->US_CSR);
+		TRACE_INFO("Nb (Number of errors):0x%" PRIX32 "\r\n", us_base->US_NER );
 		us_base->US_CR = US_CR_RSTSTA;
 	}
 
@@ -219,13 +219,13 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 	uint8_t cmdCase;
 	uint32_t status = 0;
 
-	TRACE_INFO("pAPDU[0]=0x%X\n\r",pAPDU[0]);
-	TRACE_INFO("pAPDU[1]=0x%X\n\r",pAPDU[1]);
-	TRACE_INFO("pAPDU[2]=0x%X\n\r",pAPDU[2]);
-	TRACE_INFO("pAPDU[3]=0x%X\n\r",pAPDU[3]);
-	TRACE_INFO("pAPDU[4]=0x%X\n\r",pAPDU[4]);
-	TRACE_INFO("pAPDU[5]=0x%X\n\r",pAPDU[5]);
-	TRACE_INFO("wlength=%d\n\r",wLength);
+	TRACE_INFO("pAPDU[0]=0x%X\r\n",pAPDU[0]);
+	TRACE_INFO("pAPDU[1]=0x%X\r\n",pAPDU[1]);
+	TRACE_INFO("pAPDU[2]=0x%X\r\n",pAPDU[2]);
+	TRACE_INFO("pAPDU[3]=0x%X\r\n",pAPDU[3]);
+	TRACE_INFO("pAPDU[4]=0x%X\r\n",pAPDU[4]);
+	TRACE_INFO("pAPDU[5]=0x%X\r\n",pAPDU[5]);
+	TRACE_INFO("wlength=%d\r\n",wLength);
 
 	ISO7816_SendChar( pAPDU[0], &usart_sim ); /* CLA */
 	ISO7816_SendChar( pAPDU[1], &usart_sim ); /* INS */
@@ -272,7 +272,7 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 		}
 	}
 
-	TRACE_DEBUG("CASE=0x%X NeNc=0x%X\n\r", cmdCase, NeNc);
+	TRACE_DEBUG("CASE=0x%X NeNc=0x%X\r\n", cmdCase, NeNc);
 
 	/* Handle Procedure Bytes */
 	do {
@@ -280,20 +280,20 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 		if (status != 0) {
 			return status;
 		}
-		TRACE_INFO("procByte: 0x%X\n\r", procByte);
+		TRACE_INFO("procByte: 0x%X\r\n", procByte);
 		/* Handle NULL */
 		if ( procByte == ISO_NULL_VAL ) {
-			TRACE_INFO("INS\n\r");
+			TRACE_INFO("INS\r\n");
 			continue;
 		}
 		/* Handle SW1 */
 		else if ( ((procByte & 0xF0) ==0x60) || ((procByte & 0xF0) ==0x90) ) {
-			TRACE_INFO("SW1\n\r");
+			TRACE_INFO("SW1\r\n");
 			SW1 = 1;
 		}
 		/* Handle INS */
 		else if ( pAPDU[1] == procByte) {
-			TRACE_INFO("HdlINS\n\r");
+			TRACE_INFO("HdlINS\r\n");
 			if (cmdCase == CASE2) {
 				/* receive data from card */
 				do {
@@ -317,14 +317,14 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 		#pragma GCC diagnostic ignored "-Wsign-compare"
 		if ( pAPDU[1] == (procByte ^ 0xff)) {
 		#pragma GCC diagnostic pop
-			TRACE_INFO("HdlINS+\n\r");
+			TRACE_INFO("HdlINS+\r\n");
 			if (cmdCase == CASE2) {
 				/* receive data from card */
 				status = ISO7816_GetChar(&pMessage[indexMsg++], &usart_sim);
 				if (status != 0) {
 					return status;
 				}
-				TRACE_INFO("Rcv: 0x%X\n\r", pMessage[indexMsg-1]);
+				TRACE_INFO("Rcv: 0x%X\r\n", pMessage[indexMsg-1]);
 			}
 			else {
 				status = ISO7816_SendChar(pAPDU[indexApdu++], &usart_sim);
@@ -336,7 +336,7 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 		}
 		else {
 			/* ?? */
-			TRACE_INFO("procByte=0x%X\n\r", procByte);
+			TRACE_INFO("procByte=0x%X\r\n", procByte);
 			break;
 		}
 	} while (NeNc != 0);
@@ -356,7 +356,7 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
 		return status;
 	}
 
-	TRACE_WARNING("SW1=0x%X, SW2=0x%X\n\r", pMessage[indexMsg-2], pMessage[indexMsg-1]);
+	TRACE_WARNING("SW1=0x%X, SW2=0x%X\r\n", pMessage[indexMsg-2], pMessage[indexMsg-1]);
 
 	*retlen = indexMsg;
 	return status;
@@ -368,7 +368,7 @@ uint32_t ISO7816_XfrBlockTPDU_T0(const uint8_t *pAPDU,
  */
 void ISO7816_Escape( void )
 {
-	TRACE_DEBUG("For user, if needed\n\r");
+	TRACE_DEBUG("For user, if needed\r\n");
 }
 
 /**
@@ -376,7 +376,7 @@ void ISO7816_Escape( void )
  */
 void ISO7816_RestartClock( void )
 {
-	TRACE_DEBUG("ISO7816_RestartClock\n\r");
+	TRACE_DEBUG("ISO7816_RestartClock\r\n");
 	USART_SIM->US_BRGR = 13;
 }
 
@@ -385,7 +385,7 @@ void ISO7816_RestartClock( void )
  */
 void ISO7816_StopClock( void )
 {
-	TRACE_DEBUG("ISO7816_StopClock\n\r");
+	TRACE_DEBUG("ISO7816_StopClock\r\n");
 	USART_SIM->US_BRGR = 0;
 }
 
@@ -394,8 +394,8 @@ void ISO7816_StopClock( void )
  */
 void ISO7816_toAPDU( void )
 {
-	TRACE_DEBUG("ISO7816_toAPDU\n\r");
-	TRACE_DEBUG("Not supported at this time\n\r");
+	TRACE_DEBUG("ISO7816_toAPDU\r\n");
+	TRACE_DEBUG("Not supported at this time\r\n");
 }
 
 /**
@@ -549,26 +549,26 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 	uint32_t y;
 	uint8_t offset;
 
-	printf("\n\r");
-	printf("ATR: Answer To Reset:\n\r");
+	printf("\r\n");
+	printf("ATR: Answer To Reset:\r\n");
 	printf("TS = 0x%X Initial character ",pAtr[0]);
 	if( pAtr[0] == 0x3B ) {
 
-		printf("Direct Convention\n\r");
+		printf("Direct Convention\r\n");
 	}
 	else {
 		if( pAtr[0] == 0x3F ) {
 
-			printf("Inverse Convention\n\r");
+			printf("Inverse Convention\r\n");
 		}
 		else {
-			printf("BAD Convention\n\r");
+			printf("BAD Convention\r\n");
 		}
 	}
 
-	printf("T0 = 0x%X Format caracter\n\r",pAtr[1]);
-	printf("    Number of historical bytes: K = %d\n\r", pAtr[1]&0x0F);
-	printf("    Presence further interface byte:\n\r");
+	printf("T0 = 0x%X Format caracter\r\n",pAtr[1]);
+	printf("    Number of historical bytes: K = %d\r\n", pAtr[1]&0x0F);
+	printf("    Presence further interface byte:\r\n");
 	if( pAtr[1]&0x80 ) {
 		printf("TA ");
 	}
@@ -582,7 +582,7 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 		printf("TD ");
 	}
 	if( pAtr[1] != 0 ) {
-		printf(" present\n\r");
+		printf(" present\r\n");
 	}
 
 	i = 2;
@@ -598,11 +598,11 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 				printf("FI = %d ", (pAtr[i]>>8));
 				printf("DI = %d", (pAtr[i]&0x0F));
 			}
-			printf("\n\r");
+			printf("\r\n");
 			i++;
 		}
 		if (y & 0x20) {  /* TB[i] */
-			printf("TB[%d] = 0x%X\n\r", offset, pAtr[i]);
+			printf("TB[%d] = 0x%X\r\n", offset, pAtr[i]);
 			i++;
 		}
 		if (y & 0x40) {  /* TC[i] */
@@ -610,11 +610,11 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 			if( offset == 1 ) {
 				printf("Extra Guard Time: N = %d", pAtr[i]);
 			}
-			printf("\n\r");
+			printf("\r\n");
 			i++;
 		}
 		if (y & 0x80) {  /* TD[i] */
-			printf("TD[%d] = 0x%X\n\r", offset, pAtr[i]);
+			printf("TD[%d] = 0x%X\r\n", offset, pAtr[i]);
 			y =  pAtr[i++] & 0xF0;
 		}
 		else {
@@ -624,13 +624,13 @@ void ISO7816_Decode_ATR( uint8_t* pAtr )
 	}
 
 	/* Historical Bytes */
-	printf("Historical bytes:\n\r");
+	printf("Historical bytes:\r\n");
 	y = pAtr[1] & 0x0F;
 	for( j=0; j < y; j++ ) {
 		printf(" 0x%X", pAtr[i]);
 		i++;
 	}
-	printf("\n\r\n\r");
+	printf("\r\n\r\n");
 
 }
 
@@ -645,7 +645,7 @@ void ISO7816_Set_Reset_Pin(const Pin *pPinIso7816RstMC) {
 void ISO7816_Init( Usart_info *usart, bool master_clock )
 {
 	uint32_t clk;
-	TRACE_DEBUG("ISO_Init\n\r");
+	TRACE_DEBUG("ISO_Init\r\n");
 
 	Usart *us_base = usart->base;
 	uint32_t us_id = usart->id;

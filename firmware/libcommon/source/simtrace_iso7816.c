@@ -50,7 +50,7 @@ volatile ringbuf sim_rcv_buf = { {0}, 0, 0 };
 static void Callback_PhoneRST_ISR(uint8_t * pArg, uint8_t status,
 				  uint32_t transferred, uint32_t remaining)
 {
-	printf("rstCB\n\r");
+	printf("rstCB\r\n");
 	PIO_EnableIt(&pinPhoneRST);
 }
 
@@ -58,7 +58,7 @@ void ISR_PhoneRST(const Pin * pPin)
 {
 	int ret;
 	// FIXME: no printfs in ISRs?
-	printf("+++ Int!! %lx\n\r", pinPhoneRST.pio->PIO_ISR);
+	printf("+++ Int!! %lx\r\n", pinPhoneRST.pio->PIO_ISR);
 	if (((pinPhoneRST.pio->PIO_ISR & pinPhoneRST.mask) != 0)) {
 		if (PIO_Get(&pinPhoneRST) == 0) {
 			printf(" 0 ");
@@ -136,8 +136,8 @@ void update_fidi(Usart_info *usart, uint8_t fidi)
 		}
 		usart->base->US_FIDI = (ratio & 0x7ff);
 		usart->base->US_CR |= US_CR_RXEN | US_CR_STTTO;
-		//TRACE_INFO("updated USART(%u) Fi(%u)/Di(%u) ratio(%d): %u\n\r", usart->id, fi, di, ratio, usart->base->US_FIDI);
+		//TRACE_INFO("updated USART(%u) Fi(%u)/Di(%u) ratio(%d): %u\r\n", usart->id, fi, di, ratio, usart->base->US_FIDI);
 	} else {
-		//TRACE_WARNING("computed Fi/Di ratio %d unsupported\n\r", ratio); /* don't print since this is function is also called by ISRs */
+		//TRACE_WARNING("computed Fi/Di ratio %d unsupported\r\n", ratio); /* don't print since this is function is also called by ISRs */
 	}
 }

@@ -767,7 +767,7 @@ static void UDP_EndpointHandler(uint8_t bEndpoint)
         }
         else {
             // Acknowledge interrupt
-            TRACE_ERROR("Error Wr%d, %x\n\r", bEndpoint, pEndpoint->state);
+            TRACE_ERROR("Error Wr%d, %x\r\n", bEndpoint, pEndpoint->state);
             CLEAR_CSR(bEndpoint, UDP_CSR_TXCOMP);
         }
     }
@@ -914,11 +914,11 @@ static inline uint8_t UDP_Write(uint8_t    bEndpoint,
 /*    int i;
     for (i = 0; i < dLength; i++) {
        if (!(i%16)) {
-            printf("\n\r");
+            printf("\r\n");
         }
         printf("0x%x ", ((uint8_t*)pData)[i]);
     }
-    printf("\n\r");
+    printf("\r\n");
 */
 
     /* Setup the transfer descriptor */
@@ -1053,11 +1053,11 @@ static inline uint8_t UDP_Read(uint8_t  bEndpoint,
 /*    int i;
     for (i = 0; i < dLength; i++) {
         if (!(i%16)) {
-            printf("\n\r");
+            printf("\r\n");
         }
         printf("0x%x ", ((uint8_t*)pData)[i]);
     }
-    printf("\n\r");
+    printf("\r\n");
 */
 
     /* Set the transfer descriptor */
@@ -1114,7 +1114,7 @@ void USBD_IrqHandler(void)
     /* Return immediately if there is no interrupt to service */
     if (status == 0) {
 
-        TRACE_DEBUG_WP(".\n\r");
+        TRACE_DEBUG_WP(".\r\n");
         return;
     }
 
@@ -1212,7 +1212,7 @@ void USBD_IrqHandler(void)
 
                 if (status != 0) {
 
-                    TRACE_DEBUG_WP("\n\r  - ");
+                    TRACE_DEBUG_WP("\r\n  - ");
                 }
             }
             eptnum++;
@@ -1221,7 +1221,7 @@ void USBD_IrqHandler(void)
 
     /* Toggle LED back to its previous state */
     TRACE_DEBUG_WP("!");
-    TRACE_DEBUG_WP("\n\r");
+    TRACE_DEBUG_WP("\r\n");
     if (USBD_GetState() >= USBD_STATE_POWERED) {
 
         //LED_Clear(USBD_LEDUSB);
@@ -1581,7 +1581,7 @@ void USBD_HAL_SetConfiguration(uint8_t cfgnum)
  */
 void USBD_HAL_Init(void)
 {
-    TRACE_DEBUG("%s\n\r", "USBD_HAL_Init");
+    TRACE_DEBUG("%s\r\n", "USBD_HAL_Init");
 
     /* Must before USB & TXVC access! */
     UDP_EnablePeripheralClock();
@@ -1610,7 +1610,7 @@ uint8_t USBD_HAL_Stall(uint8_t bEP)
 
     /* Check that endpoint is in Idle state */
     if (pEndpoint->state != UDP_ENDPOINT_IDLE) {
-        TRACE_WARNING("UDP_Stall: EP%d locked\n\r", bEP);
+        TRACE_WARNING("UDP_Stall: EP%d locked\r\n", bEP);
         return USBD_STATUS_LOCKED;
     }
     /* STALL endpoint */

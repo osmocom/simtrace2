@@ -439,7 +439,7 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
 		return rc;
 	}
 	if (rc >= MAX_STRING_SIZE) {
-		fputs("stdio.c: increase MAX_STRING_SIZE\n\r", stderr);
+		fputs("stdio.c: increase MAX_STRING_SIZE\r\n", stderr);
 		return rc;
 	}
 
@@ -469,7 +469,7 @@ signed int vfprintf_sync(FILE *pStream, const char *pFormat, va_list ap)
 		return rc;
 	}
 	if (rc >= MAX_STRING_SIZE) {
-		fputs_sync("stdio.c: increase MAX_STRING_SIZE\n\r", stderr);
+		fputs_sync("stdio.c: increase MAX_STRING_SIZE\r\n", stderr);
 		return rc;
 	}
 

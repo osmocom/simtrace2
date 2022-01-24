@@ -49,7 +49,7 @@ struct dfudata *g_dfu = &_g_dfu;
 
 WEAK void dfu_drv_updstatus(void)
 {
-	TRACE_INFO("DFU: updstatus()\n\r");
+	TRACE_INFO("DFU: updstatus()\r\n");
 
 	/* we transition immediately from MANIFEST_SYNC to MANIFEST,
 	 * as the flash-writing is not asynchronous in this
@@ -72,7 +72,7 @@ static __dfufunc void handle_getstatus(void)
 	dstat.iString = 0;
 	memcpy(&dstat.bwPollTimeout, poll_timeout_10ms, sizeof(dstat.bwPollTimeout));
 
-	TRACE_DEBUG("handle_getstatus(%u, %u)\n\r", dstat.bStatus, dstat.bState);
+	TRACE_DEBUG("handle_getstatus(%u, %u)\r\n", dstat.bStatus, dstat.bState);
 
 	USBD_Write(0, (char *)&dstat, sizeof(dstat), NULL, 0);
 }
@@ -81,7 +81,7 @@ static void __dfufunc handle_getstate(void)
 {
 	uint8_t u8 = g_dfu->state;
 
-	TRACE_DEBUG("handle_getstate(%ld)\n\r", g_dfu->state);
+	TRACE_DEBUG("handle_getstate(%ld)\r\n", g_dfu->state);
 
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }
@@ -106,10 +106,10 @@ static void dnload_cb(void *arg, unsigned char status, unsigned long int transfe
 {
 	int rc;
 
-	TRACE_DEBUG("COMPLETE\n\r");
+	TRACE_DEBUG("COMPLETE\r\n");
 
 	if (status != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("USBD download callback status %d\n\r", status);
+		TRACE_ERROR("USBD download callback status %d\r\n", status);
 		USBD_Stall(0);
 		return;
 	}
@@ -136,14 +136,14 @@ static int handle_dnload(uint16_t val, uint16_t len, int first)
 	int rc;
 
 	if (len > BOARD_DFU_PAGE_SIZE) {
-		TRACE_ERROR("DFU length exceeds flash page size\n\r");
+		TRACE_ERROR("DFU length exceeds flash page size\r\n");
 		g_dfu->state = DFU_STATE_dfuERROR;
 		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
 	}
 
 	if (len & 0x03) {
-		TRACE_ERROR("DFU length not four-byte-aligned\n\r");
+		TRACE_ERROR("DFU length not four-byte-aligned\r\n");
 		g_dfu->state = DFU_STATE_dfuERROR;
 		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
@@ -153,7 +153,7 @@ static int handle_dnload(uint16_t val, uint16_t len, int first)
 		g_dfu->total_bytes = 0;
 
 	if (len == 0) {
-		TRACE_DEBUG("zero-size write -> MANIFEST_SYNC\n\r");
+		TRACE_DEBUG("zero-size write -> MANIFEST_SYNC\r\n");
 		g_dfu->state = DFU_STATE_dfuMANIFEST_SYNC;
 		return DFU_RET_ZLP;
 	}
@@ -172,10 +172,10 @@ static void upload_cb(void *arg, unsigned char status, unsigned long int transfe
 {
 	int rc;
 
-	TRACE_DEBUG("COMPLETE\n\r");
+	TRACE_DEBUG("COMPLETE\r\n");
 
 	if (status != USBD_STATUS_SUCCESS) {
-		TRACE_ERROR("USBD upload callback status %d\n\r", status);
+		TRACE_ERROR("USBD upload callback status %d\r\n", status);
 		USBD_Stall(0);
 		return;
 	}
@@ -191,7 +191,7 @@ static int handle_upload(uint16_t val, uint16_t len, int first)
 		g_dfu->total_bytes = 0;
 
 	if (len > BOARD_DFU_PAGE_SIZE) {
-		TRACE_ERROR("DFU length exceeds flash page size\n\r");
+		TRACE_ERROR("DFU length exceeds flash page size\r\n");
 		g_dfu->state = DFU_STATE_dfuERROR;
 		g_dfu->status = DFU_STATUS_errADDRESS;
 		return DFU_RET_STALL;
@@ -199,7 +199,7 @@ static int handle_upload(uint16_t val, uint16_t len, int first)
 
 	rc = USBDFU_handle_upload(if_altsettings[0], g_dfu->total_bytes, dfu_buf, len);
 	if (rc < 0) {
-		TRACE_ERROR("application handle_upload() returned %d\n\r", rc);
+		TRACE_ERROR("application handle_upload() returned %d\r\n", rc);
 		return DFU_RET_STALL;
 	}
 
@@ -217,7 +217,7 @@ void USBDFU_DFU_RequestHandler(const USBGenericRequest *request)
 	uint16_t val = USBGenericRequest_GetValue(request);
 	int rc, ret = DFU_RET_NOTHING;
 
-	TRACE_DEBUG("type=0x%x, recipient=0x%x val=0x%x len=%u\n\r",
+	TRACE_DEBUG("type=0x%x, recipient=0x%x val=0x%x len=%u\r\n",
 			USBGenericRequest_GetType(request),
 			USBGenericRequest_GetRecipient(request),
 			val, len);

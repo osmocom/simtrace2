@@ -84,15 +84,15 @@ static const Pin pinSmartCard = SMARTCARD_CONNECT_PIN;
 static void ISR_PioSmartCard(const Pin * pPin)
 {
 /* FIXME: why is pinSmartCard.pio->PIO_ISR the wrong number?
-	printf("+++++ Trying to check for pending interrupts (PIO ISR: 0x%X)\n\r", pinSmartCard.pio->PIO_ISR);
-	printf("+++++ Mask: 0x%X\n\r", pinSmartCard.mask);
+	printf("+++++ Trying to check for pending interrupts (PIO ISR: 0x%X)\r\n", pinSmartCard.pio->PIO_ISR);
+	printf("+++++ Mask: 0x%X\r\n", pinSmartCard.mask);
 Output:
 	+++++ Trying to check for pending interrupts (PIO ISR: 0x400)) = 1<<10
 	+++++ Mask: 0x100 = 1<<8
 */
 	// PA10 is DTXD, which is the debug uart transmit pin
 
-	printf("Interrupt!!\n\r");
+	printf("Interrupt!!\r\n");
 	/*  Check all pending interrupts */
 	// FIXME: this if condition is not always true...
 //    if ( (pinSmartCard.pio->PIO_ISR & pinSmartCard.mask) != 0 )
@@ -100,11 +100,11 @@ Output:
 		/*  Check current level on pin */
 		if (PIO_Get(&pinSmartCard) == 0) {
 			sim_inserted = 1;
-			printf("-I- Smartcard inserted\n\r");
+			printf("-I- Smartcard inserted\r\n");
 			CCID_Insertion();
 		} else {
 			sim_inserted = 0;
-			printf("-I- Smartcard removed\n\r");
+			printf("-I- Smartcard removed\r\n");
 			CCID_Removal();
 		}
 	}
@@ -115,7 +115,7 @@ Output:
  */
 static void ConfigureCardDetection(void)
 {
-	printf("+++++ Configure PIOs\n\r");
+	printf("+++++ Configure PIOs\r\n");
 	PIO_Configure(&pinSmartCard, 1);
 	NVIC_EnableIRQ(PIOA_IRQn);
 	PIO_EnableIt(&pinSmartCard);
@@ -177,7 +177,7 @@ void CCID_init(void)
 
 	// FIXME. what if smcard is not inserted?
 	if (PIO_Get(&pinSmartCard) == 0) {
-		printf("SIM card inserted\n\r");
+		printf("SIM card inserted\r\n");
 		CCID_Insertion();
 	}
 }

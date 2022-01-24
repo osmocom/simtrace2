@@ -89,11 +89,11 @@
 		/// \param condition  Condition to verify.
 		#define ASSERT(condition)  { \
 			if (!(condition)) { \
-				printf_sync("-F- ASSERT: %s %s:%d\n\r", #condition, __BASE_FILE__, __LINE__); \
+				printf_sync("-F- ASSERT: %s %s:%d\r\n", #condition, __BASE_FILE__, __LINE__); \
 				while (1); \
 			} \
 		}
-		#define SANITY_ERROR            "Sanity check failed at %s:%d\n\r"
+		#define SANITY_ERROR            "Sanity check failed at %s:%d\r\n"
 	
 		/// Performs the same duty as the ASSERT() macro, except a default error
 		/// message is output if the condition is false.

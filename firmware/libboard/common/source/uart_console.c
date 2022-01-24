@@ -238,7 +238,7 @@ extern void UART_DumpFrame( uint8_t* pucFrame, uint32_t dwSize )
 		printf( "%02X ", pucFrame[dw] ) ;
 	}
 
-	printf( "\n\r" ) ;
+	printf( "\r\n" ) ;
 }
 
 /**
@@ -273,7 +273,7 @@ extern void UART_DumpMemory( uint8_t* pucBuffer, uint32_t dwSize, uint32_t dwAdd
 			UART_PutChar( *pucTmp++ ) ;
 		}
 
-		printf( "\n\r" ) ;
+		printf( "\r\n" ) ;
 	}
 
 	if ( (dwSize%16) != 0 )
@@ -304,7 +304,7 @@ extern void UART_DumpMemory( uint8_t* pucBuffer, uint32_t dwSize, uint32_t dwAdd
 			UART_PutChar( pucBuffer[j] ) ;
 		}
 
-		printf( "\n\r" ) ;
+		printf( "\r\n" ) ;
 	}
 }
 
@@ -335,12 +335,12 @@ extern uint32_t UART_GetInteger( uint32_t* pdwValue )
 			{
 				if ( ucNbNb == 0 )
 				{
-					printf( "\n\rWrite a number and press ENTER or SPACE!\n\r" ) ;
+					printf( "\r\nWrite a number and press ENTER or SPACE!\r\n" ) ;
 					return 0 ;
 				}
 				else
 				{
-					printf( "\n\r" ) ;
+					printf( "\r\n" ) ;
 					*pdwValue=dwValue ;
 
 					return 1 ;
@@ -348,7 +348,7 @@ extern uint32_t UART_GetInteger( uint32_t* pdwValue )
 			}
 			else
 			{
-				printf( "\n\r'%c' not a number!\n\r", ucKey ) ;
+				printf( "\r\n'%c' not a number!\r\n", ucKey ) ;
 
 				return 0 ;
 			}
@@ -375,12 +375,12 @@ extern uint32_t UART_GetIntegerMinMax( uint32_t* pdwValue, uint32_t dwMin, uint3
 
 	if ( dwValue < dwMin || dwValue > dwMax )
  {
-		printf( "\n\rThe number have to be between %d and %d\n\r", (int)dwMin, (int)dwMax ) ;
+		printf( "\r\nThe number have to be between %d and %d\r\n", (int)dwMin, (int)dwMax ) ;
 
 		return 0 ;
 	}
 
-	printf( "\n\r" ) ;
+	printf( "\r\n" ) ;
 
 	*pdwValue = dwValue ;
 
@@ -421,7 +421,7 @@ extern uint32_t UART_GetHexa32( uint32_t* pdwValue )
 				}
 				else
 				{
-					printf( "\n\rIt is not a hexa character!\n\r" ) ;
+					printf( "\r\nIt is not a hexa character!\r\n" ) ;
 
 					return 0 ;
 				}
@@ -429,7 +429,7 @@ extern uint32_t UART_GetHexa32( uint32_t* pdwValue )
 		}
 	}
 
-	printf("\n\r" ) ;
+	printf("\r\n" ) ;
 	*pdwValue = dwValue ;
 
 	return 1 ;

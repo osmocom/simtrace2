@@ -156,7 +156,7 @@ extern int main(void)
 	print_banner();
 	board_main_top();
 
-	TRACE_INFO("USB init...\n\r");
+	TRACE_INFO("USB init...\r\n");
 	SIMtrace_USB_Initialize();
 
 	while (USBD_GetState() < USBD_STATE_CONFIGURED) {
@@ -165,7 +165,7 @@ extern int main(void)
 #if 0
 		if (i >= MAX_USB_ITER * 3) {
 			TRACE_ERROR("Resetting board (USB could "
-				    "not be configured)\n\r");
+				    "not be configured)\r\n");
 			USBD_Disconnect();
 			NVIC_SystemReset();
 		}
@@ -173,17 +173,17 @@ extern int main(void)
 		i++;
 	}
 
-	TRACE_INFO("calling configure of all configurations...\n\r");
+	TRACE_INFO("calling configure of all configurations...\r\n");
 	for (i = 1; i < ARRAY_SIZE(config_func_ptrs); i++) {
 		if (config_func_ptrs[i].configure)
 			config_func_ptrs[i].configure();
 	}
 
-	TRACE_INFO("calling init of config %u...\n\r", simtrace_config);
+	TRACE_INFO("calling init of config %u...\r\n", simtrace_config);
 	config_func_ptrs[simtrace_config].init();
 	last_simtrace_config = simtrace_config;
 
-	TRACE_INFO("entering main loop...\n\r");
+	TRACE_INFO("entering main loop...\r\n");
 	while (1) {
 		WDT_Restart(WDT);
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
@@ -201,12 +201,12 @@ extern int main(void)
 				isUsbConnected = 0;
 			}
 		} else if (isUsbConnected == 0) {
-			TRACE_INFO("USB is now configured\n\r");
+			TRACE_INFO("USB is now configured\r\n");
 
 			isUsbConnected = 1;
 		}
 		if (last_simtrace_config != simtrace_config) {
-			TRACE_INFO("USB config chg %u -> %u\n\r",
+			TRACE_INFO("USB config chg %u -> %u\r\n",
 				   last_simtrace_config, simtrace_config);
 			config_func_ptrs[last_simtrace_config].exit();
 			config_func_ptrs[simtrace_config].init();

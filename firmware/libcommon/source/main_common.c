@@ -18,18 +18,18 @@
 
 void print_banner(void)
 {
-	printf("\n\r\n\r"
-		"=============================================================================\n\r"
-		"SIMtrace2 firmware " GIT_VERSION ", BOARD=" BOARD ", APP=" APPLICATION "\n\r"
-		"(C) 2010-2019 by Harald Welte, 2018-2019 by Kevin Redon\n\r"
-		"=============================================================================\n\r");
+	printf("\r\n\r\n"
+		"=============================================================================\r\n"
+		"SIMtrace2 firmware " GIT_VERSION ", BOARD=" BOARD ", APP=" APPLICATION "\r\n"
+		"(C) 2010-2019 by Harald Welte, 2018-2019 by Kevin Redon\r\n"
+		"=============================================================================\r\n");
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
 	/* print chip-unique ID */
 	unsigned int unique_id[4];
 	EEFC_ReadUniqueID(unique_id);
-	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
+	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\r\n", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
+	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
 		   unique_id[0], unique_id[1], unique_id[2], unique_id[3]);
 
 	/* print reset cause */
@@ -42,9 +42,9 @@ void print_banner(void)
 		"user reset (NRST pin detected low)",
 	};
 	if (reset_cause < ARRAY_SIZE(reset_causes)) {
-		TRACE_INFO("Reset Cause: %s\n\r", reset_causes[reset_cause]);
+		TRACE_INFO("Reset Cause: %s\r\n", reset_causes[reset_cause]);
 	} else {
-		TRACE_INFO("Reset Cause: 0x%lx\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+		TRACE_INFO("Reset Cause: 0x%lx\r\n", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
 	}
 #endif
 }

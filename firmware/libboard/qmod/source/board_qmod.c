@@ -74,27 +74,27 @@ static int write_hub_eeprom(void)
 	/* wait */
 	mdelay(100);
 
-	TRACE_INFO("Writing EEPROM...\n\r");
+	TRACE_INFO("Writing EEPROM...\r\n");
 	/* write the EEPROM once */
 	for (i = 0; i < ARRAY_SIZE(__eeprom_bin); i++) {
 		int rc = eeprom_write_byte(0x50, i, __eeprom_bin[i]);
 		if (rc < 0) {
-			TRACE_ERROR("Writing EEPROM failed at byte %u: 0x%02x\n\r",
+			TRACE_ERROR("Writing EEPROM failed at byte %u: 0x%02x\r\n",
 				i, __eeprom_bin[i]);
 			return 1;
 		}
 	}
 
 	/* then pursue re-reading it again and again */
-	TRACE_INFO("Verifying EEPROM...\n\r");
+	TRACE_INFO("Verifying EEPROM...\r\n");
 	for (i = 0; i < ARRAY_SIZE(__eeprom_bin); i++) {
 		int byte = eeprom_read_byte(0x50, i);
-		TRACE_DEBUG("0x%02x: %02x\n\r", i, byte);
+		TRACE_DEBUG("0x%02x: %02x\r\n", i, byte);
 		if (byte != __eeprom_bin[i])
-			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\n\r",
+			TRACE_ERROR("Byte %u is wrong, expected 0x%02x, found 0x%02x\r\n",
 					i, __eeprom_bin[i], byte);
 	}
-	TRACE_INFO("EEPROM written\n\r");
+	TRACE_INFO("EEPROM written\r\n");
 
 	/* FIXME: Release PIN_PRTPWR_OVERRIDE after we know the hub is
 	 * again powering us up */
@@ -109,17 +109,17 @@ static int erase_hub_eeprom(void)
 	/* wait */
 	mdelay(100);
 
-	TRACE_INFO("Erasing EEPROM...\n\r");
+	TRACE_INFO("Erasing EEPROM...\r\n");
 	/* write the EEPROM once */
 	for (i = 0; i < 256; i++) {
 		int rc = eeprom_write_byte(0x50, i, 0xff);
 		if (rc < 0) {
-			TRACE_ERROR("Erasing EEPROM failed at byte %u: 0x%02x\n\r",
+			TRACE_ERROR("Erasing EEPROM failed at byte %u: 0x%02x\r\n",
 				i, __eeprom_bin[i]);
 			return 1;
 		}
 	}
-	TRACE_INFO("EEPROM erased\n\r");
+	TRACE_INFO("EEPROM erased\r\n");
 
 	return 0;
 }
@@ -143,41 +143,41 @@ static void board_exec_dbg_cmd_st12only(int ch)
 		break;
 #endif /* ALLOW_PEER_ERASE */
 	case 'O':
-		printf("Setting PRTPWR_OVERRIDE\n\r");
+		printf("Setting PRTPWR_OVERRIDE\r\n");
 		PIO_Set(&pin_hubpwr_override);
 		break;
 	case 'o':
-		printf("Clearing PRTPWR_OVERRIDE\n\r");
+		printf("Clearing PRTPWR_OVERRIDE\r\n");
 		PIO_Clear(&pin_hubpwr_override);
 		break;
 #if (ALLOW_PEER_ERASE > 0)
 	case 'H':
-		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\n\r");
+		printf("Clearing _HUB_RESET -> HUB_RESET high (inactive)\r\n");
 		PIO_Clear(&pin_hub_rst);
 		break;
 	case 'h':
 		/* high level drives transistor -> HUB_RESET low */
-		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\n\r");
+		printf("Asserting _HUB_RESET -> HUB_RESET low (active)\r\n");
 		PIO_Set(&pin_hub_rst);
 		break;
 	case 'w':
 		if (PIO_GetOutputDataStatus(&pin_hub_rst) == 0)
-			printf("WARNING: attempting EEPROM access while HUB not in reset\n\r");
-		printf("Please enter EEPROM offset:\n\r");
+			printf("WARNING: attempting EEPROM access while HUB not in reset\r\n");
+		printf("Please enter EEPROM offset:\r\n");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("Please enter EEPROM value:\n\r");
+		printf("Please enter EEPROM value:\r\n");
 		UART_GetIntegerMinMax(&val, 0, 255);
-		printf("Writing value 0x%02lx to EEPROM offset 0x%02lx\n\r", val, addr);
+		printf("Writing value 0x%02lx to EEPROM offset 0x%02lx\r\n", val, addr);
 		eeprom_write_byte(0x50, addr, val);
 		break;
 #endif /* ALLOW_PEER_ERASE */
 	case 'r':
-		printf("Please enter EEPROM offset:\n\r");
+		printf("Please enter EEPROM offset:\r\n");
 		UART_GetIntegerMinMax(&addr, 0, 255);
-		printf("EEPROM[0x%02lx] = 0x%02x\n\r", addr, eeprom_read_byte(0x50, addr));
+		printf("EEPROM[0x%02lx] = 0x%02x\r\n", addr, eeprom_read_byte(0x50, addr));
 		break;
 	default:
-		printf("Unknown command '%c'\n\r", ch);
+		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
 }
@@ -194,93 +194,93 @@ void board_exec_dbg_cmd(int ch)
 
 	switch (ch) {
 	case '?':
-		printf("\t?\thelp\n\r");
-		printf("\tR\treset SAM3\n\r");
-		printf("\tl\tswitch off LED 1\n\r");
-		printf("\tL\tswitch off LED 1\n\r");
-		printf("\tg\tswitch off LED 2\n\r");
-		printf("\tG\tswitch off LED 2\n\r");
+		printf("\t?\thelp\r\n");
+		printf("\tR\treset SAM3\r\n");
+		printf("\tl\tswitch off LED 1\r\n");
+		printf("\tL\tswitch off LED 1\r\n");
+		printf("\tg\tswitch off LED 2\r\n");
+		printf("\tG\tswitch off LED 2\r\n");
 		if (qmod_sam3_is_12()) {
 #if (ALLOW_PEER_ERASE > 0)
-			printf("\tE\tprogram EEPROM\n\r");
-			printf("\te\tErase EEPROM\n\r");
+			printf("\tE\tprogram EEPROM\r\n");
+			printf("\te\tErase EEPROM\r\n");
 #endif /* ALLOW_PEER_ERASE */
-			printf("\tO\tEnable PRTPWR_OVERRIDE\n\r");
-			printf("\to\tDisable PRTPWR_OVERRIDE\n\r");
+			printf("\tO\tEnable PRTPWR_OVERRIDE\r\n");
+			printf("\to\tDisable PRTPWR_OVERRIDE\r\n");
 #if (ALLOW_PEER_ERASE > 0)
-			printf("\tH\tRelease HUB RESET (high)\n\r");
-			printf("\th\tAssert HUB RESET (low)\n\r");
-			printf("\tw\tWrite single byte in EEPROM\n\r");
+			printf("\tH\tRelease HUB RESET (high)\r\n");
+			printf("\th\tAssert HUB RESET (low)\r\n");
+			printf("\tw\tWrite single byte in EEPROM\r\n");
 #endif /* ALLOW_PEER_ERASE */
-			printf("\tr\tRead single byte from EEPROM\n\r");
+			printf("\tr\tRead single byte from EEPROM\r\n");
 		}
-		printf("\tX\tRelease peer SAM3 from reset\n\r");
-		printf("\tx\tAssert peer SAM3 reset\n\r");
+		printf("\tX\tRelease peer SAM3 from reset\r\n");
+		printf("\tx\tAssert peer SAM3 reset\r\n");
 #if (ALLOW_PEER_ERASE > 0)
-		printf("\tY\tRelease peer SAM3 ERASE signal\n\r");
-		printf("\ta\tAllow asserting peer SAM3 ERASE signal\n\r");
-		printf("\ty\tAssert peer SAM3 ERASE signal\n\r");
+		printf("\tY\tRelease peer SAM3 ERASE signal\r\n");
+		printf("\ta\tAllow asserting peer SAM3 ERASE signal\r\n");
+		printf("\ty\tAssert peer SAM3 ERASE signal\r\n");
 #endif /* ALLOW_PEER_ERASE */
-		printf("\tU\tProceed to USB Initialization\n\r");
-		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
-		printf("\t2\tGenerate 1ms reset pulse on WWAN2\n\r");
-		printf("\t!\tSwitch Channel A from physical -> remote\n\r");
-		printf("\t@\tSwitch Channel B from physical -> remote\n\r");
-		printf("\tt\t(pseudo)talloc report\n\r");
+		printf("\tU\tProceed to USB Initialization\r\n");
+		printf("\t1\tGenerate 1ms reset pulse on WWAN1\r\n");
+		printf("\t2\tGenerate 1ms reset pulse on WWAN2\r\n");
+		printf("\t!\tSwitch Channel A from physical -> remote\r\n");
+		printf("\t@\tSwitch Channel B from physical -> remote\r\n");
+		printf("\tt\t(pseudo)talloc report\r\n");
 		break;
 	case 'R':
-		printf("Asking NVIC to reset us\n\r");
+		printf("Asking NVIC to reset us\r\n");
 		USBD_Disconnect();
 		NVIC_SystemReset();
 		break;
 	case 'l':
 		led_blink(LED_GREEN, BLINK_ALWAYS_OFF);
-		printf("LED 1 switched off\n\r");
+		printf("LED 1 switched off\r\n");
 		break;
 	case 'L':
 		led_blink(LED_GREEN, BLINK_ALWAYS_ON);
-		printf("LED 1 switched on\n\r");
+		printf("LED 1 switched on\r\n");
 		break;
 	case 'g':
 		led_blink(LED_RED, BLINK_ALWAYS_OFF);
-		printf("LED 2 switched off\n\r");
+		printf("LED 2 switched off\r\n");
 		break;
 	case 'G':
 		led_blink(LED_RED, BLINK_ALWAYS_ON);
-		printf("LED 2 switched on\n\r");
+		printf("LED 2 switched on\r\n");
 		break;
 	case 'X':
-		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\n\r");
+		printf("Clearing _SIMTRACExx_RST -> SIMTRACExx_RST high (inactive)\r\n");
 		PIO_Clear(&pin_peer_rst);
 		break;
 	case 'x':
-		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\n\r");
+		printf("Setting _SIMTRACExx_RST -> SIMTRACExx_RST low (active)\r\n");
 		PIO_Set(&pin_peer_rst);
 		break;
 #if (ALLOW_PEER_ERASE > 0)
 	case 'Y':
-		printf("Clearing SIMTRACExx_ERASE (inactive)\n\r");
+		printf("Clearing SIMTRACExx_ERASE (inactive)\r\n");
 		PIO_Clear(&pin_peer_erase);
 		break;
 	case 'a':
-		printf("Asserting SIMTRACExx_ERASE allowed on next command\n\r");
+		printf("Asserting SIMTRACExx_ERASE allowed on next command\r\n");
 		allow_erase = true;
 		break;
 	case 'y':
 		if (allow_erase) {
-			printf("Setting SIMTRACExx_ERASE (active)\n\r");
+			printf("Setting SIMTRACExx_ERASE (active)\r\n");
 			PIO_Set(&pin_peer_erase);
 		} else {
-			printf("Please first allow setting SIMTRACExx_ERASE\n\r");
+			printf("Please first allow setting SIMTRACExx_ERASE\r\n");
 		}
 		break;
 #endif /* ALLOW_PEER_ERASE */
 	case '1':
-		printf("Resetting Modem 1 (of this SAM3)\n\r");
+		printf("Resetting Modem 1 (of this SAM3)\r\n");
 		wwan_perst_do_reset_pulse(0, 300);
 		break;
 	case '2':
-		printf("Resetting Modem 2 (of this SAM3)\n\r");
+		printf("Resetting Modem 2 (of this SAM3)\r\n");
 		wwan_perst_do_reset_pulse(1, 300);
 		break;
 	case '!':
@@ -294,7 +294,7 @@ void board_exec_dbg_cmd(int ch)
 		break;
 	default:
 		if (!qmod_sam3_is_12())
-			printf("Unknown command '%c'\n\r", ch);
+			printf("Unknown command '%c'\r\n", ch);
 		else
 			board_exec_dbg_cmd_st12only(ch);
 		break;
@@ -335,9 +335,9 @@ void board_main_top(void)
 #endif
 
 	if (qmod_sam3_is_12()) {
-		TRACE_INFO("Detected Quad-Modem ST12\n\r");
+		TRACE_INFO("Detected Quad-Modem ST12\r\n");
 	} else {
-		TRACE_INFO("Detected Quad-Modem ST34\n\r");
+		TRACE_INFO("Detected Quad-Modem ST34\r\n");
 #ifndef APPLICATION_dfu
 		/* make sure we use the second set of USB Strings
 		 * calling the interfaces "Modem 3" and "Modem 4" rather

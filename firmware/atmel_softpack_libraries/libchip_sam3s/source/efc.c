@@ -163,7 +163,7 @@ extern void EFC_TranslateAddress( Efc** ppEfc, uint32_t dwAddress, uint16_t* pwP
     wPage = (dwAddress - IFLASH_ADDR) / IFLASH_PAGE_SIZE;
     wOffset = (dwAddress - IFLASH_ADDR) % IFLASH_PAGE_SIZE;
 
-    TRACE_DEBUG( "Translated 0x%08lX to page=%d and offset=%d\n\r", dwAddress, wPage, wOffset ) ;
+    TRACE_DEBUG( "Translated 0x%08lX to page=%d and offset=%d\r\n", dwAddress, wPage, wOffset ) ;
     /* Store values */
     if ( pEfc )
     {

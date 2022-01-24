@@ -94,7 +94,7 @@ out_stop:
 
 int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb)
 {
-	TRACE_DEBUG("mcp23017_init\n\r");
+	TRACE_DEBUG("mcp23017_init\r\n");
 
 	// all gpio input
 	if (mcp23017_write_byte(slave, MCP23017_IODIRA, iodira))
@@ -105,23 +105,23 @@ int mcp23017_init(uint8_t slave, uint8_t iodira, uint8_t iodirb)
 	if (mcp23017_write_byte(slave, MCP23017_IOCONA, 0x20)) //disable SEQOP (autoinc addressing)
 		goto out_err;
 
-	TRACE_DEBUG("mcp23017 found\n\r");
+	TRACE_DEBUG("mcp23017 found\r\n");
 	return 0;
 
 out_err:
-	TRACE_WARNING("mcp23017 NOT found!\n\r");
+	TRACE_WARNING("mcp23017 NOT found!\r\n");
 	return -1;
 }
 
 int mcp23017_test(uint8_t slave)
 {
-	printf("mcp23017_test\n\r");
-	printf("GPIOA 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_GPIOA));
-	printf("GPIOB 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_GPIOB));
-	printf("IODIRA 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_IODIRA));
-	printf("IODIRB 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_IODIRB));
-	printf("IOCONA 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_IOCONA));
-	printf("IOCONB 0x%x\n\r", mcp23017_read_byte(slave,MCP23017_IOCONB));
+	printf("mcp23017_test\r\n");
+	printf("GPIOA 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_GPIOA));
+	printf("GPIOB 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_GPIOB));
+	printf("IODIRA 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_IODIRA));
+	printf("IODIRB 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_IODIRB));
+	printf("IOCONA 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_IOCONA));
+	printf("IOCONB 0x%x\r\n", mcp23017_read_byte(slave,MCP23017_IOCONB));
 
 	return 0;
 }
@@ -142,13 +142,13 @@ int mcp23017_toggle(uint8_t slave)
 	static bool foo=false;
 	if (foo)
 	{
-		printf("+\n\r");
+		printf("+\r\n");
 		mcp23017_write_byte(slave, MCP23017_OLATB, 0x80);
 		foo=false;
 	}
 	else
 	{
-		printf("-\n\r");
+		printf("-\r\n");
 		mcp23017_write_byte(slave, MCP23017_OLATB, 0x00);
 		foo=true;
 	}

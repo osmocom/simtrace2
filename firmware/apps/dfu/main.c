@@ -78,9 +78,9 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 	}
 
 #if TRACE_LEVEL >= TRACE_LEVEL_INFO
-	TRACE_INFO("dnload(altif=%u, offset=%u, len=%u)\n\r", altif, offset, len);
+	TRACE_INFO("dnload(altif=%u, offset=%u, len=%u)\r\n", altif, offset, len);
 #else
-	printf("DL off=%u\n\r", offset);
+	printf("DL off=%u\r\n", offset);
 #endif
 
 #ifdef PINS_LEDS
@@ -113,19 +113,19 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		}
 		rc = FLASHD_Unlock(addr, addr + len, 0, 0);
 		if (rc != 0) {
-			TRACE_ERROR("DFU download flash unlock failed\n\r");
+			TRACE_ERROR("DFU download flash unlock failed\r\n");
 			rc =  DFU_RET_STALL;
 			break;
 		}
 		rc = FLASHD_Write(addr, data, len);
 		if (rc != 0) {
-			TRACE_ERROR("DFU download flash erase failed\n\r");
+			TRACE_ERROR("DFU download flash erase failed\r\n");
 			rc = DFU_RET_STALL;
 			break;
 		}
 		for (i = 0; i < len; i++) {
 			if (((uint8_t*)addr)[i]!=data[i]) {
-				TRACE_ERROR("DFU download flash data written not correct\n\r");
+				TRACE_ERROR("DFU download flash data written not correct\r\n");
 				rc = DFU_RET_STALL;
 				break;
 			}
@@ -133,7 +133,7 @@ int USBDFU_handle_dnload(uint8_t altif, unsigned int offset,
 		rc = DFU_RET_ZLP;
 		break;
 	default:
-		TRACE_ERROR("DFU download for unknown AltIf %d\n\r", altif);
+		TRACE_ERROR("DFU download for unknown AltIf %d\r\n", altif);
 		rc = DFU_RET_STALL;
 		break;
 	}
@@ -179,11 +179,11 @@ int USBDFU_handle_upload(uint8_t altif, unsigned int offset,
 		memcpy(data, (void *)addr, req_len);
 		break;
 	default:
-		TRACE_ERROR("DFU upload for unknown AltIf %d\n\r", altif);
+		TRACE_ERROR("DFU upload for unknown AltIf %d\r\n", altif);
 		/* FIXME: set error codes */
 		return -1;
 	}
-	printf("=%u\n\r", req_len);
+	printf("=%u\r\n", req_len);
 	return req_len;
 }
 
@@ -274,16 +274,16 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-	printf("\n\r\n\r");
+	printf("\r\n\r\n");
 	print_line();
-	printf("DFU bootloader %s for board %s\n\r"
-		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r",
+	printf("DFU bootloader %s for board %s\r\n"
+		"(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\r\n",
 		manifest_revision, manifest_board);
 	print_line();
 
 #if (TRACE_LEVEL >= TRACE_LEVEL_INFO)
-	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\n\r", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
-	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\n\r",
+	TRACE_INFO("Chip ID: 0x%08lx (Ext 0x%08lx)\r\n", CHIPID->CHIPID_CIDR, CHIPID->CHIPID_EXID);
+	TRACE_INFO("Serial Nr. %08x-%08x-%08x-%08x\r\n",
 		   g_unique_id[0], g_unique_id[1],
 		   g_unique_id[2], g_unique_id[3]);
 	static const char* reset_causes[] = {
@@ -294,9 +294,9 @@ extern int main(void)
 		"user reset (NRST pin detected low)",
 	};
 	if (reset_cause < ARRAY_SIZE(reset_causes)) {
-		TRACE_INFO("Reset Cause: %s\n\r", reset_causes[reset_cause]);
+		TRACE_INFO("Reset Cause: %s\r\n", reset_causes[reset_cause]);
 	} else {
-		TRACE_INFO("Reset Cause: 0x%lx\n\r", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
+		TRACE_INFO("Reset Cause: 0x%lx\r\n", (RSTC->RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos);
 	}
 #endif
 
@@ -306,25 +306,25 @@ extern int main(void)
 	switch (USBDFU_OverrideEnterDFU()) {
 	case 0:
 		if (SCB->VTOR < IFLASH_ADDR + BOARD_DFU_BOOT_SIZE) {
-			TRACE_INFO_WP("unknown\n\r");
+			TRACE_INFO_WP("unknown\r\n");
 		} else {
-			TRACE_INFO_WP("DFU is the main application\n\r");
+			TRACE_INFO_WP("DFU is the main application\r\n");
 		}
 		break;
 	case 1:
-		TRACE_INFO_WP("DFU switch requested by main application\n\r");
+		TRACE_INFO_WP("DFU switch requested by main application\r\n");
 		break;
 	case 2:
-		TRACE_INFO_WP("bootloader forced (button pressed or jumper set)\n\r");
+		TRACE_INFO_WP("bootloader forced (button pressed or jumper set)\r\n");
 		break;
 	case 3:
-		TRACE_INFO_WP("stack pointer (first application word) does no point in RAM\n\r");
+		TRACE_INFO_WP("stack pointer (first application word) does no point in RAM\r\n");
 		break;
 	case 4: // the is no reason
-		TRACE_INFO_WP("reset vector (second application word) does no point in flash\n\r");
+		TRACE_INFO_WP("reset vector (second application word) does no point in flash\r\n");
 		break;
 	default:
-		TRACE_INFO_WP("unknown\n\r");
+		TRACE_INFO_WP("unknown\r\n");
 		break;
 	}
 #endif
@@ -335,7 +335,7 @@ extern int main(void)
 
 	board_main_top();
 
-	TRACE_INFO("USB init...\n\r");
+	TRACE_INFO("USB init...\r\n");
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
 	USBD_Disconnect();
 	mdelay(500);
@@ -346,7 +346,7 @@ extern int main(void)
 		check_exec_dbg_cmd();
 #if 1
 		if (i >= MAX_USB_ITER * 3) {
-			TRACE_ERROR("Resetting board (USB could not be configured)\n\r");
+			TRACE_ERROR("Resetting board (USB could not be configured)\r\n");
 			g_dfu->magic = USB_DFU_MAGIC; // start the bootloader after reboot
 			USBD_Disconnect();
 			NVIC_SystemReset();
@@ -358,7 +358,7 @@ extern int main(void)
 	/* Initialize the flash to be able to write it, using the IAP ROM code */
 	FLASHD_Initialize(BOARD_MCK, 1);
 
-	TRACE_INFO("entering main loop...\n\r");
+	TRACE_INFO("entering main loop...\r\n");
 	while (1) {
 		WDT_Restart(WDT);
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
@@ -378,7 +378,7 @@ extern int main(void)
 				isUsbConnected = 0;
 			}
 		} else if (isUsbConnected == 0) {
-			TRACE_INFO("USB is now configured\n\r");
+			TRACE_INFO("USB is now configured\r\n");
 
 			isUsbConnected = 1;
 		}

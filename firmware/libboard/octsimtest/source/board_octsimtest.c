@@ -30,12 +30,12 @@ void board_exec_dbg_cmd(int ch)
 {
 	switch (ch) {
 	case '?':
-		printf("\t?\thelp\n\r");
-		printf("\t0-8\tselect physical SIM slot\n\r");
-		printf("\tR\treset SAM3\n\r");
-		printf("\tm\trun mcp23017 test\n\r");
-		printf("\ti\tset card insert via I2C\n\r");
-		printf("\tI\tdisable card insert\n\r");
+		printf("\t?\thelp\r\n");
+		printf("\t0-8\tselect physical SIM slot\r\n");
+		printf("\tR\treset SAM3\r\n");
+		printf("\tm\trun mcp23017 test\r\n");
+		printf("\ti\tset card insert via I2C\r\n");
+		printf("\tI\tdisable card insert\r\n");
 		break;
 	case '0': mux_set_slot(0); break;
 	case '1': mux_set_slot(1); break;
@@ -46,7 +46,7 @@ void board_exec_dbg_cmd(int ch)
 	case '6': mux_set_slot(6); break;
 	case '7': mux_set_slot(7); break;
 	case 'R':
-		printf("Asking NVIC to reset us\n\r");
+		printf("Asking NVIC to reset us\r\n");
 		USBD_Disconnect();
 		NVIC_SystemReset();
 		break;
@@ -62,7 +62,7 @@ void board_exec_dbg_cmd(int ch)
 		mcp23017_set_output_a(MCP23017_ADDRESS, 0);
 		break;
 	default:
-		printf("Unknown command '%c'\n\r", ch);
+		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
 }
@@ -93,7 +93,7 @@ int board_override_enter_dfu(void)
 	/* Enter DFU bootloader in case the respective button is pressed */
 	if (PIO_Get(&bl_sw_pin) == 0) {
 		/* do not print to early since the console is not initialized yet */
-		//printf("BOOTLOADER switch pressed -> Force DFU\n\r");
+		//printf("BOOTLOADER switch pressed -> Force DFU\r\n");
 		return 1;
 	} else
 		return 0;

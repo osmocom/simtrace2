@@ -211,7 +211,7 @@ static void update_wt(uint8_t wi, uint8_t d)
 		wt_d = d;
 	}
 	wt = wt_wi * 960UL * wt_d;
-	TRACE_INFO("WT updated to %lu ETU\n\r", wt);
+	TRACE_INFO("WT updated to %lu ETU\r\n", wt);
 }
 
 /*! Allocate USB buffer and push + initialize simtrace_msg_hdr
@@ -262,7 +262,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 {
 	/* sanity check */
 	if (iso_state_new == iso_state) {
-		TRACE_WARNING("Already in ISO 7816 state %u\n\r", iso_state);
+		TRACE_WARNING("Already in ISO 7816 state %u\r\n", iso_state);
 		return;
 	}
 
@@ -295,7 +295,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 
 	/* save new state */
 	iso_state = iso_state_new;
-	TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state);
+	TRACE_INFO("Changed to ISO 7816-3 state %u\r\n", iso_state);
 }
 
 const struct value_string data_flags[] = {
@@ -353,7 +353,7 @@ static void usb_send_data(enum simtrace_msg_type_sniff type, const uint8_t* data
 	for (i = 0; i < length; i++) {
 		printf("%02x ", data[i]);
 	}
-	printf("\n\r");
+	printf("\r\n");
 
 	/* Send data over USB */
 	struct msgb *usb_msg = usb_msg_alloc_hdr(SIMTRACE_USB_EP_CARD_DATAIN, SIMTRACE_MSGC_SNIFF, type);
@@ -377,11 +377,11 @@ static void usb_send_atr(uint32_t flags)
 {
 	/* Check state */
 	if (ISO7816_S_IN_ATR != iso_state) {
-		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 	if (atr_i >= ARRAY_SIZE(atr)) {
-		TRACE_ERROR("ATR buffer overflow\n\r");
+		TRACE_ERROR("ATR buffer overflow\r\n");
 		return;
 	}
 
@@ -401,11 +401,11 @@ static void process_byte_atr(uint8_t byte)
 
 	/* sanity check */
 	if (ISO7816_S_IN_ATR != iso_state) {
-		TRACE_ERROR("Processing ATR data in wrong ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_ERROR("Processing ATR data in wrong ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 	if (atr_i >= ARRAY_SIZE(atr)) {
-		TRACE_ERROR("ATR data overflow\n\r");
+		TRACE_ERROR("ATR data overflow\r\n");
 		return;
 	}
 
@@ -425,7 +425,7 @@ static void process_byte_atr(uint8_t byte)
 			atr_state = ATR_S_WAIT_T0; /* wait for format byte */
 			break;
 		default:
-			TRACE_WARNING("Invalid TS received\n\r");
+			TRACE_WARNING("Invalid TS received\r\n");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_atr(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_ATR); /* reset state */
@@ -503,7 +503,7 @@ static void process_byte_atr(uint8_t byte)
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
-		TRACE_INFO("Unknown ATR state %u\n\r", atr_state);
+		TRACE_INFO("Unknown ATR state %u\r\n", atr_state);
 	}
 }
 
@@ -521,7 +521,7 @@ static void usb_send_pps(uint32_t flags)
 	} else if (ISO7816_S_IN_PPS_RSP == iso_state) {
 		pps_cur = pps_rsp;
 	} else {
-		TRACE_ERROR("Can't print PPS in ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_ERROR("Can't print PPS in ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 
@@ -577,7 +577,7 @@ static void process_byte_pps(uint8_t byte)
 	} else if (ISO7816_S_IN_PPS_RSP == iso_state) {
 		pps_cur = pps_rsp;
 	} else {
-		TRACE_ERROR("Processing PPS data in wrong ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_ERROR("Processing PPS data in wrong ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 
@@ -589,7 +589,7 @@ static void process_byte_pps(uint8_t byte)
 			pps_cur[0] = byte;
 			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
 		} else {
-			TRACE_INFO("Invalid PPSS received\n\r");
+			TRACE_INFO("Invalid PPSS received\r\n");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_pps(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
@@ -654,22 +654,22 @@ static void process_byte_pps(uint8_t byte)
 					fn = 1;
 					dn = 1;
 				}
-				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r",
+				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\r\n",
 					   iso7816_3_fi_table[fn], iso7816_3_di_table[dn]);
 				update_fidi(&sniff_usart, pps_cur[2]);
 				update_wt(0, iso7816_3_di_table[dn]);
 				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
-				TRACE_INFO("PPS negotiation failed\n\r");
+				TRACE_INFO("PPS negotiation failed\r\n");
 			}
 			change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		}
 		break;
 	case PPS_S_WAIT_END:
-		TRACE_WARNING("Unexpected PPS received %u\n\r", pps_state);
+		TRACE_WARNING("Unexpected PPS received %u\r\n", pps_state);
 		break;
 	default:
-		TRACE_WARNING("Unknown PPS state %u\n\r", pps_state);
+		TRACE_WARNING("Unknown PPS state %u\r\n", pps_state);
 		break;
 	}
 }
@@ -682,7 +682,7 @@ static void usb_send_tpdu(uint32_t flags)
 {
 	/* Check state */
 	if (ISO7816_S_IN_TPDU != iso_state) {
-		TRACE_WARNING("Can't print TPDU in ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_WARNING("Can't print TPDU in ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 
@@ -694,11 +694,11 @@ static void process_byte_tpdu(uint8_t byte)
 {
 	/* sanity check */
 	if (ISO7816_S_IN_TPDU != iso_state) {
-		TRACE_ERROR("Processing TPDU data in wrong ISO 7816-3 state %u\n\r", iso_state);
+		TRACE_ERROR("Processing TPDU data in wrong ISO 7816-3 state %u\r\n", iso_state);
 		return;
 	}
 	if (tpdu_packet_i >= ARRAY_SIZE(tpdu_packet)) {
-		TRACE_ERROR("TPDU data overflow\n\r");
+		TRACE_ERROR("TPDU data overflow\r\n");
 		return;
 	}
 
@@ -706,7 +706,7 @@ static void process_byte_tpdu(uint8_t byte)
 	switch (tpdu_state) {
 	case TPDU_S_CLA:
 		if (0xff == byte) {
-			TRACE_WARNING("0xff is not a valid class byte\n\r");
+			TRACE_WARNING("0xff is not a valid class byte\r\n");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
@@ -718,7 +718,7 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	case TPDU_S_INS:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) {
-			TRACE_WARNING("invalid CLA 0x%02x\n\r", byte);
+			TRACE_WARNING("invalid CLA 0x%02x\r\n", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
@@ -758,7 +758,7 @@ static void process_byte_tpdu(uint8_t byte)
 			tpdu_packet[tpdu_packet_i++] = byte;
 			tpdu_state = TPDU_S_SW2;
 		} else {
-			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
+			TRACE_WARNING("invalid SW1 0x%02x\r\n", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
@@ -787,7 +787,7 @@ static void process_byte_tpdu(uint8_t byte)
 		}
 		break;
 	default:
-		TRACE_ERROR("unhandled TPDU state %u\n\r", tpdu_state);
+		TRACE_ERROR("unhandled TPDU state %u\r\n", tpdu_state);
 	}
 }
 
@@ -801,11 +801,11 @@ void Sniffer_usart_isr(void)
 	uint32_t csr = sniff_usart.base->US_CSR;
 	/* Verify if there was an error */
 	if (csr & US_CSR_OVRE) {
-		TRACE_WARNING("USART overrun error\n\r");
+		TRACE_WARNING("USART overrun error\r\n");
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
 	}
 	if (csr & US_CSR_FRAME) {
-		TRACE_WARNING("USART framing error\n\r");
+		TRACE_WARNING("USART framing error\r\n");
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
 	}
 
@@ -817,7 +817,7 @@ void Sniffer_usart_isr(void)
 		wt_remaining = wt;
 		/* Store sniffed data into buffer (also clear interrupt */
 		if (rbuf_is_full(&sniff_buffer)) {
-			TRACE_ERROR("USART buffer full\n\r");
+			TRACE_ERROR("USART buffer full\r\n");
 		} else {
 			rbuf_write(&sniff_buffer, byte);
 		}
@@ -853,7 +853,7 @@ static void Sniffer_reset_isr(const Pin* pPin)
 {
 	/* Ensure an edge on the reset pin cause the interrupt */
 	if (pPin->id != pin_rst.id || 0 == (pPin->mask & pin_rst.mask)) {
-		TRACE_ERROR("Pin other than reset caused a interrupt\n\r");
+		TRACE_ERROR("Pin other than reset caused a interrupt\r\n");
 		return;
 	}
 	/* Update the ISO state according to the reset change (reset is active low) */
@@ -889,13 +889,13 @@ void Sniffer_usart0_irq(void)
 /* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)
 {
-	TRACE_INFO("Sniffer config\n\r");
+	TRACE_INFO("Sniffer config\r\n");
 }
 
 /* called when *different* configuration is set by host */
 void Sniffer_exit(void)
 {
-	TRACE_INFO("Sniffer exit\n\r");
+	TRACE_INFO("Sniffer exit\r\n");
 	/* Disable USART */
 	USART_DisableIt(sniff_usart.base, US_IER_RXRDY);
 	/* NOTE: don't forget to set the IRQ according to the USART peripheral used */
@@ -909,7 +909,7 @@ void Sniffer_exit(void)
 /* called when *Sniffer* configuration is set by host */
 void Sniffer_init(void)
 {
-	TRACE_INFO("Sniffer Init\n\r");
+	TRACE_INFO("Sniffer Init\r\n");
 
 	/* Configure pins to sniff communication between phone and card */
 	PIO_Configure(pins_sniff, PIO_LISTSIZE(pins_sniff));
@@ -958,7 +958,7 @@ static void usb_send_change(uint32_t flags)
 	}
 
 	if (flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
-		printf("waiting time (WT) timeout\n\r");
+		printf("waiting time (WT) timeout\r\n");
 	}
 
 	/* Send message over USB */
@@ -1028,7 +1028,7 @@ void Sniffer_run(void)
 			process_byte_pps(byte);
 			break;
 		default:
-			TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
+			TRACE_ERROR("Data received in unknown state %u\r\n", iso_state);
 		}
 	}
 
@@ -1054,13 +1054,13 @@ void Sniffer_run(void)
 			}
 			if (ISO7816_S_RESET != iso_state) {
 				change_state(ISO7816_S_RESET);
-				printf("reset asserted\n\r");
+				printf("reset asserted\r\n");
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_RESET_DEASSERT) {
 			if (ISO7816_S_WAIT_ATR != iso_state) {
 				change_state(ISO7816_S_WAIT_ATR);
-				printf("reset de-asserted\n\r");
+				printf("reset de-asserted\r\n");
 			}
 		}
 		if (change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {

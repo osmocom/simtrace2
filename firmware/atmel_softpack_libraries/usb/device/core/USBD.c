@@ -140,7 +140,7 @@ void USBD_ResetHandler()
 void USBD_RequestHandler(uint8_t bEndpoint,
                          const USBGenericRequest* pRequest)
 {
-    TRACE_DEBUG("%s\n\r", "USBD_RequestHandler");
+    TRACE_DEBUG("%s\r\n", "USBD_RequestHandler");
     if (bEndpoint != 0) {
         TRACE_WARNING("EP%d request not supported, default EP only",
                       bEndpoint);
@@ -316,7 +316,7 @@ void USBD_RemoteWakeUp(void)
     /* Device is NOT suspended */
     if (deviceState != USBD_STATE_SUSPENDED) {
 
-        TRACE_INFO("USBD_RemoteWakeUp: Device is not suspended\n\r");
+        TRACE_INFO("USBD_RemoteWakeUp: Device is not suspended\r\n");
         return;
     }
     USBD_HAL_Activate();
@@ -356,7 +356,7 @@ void USBD_Disconnect(void)
  */
 void USBD_Init(void)
 {
-    TRACE_INFO_WP("USBD_Init\n\r");
+    TRACE_INFO_WP("USBD_Init\r\n");
 
     /* HW Layer Initialize */
     USBD_HAL_Init();
@@ -367,7 +367,7 @@ void USBD_Init(void)
 
     /* Upper Layer Initialize */
     USBDCallbacks_Initialized();
-    TRACE_DEBUG("%s\n\r", "..");
+    TRACE_DEBUG("%s\r\n", "..");
 }
 
 /**

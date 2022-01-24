@@ -24,16 +24,16 @@ void board_exec_dbg_cmd(int ch)
 {
 	switch (ch) {
 	case '?':
-		printf("\t?\thelp\n\r");
-		printf("\tR\treset SAM3\n\r");
+		printf("\t?\thelp\r\n");
+		printf("\tR\treset SAM3\r\n");
 		break;
 	case 'R':
-		printf("Asking NVIC to reset us\n\r");
+		printf("Asking NVIC to reset us\r\n");
 		USBD_Disconnect();
 		NVIC_SystemReset();
 		break;
 	default:
-		printf("Unknown command '%c'\n\r", ch);
+		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
 }
@@ -57,7 +57,7 @@ int board_override_enter_dfu(void)
 	/* Enter DFU bootloader in case the respective button is pressed */
 	if (PIO_Get(&bl_sw_pin) == 0) {
 		/* do not print to early since the console is not initialized yet */
-		//printf("BOOTLOADER switch pressed -> Force DFU\n\r");
+		//printf("BOOTLOADER switch pressed -> Force DFU\r\n");
 		return 1;
 	} else
 		return 0;

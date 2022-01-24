@@ -28,7 +28,7 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 		return -1;
 	}
 
-	TRACE_INFO("Modem %u: %s SIM\n\r", nr, physical ? "physical" : "virtual");
+	TRACE_INFO("Modem %u: %s SIM\r\n", nr, physical ? "physical" : "virtual");
 
 	if (physical) {
 		TRACE_INFO("%u: Use local/physical SIM\r\n", nr);

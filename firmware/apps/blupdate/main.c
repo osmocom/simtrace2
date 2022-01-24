@@ -113,15 +113,15 @@ extern int main(void)
 
 	EEFC_ReadUniqueID(g_unique_id);
 
-	printf("\n\r\n\r");
-	printf("bootloader updater %s for board %s\n\r"
-	       "(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\n\r",
+	printf("\r\n\r\n");
+	printf("bootloader updater %s for board %s\r\n"
+	       "(C) 2010-2017 by Harald Welte, 2018-2019 by Kevin Redon\r\n",
 	       manifest_revision, manifest_board);
 
 	/* clear g_dfu on power-up reset */
 	memset(g_dfu, 0, sizeof(*g_dfu));
 
-	TRACE_INFO("USB init...\n\r");
+	TRACE_INFO("USB init...\r\n");
 	/* Signal USB reset by disabling the pull-up on USB D+ for at least 10 ms */
 	USBD_Disconnect();
 

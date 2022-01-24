@@ -264,24 +264,24 @@ struct msgb *usb_buf_alloc_st(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
 		if (!msg) { // allocation failed, we might be out of memory
 			struct usb_buffered_ep *bep = usb_get_buf_ep(ep);
 			if (!bep) {
-				TRACE_ERROR("ep %u: %s queue does not exist\n\r",
+				TRACE_ERROR("ep %u: %s queue does not exist\r\n",
 				            ep, __func__);
 				return NULL;
 			}
 			if (llist_empty(&bep->queue)) {
-				TRACE_ERROR("ep %u: %s EOMEM (queue already empty)\n\r",
+				TRACE_ERROR("ep %u: %s EOMEM (queue already empty)\r\n",
 				            ep, __func__);
 				return NULL;
 			}
 			msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
 			if (!msg) {
-				TRACE_ERROR("ep %u: %s no msg in non-empty queue\n\r",
+				TRACE_ERROR("ep %u: %s no msg in non-empty queue\r\n",
 				            ep, __func__);
 				return NULL;
 			}
 			usb_buf_free(msg);
 			msg = NULL;
-			TRACE_DEBUG("ep %u: %s queue msg dropped\n\r",
+			TRACE_DEBUG("ep %u: %s queue msg dropped\r\n",
 			            ep, __func__);
 		}
 	}
@@ -313,7 +313,7 @@ static void flush_rx_buffer(struct card_handle *ch)
 	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 	rd->data_len = msgb_l2len(msg) - sizeof(*rd);
 
-	TRACE_DEBUG("%u: %s (%u)\n\r",
+	TRACE_DEBUG("%u: %s (%u)\r\n",
 			ch->num, __func__, rd->data_len);
 
 	usb_buf_upd_len_and_submit(msg);
@@ -460,11 +460,11 @@ static void card_set_state(struct card_handle *ch,
 static int tx_byte_atr(struct card_handle *ch)
 {
 	if (NULL == ch) {
-		TRACE_ERROR("ATR TX: no card handle provided\n\r");
+		TRACE_ERROR("ATR TX: no card handle provided\r\n");
 		return 0;
 	}
 	if (ISO_S_IN_ATR != ch->state) {
-		TRACE_ERROR("%u: ATR TX: no in ATR state\n\r", ch->num);
+		TRACE_ERROR("%u: ATR TX: no in ATR state\r\n", ch->num);
 		return 0;
 	}
 
@@ -1174,7 +1174,7 @@ int card_emu_set_atr(struct card_handle *ch, const uint8_t *atr, uint8_t len)
 	for (i = 0; i < ch->atr.len; i++) {
 		TRACE_INFO_WP("%02x ", atr[i]);
 	}
-	TRACE_INFO_WP("\n\r");
+	TRACE_INFO_WP("\r\n");
 #endif
 	/* FIXME: race condition with transmitting ATR to reader? */
 

@@ -36,7 +36,7 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 		sim_switch_init();
 	}
 
-	TRACE_INFO("Modem %d: %s SIM\n\r", nr,
+	TRACE_INFO("Modem %d: %s SIM\r\n", nr,
 		   physical ? "physical" : "virtual");
 
 	switch (nr) {
@@ -53,7 +53,7 @@ int sim_switch_use_physical(unsigned int nr, int physical)
 		break;
 #endif
 	default:
-		TRACE_ERROR("Invalid SIM%u\n\r", nr);
+		TRACE_ERROR("Invalid SIM%u\r\n", nr);
 		return -1;
 	}
 

@@ -184,7 +184,7 @@ static void RDRtoPCDatablock_ATR( void )
 	if( length > 5 ) {
 		ccidDriver.ProtocolDataStructure[1] = Atr[3]&0x0F; // TD(1)
 		ccidDriver.bProtocol = Atr[3]&0x0F;           // TD(1)
-		TRACE_INFO("Protocol data structure: 0x%x\n\r",
+		TRACE_INFO("Protocol data structure: 0x%x\r\n",
 					    ccidDriver.ProtocolDataStructure[1]);
 	}
 
@@ -367,7 +367,7 @@ static void PCtoRDRIccPowerOn( void )
 	// for emulation only //JCB 
 	if ( ccidDriver.sCcidCommand.bSpecific_0 != VOLTS_5_0 ) {
 
-		TRACE_ERROR("POWER_NOT_SUPPORTED\n\r");
+		TRACE_ERROR("POWER_NOT_SUPPORTED\r\n");
 	}
 
 	else {
@@ -428,7 +428,7 @@ static void PCtoRDRXfrBlock( void )
 	uint16_t msglen = 0;
 	uint32_t ret;
 
-	TRACE_DEBUG("PCtoRDRXfrBlock\n\r");
+	TRACE_DEBUG("PCtoRDRXfrBlock\r\n");
 
 	// Check the block length
 	if ( ccidDriver.sCcidCommand.wLength > (configurationDescriptorsFS->ccid.dwMaxCCIDMessageLength-10) ) {
@@ -439,7 +439,7 @@ static void PCtoRDRXfrBlock( void )
 	// check bBWI
 	else if ( 0 != ccidDriver.sCcidCommand.bSpecific_0 ) {
 
-		 TRACE_ERROR("Bad bBWI\n\r");
+		 TRACE_ERROR("Bad bBWI\r\n");
 	}
 	else {
 
@@ -463,16 +463,16 @@ static void PCtoRDRXfrBlock( void )
 				}
 				else {
 					if (ccidDriver.ProtocolDataStructure[1] == PROTOCOL_T1) {
-					    TRACE_DEBUG("Not supported T=1\n\r");
+					    TRACE_DEBUG("Not supported T=1\r\n");
 					}
 					else {
-					    TRACE_DEBUG("Not supported 0x%x\n\r", ccidDriver.ProtocolDataStructure[1]);
+					    TRACE_DEBUG("Not supported 0x%x\r\n", ccidDriver.ProtocolDataStructure[1]);
 					}
 				}
 				break;
 
 			case CCID_FEATURES_EXC_APDU:
-				TRACE_DEBUG("Not supported CCID_FEATURES_EXC_APDU\n\r");
+				TRACE_DEBUG("Not supported CCID_FEATURES_EXC_APDU\r\n");
 				break;
 
 			default:
@@ -482,7 +482,7 @@ static void PCtoRDRXfrBlock( void )
 	}
 
 	ccidDriver.sCcidMessage.wLength = msglen;
-	TRACE_DEBUG("USB: 0x%X, 0x%X, 0x%X, 0x%X, 0x%X\n\r", ccidDriver.sCcidMessage.abData[0], 
+	TRACE_DEBUG("USB: 0x%X, 0x%X, 0x%X, 0x%X, 0x%X\r\n", ccidDriver.sCcidMessage.abData[0], 
 					                                                ccidDriver.sCcidMessage.abData[1], 
 					                                                ccidDriver.sCcidMessage.abData[2], 
 					                                                ccidDriver.sCcidMessage.abData[3],
@@ -614,7 +614,7 @@ static void PCtoRDRSecure( void )
 {
 	TRACE_DEBUG(".");
 
-	TRACE_DEBUG("For user\n\r");
+	TRACE_DEBUG("For user\r\n");
 }
 
 //------------------------------------------------------------------------------
@@ -628,7 +628,7 @@ static void PCtoRDRSecure( void )
 static void PCtoRDRMechanical( void )
 {
 	TRACE_DEBUG(".");
-	TRACE_DEBUG("Not implemented\n\r");
+	TRACE_DEBUG("Not implemented\r\n");
 
 	RDRtoPCSlotStatus();
 }
@@ -682,7 +682,7 @@ static void vCCIDCommandNotSupported( void )
 	// Command not supported
 	// vCCIDReportError(CMD_NOT_SUPPORTED);
 
-	TRACE_DEBUG("CMD_NOT_SUPPORTED\n\r");
+	TRACE_DEBUG("CMD_NOT_SUPPORTED\r\n");
 
 	// Header fields settings
 	ccidDriver.sCcidMessage.bMessageType = RDR_TO_PC_SLOTSTATUS;
@@ -708,7 +708,7 @@ static void vCCIDSendResponse( void )
 					          ccidDriver.sCcidMessage.bSizeToSend, 0, 0 );
 	} while (bStatus != USBD_STATUS_SUCCESS);
 
-	TRACE_DEBUG("bStatus: 0x%x\n\r", bStatus);
+	TRACE_DEBUG("bStatus: 0x%x\r\n", bStatus);
 }
 
 
@@ -723,7 +723,7 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 		TRACE_ERROR("USB error: %d", status);
 		return;
 	}
-	TRACE_DEBUG("Command: 0x%X 0x%x 0x%X 0x%X 0x%X 0x%X 0x%X\n\r\n\r",
+	TRACE_DEBUG("Command: 0x%X 0x%x 0x%X 0x%X 0x%X 0x%X 0x%X\r\n\r\n",
 				   (unsigned int)ccidDriver.sCcidCommand.bMessageType,
 				   (unsigned int)ccidDriver.sCcidCommand.wLength,
 				   (unsigned int)ccidDriver.sCcidCommand.bSlot,
@@ -735,10 +735,10 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 	// Check the slot number
 	if ( ccidDriver.sCcidCommand.bSlot > 0 ) {
 
-		TRACE_ERROR("BAD_SLOT_NUMBER\n\r");
+		TRACE_ERROR("BAD_SLOT_NUMBER\r\n");
 	}
 
-	TRACE_INFO("typ=0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+	TRACE_INFO("typ=0x%X\r\n", ccidDriver.sCcidCommand.bMessageType);
 
 	ccidDriver.sCcidMessage.bStatus = 0;
 
@@ -807,7 +807,7 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 			}
 			else {
 				// command not supported
-				TRACE_INFO("Not supported: PC_TO_RDR_T0APDU\n\r");
+				TRACE_INFO("Not supported: PC_TO_RDR_T0APDU\r\n");
 				vCCIDCommandNotSupported();
 			}
 			MessageToSend = 1;
@@ -834,7 +834,7 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 			break;
 
 		default:
-			TRACE_DEBUG("default: Not supported: 0x%X\n\r", ccidDriver.sCcidCommand.bMessageType);
+			TRACE_DEBUG("default: Not supported: 0x%X\r\n", ccidDriver.sCcidCommand.bMessageType);
 			vCCIDCommandNotSupported();
 			MessageToSend = 1;
 			break;
@@ -853,7 +853,7 @@ static void CCIDCommandDispatcher( void *pArg, uint8_t status, uint32_t transfer
 //------------------------------------------------------------------------------
 static void CCID_RequestHandler(const USBGenericRequest *pRequest)
 {
-	TRACE_DEBUG("CCID_RHl\n\r");
+	TRACE_DEBUG("CCID_RHl\r\n");
 
 	// Check if this is a class request
 	if (USBGenericRequest_GetType(pRequest) == USBGenericRequest_CLASS) {
@@ -862,23 +862,23 @@ static void CCID_RequestHandler(const USBGenericRequest *pRequest)
 		switch (USBGenericRequest_GetRequest(pRequest)) {
 
 			case CCIDGenericRequest_ABORT:
-				TRACE_DEBUG("CCIDGenericRequest_ABORT\n\r");
+				TRACE_DEBUG("CCIDGenericRequest_ABORT\r\n");
 				break;
 
 			case CCIDGenericRequest_GET_CLOCK_FREQUENCIES:
-				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_CLOCK_FREQUENCIES\n\r");
+				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_CLOCK_FREQUENCIES\r\n");
 				// A CCID with bNumClockSupported equal to 00h does not have 
 				// to support this request
 				break;
 
 			case CCIDGenericRequest_GET_DATA_RATES:
-				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_DATA_RATES\n\r");
+				TRACE_DEBUG("Not supported: CCIDGenericRequest_GET_DATA_RATES\r\n");
 				// A CCID with bNumDataRatesSupported equal to 00h does not have 
 				// to support this request.
 				break;
 
 			default:
-				TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request (%d)\n\r",
+				TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request (%d)\r\n",
 					                                USBGenericRequest_GetRequest(pRequest));
 				USBD_Stall(0);
 		}
@@ -892,7 +892,7 @@ static void CCID_RequestHandler(const USBGenericRequest *pRequest)
 	else {
 
 		// Unsupported request type
-		TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request type (%d)\n\r",
+		TRACE_WARNING( "CCIDDriver_RequestHandler: Unsupported request type (%d)\r\n",
 					                                USBGenericRequest_GetType(pRequest));
 		USBD_Stall(0);
 	}
@@ -921,7 +921,7 @@ void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
 void CCID_SmartCardRequest( void )
 {
 	unsigned char bStatus;
-	TRACE_DEBUG("CCID_req\n\r");
+	TRACE_DEBUG("CCID_req\r\n");
 
 	do {
 

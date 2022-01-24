@@ -134,7 +134,7 @@ static void ComputeLockRange( uint32_t dwStart, uint32_t dwEnd, uint32_t *pdwAct
     // Store actual page numbers
     EFC_ComputeAddress( pStartEfc, wActualStartPage, 0, pdwActualStart ) ;
     EFC_ComputeAddress( pEndEfc, wActualEndPage, 0, pdwActualEnd ) ;
-    TRACE_DEBUG( "Actual lock range is 0x%06lX - 0x%06lX\n\r", *pdwActualStart, *pdwActualEnd ) ;
+    TRACE_DEBUG( "Actual lock range is 0x%06lX - 0x%06lX\r\n", *pdwActualStart, *pdwActualEnd ) ;
 }
 
 

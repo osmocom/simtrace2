@@ -32,17 +32,17 @@ extern int main(void)
 	PIO_InitializeInterrupts(0);
 
 
-	printf("\n\r\n\r"
-		"=============================================================================\n\r"
-		"GPIO Test firmware " GIT_VERSION " (C) 2019 Sysmocom GmbH\n\r"
-		"=============================================================================\n\r");
+	printf("\r\n\r\n"
+		"=============================================================================\r\n"
+		"GPIO Test firmware " GIT_VERSION " (C) 2019 Sysmocom GmbH\r\n"
+		"=============================================================================\r\n");
 
 	board_main_top();
 
-	TRACE_INFO("starting gpio test...\n\r");
+	TRACE_INFO("starting gpio test...\r\n");
 	gpio_test_init();
 
-	TRACE_INFO("entering main loop...\n\r");
+	TRACE_INFO("entering main loop...\r\n");
 	while (1) {
 		WDT_Restart(WDT);
 

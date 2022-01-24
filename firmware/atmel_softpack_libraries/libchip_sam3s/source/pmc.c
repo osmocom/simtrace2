@@ -63,7 +63,7 @@ extern void PMC_EnablePeripheral( uint32_t dwId )
     {
         if ( (PMC->PMC_PCSR0 & ((uint32_t)1 << dwId)) == ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\n\r", dwId ) ;
+            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\r\n", dwId ) ;
         }
         else
         {
@@ -75,7 +75,7 @@ extern void PMC_EnablePeripheral( uint32_t dwId )
         dwId -= 32;
         if ((PMC->PMC_PCSR1 & ((uint32_t)1 << dwId)) == ((uint32_t)1 << dwId))
         {
-            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\n\r", dwId + 32 ) ;
+            TRACE_DEBUG( "PMC_EnablePeripheral: clock of peripheral"  " %" PRIu32 " is already enabled\r\n", dwId + 32 ) ;
         }
         else
         {
@@ -100,7 +100,7 @@ extern void PMC_DisablePeripheral( uint32_t dwId )
     {
         if ( (PMC->PMC_PCSR0 & ((uint32_t)1 << dwId)) != ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG("PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\n\r", dwId ) ;
+            TRACE_DEBUG("PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\r\n", dwId ) ;
         }
         else
         {
@@ -112,7 +112,7 @@ extern void PMC_DisablePeripheral( uint32_t dwId )
         dwId -= 32 ;
         if ( (PMC->PMC_PCSR1 & ((uint32_t)1 << dwId)) != ((uint32_t)1 << dwId) )
         {
-            TRACE_DEBUG( "PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\n\r", dwId + 32 ) ;
+            TRACE_DEBUG( "PMC_DisablePeripheral: clock of peripheral" " %" PRIu32 " is not enabled\r\n", dwId + 32 ) ;
         }
         else
         {
@@ -132,7 +132,7 @@ extern void PMC_EnableAllPeripherals( void )
     PMC->PMC_PCER1 = MASK_STATUS1 ;
     while ( (PMC->PMC_PCSR1 & MASK_STATUS1) != MASK_STATUS1 ) ;
 
-    TRACE_DEBUG( "Enable all periph clocks\n\r" ) ;
+    TRACE_DEBUG( "Enable all periph clocks\r\n" ) ;
 }
 
 /**
@@ -146,7 +146,7 @@ extern void PMC_DisableAllPeripherals( void )
     PMC->PMC_PCDR1 = MASK_STATUS1 ;
     while ( (PMC->PMC_PCSR1 & MASK_STATUS1) != 0 ) ;
 
-    TRACE_DEBUG( "Disable all periph clocks\n\r" ) ;
+    TRACE_DEBUG( "Disable all periph clocks\r\n" ) ;
 }
 
 /**

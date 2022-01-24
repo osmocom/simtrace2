@@ -55,7 +55,7 @@ static __dfufunc void handle_getstatus(void)
 	dstat.iString = 0;
 	memcpy(&dstat.bwPollTimeout, poll_timeout_10ms, sizeof(dstat.bwPollTimeout));
 
-	TRACE_DEBUG("handle_getstatus(%u, %u)\n\r", dstat.bStatus, dstat.bState);
+	TRACE_DEBUG("handle_getstatus(%u, %u)\r\n", dstat.bStatus, dstat.bState);
 
 	USBD_Write(0, (char *)&dstat, sizeof(dstat), NULL, 0);
 }
@@ -64,7 +64,7 @@ static void __dfufunc handle_getstate(void)
 {
 	uint8_t u8 = g_dfu->state;
 
-	TRACE_DEBUG("handle_getstate(%lu)\n\r", g_dfu->state);
+	TRACE_DEBUG("handle_getstate(%lu)\r\n", g_dfu->state);
 
 	USBD_Write(0, (char *)&u8, sizeof(u8), NULL, 0);
 }
@@ -110,7 +110,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 	uint16_t val = USBGenericRequest_GetValue(request);
 	int rc, ret = DFU_RET_NOTHING;
 
-	TRACE_DEBUG("type=0x%x, recipient=0x%x val=0x%x len=%u\n\r",
+	TRACE_DEBUG("type=0x%x, recipient=0x%x val=0x%x len=%u\r\n",
 			USBGenericRequest_GetType(request),
 			USBGenericRequest_GetRecipient(request),
 			val, len);
@@ -159,7 +159,7 @@ void USBDFU_Runtime_RequestHandler(const USBGenericRequest *request)
 			/* we switch it DETACH state, send a ZLP and
 			 * return.  The next USB reset in this state
 			 * will then trigger DFURT_SwitchToDFU() below */
-			TRACE_DEBUG("\r\n====dfu_detach\n\r");
+			TRACE_DEBUG("\r\n====dfu_detach\r\n");
 			g_dfu->state = DFU_STATE_appDETACH;
 			USBD_Write(0, 0, 0, 0, 0);
 			DFURT_SwitchToDFU();

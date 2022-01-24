@@ -32,39 +32,39 @@ void board_exec_dbg_cmd(int ch)
 {
 	switch (ch) {
 	case '?':
-		printf("\t?\thelp\n\r");
-		printf("\tR\treset SAM3\n\r");
-		printf("\tl\tswitch off LED 1\n\r");
-		printf("\tL\tswitch on  LED 1\n\r");
-		printf("\tg\tswitch off LED 2\n\r");
-		printf("\tG\tswitch on  LED 2\n\r");
-		printf("\t1\tGenerate 1ms reset pulse on WWAN1\n\r");
-		printf("\t!\tSwitch Channel A from physical -> remote\n\r");
-		printf("\tt\t(pseudo)talloc report\n\r");
+		printf("\t?\thelp\r\n");
+		printf("\tR\treset SAM3\r\n");
+		printf("\tl\tswitch off LED 1\r\n");
+		printf("\tL\tswitch on  LED 1\r\n");
+		printf("\tg\tswitch off LED 2\r\n");
+		printf("\tG\tswitch on  LED 2\r\n");
+		printf("\t1\tGenerate 1ms reset pulse on WWAN1\r\n");
+		printf("\t!\tSwitch Channel A from physical -> remote\r\n");
+		printf("\tt\t(pseudo)talloc report\r\n");
 		break;
 	case 'R':
-		printf("Asking NVIC to reset us\n\r");
+		printf("Asking NVIC to reset us\r\n");
 		USBD_Disconnect();
 		NVIC_SystemReset();
 		break;
 	case 'l':
 		led_blink(LED_GREEN, BLINK_ALWAYS_OFF);
-		printf("LED 1 switched off\n\r");
+		printf("LED 1 switched off\r\n");
 		break;
 	case 'L':
 		led_blink(LED_GREEN, BLINK_ALWAYS_ON);
-		printf("LED 1 switched on\n\r");
+		printf("LED 1 switched on\r\n");
 		break;
 	case 'g':
 		led_blink(LED_RED, BLINK_ALWAYS_OFF);
-		printf("LED 2 switched off\n\r");
+		printf("LED 2 switched off\r\n");
 		break;
 	case 'G':
 		led_blink(LED_RED, BLINK_ALWAYS_ON);
-		printf("LED 2 switched on\n\r");
+		printf("LED 2 switched on\r\n");
 		break;
 	case '1':
-		printf("Resetting Modem\n\r");
+		printf("Resetting Modem\r\n");
 		wwan_perst_do_reset_pulse(0, 300);
 		break;
 	case '!':
@@ -74,7 +74,7 @@ void board_exec_dbg_cmd(int ch)
 		talloc_report(NULL, stdout);
 		break;
 	default:
-		printf("Unknown command '%c'\n\r", ch);
+		printf("Unknown command '%c'\r\n", ch);
 		break;
 	}
 }

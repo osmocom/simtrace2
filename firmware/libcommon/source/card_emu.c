@@ -313,7 +313,7 @@ static void flush_rx_buffer(struct card_handle *ch)
 	rd = (struct cardemu_usb_msg_rx_data *) msg->l2h;
 	rd->data_len = msgb_l2len(msg) - sizeof(*rd);
 
-	TRACE_INFO("%u: %s (%u)\n\r",
+	TRACE_DEBUG("%u: %s (%u)\n\r",
 			ch->num, __func__, rd->data_len);
 
 	usb_buf_upd_len_and_submit(msg);
@@ -812,7 +812,7 @@ static void send_tpdu_header(struct card_handle *ch)
 	struct cardemu_usb_msg_rx_data *rd;
 	uint8_t *cur;
 
-	TRACE_INFO("%u: %s: %02x %02x %02x %02x %02x\r\n",
+	TRACE_DEBUG("%u: %s: %02x %02x %02x %02x %02x\r\n",
 			ch->num, __func__,
 			ch->tpdu.hdr[0], ch->tpdu.hdr[1],
 			ch->tpdu.hdr[2], ch->tpdu.hdr[3],

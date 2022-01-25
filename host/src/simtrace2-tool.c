@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 				osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
 			transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);
 			if (!transp->usb_devh) {
-				fprintf(stderr, "can't open USB device\n");
+				fprintf(stderr, "can't open USB device: %s\n", strerror(errno));
 				goto close_exit;
 			}
 

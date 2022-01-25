@@ -36,17 +36,17 @@ local control_commands = {
 }
 
 local msgtype  = ProtoField.uint16("usb_simtrace.msgtype", "Message Type", base.HEX_DEC, control_commands)
-local seqnr  = ProtoField.uint8("usb_simtrace.seqnr", "Sequence Number", base.HEX_DEC)
-local slotnr  = ProtoField.uint8("usb_simtrace.slotnr", "Slot Number", base.HEX_DEC)
+local seqnr  = ProtoField.uint8("usb_simtrace.seqnr", "Sequence Number", base.DEC)
+local slotnr  = ProtoField.uint8("usb_simtrace.slotnr", "Slot Number", base.DEC)
 local reserved  = ProtoField.uint16("usb_simtrace.reserved", "reserved", base.HEX_DEC)
-local payloadlen  = ProtoField.uint16("usb_simtrace.length", "length", base.HEX_DEC)
+local payloadlen  = ProtoField.uint16("usb_simtrace.length", "length", base.DEC)
 local payload  = ProtoField.bytes("usb_simtrace.payload", "Data")
 
 local pb_and_rx  = ProtoField.uint32("usb_simtrace.pb_and_rx", "pb_and_rx", base.HEX_DEC, NULL, 0x8)
 local pb_and_tx  = ProtoField.uint32("usb_simtrace.pb_and_tx", "pb_and_tx", base.HEX_DEC, NULL, 0x4)
 local final  = ProtoField.uint32("usb_simtrace.final", "final", base.HEX_DEC, NULL, 0x2)
 local tpdu_hdr  = ProtoField.uint32("usb_simtrace.tpdu_hdr", "tpdu_hdr", base.HEX_DEC, NULL, 0x1)
-local rxtxdatalen  = ProtoField.uint16("usb_simtrace.rxtxdatalen", "rx/tx data length", base.HEX_DEC)
+local rxtxdatalen  = ProtoField.uint16("usb_simtrace.rxtxdatalen", "rx/tx data length", base.DEC)
 local rxtxdata  = ProtoField.bytes("usb_simtrace.rxtxdata", "rx/tx (data)")
 
 local CEMU_STATUS_F_VCC_PRESENT  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_VCC_PRESENT", "VCC_PRESENT", base.HEX_DEC, NULL, 0x00000001)

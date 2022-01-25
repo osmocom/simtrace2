@@ -160,11 +160,11 @@ function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
   if(command == 0x0101 or command == 0x0106) then
     return dissect_rxtx(payload_data(),pinfo,subtree)
   elseif(command == 0x0104) then
-	return dissect_status(payload_data(),pinfo,subtree)
+    return dissect_status(payload_data(),pinfo,subtree)
   elseif(command == 0x0102) then
-	return dissect_atr(payload_data(),pinfo,subtree)
+    return dissect_atr(payload_data(),pinfo,subtree)
   elseif(command == 0x0201) then
-	return dissect_modem_reset(payload_data(),pinfo,subtree)
+    return dissect_modem_reset(payload_data(),pinfo,subtree)
   else
     subtree:add(payload, payload_data)
   end
@@ -173,13 +173,12 @@ end
 
 
 function usb_simtrace_protocol.init()
-local usb_product_dissectors = DissectorTable.get("usb.product")
-usb_product_dissectors:add(0x1d50616d, usb_simtrace_protocol) -- OCTSIMTEST
-usb_product_dissectors:add(0x1d50616e, usb_simtrace_protocol) -- NGFF_CARDEM
-usb_product_dissectors:add(0x1d5060e3, usb_simtrace_protocol) -- SIMTRACE2
-usb_product_dissectors:add(0x1d504004, usb_simtrace_protocol) -- QMOD
-usb_product_dissectors:add(0x1d504001, usb_simtrace_protocol) -- OWHW
-DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
-DissectorTable.get("usb.interrupt"):add(0xffff, usb_simtrace_protocol)
---concatss =  ByteArray.new()
+  local usb_product_dissectors = DissectorTable.get("usb.product")
+  usb_product_dissectors:add(0x1d50616d, usb_simtrace_protocol) -- OCTSIMTEST
+  usb_product_dissectors:add(0x1d50616e, usb_simtrace_protocol) -- NGFF_CARDEM
+  usb_product_dissectors:add(0x1d5060e3, usb_simtrace_protocol) -- SIMTRACE2
+  usb_product_dissectors:add(0x1d504004, usb_simtrace_protocol) -- QMOD
+  usb_product_dissectors:add(0x1d504001, usb_simtrace_protocol) -- OWHW
+  DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
+  DissectorTable.get("usb.interrupt"):add(0xffff, usb_simtrace_protocol)
 end

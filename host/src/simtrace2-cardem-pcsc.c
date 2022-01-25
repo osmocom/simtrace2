@@ -549,6 +549,7 @@ int main(int argc, char **argv)
 
 	do {
 		struct usb_interface_match _ifm, *ifm = &_ifm;
+		memset(ifm, 0, sizeof(*ifm));
 		ifm->vendor = vendor_id;
 		ifm->product = product_id;
 		ifm->configuration = config_id;

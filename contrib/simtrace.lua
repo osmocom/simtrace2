@@ -1,3 +1,9 @@
+-- wireshark LUA dissector for the SIMtrace USB protocol
+-- (C) 2021 by sysmocom - s.f.m.c. GmbH, Author: Eric Wild
+-- SPDX-License-Identifier: GPL-2.0+
+--
+-- Usage: Put this into your ~/.wireshark/init.lua [or include it from there]
+
 usb_simtrace_protocol = Proto("USB_simtrace",  "USB simtrace protocol")
 
 

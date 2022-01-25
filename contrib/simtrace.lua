@@ -114,6 +114,30 @@ function dissect_rxtx(payload_data,pinfo,tree)
   headerSubtree:add(rxtxdatalen, len)
   headerSubtree:add_le(rxtxdata, payload_data(6,len))
 
+  local flagstr = " "
+  if is_pbrx().value == 1 then
+    flagstr = flagstr .. "R"
+  else
+    flagstr = flagstr .. "."
+  end
+  if is_pbtx().value == 1 then
+    flagstr = flagstr .. "T"
+  else
+    flagstr = flagstr .. "."
+  end
+  if is_final().value == 1 then
+    flagstr = flagstr .. "F"
+  else
+    flagstr = flagstr .. "."
+  end
+  if is_hdr().value == 1 then
+    flagstr = flagstr .. "H"
+  else
+    flagstr = flagstr .. "."
+  end
+  flagstr = flagstr .. " "
+  pinfo.cols.info:append(flagstr .. payload_data(6,len))
+
   -- ghetto dissection does not work due to mixed in procedure bytes
   --if pinfo.visited == false then
   -- Dissector.get("iso7816"):call(payload_data(6):tvb(), pinfo, tree)

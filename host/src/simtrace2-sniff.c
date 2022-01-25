@@ -442,9 +442,9 @@ int main(int argc, char **argv)
 	}
 	struct usb_interface_match ifm_selected = ifm_filtered[0];
 	printf("Using USB device %04x:%04x Addr=%u, Path=%s, Cfg=%u, Intf=%u, Alt=%u: %d/%d/%d ",
-	ifm_selected.vendor, ifm_selected.product, ifm_selected.addr, ifm_selected.path,
-	ifm_selected.configuration, ifm_selected.interface, ifm_selected.altsetting,
-	ifm_selected.class, ifm_selected.sub_class, ifm_selected.protocol);
+		ifm_selected.vendor, ifm_selected.product, ifm_selected.addr, ifm_selected.path,
+		ifm_selected.configuration, ifm_selected.interface, ifm_selected.altsetting,
+		ifm_selected.class, ifm_selected.sub_class, ifm_selected.protocol);
 	libusb_device_handle *dev_handle;
 	rc = libusb_open(ifm_selected.usb_dev, &dev_handle);
 	if (rc < 0) {

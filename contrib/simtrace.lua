@@ -253,6 +253,7 @@ function usb_simtrace_protocol.init()
   usb_product_dissectors:add(0x1d5060e3, usb_simtrace_protocol) -- SIMTRACE2
   usb_product_dissectors:add(0x1d504004, usb_simtrace_protocol) -- QMOD
   usb_product_dissectors:add(0x1d504001, usb_simtrace_protocol) -- OWHW
+  DissectorTable.get("usb.device"):add_for_decode_as(usb_simtrace_protocol)
   DissectorTable.get("usb.bulk"):add(0xffff, usb_simtrace_protocol)
   DissectorTable.get("usb.interrupt"):add(0xffff, usb_simtrace_protocol)
 end

@@ -49,6 +49,19 @@ local tpdu_hdr  = ProtoField.uint32("usb_simtrace.tpdu_hdr", "tpdu_hdr", base.HE
 local rxtxdatalen  = ProtoField.uint16("usb_simtrace.rxtxdatalen", "rx/tx data length", base.DEC)
 local rxtxdata  = ProtoField.bytes("usb_simtrace.rxtxdata", "rx/tx (data)")
 
+local hf_pts_len = ProtoField.uint8("usb_simtrace.pts_len", "PTS length", base.DEC)
+local hf_pts_req = ProtoField.bytes("usb_simtrace.pts_req", "PTS request")
+local hf_pts_resp = ProtoField.bytes("usb_simtrace.pts_resp", "PTS response")
+
+local hf_cemu_cfg_features = ProtoField.uint32("usb_simtrace.cemu_cfg.features.status_irq", "CardEm Features", base.HEX)
+local hf_cemu_cfg_slot_mux_nr = ProtoField.uint32("usb_simtrace.cemu_cfg.features.slot_mux_nr", "CardEm Slot Mux Nr", base.DEC)
+
+local card_insert_types = {
+    [0x00] = "not inserted",
+    [0x01] = "inserted",
+}
+local hf_cemu_cardinsert = ProtoField.uint8("usb_simtrace.cardinsert", "Card Insert", base.DEC, card_insert_types, 0xff)
+
 local CEMU_STATUS_F_VCC_PRESENT  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_VCC_PRESENT", "VCC_PRESENT", base.HEX_DEC, NULL, 0x00000001)
 local CEMU_STATUS_F_CLK_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_CLK_ACTIVE", "CLK_ACTIVE", base.HEX_DEC, NULL, 0x00000002)
 local CEMU_STATUS_F_RCEMU_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_RCEMU_ACTIVE", "CEMU_ACTIVE", base.HEX_DEC, NULL, 0x00000004)
@@ -63,11 +76,20 @@ local modem_reset_types = {
 local modem_reset_status = ProtoField.uint8("usb_simtrace.modem.reset_type", "modem reset type", base.HEX, modem_reset_types, 0xf)
 local modem_reset_len = ProtoField.uint8("usb_simtrace.modem.reset_len", "modem reset length (ms)", base.DEC)
 
+local modem_sim_select_types = {
+    [0x00] = "local",
+    [0x01] = "remote",
+}
+local hf_modem_sim_select = ProtoField.uint8("usb_simtrace.modem.sim_select", "SIM card selection", base.DEC, modem_sim_select_types, 0xff)
+
 usb_simtrace_protocol.fields = {
   msgtype, seqnr, slotnr, reserved, payloadlen, payload,
   pb_and_rx, pb_and_tx, final, tpdu_hdr, rxtxdatalen, rxtxdata,
   CEMU_STATUS_F_VCC_PRESENT, CEMU_STATUS_F_CLK_ACTIVE, CEMU_STATUS_F_RCEMU_ACTIVE, CEMU_STATUS_F_CARD_INSERT, CEMU_STATUS_F_RESET_ACTIVE,
-  modem_reset_status, modem_reset_len
+  modem_reset_status, modem_reset_len,
+  hf_pts_len, hf_pts_req, hf_pts_resp,
+  hf_cemu_cfg_features, hf_cemu_cfg_slot_mux_nr,
+  hf_cemu_cardinsert, hf_modem_sim_select,
 }
 
 local is_hdr = Field.new("usb_simtrace.tpdu_hdr")
@@ -148,6 +170,44 @@ function dissect_modem_reset(payload_data,pinfo,tree)
 
 end
 
+function dissect_pts(payload_data, pinfo, tree)
+  local subtree = tree:add(usb_simtrace_protocol, payload_data, "PTS")
+  local pts_len = payload_data(0,1):le_uint()
+  local pts_req = payload_data(1, pts_len);
+  local pts_resp = payload_data(7, pts_len);
+
+  subtree:add(hf_pts_len, pts_len);
+  subtree:add(hf_pts_req, pts_req);
+  subtree:add(hf_pts_resp, pts_resp);
+
+  pinfo.cols.info:append(" Req: " .. pts_req .. ", Resp: " .. pts_resp);
+end
+
+function dissect_cemu_config(payload_data, pinfo, tree)
+  local subtree = tree:add(usb_simtrace_protocol, payload_data, "Card Emu Config")
+
+  subtree:add(hf_cemu_cfg_features, payload_data(0,4));
+  subtree:add(hf_cemu_cfg_slot_mux_nr, payload_data(4,1));
+end
+
+function dissect_modem_sim_sel(payload_data, pinfo, tree)
+  local subtree = tree:add(usb_simtrace_protocol, payload_data, "Modem SIM Select")
+  local sim_select = payload_data(0,1):le_uint();
+
+  subtree:add(hf_modem_sim_select, sim_select);
+  pinfo.cols.info:append(" " .. modem_sim_select_types[sim_select]);
+end
+
+function dissect_cemu_cardinsert(payload_data, pinfo, tree)
+  local subtree = tree:add(usb_simtrace_protocol, payload_data, "Card Insert")
+  local cins_type = payload_data(0,1):le_uint()
+
+  subtree:add(hf_cemu_cardinsert, cins_type);
+  pinfo.cols.info:append(" " .. card_insert_types[cins_type]);
+end
+
+
+
 function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
   length = buffer:len()
   if length == 0 then return end
@@ -169,8 +229,16 @@ function usb_simtrace_protocol.dissector(buffer, pinfo, tree)
     return dissect_status(payload_data(),pinfo,subtree)
   elseif(command == 0x0102) then
     return dissect_atr(payload_data(),pinfo,subtree)
+  elseif(command == 0x0105) then
+    return dissect_cemu_cardinsert(payload_data(),pinfo,subtree)
+  elseif(command == 0x0107) then
+    return dissect_pts(payload_data(),pinfo,subtree)
+  elseif(command == 0x0108) then
+    return dissect_cemu_config(payload_data(),pinfo,subtree)
   elseif(command == 0x0201) then
     return dissect_modem_reset(payload_data(),pinfo,subtree)
+  elseif(command == 0x0202) then
+    return dissect_modem_sim_sel(payload_data(),pinfo,subtree)
   else
     subtree:add(payload, payload_data)
   end

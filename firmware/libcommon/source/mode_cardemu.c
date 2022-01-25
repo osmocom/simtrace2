@@ -470,6 +470,7 @@ static int card_vcc_adc_init(void)
 	ADC->ADC_CHER |= ADC_CHER_CH6;
 	ADC->ADC_IER |= ADC_IER_EOC6;
 #endif
+	NVIC_SetPriority(ADC_IRQn, 13);
 	NVIC_EnableIRQ(ADC_IRQn);
 	ADC->ADC_CR |= ADC_CR_START;
 
@@ -573,6 +574,8 @@ void mode_cardemu_init(void)
 
 	TRACE_ENTRY();
 
+	NVIC_SetPriority(UDP_IRQn, 14);
+
 #ifdef PINS_CARDSIM
 	PIO_Configure(pins_cardsim, PIO_LISTSIZE(pins_cardsim));
 #endif
@@ -586,6 +589,7 @@ void mode_cardemu_init(void)
 
 	/* configure USART as ISO-7816 slave (e.g. card) */
 	ISO7816_Init(&cardem_inst[0].usart_info, CLK_SLAVE);
+	NVIC_SetPriority(FIRST_USART_IRQ, 0);
 	NVIC_EnableIRQ(FIRST_USART_IRQ);
 	PIO_ConfigureIt(&pin_usim1_rst, usim1_rst_irqhandler);
 	PIO_EnableIt(&pin_usim1_rst);
@@ -613,6 +617,7 @@ void mode_cardemu_init(void)
 	PIO_Configure(pins_usim2, PIO_LISTSIZE(pins_usim2));
 	ISO7816_Init(&cardem_inst[1].usart_info, CLK_SLAVE);
 	/* TODO enable timeout */
+	NVIC_SetPriority(USART0_IRQn, 0);
 	NVIC_EnableIRQ(USART0_IRQn);
 	PIO_ConfigureIt(&pin_usim2_rst, usim2_rst_irqhandler);
 	PIO_EnableIt(&pin_usim2_rst);

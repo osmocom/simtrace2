@@ -100,6 +100,7 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 
 	/* Enable TX interrupts */
 	pUart->UART_IER = UART_IER_TXRDY;
+	NVIC_SetPriority(CONSOLE_IRQ, 15); /* lowest priority */
 	NVIC_EnableIRQ(CONSOLE_IRQ);
 	
 	/* Enable receiver and transmitter */

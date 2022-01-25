@@ -155,7 +155,7 @@ extern int main(void)
 	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
 		   (WDT_GetPeriod(2000) << 16) | WDT_GetPeriod(2000));
 
-	PIO_InitializeInterrupts(0);
+	PIO_InitializeInterrupts(10);
 
 	print_banner();
 	board_main_top();

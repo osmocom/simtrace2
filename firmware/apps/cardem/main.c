@@ -137,6 +137,12 @@ static void check_exec_dbg_cmd(void)
 	board_exec_dbg_cmd(ch);
 }
 
+#include <osmocom/core/panic.h>
+void WDT_IrqHandler(void)
+{
+	osmo_panic("WDT");
+}
+
 /*------------------------------------------------------------------------------
  *        Main
  *------------------------------------------------------------------------------*/
@@ -152,8 +158,9 @@ extern int main(void)
 	led_blink(LED_GREEN, BLINK_ALWAYS_ON);
 
 	/* Enable watchdog for 2000ms, with no window */
-	WDT_Enable(WDT, WDT_MR_WDRSTEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
-		   (WDT_GetPeriod(2000) << 16) | WDT_GetPeriod(2000));
+	WDT_Enable(WDT, WDT_MR_WDFIEN | WDT_MR_WDDBGHLT | WDT_MR_WDIDLEHLT |
+		   (WDT_GetPeriod(1000) << 16) | WDT_GetPeriod(1000));
+	NVIC_EnableIRQ(WDT_IRQn);
 
 	PIO_InitializeInterrupts(10);
 

@@ -334,7 +334,7 @@ static void usb_irq_xfer_cb(struct libusb_transfer *xfer)
 		exit(1);
 		break;
 	default:
-		LOGCI(ci, LOGL_FATAL, "USB IN transfer failed, status=%u\n", xfer->status);
+		LOGCI(ci, LOGL_FATAL, "USB INT transfer failed, status=%u\n", xfer->status);
 		exit(1);
 		break;
 	}

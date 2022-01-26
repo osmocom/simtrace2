@@ -206,7 +206,7 @@ static const SIMTraceDriverConfigurationDescriptorSniffer
 						SIMTRACE_USB_EP_CARD_INT),
 		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
 		.wMaxPacketSize	= USBEndpointDescriptor_MAXINTERRUPTSIZE_FS,
-		.bInterval = 0x10,
+		.bInterval = 1,
 	},
 	DFURT_IF_DESCRIPTOR(1, 0),
 };
@@ -382,7 +382,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 						SIMTRACE_CARDEM_USB_EP_USIM1_INT),
 		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
 		.wMaxPacketSize		= USBEndpointDescriptor_MAXINTERRUPTSIZE_FS,
-		.bInterval		= 0x10
+		.bInterval		= 1
 	},
 #ifdef CARDEMU_SECOND_UART
 	/* Communication class interface standard descriptor */
@@ -429,7 +429,7 @@ static const SIMTraceDriverConfigurationDescriptorPhone
 						SIMTRACE_CARDEM_USB_EP_USIM2_INT),
 		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
 		.wMaxPacketSize		= USBEndpointDescriptor_MAXINTERRUPTSIZE_FS,
-		.bInterval		= 0x10,
+		.bInterval		= 1,
 	},
 	DFURT_IF_DESCRIPTOR(2, 0),
 #else
@@ -547,7 +547,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 						      CCID_EPT_NOTIFICATION),
 		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
 		.wMaxPacketSize = USBEndpointDescriptor_MAXINTERRUPTSIZE_FS,
-		.bInterval = 0x10,
+		.bInterval = 1,
 	},
 
 	/* Communication class interface standard descriptor */
@@ -593,7 +593,7 @@ static const SIMTraceDriverConfigurationDescriptorMITM
 						SIMTRACE_USB_EP_PHONE_INT),
 		.bmAttributes		= USBEndpointDescriptor_INTERRUPT,
 		.wMaxPacketSize		= USBEndpointDescriptor_MAXINTERRUPTSIZE_FS,
-		.bInterval		= 0x10
+		.bInterval		= 1
 	},
 	DFURT_IF_DESCRIPTOR(2, 0),
 };

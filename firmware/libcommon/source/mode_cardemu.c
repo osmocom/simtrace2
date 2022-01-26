@@ -567,6 +567,35 @@ void mode_cardemu_configure(void)
 	TRACE_ENTRY();
 }
 
+struct relevant_irq {
+	uint32_t irq;
+	uint32_t prio;
+	const char *name;
+};
+static const struct relevant_irq relevant_irqs[] = {
+	{ UDP_IRQn, 		14, "USB" },
+	{ CONSOLE_IRQ,		15, "CONSOLE" },
+	{ FIRST_USART_IRQ,	 0, "7816_0" },
+#ifdef CARDEMU_SECOND_UART
+	{ USART0_IRQn,	 	 0, "7816_1" },
+#endif
+#ifdef DETECT_VCC_BY_ADC
+	{ ADC_IRQn,		13, "ADC" },
+#endif
+	{ PIOA_IRQn,		10, "PIOA" },
+	{ PIOB_IRQn,		10, "PIOB" },
+	{ PIOC_IRQn,		10, "PIOC" },
+};
+void dump_irq_prios(void)
+{
+	printf("Interrupt Enable Mask (ISER): %08x%08x\n\r", NVIC->ISER[1], NVIC->ISER[0]);
+	for (unsigned int i = 0; i < ARRAY_SIZE(relevant_irqs); i++) {
+		const struct relevant_irq *ri = &relevant_irqs[i];
+		printf("IRQ prio %02u (%s): current=%u, expected=%u\r\n", ri->irq, ri->name,
+			NVIC_GetPriority(ri->irq), ri->prio);
+	}
+}
+
 /* called if config is activated */
 void mode_cardemu_init(void)
 {
@@ -636,6 +665,9 @@ void mode_cardemu_init(void)
 	sim_switch_use_physical(1, 1);
 	/* TODO check RST and VCC */
 #endif /* CARDEMU_SECOND_UART */
+
+	dump_irq_prios();
+
 }
 
 /* called if config is deactivated */

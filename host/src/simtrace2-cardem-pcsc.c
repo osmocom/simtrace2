@@ -279,6 +279,7 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 		process_usb_msg(ci, xfer->buffer, xfer->actual_length);
 		break;
 	case LIBUSB_TRANSFER_ERROR:
+	case LIBUSB_TRANSFER_STALL:
 		LOGCI(ci, LOGL_FATAL, "USB IN transfer error, trying resubmit\n");
 		break;
 	case LIBUSB_TRANSFER_NO_DEVICE:
@@ -333,6 +334,7 @@ static void usb_irq_xfer_cb(struct libusb_transfer *xfer)
 		process_usb_msg_irq(ci, xfer->buffer, xfer->actual_length);
 		break;
 	case LIBUSB_TRANSFER_ERROR:
+	case LIBUSB_TRANSFER_STALL:
 		LOGCI(ci, LOGL_FATAL, "USB INT transfer error, trying resubmit\n");
 		break;
 	case LIBUSB_TRANSFER_NO_DEVICE:

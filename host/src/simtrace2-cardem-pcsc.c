@@ -278,6 +278,9 @@ static void usb_in_xfer_cb(struct libusb_transfer *xfer)
 		/* hand the message up the stack */
 		process_usb_msg(ci, xfer->buffer, xfer->actual_length);
 		break;
+	case LIBUSB_TRANSFER_ERROR:
+		LOGCI(ci, LOGL_FATAL, "USB IN transfer error, trying resubmit\n");
+		break;
 	case LIBUSB_TRANSFER_NO_DEVICE:
 		LOGCI(ci, LOGL_FATAL, "USB device disappeared\n");
 		exit(1);
@@ -328,6 +331,9 @@ static void usb_irq_xfer_cb(struct libusb_transfer *xfer)
 	switch (xfer->status) {
 	case LIBUSB_TRANSFER_COMPLETED:
 		process_usb_msg_irq(ci, xfer->buffer, xfer->actual_length);
+		break;
+	case LIBUSB_TRANSFER_ERROR:
+		LOGCI(ci, LOGL_FATAL, "USB INT transfer error, trying resubmit\n");
 		break;
 	case LIBUSB_TRANSFER_NO_DEVICE:
 		LOGCI(ci, LOGL_FATAL, "USB device disappeared\n");

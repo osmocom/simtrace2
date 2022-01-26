@@ -1058,7 +1058,10 @@ void card_emu_report_status(struct card_handle *ch, bool report_on_irq)
 		sts->flags |= CEMU_STATUS_F_CLK_ACTIVE;
 	if (ch->in_reset)
 		sts->flags |= CEMU_STATUS_F_RESET_ACTIVE;
-	/* FIXME: voltage + card insert */
+#ifdef DETECT_VCC_BY_ADC
+	sts->voltage_mv = card_emu_get_vcc(ch->num);
+#endif
+	/* FIXME: card insert */
 	sts->F_index = ch->F_index;
 	sts->D_index = ch->D_index;
 	sts->wi = ch->wi;
@@ -1102,7 +1105,12 @@ void card_emu_io_statechg(struct card_handle *ch, enum card_io io, int active)
 			card_set_state(ch, ISO_S_WAIT_POWER);
 			chg_mask |= CEMU_STATUS_F_VCC_PRESENT;
 		} else if (active == 1 && ch->vcc_active == 0) {
+#ifdef DETECT_VCC_BY_ADC
+			TRACE_INFO("%u: VCC activated (%d mV)\r\n", ch->num,
+				   card_emu_get_vcc(ch->num));
+#else
 			TRACE_INFO("%u: VCC activated\r\n", ch->num);
+#endif
 			card_set_state(ch, ISO_S_WAIT_CLK);
 			chg_mask |= CEMU_STATUS_F_VCC_PRESENT;
 		}

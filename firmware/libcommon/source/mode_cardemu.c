@@ -168,6 +168,16 @@ static void card_emu_uart_set_direction(uint8_t uart_chan, bool tx)
 #endif
 }
 
+int card_emu_get_vcc(uint8_t uart_chan)
+{
+	struct cardem_inst *ci = &cardem_inst[uart_chan];
+#ifdef DETECT_VCC_BY_ADC
+	return ci->vcc_uv / 1000;
+#else
+	return -1;
+#endif
+}
+
 /* call-back from card_emu.c to enable/disable transmit and/or receive */
 void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx)
 {

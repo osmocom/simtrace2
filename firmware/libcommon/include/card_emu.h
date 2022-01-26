@@ -69,6 +69,8 @@ void card_emu_uart_enable(uint8_t uart_chan, uint8_t rxtx);
 void card_emu_uart_wait_tx_idle(uint8_t uart_chan);
 void card_emu_uart_interrupt(uint8_t uart_chan);
 
+int card_emu_get_vcc(uint8_t uart_chan);
+
 struct cardemu_usb_msg_config;
 int card_emu_set_config(struct card_handle *ch, const struct cardemu_usb_msg_config *scfg,
 			unsigned int scfg_len);

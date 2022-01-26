@@ -410,10 +410,9 @@ void card_emu_uart_reset_wt(uint8_t uart_chan)
 /* call-back from card_emu.c to force a USART interrupt */
 void card_emu_uart_interrupt(uint8_t uart_chan)
 {
+	OSMO_ASSERT(uart_chan < ARRAY_SIZE(cardem_inst));
 	Usart *usart = get_usart_by_chan(uart_chan);
-	if (!usart) {
-		return;
-	}
+
 	if (USART0 == usart) {
 		NVIC_SetPendingIRQ(USART0_IRQn);
 	} else if (USART1 == usart) {

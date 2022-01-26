@@ -62,7 +62,7 @@ static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 	atr[atr_len-1] = csum;
 }
 
-static void cemu_flags2str(char *out, unsigned int out_len, uint32_t flags)
+static void cemu_status_flags2str(char *out, unsigned int out_len, uint32_t flags)
 {
 	snprintf(out, out_len, "%s%s%s%s%s",
 		 flags & CEMU_STATUS_F_RESET_ACTIVE ? "RESET " : "",
@@ -72,25 +72,25 @@ static void cemu_flags2str(char *out, unsigned int out_len, uint32_t flags)
 		 flags & CEMU_STATUS_F_RCEMU_ACTIVE ? "RCEMU " : "");
 }
 
-static uint32_t last_flags = 0;
+static uint32_t last_status_flags = 0;
 
-static void update_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
+static void update_status_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
 {
 	struct osim_card_hdl *card = ci->chan->card;
 
 	if ((flags & CEMU_STATUS_F_VCC_PRESENT) && (flags & CEMU_STATUS_F_CLK_ACTIVE) &&
 	    !(flags & CEMU_STATUS_F_RESET_ACTIVE)) {
-		if (last_flags & CEMU_STATUS_F_RESET_ACTIVE) {
+		if (last_status_flags & CEMU_STATUS_F_RESET_ACTIVE) {
 			/* a reset has just ended, forward it to the real card */
 			bool cold_reset = true;
-			if (last_flags & CEMU_STATUS_F_VCC_PRESENT)
+			if (last_status_flags & CEMU_STATUS_F_VCC_PRESENT)
 				cold_reset = false;
 			LOGCI(ci, LOGL_NOTICE, "%s Resetting card in reader...\n",
 				cold_reset ? "Cold" : "Warm");
 			osim_card_reset(card, cold_reset);
 		}
 	}
-	last_flags = flags;
+	last_status_flags = flags;
 }
 
 /***********************************************************************
@@ -103,12 +103,12 @@ static int process_do_status(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int 
 	struct cardemu_usb_msg_status *status = (struct cardemu_usb_msg_status *) buf;
 	char fbuf[80];
 
-	cemu_flags2str(fbuf, sizeof(fbuf), status->flags);
+	cemu_status_flags2str(fbuf, sizeof(fbuf), status->flags);
 	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
 
-	update_flags(ci, status->flags);
+	update_status_flags(ci, status->flags);
 
 	return 0;
 }
@@ -212,12 +212,12 @@ static int process_irq_status(struct osmo_st2_cardem_inst *ci, const uint8_t *bu
 	const struct cardemu_usb_msg_status *status = (struct cardemu_usb_msg_status *) buf;
 	char fbuf[80];
 
-	cemu_flags2str(fbuf, sizeof(fbuf), status->flags);
-	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
+	cemu_status_flags2str(fbuf, sizeof(fbuf), status->flags);
+	LOGCI(ci, LOGL_INFO, "=> IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
 
-	update_flags(ci, status->flags);
+	update_status_flags(ci, status->flags);
 
 	return 0;
 }

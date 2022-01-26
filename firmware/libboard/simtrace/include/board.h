@@ -155,3 +155,7 @@
 #endif
 /* SIMtrace board supports man-in-the-middle mode */
 //#define HAVE_MITM
+
+#define DETECT_VCC_BY_ADC
+#define VCC_UV_THRESH_1V8	(1500000/2)	/* 10k/10k resistive divider halves voltage */
+#define VCC_UV_THRESH_3V	(2500000/2)	/* 10k/10k resistive divider halves voltage */

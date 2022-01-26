@@ -74,22 +74,40 @@ static void cemu_status_flags2str(char *out, unsigned int out_len, uint32_t flag
 
 static uint32_t last_status_flags = 0;
 
+#define NO_RESET 0
+#define COLD_RESET 1
+#define WARM_RESET 2
+
 static void update_status_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
 {
 	struct osim_card_hdl *card = ci->chan->card;
+	int reset = NO_RESET;
 
+	/* check if card is _now_ operational: VCC+CLK present, RST absent */
 	if ((flags & CEMU_STATUS_F_VCC_PRESENT) && (flags & CEMU_STATUS_F_CLK_ACTIVE) &&
 	    !(flags & CEMU_STATUS_F_RESET_ACTIVE)) {
 		if (last_status_flags & CEMU_STATUS_F_RESET_ACTIVE) {
 			/* a reset has just ended, forward it to the real card */
-			bool cold_reset = true;
 			if (last_status_flags & CEMU_STATUS_F_VCC_PRESENT)
-				cold_reset = false;
-			LOGCI(ci, LOGL_NOTICE, "%s Resetting card in reader...\n",
-				cold_reset ? "Cold" : "Warm");
-			osim_card_reset(card, cold_reset);
+				reset = WARM_RESET;
+			else
+				reset = COLD_RESET;
+		} else if (!(last_status_flags & CEMU_STATUS_F_VCC_PRESENT)) {
+			/* power-up has just happened, perform cold reset */
+			reset = COLD_RESET;
 		}
+	} else if (flags == CEMU_STATUS_F_VCC_PRESENT &&
+		   !(last_status_flags & CEMU_STATUS_F_VCC_PRESENT)) {
+		/* improper power-up: Only power enabled, but no reset active. */
+		reset = COLD_RESET;
 	}
+
+	if (reset) {
+		LOGCI(ci, LOGL_NOTICE, "%s Resetting card in reader...\n",
+			reset == COLD_RESET ? "Cold" : "Warm");
+		osim_card_reset(card, reset == COLD_RESET ? true : false);
+	}
+
 	last_status_flags = flags;
 }
 

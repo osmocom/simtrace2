@@ -1,7 +1,7 @@
 /* simtrace2-cardem-pcsc - main program for the host PC to provide a remote SIM
  * using the SIMtrace 2 firmware in card emulation mode
  *
- * (C) 2016-2021 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2022 by Harald Welte <hwelte@hmw-consulting.de>
  * (C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or
@@ -49,7 +49,7 @@
 #include <osmocom/sim/class_tables.h>
 #include <osmocom/sim/sim.h>
 
-#define LOGCI(ci, lvl, fmt, args ...) printf(fmt, ## args)
+#define LOGCI(ci, lvl, fmt, args ...) LOGP(DLGLOBAL, lvl,  fmt, ## args)
 
 static void atr_update_csum(uint8_t *atr, unsigned int atr_len)
 {
@@ -93,6 +93,17 @@ static void update_status_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
 	last_status_flags = flags;
 }
 
+static const char *cemu_data_flags2str(uint32_t flags)
+{
+	static char out[64];
+	snprintf(out, sizeof(out), "%s%s%s%s",
+		 flags & CEMU_DATA_F_TPDU_HDR ? "HDR " : "",
+		 flags & CEMU_DATA_F_FINAL ? "FINAL " : "",
+		 flags & CEMU_DATA_F_PB_AND_TX ? "PB_AND_TX " : "",
+		 flags & CEMU_DATA_F_PB_AND_RX ? "PB_AND_RX" : "");
+	return out;
+}
+
 /***********************************************************************
  * Incoming Messages
  ***********************************************************************/
@@ -104,7 +115,7 @@ static int process_do_status(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int 
 	char fbuf[80];
 
 	cemu_status_flags2str(fbuf, sizeof(fbuf), status->flags);
-	printf("=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
+	LOGCI(ci, LOGL_NOTICE, "=> STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
 
@@ -119,7 +130,7 @@ static int process_do_pts(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len
 	struct cardemu_usb_msg_pts_info *pts;
 	pts = (struct cardemu_usb_msg_pts_info *) buf;
 
-	printf("=> PTS req: %s\n", osmo_hexdump(pts->req, sizeof(pts->req)));
+	LOGCI(ci, LOGL_NOTICE, "=> PTS req: %s\n", osmo_hexdump(pts->req, pts->pts_len));
 
 	return 0;
 }
@@ -133,8 +144,8 @@ static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int l
 
 	data = (struct cardemu_usb_msg_rx_data *) buf;
 
-	printf("=> DATA: flags=%x, %s: ", data->flags,
-		osmo_hexdump(data->data, data->data_len));
+	LOGCI(ci, LOGL_INFO, "=> DATA: flags=0x%02x (%s), %s\n ", data->flags,
+	      cemu_data_flags2str(data->flags), osmo_hexdump(data->data, data->data_len));
 
 	rc = osmo_apdu_segment_in(&ac, data->data, data->data_len,
 				  data->flags & CEMU_DATA_F_TPDU_HDR);
@@ -163,7 +174,6 @@ static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int l
 		msgb_apdu_sw(tmsg) = msgb_get_u16(tmsg);
 		ac.sw[0] = msgb_apdu_sw(tmsg) >> 8;
 		ac.sw[1] = msgb_apdu_sw(tmsg) & 0xff;
-		printf("SW=0x%04x, len_rx=%d\n", msgb_apdu_sw(tmsg), msgb_l3len(tmsg));
 		if (msgb_l3len(tmsg))
 			osmo_st2_cardem_request_pb_and_tx(ci, ac.hdr.ins, tmsg->l3h, msgb_l3len(tmsg));
 		osmo_st2_cardem_request_sw_tx(ci, ac.sw);
@@ -178,8 +188,6 @@ static int process_usb_msg(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int le
 {
 	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *)buf;
 	int rc;
-
-	printf("-> %s\n", osmo_hexdump(buf, len));
 
 	buf += sizeof(*sh);
 
@@ -213,7 +221,7 @@ static int process_irq_status(struct osmo_st2_cardem_inst *ci, const uint8_t *bu
 	char fbuf[80];
 
 	cemu_status_flags2str(fbuf, sizeof(fbuf), status->flags);
-	LOGCI(ci, LOGL_INFO, "=> IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
+	LOGCI(ci, LOGL_NOTICE, "=> IRQ STATUS: flags=0x%x, fi=%u, di=%u, wi=%u wtime=%u (%s)\n",
 		status->flags, status->fi, status->di, status->wi,
 		status->waiting_time, fbuf);
 
@@ -226,8 +234,6 @@ static int process_usb_msg_irq(struct osmo_st2_cardem_inst *ci, const uint8_t *b
 {
 	struct simtrace_msg_hdr *sh = (struct simtrace_msg_hdr *)buf;
 	int rc;
-
-	LOGCI(ci, LOGL_INFO, "SIMtrace IRQ %s\n", osmo_hexdump(buf, len));
 
 	buf += sizeof(*sh);
 
@@ -351,7 +357,7 @@ static void allocate_and_submit_irq(struct osmo_st2_cardem_inst *ci)
 static void print_welcome(void)
 {
 	printf("simtrace2-cardem-pcsc - Using PC/SC reader as SIM\n"
-	       "(C) 2010-2020, Harald Welte <laforge@gnumonks.org>\n"
+	       "(C) 2010-2022, Harald Welte <laforge@gnumonks.org>\n"
 	       "(C) 2018, sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>\n\n");
 }
 

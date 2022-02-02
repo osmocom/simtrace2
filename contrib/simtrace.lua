@@ -2,7 +2,10 @@
 -- (C) 2021 by sysmocom - s.f.m.c. GmbH, Author: Eric Wild
 -- SPDX-License-Identifier: GPL-2.0+
 --
--- Usage: Put this into your ~/.wireshark/init.lua [or include it from there]
+-- Usage: Move this file to your "personal lua plugins" folder that
+-- can be found in the Wireshark Help->About Wireshark->Folders tab
+-- Windows: %APPDATA%\Wireshark\plugins.
+-- Unix-like systems: ~/.local/lib/wireshark/plugins.
 
 usb_simtrace_protocol = Proto("USB_simtrace",  "USB simtrace protocol")
 

@@ -309,7 +309,8 @@ int main(int argc, char **argv)
 			ifm->configuration = config_id;
 			ifm->interface = if_num;
 			ifm->altsetting = altsetting;
-			ifm->addr = addr;
+			if (addr > 0 && addr < 256)
+				ifm->addr = addr;
 			if (path)
 				osmo_strlcpy(ifm->path, path, sizeof(ifm->path));
 			transp->usb_devh = osmo_libusb_open_claim_interface(NULL, NULL, ifm);

@@ -290,6 +290,8 @@ int main(int argc, char **argv)
 
 	transp->udp_fd = -1;
 
+	print_welcome();
+
 	osmo_init_logging2(NULL, &log_info);
 
 	rc = osmo_libusb_init(NULL);
@@ -297,8 +299,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "libusb initialization failed\n");
 		goto do_exit;
 	}
-
-	print_welcome();
 
 	do {
 		if (transp->udp_fd < 0) {

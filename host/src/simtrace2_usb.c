@@ -18,6 +18,8 @@
 #include <errno.h>
 
 #include <osmocom/core/utils.h>
+#include <osmocom/core/logging.h>
+#include <osmocom/core/application.h>
 
 #include <osmocom/usb/libusb.h>
 #include <osmocom/simtrace2/simtrace_usb.h>
@@ -71,8 +73,11 @@ static int find_devices(void)
 	return num_interfaces;
 }
 
+static struct log_info log_info = {};
+
 int main(int argc, char **argv)
 {
+	osmo_init_logging2(NULL, &log_info);
 	osmo_libusb_init(NULL);
 	find_devices();
 	return 0;

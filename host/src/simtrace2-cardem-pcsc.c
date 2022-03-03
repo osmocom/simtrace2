@@ -447,13 +447,21 @@ int main(int argc, char **argv)
 
 	print_welcome();
 
+	osmo_init_logging2(NULL, &log_info);
+
 	rc = osmo_libusb_init(NULL);
 	if (rc < 0) {
 		fprintf(stderr, "libusb initialization failed\n");
 		return rc;
 	}
 
-	osmo_init_logging2(NULL, &log_info);
+	log_set_print_category_hex(osmo_stderr_target, false);
+	log_set_print_category(osmo_stderr_target, true);
+	log_set_print_level(osmo_stderr_target, true);
+	log_set_print_filename_pos(osmo_stderr_target, LOG_FILENAME_POS_LINE_END);
+	log_set_print_filename2(osmo_stderr_target, LOG_FILENAME_NONE);
+	log_set_category_filter(osmo_stderr_target, DLINP, 1, LOGL_DEBUG);
+	log_set_category_filter(osmo_stderr_target, DLGLOBAL, 1, LOGL_DEBUG);
 
 	while (1) {
 		int option_index = 0;

@@ -189,6 +189,9 @@ static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int l
 			msgb_free(tmsg);
 			return rc;
 		}
+		/* send via GSMTAP for wireshark tracing */
+		osmo_st2_gsmtap_send_apdu(GSMTAP_SIM_APDU, tmsg->data, msgb_length(tmsg));
+
 		msgb_apdu_sw(tmsg) = msgb_get_u16(tmsg);
 		ac.sw[0] = msgb_apdu_sw(tmsg) >> 8;
 		ac.sw[1] = msgb_apdu_sw(tmsg) & 0xff;

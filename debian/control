@@ -16,8 +16,8 @@ Build-Depends: debhelper (>= 9),
                libusb-1.0-0-dev,
                gcc-arm-none-eabi
 Standards-Version: 3.9.8
-Vcs-Git: git://git.osmocom.org/simtrace2.git
-Vcs-Browser: http://git.osmocom.org/simtrace2/
+Vcs-Git: https://gitea.osmocom.org/sim-card/simtrace2
+Vcs-Browser: https://gitea.osmocom.org/sim-card/simtrace2
 Homepage: http://osmocom.org/projects/simtrace2/wiki
 
 Package: simtrace2-firmware

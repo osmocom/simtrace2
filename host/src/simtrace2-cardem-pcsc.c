@@ -167,6 +167,13 @@ static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int l
 
 	rc = osmo_apdu_segment_in(&ac, data->data, data->data_len,
 				  data->flags & CEMU_DATA_F_TPDU_HDR);
+	if (rc < 0) {
+		/* At this point the communication is broken.  We cannot keep running, as we
+		 * don't know if we should continue transmitting or receiving.  Only a successful
+		 * return value by osmo_apdu_segment_in() would allow us to know this. */
+		LOGCI(ci, LOGL_FATAL, "Failed to recognize APDU, terminating\n");
+		exit(1);
+	}
 
 	if (rc & APDU_ACT_TX_CAPDU_TO_CARD) {
 		struct msgb *tmsg = msgb_alloc(1024, "TPDU");

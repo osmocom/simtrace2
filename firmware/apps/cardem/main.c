@@ -206,6 +206,10 @@ extern int main(void)
 			if (isUsbConnected) {
 				isUsbConnected = 0;
 			}
+			/* HACK: we don't really deal with USB disconnect yet,
+			 * so let's just reset the entire uC if this happens */
+			TRACE_INFO("Resetting uC on USB disconnect\n\r");
+			NVIC_SystemReset();
 		} else if (isUsbConnected == 0) {
 			TRACE_INFO("USB is now configured\n\r");
 

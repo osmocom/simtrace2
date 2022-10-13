@@ -40,7 +40,7 @@ for build in $BUILDS; do
 	app=`echo $build | cut -d "/" -f 2`
 	echo
 	echo "=============== $board / $app START  =============="
-	make BOARD="$board" APP="$app"
+	PATH="/opt/llvm-arm/bin:$PATH" make USE_CLANG=1 BOARD="$board" APP="$app"
 	echo "=============== $board / $app RES:$? =============="
 done
 

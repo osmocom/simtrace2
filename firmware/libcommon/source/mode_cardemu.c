@@ -437,7 +437,7 @@ void card_emu_uart_interrupt(uint8_t uart_chan)
 
 #ifdef DETECT_VCC_BY_ADC
 #if !defined(VCC_UV_THRESH_1V8) || !defined(VCC_UV_THRESH_3V)
-#error "You must define VCC_UV_THRESH_{1V1,3V} if you use ADC VCC detection"
+#error "You must define VCC_UV_THRESH_{1V8,3V} if you use ADC VCC detection"
 #endif
 
 static volatile int adc_triggered = 0;

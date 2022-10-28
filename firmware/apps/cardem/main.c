@@ -194,8 +194,8 @@ extern int main(void)
 		WDT_Restart(WDT);
 #if TRACE_LEVEL >= TRACE_LEVEL_DEBUG
 		const char rotor[] = { '-', '\\', '|', '/' };
-		putchar('\b');
 		putchar(rotor[i++ % ARRAY_SIZE(rotor)]);
+		putchar('\b');
 #endif
 		check_exec_dbg_cmd();
 		osmo_timers_prepare();

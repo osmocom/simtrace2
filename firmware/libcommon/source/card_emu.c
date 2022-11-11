@@ -775,6 +775,15 @@ static void set_tpdu_state(struct card_handle *ch, enum tpdu_state new_ts)
 		/* prepare to extend the waiting time once half of it is reached */
 		card_emu_uart_update_wt(ch->uart_chan, ch->waiting_time);
 		break;
+	case TPDU_S_WAIT_TX:
+		/* If we came from WAIT_RX, disable the receiver and
+		 * enable the transmitter. If we came from WAIT_RX or
+		 * WAIT_PB, reset the waiting time so that we can extend
+		 * waiting time if needed. */
+		card_emu_uart_enable(ch->uart_chan, ENABLE_TX);
+		/* prepare to extend the waiting time once half of it is reached */
+		card_emu_uart_update_wt(ch->uart_chan, ch->waiting_time);
+		break;
 	default:
 		break;
 	}

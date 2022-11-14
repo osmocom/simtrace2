@@ -27,20 +27,37 @@ verify_value_string_arrays_are_terminated.py $(find . -name "*.[hc]")
 export PKG_CONFIG_PATH="$inst/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LD_LIBRARY_PATH="$inst/lib"
 
-BUILDS=""
-BUILDS+="simtrace/dfu simtrace/blupdate simtrace/trace simtrace/cardem "
-BUILDS+="qmod/dfu qmod/blupdate qmod/cardem "
-BUILDS+="owhw/dfu owhw/blupdate owhw/cardem "
-BUILDS+="octsimtest/cardem "
-BUILDS+="ngff_cardem/dfu ngff_cardem/blupdate ngff_cardem/cardem ngff_cardem/trace "
+# dfu target MUST be built first, the combined targets need a bl that can be combined..
+BUILDS="simtrace/dfu qmod/dfu owhw/dfu ngff_cardem/dfu "
+#
+BUILDS+="simtrace/blupdate qmod/blupdate owhw/blupdate ngff_cardem/blupdate "
+BUILDS+="simtrace/cardem qmod/cardem owhw/cardem octsimtest/cardem ngff_cardem/cardem "
+BUILDS+="simtrace/trace ngff_cardem/trace "
 
 cd $TOPDIR/firmware
 for build in $BUILDS; do
 	board=`echo $build | cut -d "/" -f 1`
 	app=`echo $build | cut -d "/" -f 2`
+	case "$build" in
+		"owhw/cardem")
+			comb="combined"
+			;;
+		"qmod/cardem")
+			comb="combined"
+			;;
+		"ngff_cardem/cardem")
+			comb="combined"
+			;;
+		"simtrace/trace")
+			comb="combined"
+			;;
+		*)
+			comb=""
+			;;
+	esac
 	echo
 	echo "=============== $board / $app START  =============="
-	PATH="/opt/llvm-arm/bin:$PATH" make USE_CLANG=1 BOARD="$board" APP="$app"
+	PATH="/opt/llvm-arm/bin:$PATH" make USE_CLANG=1 BOARD="$board" APP="$app" $comb
 	echo "=============== $board / $app RES:$? =============="
 done
 

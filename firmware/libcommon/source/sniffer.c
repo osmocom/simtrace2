@@ -800,14 +800,14 @@ void Sniffer_usart_isr(void)
 	/* Read channel status register */
 	uint32_t csr = sniff_usart.base->US_CSR;
 	/* Verify if there was an error */
-	if (csr & US_CSR_OVRE) {
-		TRACE_WARNING("USART overrun error\n\r");
+	if (csr & US_CSR_OVRE)
+		TRACE_ERROR("USART overrun error\n\r");
+	if (csr & US_CSR_FRAME)
+		TRACE_ERROR("USART framing error\n\r");
+	if (csr & US_CSR_PARE)
+		TRACE_ERROR("USART parity error\n\r");
+	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
-	}
-	if (csr & US_CSR_FRAME) {
-		TRACE_WARNING("USART framing error\n\r");
-		sniff_usart.base->US_CR |= US_CR_RSTSTA;
-	}
 
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {

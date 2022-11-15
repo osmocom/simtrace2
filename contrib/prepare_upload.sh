@@ -9,7 +9,7 @@ echo "Copying binaries with "-latest" and "-$GIT_VERSION" appended..."
 cd firmware/bin
 for ext in bin elf; do
 	for file in *."$ext"; do
-		if ! [[ "$file" =~ ^(.*padded.*|.*nocrcstub.*)$ ]];then
+		if ! [[ "$file" =~ ^(.*padded.*|.*nocrcstub.*bin)$ ]];then
 			without_ext="${file%.*}"
 			cp -v "$file" "$without_ext-latest.$ext"
 			cp -v "$file" "$without_ext-$GIT_VERSION.$ext"

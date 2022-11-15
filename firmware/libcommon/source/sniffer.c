@@ -718,7 +718,7 @@ static void process_byte_tpdu(uint8_t byte)
 		break;
 	case TPDU_S_INS:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) {
-			TRACE_WARNING("invalid CLA 0x%02x\n\r", byte);
+			TRACE_WARNING("invalid INS 0x%02x\n\r", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */

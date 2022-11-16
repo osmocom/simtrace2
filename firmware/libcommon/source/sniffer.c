@@ -116,6 +116,7 @@ enum tpdu_sniff_state {
 #define RBUF16_F_FRAMING	0x0200
 #define RBUF16_F_PARITY		0x0400
 #define RBUF16_F_TIMEOUT_WT	0x0800
+#define RBUF16_F_BREAK		0x1000
 #define RBUF16_F_DATA_BYTE	0x8000
 
 /*------------------------------------------------------------------------------
@@ -865,6 +866,10 @@ void Sniffer_usart_isr(void)
 		g_stats.num_usart.parity_errs++;
 		byte |= RBUF16_F_PARITY;
 	}
+	if (csr & US_CSR_RXBRK) {
+		g_stats.num_usart.breaks++;
+		byte |= RBUF16_F_BREAK;
+	};
 
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
@@ -944,7 +949,8 @@ void Sniffer_usart0_irq(void)
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
-#define SNIFFER_IER (US_IER_RXRDY | US_IER_TIMEOUT | US_IER_OVRE | US_IER_FRAME | US_IER_PARE)
+#define SNIFFER_IER (US_IER_RXRDY | US_IER_TIMEOUT | US_IER_OVRE | US_IER_FRAME | US_IER_PARE | \
+		     US_CSR_RXBRK)
 
 /* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)
@@ -1129,6 +1135,8 @@ void Sniffer_run(void)
 			TRACE_ERROR("USART FRAMING Error\r\n");
 		if (entry & RBUF16_F_OVERRUN)
 			TRACE_ERROR("USART OVERRUN Error\r\n");
+		if (entry & RBUF16_F_BREAK)
+			TRACE_ERROR("USART BREAK Error\r\n");
 	}
 
 	/* Handle flags */

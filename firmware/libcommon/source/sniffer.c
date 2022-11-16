@@ -146,37 +146,45 @@ static volatile uint32_t change_flags = 0;
 /* ISO 7816 variables */
 /*! ISO 7816-3 state */
 static enum iso7816_3_sniff_state iso_state = ISO7816_S_RESET;
-/*! ATR state */
-static enum atr_sniff_state atr_state;
-/*! ATR data
- *  @remark can be used to check later protocol changes
- */
-static uint8_t atr[MAX_ATR_SIZE];
-/*! Current index in the ATR data */
-static uint8_t atr_i = 0;
+
+static struct {
+	/*! ATR state */
+	enum atr_sniff_state state;
+	/*! ATR data
+	 *  @remark can be used to check later protocol changes
+	 */
+	uint8_t atr[MAX_ATR_SIZE];
+	/*! Current index in the ATR data */
+	uint8_t atr_i;
+} g_atr;
+
 /*! If convention conversion is needed */
 static bool convention_convert = false;
 /*! The supported T protocols */
 static uint16_t t_protocol_support = 0;
-/*! PPS state 
- *  @remark it is shared between request and response since they aren't simultaneous but follow the same procedure
- */
-static enum pps_sniff_state pps_state;
-/*! PPS request data
- *  @remark can be used to check PPS response
- */
-static uint8_t pps_req[MAX_PPS_SIZE];
-/*! PPS response data */
-static uint8_t pps_rsp[MAX_PPS_SIZE];
-/*! TPDU state */
-static enum tpdu_sniff_state tpdu_state;
-/*! Final TPDU packet
- *  @note this is the complete command+response TPDU, including header, data, and status words
- *  @remark this does not include the procedure bytes
- */
-static uint8_t tpdu_packet[5+256+2];
-/*! Current index in TPDU packet */
-static uint16_t tpdu_packet_i = 0;
+
+static struct {
+	/*! PPS state
+	 *  @remark it is shared between request and response since they aren't simultaneous but
+	 *  follow the same procedure */
+	enum pps_sniff_state state;
+	/*! PPS request data
+	 *  @remark can be used to check PPS response */
+	uint8_t req[MAX_PPS_SIZE];
+	/*! PPS response data */
+	uint8_t rsp[MAX_PPS_SIZE];
+} g_pps;
+
+static struct {
+	/*! TPDU state */
+	enum tpdu_sniff_state state;
+	/*! Final TPDU packet
+	 *  @note this is the complete command+response TPDU, including header, data, and status words
+	 *  @remark this does not include the procedure bytes */
+	uint8_t packet[5+256+2];
+	/*! Current index in TPDU packet */
+	uint16_t packet_i;
+} g_tpdu;
 
 /*! Waiting Time (WT)
  *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
@@ -260,8 +268,8 @@ void usb_msg_upd_len_and_submit(struct msgb *usb_msg)
  */
 static void change_tpdu_state(enum tpdu_sniff_state tpdu_state_new)
 {
-	//TRACE_ERROR("TPDU state %u->%u\n\r", tpdu_state, tpdu_state_new);
-	tpdu_state = tpdu_state_new;
+	//TRACE_ERROR("TPDU state %u->%u\n\r", g_tpdu.state, tpdu_state_new);
+	g_tpdu.state = tpdu_state_new;
 }
 
 /*! Update the ISO 7816-3 state
@@ -285,18 +293,18 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
 		break;
 	case ISO7816_S_IN_ATR:
-		atr_i = 0;
+		g_atr.atr_i = 0;
 		convention_convert = false;
 		t_protocol_support = 0;
-		atr_state = ATR_S_WAIT_TS;
+		g_atr.state = ATR_S_WAIT_TS;
 		break;
 	case ISO7816_S_IN_PPS_REQ:
 	case ISO7816_S_IN_PPS_RSP:
-		pps_state = PPS_S_WAIT_PPSS;
+		g_pps.state = PPS_S_WAIT_PPSS;
 		break;
 	case ISO7816_S_WAIT_TPDU:
 		change_tpdu_state(TPDU_S_CLA);
-		tpdu_packet_i = 0;
+		g_tpdu.packet_i = 0;
 		break;
 	default:
 		break;
@@ -390,13 +398,13 @@ static void usb_send_atr(uint32_t flags)
 		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
-	if (atr_i >= ARRAY_SIZE(atr)) {
+	if (g_atr.atr_i >= ARRAY_SIZE(g_atr.atr)) {
 		TRACE_ERROR("ATR buffer overflow\n\r");
 		return;
 	}
 
 	/* Send ATR over USB */
-	usb_send_data(SIMTRACE_MSGT_SNIFF_ATR, atr, atr_i, flags);
+	usb_send_data(SIMTRACE_MSGT_SNIFF_ATR, g_atr.atr, g_atr.atr_i, flags);
 }
 
 /*! Process ATR byte
@@ -414,16 +422,16 @@ static void process_byte_atr(uint8_t byte)
 		TRACE_ERROR("Processing ATR data in wrong ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
-	if (atr_i >= ARRAY_SIZE(atr)) {
+	if (g_atr.atr_i >= ARRAY_SIZE(g_atr.atr)) {
 		TRACE_ERROR("ATR data overflow\n\r");
 		return;
 	}
 
 	/* save data for use by other functions */
-	atr[atr_i++] = byte;
+	g_atr.atr[g_atr.atr_i++] = byte;
 
 	/* handle ATR byte depending on current state */
-	switch (atr_state) {
+	switch (g_atr.state) {
 	case ATR_S_WAIT_TS: /* see ISO/IEC 7816-3:2006 section 8.1 */
 		flags = 0;
 		switch (byte) {
@@ -432,7 +440,7 @@ static void process_byte_atr(uint8_t byte)
 			convention_convert = !convention_convert;
 		case 0x3b: /* direct convention used and correctly decoded */
 		case 0x3f: /* inverse convention used and correctly decoded */
-			atr_state = ATR_S_WAIT_T0; /* wait for format byte */
+			g_atr.state = ATR_S_WAIT_T0; /* wait for format byte */
 			break;
 		default:
 			TRACE_WARNING("Invalid TS received\n\r");
@@ -445,30 +453,30 @@ static void process_byte_atr(uint8_t byte)
 		break;
 	case ATR_S_WAIT_T0: /* see ISO/IEC 7816-3:2006 section 8.2.2 */
 	case ATR_S_WAIT_TD: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
-		if (ATR_S_WAIT_T0 == atr_state) {
+		if (ATR_S_WAIT_T0 == g_atr.state) {
 			atr_hist_len = (byte & 0x0f); /* save the number of historical bytes */
-		} else if (ATR_S_WAIT_TD == atr_state) {
+		} else if (ATR_S_WAIT_TD == g_atr.state) {
 			t_protocol_support |= (1<<(byte & 0x0f)); /* remember supported protocol to know if TCK will be present */
 		}
 		y = (byte & 0xf0); /* remember upcoming interface bytes */
 		i++; /* next interface byte sub-group is coming */
 		if (y & 0x10) {
-			atr_state = ATR_S_WAIT_TA; /* wait for interface byte TA */
+			g_atr.state = ATR_S_WAIT_TA; /* wait for interface byte TA */
 			break;
 		}
 	case ATR_S_WAIT_TA: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
 		if (y & 0x20) {
-			atr_state = ATR_S_WAIT_TB; /* wait for interface byte TB */
+			g_atr.state = ATR_S_WAIT_TB; /* wait for interface byte TB */
 			break;
 		}
 	case ATR_S_WAIT_TB: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
 		if (y & 0x40) {
-			atr_state = ATR_S_WAIT_TC; /* wait for interface byte TC */
+			g_atr.state = ATR_S_WAIT_TC; /* wait for interface byte TC */
 			break;
 		}
 	case ATR_S_WAIT_TC: /* see ISO/IEC 7816-3:2006 section 8.2.3 */
 		/* retrieve WI encoded in TC2*/
-		if (ATR_S_WAIT_TC==atr_state && 2==i) {
+		if (ATR_S_WAIT_TC == g_atr.state && 2 == i) {
 			if (0 == byte) {
 				update_wt(10, 0);
 			} else {
@@ -476,10 +484,10 @@ static void process_byte_atr(uint8_t byte)
 			}
 		}
 		if (y & 0x80) {
-			atr_state = ATR_S_WAIT_TD; /* wait for interface byte TD */
+			g_atr.state = ATR_S_WAIT_TD; /* wait for interface byte TD */
 			break;
 		} else if (atr_hist_len) {
-			atr_state = ATR_S_WAIT_HIST; /* wait for historical bytes */
+			g_atr.state = ATR_S_WAIT_HIST; /* wait for historical bytes */
 			break;
 		}
 	case ATR_S_WAIT_HIST: /* see ISO/IEC 7816-3:2006 section 8.2.4 */
@@ -488,7 +496,7 @@ static void process_byte_atr(uint8_t byte)
 		}
 		if (0 == atr_hist_len) {
 			if (t_protocol_support > 1) {
-				atr_state = ATR_S_WAIT_TCK; /* wait for check bytes */
+				g_atr.state = ATR_S_WAIT_TCK; /* wait for check bytes */
 				break;
 			}
 		} else {
@@ -496,11 +504,11 @@ static void process_byte_atr(uint8_t byte)
 		}
 	case ATR_S_WAIT_TCK:  /* see ISO/IEC 7816-3:2006 section 8.2.5 */
 		/* verify checksum if present */
-		if (ATR_S_WAIT_TCK == atr_state) {
+		if (ATR_S_WAIT_TCK == g_atr.state) {
 			uint8_t ui;
 			uint8_t checksum = 0;
-			for (ui = 1; ui < atr_i; ui++) {
-				checksum ^= atr[ui];
+			for (ui = 1; ui < g_atr.atr_i; ui++) {
+				checksum ^= g_atr.atr[ui];
 			}
 			if (checksum) {
 				flags |= SNIFF_DATA_FLAG_ERROR_CHECKSUM;
@@ -513,7 +521,7 @@ static void process_byte_atr(uint8_t byte)
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
-		TRACE_INFO("Unknown ATR state %u\n\r", atr_state);
+		TRACE_INFO("Unknown ATR state %u\n\r", g_atr.state);
 	}
 }
 
@@ -527,9 +535,9 @@ static void usb_send_pps(uint32_t flags)
 
 	/* Sanity check */
 	if (ISO7816_S_IN_PPS_REQ == iso_state) {
-		pps_cur = pps_req;
+		pps_cur = g_pps.req;
 	} else if (ISO7816_S_IN_PPS_RSP == iso_state) {
-		pps_cur = pps_rsp;
+		pps_cur = g_pps.rsp;
 	} else {
 		TRACE_ERROR("Can't print PPS in ISO 7816-3 state %u\n\r", iso_state);
 		return;
@@ -538,22 +546,22 @@ static void usb_send_pps(uint32_t flags)
 	/* Get only relevant data */
 	uint8_t pps[6];
 	uint8_t pps_i = 0;
-	if (pps_state > PPS_S_WAIT_PPSS) {
+	if (g_pps.state > PPS_S_WAIT_PPSS) {
 		pps[pps_i++] = pps_cur[0];
 	}
-	if (pps_state > PPS_S_WAIT_PPS0) {
+	if (g_pps.state > PPS_S_WAIT_PPS0) {
 		pps[pps_i++] = pps_cur[1];
 	}
-	if (pps_state > PPS_S_WAIT_PPS1 && pps_cur[1] & 0x10) {
+	if (g_pps.state > PPS_S_WAIT_PPS1 && pps_cur[1] & 0x10) {
 		pps[pps_i++] = pps_cur[2];
 	}
-	if (pps_state > PPS_S_WAIT_PPS2 && pps_cur[1] & 0x20) {
+	if (g_pps.state > PPS_S_WAIT_PPS2 && pps_cur[1] & 0x20) {
 		pps[pps_i++] = pps_cur[3];
 	}
-	if (pps_state > PPS_S_WAIT_PPS3 && pps_cur[1] & 0x40) {
+	if (g_pps.state > PPS_S_WAIT_PPS3 && pps_cur[1] & 0x40) {
 		pps[pps_i++] = pps_cur[4];
 	}
-	if (pps_state > PPS_S_WAIT_PCK) {
+	if (g_pps.state > PPS_S_WAIT_PCK) {
 		pps[pps_i++] = pps_cur[5];
 	}
 
@@ -583,21 +591,21 @@ static void process_byte_pps(uint8_t byte)
 
 	/* sanity check */
 	if (ISO7816_S_IN_PPS_REQ == iso_state) {
-		pps_cur = pps_req;
+		pps_cur = g_pps.req;
 	} else if (ISO7816_S_IN_PPS_RSP == iso_state) {
-		pps_cur = pps_rsp;
+		pps_cur = g_pps.rsp;
 	} else {
 		TRACE_ERROR("Processing PPS data in wrong ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
 
 	/* handle PPS byte depending on current state */
-	switch (pps_state) { /* see ISO/IEC 7816-3:2006 section 9.2 */
+	switch (g_pps.state) { /* see ISO/IEC 7816-3:2006 section 9.2 */
 	case PPS_S_WAIT_PPSS: /*!< initial byte */
 		flags = 0;
 		if (byte == 0xff) {
 			pps_cur[0] = byte;
-			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
+			g_pps.state = PPS_S_WAIT_PPS0; /* go to next state */
 		} else {
 			TRACE_INFO("Invalid PPSS received\n\r");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
@@ -608,24 +616,24 @@ static void process_byte_pps(uint8_t byte)
 	case PPS_S_WAIT_PPS0: /*!< format byte */
 		pps_cur[1] = byte;
 		if (pps_cur[1] & 0x10) {
-			pps_state = PPS_S_WAIT_PPS1; /* go to next state */
+			g_pps.state = PPS_S_WAIT_PPS1; /* go to next state */
 			break;
 		}
 	case PPS_S_WAIT_PPS1: /*!< first parameter byte */
 		pps_cur[2] = byte; /* not always right but doesn't affect the process */
 		if (pps_cur[1] & 0x20) {
-			pps_state = PPS_S_WAIT_PPS2; /* go to next state */
+			g_pps.state = PPS_S_WAIT_PPS2; /* go to next state */
 			break;
 		}
 	case PPS_S_WAIT_PPS2: /*!< second parameter byte */
 		pps_cur[3] = byte; /* not always right but doesn't affect the process */
 		if (pps_cur[1] & 0x40) {
-			pps_state = PPS_S_WAIT_PPS3; /* go to next state */
+			g_pps.state = PPS_S_WAIT_PPS3; /* go to next state */
 			break;
 		}
 	case PPS_S_WAIT_PPS3: /*!< third parameter byte */
 		pps_cur[4] = byte; /* not always right but doesn't affect the process */
-		pps_state = PPS_S_WAIT_PCK; /* go to next state */
+		g_pps.state = PPS_S_WAIT_PCK; /* go to next state */
 		break;
 	case PPS_S_WAIT_PCK: /*!< check byte */
 		pps_cur[5] = byte; /* not always right but doesn't affect the process */
@@ -646,7 +654,7 @@ static void process_byte_pps(uint8_t byte)
 		if (check) {
 			flags |= SNIFF_DATA_FLAG_ERROR_CHECKSUM;
 		}
-		pps_state = PPS_S_WAIT_END;
+		g_pps.state = PPS_S_WAIT_END;
 		usb_send_pps(flags); /* send PPS to host software using USB */
 		if (ISO7816_S_IN_PPS_REQ == iso_state) {
 			if (0 == check) { /* checksum is valid */
@@ -676,10 +684,10 @@ static void process_byte_pps(uint8_t byte)
 		}
 		break;
 	case PPS_S_WAIT_END:
-		TRACE_WARNING("Unexpected PPS received %u\n\r", pps_state);
+		TRACE_WARNING("Unexpected PPS received %u\n\r", g_pps.state);
 		break;
 	default:
-		TRACE_WARNING("Unknown PPS state %u\n\r", pps_state);
+		TRACE_WARNING("Unknown PPS state %u\n\r", g_pps.state);
 		break;
 	}
 }
@@ -697,7 +705,7 @@ static void usb_send_tpdu(uint32_t flags)
 	}
 
 	/* Send ATR over USB */
-	usb_send_data(SIMTRACE_MSGT_SNIFF_TPDU, tpdu_packet, tpdu_packet_i, flags);
+	usb_send_data(SIMTRACE_MSGT_SNIFF_TPDU, g_tpdu.packet, g_tpdu.packet_i, flags);
 }
 
 static void process_byte_tpdu(uint8_t byte)
@@ -707,13 +715,13 @@ static void process_byte_tpdu(uint8_t byte)
 		TRACE_ERROR("Processing TPDU data in wrong ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
-	if (tpdu_packet_i >= ARRAY_SIZE(tpdu_packet)) {
+	if (g_tpdu.packet_i >= ARRAY_SIZE(g_tpdu.packet)) {
 		TRACE_ERROR("TPDU data overflow\n\r");
 		return;
 	}
 
 	/* handle TPDU byte depending on current state */
-	switch (tpdu_state) {
+	switch (g_tpdu.state) {
 	case TPDU_S_CLA:
 		if (0xff == byte) {
 			TRACE_WARNING("0xff is not a valid class byte\n\r");
@@ -722,8 +730,8 @@ static void process_byte_tpdu(uint8_t byte)
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
 		}
-		tpdu_packet_i = 0;
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet_i = 0;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		change_tpdu_state(TPDU_S_INS);
 		break;
 	case TPDU_S_INS:
@@ -734,38 +742,38 @@ static void process_byte_tpdu(uint8_t byte)
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
 		}
-		tpdu_packet_i = 1;
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet_i = 1;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		change_tpdu_state(TPDU_S_P1);
 		break;
 	case TPDU_S_P1:
-		tpdu_packet_i = 2;
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet_i = 2;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		change_tpdu_state(TPDU_S_P2);
 		break;
 	case TPDU_S_P2:
-		tpdu_packet_i = 3;
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet_i = 3;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		change_tpdu_state(TPDU_S_P3);
 		break;
 	case TPDU_S_P3:
-		tpdu_packet_i = 4;
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet_i = 4;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		change_tpdu_state(TPDU_S_PROCEDURE);
 		break;
 	case TPDU_S_PROCEDURE:
 		if (0x60 == byte) { /* wait for next procedure byte */
 			break;
-		} else if (tpdu_packet[1] == byte) { /* get all remaining data bytes */
+		} else if (g_tpdu.packet[1] == byte) { /* get all remaining data bytes */
 			change_tpdu_state(TPDU_S_DATA_REMAINING);
 			break;
-		} else if ((~tpdu_packet[1]) == byte) { /* get single data byte */
+		} else if ((~g_tpdu.packet[1]) == byte) { /* get single data byte */
 			change_tpdu_state(TPDU_S_DATA_SINGLE);
 			break;
 		}
 	case TPDU_S_SW1:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) { /* this procedure byte is SW1 */
-			tpdu_packet[tpdu_packet_i++] = byte;
+			g_tpdu.packet[g_tpdu.packet_i++] = byte;
 			change_tpdu_state(TPDU_S_SW2);
 		} else {
 			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
@@ -776,28 +784,28 @@ static void process_byte_tpdu(uint8_t byte)
 		}
 		break;
 	case TPDU_S_SW2:
-		tpdu_packet[tpdu_packet_i++] = byte;
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		usb_send_tpdu(0); /* send TPDU to host software using USB */
 		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
 		break;
 	case TPDU_S_DATA_SINGLE:
 	case TPDU_S_DATA_REMAINING:
-		tpdu_packet[tpdu_packet_i++] = byte;
-		if (0 == tpdu_packet[4]) {
-			if (5+256 <= tpdu_packet_i) {
+		g_tpdu.packet[g_tpdu.packet_i++] = byte;
+		if (0 == g_tpdu.packet[4]) {
+			if (5+256 <= g_tpdu.packet_i) {
 				change_tpdu_state(TPDU_S_PROCEDURE);
 			}
 		} else {
-			if (5+tpdu_packet[4] <= tpdu_packet_i) {
+			if (5+g_tpdu.packet[4] <= g_tpdu.packet_i) {
 				change_tpdu_state(TPDU_S_PROCEDURE);
 			}
 		}
-		if (TPDU_S_DATA_SINGLE == tpdu_state) {
+		if (TPDU_S_DATA_SINGLE == g_tpdu.state) {
 			change_tpdu_state(TPDU_S_PROCEDURE);
 		}
 		break;
 	default:
-		TRACE_ERROR("unhandled TPDU state %u\n\r", tpdu_state);
+		TRACE_ERROR("unhandled TPDU state %u\n\r", g_tpdu.state);
 	}
 }
 

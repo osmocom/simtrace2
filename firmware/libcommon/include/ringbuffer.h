@@ -32,4 +32,22 @@ int rbuf_write(volatile ringbuf * rb, uint8_t item);
 bool rbuf_is_empty(volatile ringbuf * rb);
 bool rbuf_is_full(volatile ringbuf * rb);
 
+
+/* same as above but with 16bit values instead of 8bit */
+
+#define RING16_BUFLEN 512
+
+typedef struct ringbuf16 {
+	uint16_t buf[RING16_BUFLEN];
+	size_t ird;
+	size_t iwr;
+} ringbuf16;
+
+void rbuf16_reset(volatile ringbuf16 * rb);
+uint16_t rbuf16_read(volatile ringbuf16 * rb);
+uint16_t rbuf16_peek(volatile ringbuf16 * rb);
+int rbuf16_write(volatile ringbuf16 * rb, uint16_t item);
+bool rbuf16_is_empty(volatile ringbuf16 * rb);
+bool rbuf16_is_full(volatile ringbuf16 * rb);
+
 #endif /* end of include guard: SIMTRACE_RINGBUF_H */

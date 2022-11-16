@@ -138,7 +138,7 @@ static struct Usart_info sniff_usart = {
 	.state = USART_RCV,
 };
 /*! Ring buffer to store sniffer communication data */
-static struct ringbuf sniff_buffer;
+static struct ringbuf16 sniff_buffer;
 
 /* Flags  to know is the card status changed (see SIMTRACE_MSGT_DT_SNIFF_CHANGE flags) */
 static volatile uint32_t change_flags = 0;
@@ -291,7 +291,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 		update_wt(10, 1, "RESET"); /* reset WT time-out */
 		break;
 	case ISO7816_S_WAIT_ATR:
-		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
+		rbuf16_reset(&sniff_buffer); /* reset buffer for new communication */
 		break;
 	case ISO7816_S_IN_ATR:
 		g_atr.atr_i = 0;
@@ -835,7 +835,7 @@ void Sniffer_usart_isr(void)
 		/* Reset WT timer */
 		wt_remaining = g_wt;
 		/* Store sniffed data into buffer (also clear interrupt */
-		if (rbuf_write(&sniff_buffer, byte) != 0)
+		if (rbuf16_write(&sniff_buffer, byte) != 0)
 			TRACE_ERROR("USART buffer full\n\r");
 	}
 
@@ -941,7 +941,7 @@ void Sniffer_init(void)
 	PIO_EnableIt(&pin_rst);
 
 	/* Clear ring buffer containing the sniffed data */
-	rbuf_reset(&sniff_buffer);
+	rbuf16_reset(&sniff_buffer);
 	/* Configure USART to as ISO-7816 slave communication to sniff communication */
 	ISO7816_Init(&sniff_usart, CLK_SLAVE);
 	/* Only receive data when sniffing */
@@ -1007,8 +1007,8 @@ void Sniffer_run(void)
 	 * is remaining
 	 */
 	/* Handle sniffed data */
-	if (!rbuf_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
-		uint8_t byte = rbuf_read(&sniff_buffer);
+	if (!rbuf16_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
+		uint8_t byte = rbuf16_read(&sniff_buffer);
 		/* Convert convention if required */
 		if (convention_convert) {
 			byte = convention_convert_lut[byte];

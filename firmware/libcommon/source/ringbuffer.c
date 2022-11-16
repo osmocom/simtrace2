@@ -28,6 +28,16 @@ void rbuf_reset(volatile ringbuf * rb)
 	local_irq_restore(state);
 }
 
+void rbuf16_reset(volatile ringbuf16 * rb)
+{
+	unsigned long state;
+
+	local_irq_save(state);
+	rb->ird = 0;
+	rb->iwr = 0;
+	local_irq_restore(state);
+}
+
 uint8_t rbuf_read(volatile ringbuf * rb)
 {
 	unsigned long state;
@@ -41,7 +51,25 @@ uint8_t rbuf_read(volatile ringbuf * rb)
 	return val;
 }
 
+uint16_t rbuf16_read(volatile ringbuf16 * rb)
+{
+	unsigned long state;
+	uint16_t val;
+
+	local_irq_save(state);
+	val = rb->buf[rb->ird];
+	rb->ird = (rb->ird + 1) % RING16_BUFLEN;
+	local_irq_restore(state);
+
+	return val;
+}
+
 uint8_t rbuf_peek(volatile ringbuf * rb)
+{
+	return rb->buf[rb->ird];
+}
+
+uint16_t rbuf16_peek(volatile ringbuf16 * rb)
 {
 	return rb->buf[rb->ird];
 }
@@ -51,9 +79,19 @@ bool rbuf_is_empty(volatile ringbuf * rb)
 	return rb->ird == rb->iwr;
 }
 
+bool rbuf16_is_empty(volatile ringbuf16 * rb)
+{
+	return rb->ird == rb->iwr;
+}
+
 static bool __rbuf_is_full(volatile ringbuf * rb)
 {
 	return rb->ird == (rb->iwr + 1) % RING_BUFLEN;
+}
+
+static bool __rbuf16_is_full(volatile ringbuf16 * rb)
+{
+	return rb->ird == (rb->iwr + 1) % RING16_BUFLEN;
 }
 
 bool rbuf_is_full(volatile ringbuf * rb)
@@ -63,6 +101,18 @@ bool rbuf_is_full(volatile ringbuf * rb)
 
 	local_irq_save(state);
 	rc = rb->ird == (rb->iwr + 1) % RING_BUFLEN;
+	local_irq_restore(state);
+
+	return rc;
+}
+
+bool rbuf16_is_full(volatile ringbuf16 * rb)
+{
+	unsigned long state;
+	bool rc;
+
+	local_irq_save(state);
+	rc = rb->ird == (rb->iwr + 1) % RING16_BUFLEN;
 	local_irq_restore(state);
 
 	return rc;
@@ -84,4 +134,18 @@ int rbuf_write(volatile ringbuf * rb, uint8_t item)
 	}
 }
 
+int rbuf16_write(volatile ringbuf16 * rb, uint16_t item)
+{
+	unsigned long state;
 
+	local_irq_save(state);
+	if (!__rbuf16_is_full(rb)) {
+		rb->buf[rb->iwr] = item;
+		rb->iwr = (rb->iwr + 1) % RING16_BUFLEN;
+		local_irq_restore(state);
+		return 0;
+	} else {
+		local_irq_restore(state);
+		return -1;
+	}
+}

@@ -826,11 +826,8 @@ void Sniffer_usart_isr(void)
 		/* Reset WT timer */
 		wt_remaining = wt;
 		/* Store sniffed data into buffer (also clear interrupt */
-		if (rbuf_is_full(&sniff_buffer)) {
+		if (rbuf_write(&sniff_buffer, byte) != 0)
 			TRACE_ERROR("USART buffer full\n\r");
-		} else {
-			rbuf_write(&sniff_buffer, byte);
-		}
 	}
 
 	/* Verify it WT timeout occurred, to detect unresponsive card */

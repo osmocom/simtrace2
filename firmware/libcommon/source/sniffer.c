@@ -255,6 +255,15 @@ void usb_msg_upd_len_and_submit(struct msgb *usb_msg)
 	usb_buf_submit(usb_msg);
 }
 
+/*! Update the TPDU state
+ *  @param[in] tpdu_state_new new TPDU state to update to
+ */
+static void change_tpdu_state(enum tpdu_sniff_state tpdu_state_new)
+{
+	//TRACE_ERROR("TPDU state %u->%u\n\r", tpdu_state, tpdu_state_new);
+	tpdu_state = tpdu_state_new;
+}
+
 /*! Update the ISO 7816-3 state
  *  @param[in] iso_state_new new ISO 7816-3 state to update to
  */
@@ -286,7 +295,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 		pps_state = PPS_S_WAIT_PPSS;
 		break;
 	case ISO7816_S_WAIT_TPDU:
-		tpdu_state = TPDU_S_CLA;
+		change_tpdu_state(TPDU_S_CLA);
 		tpdu_packet_i = 0;
 		break;
 	default:
@@ -714,7 +723,7 @@ static void process_byte_tpdu(uint8_t byte)
 		}
 		tpdu_packet_i = 0;
 		tpdu_packet[tpdu_packet_i++] = byte;
-		tpdu_state = TPDU_S_INS;
+		change_tpdu_state(TPDU_S_INS);
 		break;
 	case TPDU_S_INS:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) {
@@ -726,37 +735,37 @@ static void process_byte_tpdu(uint8_t byte)
 		}
 		tpdu_packet_i = 1;
 		tpdu_packet[tpdu_packet_i++] = byte;
-		tpdu_state = TPDU_S_P1;
+		change_tpdu_state(TPDU_S_P1);
 		break;
 	case TPDU_S_P1:
 		tpdu_packet_i = 2;
 		tpdu_packet[tpdu_packet_i++] = byte;
-		tpdu_state = TPDU_S_P2;
+		change_tpdu_state(TPDU_S_P2);
 		break;
 	case TPDU_S_P2:
 		tpdu_packet_i = 3;
 		tpdu_packet[tpdu_packet_i++] = byte;
-		tpdu_state = TPDU_S_P3;
+		change_tpdu_state(TPDU_S_P3);
 		break;
 	case TPDU_S_P3:
 		tpdu_packet_i = 4;
 		tpdu_packet[tpdu_packet_i++] = byte;
-		tpdu_state = TPDU_S_PROCEDURE;
+		change_tpdu_state(TPDU_S_PROCEDURE);
 		break;
 	case TPDU_S_PROCEDURE:
 		if (0x60 == byte) { /* wait for next procedure byte */
 			break;
 		} else if (tpdu_packet[1] == byte) { /* get all remaining data bytes */
-			tpdu_state = TPDU_S_DATA_REMAINING;
+			change_tpdu_state(TPDU_S_DATA_REMAINING);
 			break;
 		} else if ((~tpdu_packet[1]) == byte) { /* get single data byte */
-			tpdu_state = TPDU_S_DATA_SINGLE;
+			change_tpdu_state(TPDU_S_DATA_SINGLE);
 			break;
 		}
 	case TPDU_S_SW1:
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) { /* this procedure byte is SW1 */
 			tpdu_packet[tpdu_packet_i++] = byte;
-			tpdu_state = TPDU_S_SW2;
+			change_tpdu_state(TPDU_S_SW2);
 		} else {
 			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
@@ -775,15 +784,15 @@ static void process_byte_tpdu(uint8_t byte)
 		tpdu_packet[tpdu_packet_i++] = byte;
 		if (0 == tpdu_packet[4]) {
 			if (5+256 <= tpdu_packet_i) {
-				tpdu_state = TPDU_S_PROCEDURE;
+				change_tpdu_state(TPDU_S_PROCEDURE);
 			}
 		} else {
 			if (5+tpdu_packet[4] <= tpdu_packet_i) {
-				tpdu_state = TPDU_S_PROCEDURE;
+				change_tpdu_state(TPDU_S_PROCEDURE);
 			}
 		}
 		if (TPDU_S_DATA_SINGLE == tpdu_state) {
-			tpdu_state = TPDU_S_PROCEDURE;
+			change_tpdu_state(TPDU_S_PROCEDURE);
 		}
 		break;
 	default:

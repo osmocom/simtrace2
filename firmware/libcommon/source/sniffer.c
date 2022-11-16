@@ -918,6 +918,8 @@ void Sniffer_usart0_irq(void)
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
+#define SNIFFER_IER (US_IER_RXRDY | US_IER_TIMEOUT)
+
 /* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)
 {
@@ -929,7 +931,7 @@ void Sniffer_exit(void)
 {
 	TRACE_INFO("Sniffer exit\n\r");
 	/* Disable USART */
-	USART_DisableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
+	USART_DisableIt(sniff_usart.base, SNIFFER_IER);
 	/* NOTE: don't forget to set the IRQ according to the USART peripheral used */
 	NVIC_DisableIRQ(IRQ_USART_SIM);
 	USART_SetReceiverEnabled(sniff_usart.base, 0);
@@ -965,7 +967,7 @@ void Sniffer_init(void)
 	/* Enable Receiver time-out to detect waiting time (WT) time-out (e.g. unresponsive cards) */
 	sniff_usart.base->US_RTOR = g_wt;
 	/* Enable interrupt to indicate when data has been received or timeout occurred */
-	USART_EnableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
+	USART_EnableIt(sniff_usart.base, SNIFFER_IER);
 	/* Set USB priority lower than USART to not miss sniffing data (both at 0 per default) */
 	if (NVIC_GetPriority(IRQ_USART_SIM) >= NVIC_GetPriority(UDP_IRQn)) {
 		NVIC_SetPriority(UDP_IRQn, NVIC_GetPriority(IRQ_USART_SIM) + 2);

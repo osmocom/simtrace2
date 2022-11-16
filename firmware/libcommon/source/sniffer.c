@@ -595,7 +595,7 @@ static void process_byte_pps(uint8_t byte)
 	switch (pps_state) { /* see ISO/IEC 7816-3:2006 section 9.2 */
 	case PPS_S_WAIT_PPSS: /*!< initial byte */
 		flags = 0;
-		if (0xff) {
+		if (byte == 0xff) {
 			pps_cur[0] = byte;
 			pps_state = PPS_S_WAIT_PPS0; /* go to next state */
 		} else {

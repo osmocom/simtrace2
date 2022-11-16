@@ -111,6 +111,11 @@ enum tpdu_sniff_state {
 	TPDU_S_SW2, /*!< second status word */
 };
 
+/*! Error flags we use to report USART errors via the ringbuffer */
+#define RBUF16_F_OVERRUN	0x0100
+#define RBUF16_F_FRAMING	0x0200
+#define RBUF16_F_PARITY		0x0400
+
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/
@@ -818,23 +823,32 @@ void Sniffer_usart_isr(void)
 
 	/* Read channel status register */
 	uint32_t csr = sniff_usart.base->US_CSR;
-	/* Verify if there was an error */
-	if (csr & US_CSR_OVRE)
-		TRACE_ERROR("USART overrun error\n\r");
-	if (csr & US_CSR_FRAME)
-		TRACE_ERROR("USART framing error\n\r");
-	if (csr & US_CSR_PARE)
-		TRACE_ERROR("USART parity error\n\r");
-	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
-		sniff_usart.base->US_CR |= US_CR_RSTSTA;
+
+	uint16_t byte = 0;
+	bool byte_received = false;
 
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {
+		byte_received = true;
 		/* Read communication data byte between phone and SIM */
-		uint8_t byte = sniff_usart.base->US_RHR;
+		byte = sniff_usart.base->US_RHR;
 		/* Reset WT timer */
 		wt_remaining = g_wt;
-		/* Store sniffed data into buffer (also clear interrupt */
+	}
+
+	/* Verify if there was an error */
+	if (csr & US_CSR_OVRE)
+		byte |= RBUF16_F_OVERRUN;
+	if (csr & US_CSR_FRAME)
+		byte |= RBUF16_F_FRAMING;
+	if (csr & US_CSR_PARE)
+		byte |= RBUF16_F_PARITY;
+
+	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
+		sniff_usart.base->US_CR |= US_CR_RSTSTA;
+
+	/* Store sniffed data (or error flags, or both) into buffer */
+	if (byte_received || byte) {
 		if (rbuf16_write(&sniff_buffer, byte) != 0)
 			TRACE_ERROR("USART buffer full\n\r");
 	}
@@ -1008,7 +1022,8 @@ void Sniffer_run(void)
 	 */
 	/* Handle sniffed data */
 	if (!rbuf16_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
-		uint8_t byte = rbuf16_read(&sniff_buffer);
+		uint16_t entry = rbuf16_read(&sniff_buffer);
+		uint8_t byte = entry & 0xff;
 		/* Convert convention if required */
 		if (convention_convert) {
 			byte = convention_convert_lut[byte];
@@ -1046,6 +1061,13 @@ void Sniffer_run(void)
 		default:
 			TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
 		}
+
+		if (entry & RBUF16_F_PARITY)
+			TRACE_ERROR("USART PARITY Error\r\n");
+		if (entry & RBUF16_F_FRAMING)
+			TRACE_ERROR("USART FRAMING Error\r\n");
+		if (entry & RBUF16_F_OVERRUN)
+			TRACE_ERROR("USART OVERRUN Error\r\n");
 	}
 
 	/* Handle flags */

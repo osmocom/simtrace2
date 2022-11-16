@@ -204,10 +204,11 @@ static const uint8_t convention_convert_lut[256] = { 0xff, 0x7f, 0xbf, 0x3f, 0xd
 /*! Update Waiting Time (WT)
  *  @param[in] wi Waiting Integer (0 if unchanged)
  *  @param[in] d Baud Rate divider (0 if unchanged)
+ *  @param[in] cause String describing the source of the change
  *  @note set wt to be used by the receiver timeout
  *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
  */
-static void update_wt(uint8_t wi, uint8_t d)
+static void update_wt(uint8_t wi, uint8_t d, const char *cause)
 {
 	static uint8_t wt_wi = 10; /* Waiting time Integer (WI), used to calculate the Waiting Time (WT) */
 	static uint8_t wt_d = 1; /* baud rate adjustment integer (the actual value, not the table index) */
@@ -219,7 +220,7 @@ static void update_wt(uint8_t wi, uint8_t d)
 		wt_d = d;
 	}
 	wt = wt_wi * 960UL * wt_d;
-	TRACE_INFO("WT updated to %lu ETU\n\r", wt);
+	TRACE_INFO("WT updated (wi=%u, d=%u, cause=%s) to %lu ETU\n\r", wi, d, cause, wt);
 }
 
 /*! Allocate USB buffer and push + initialize simtrace_msg_hdr
@@ -287,7 +288,7 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 	switch (iso_state_new) {
 	case ISO7816_S_RESET:
 		update_fidi(&sniff_usart, 0x11); /* reset baud rate to default Di/Fi values */
-		update_wt(10, 1); /* reset WT time-out */
+		update_wt(10, 1, "RESET"); /* reset WT time-out */
 		break;
 	case ISO7816_S_WAIT_ATR:
 		rbuf_reset(&sniff_buffer); /* reset buffer for new communication */
@@ -478,9 +479,9 @@ static void process_byte_atr(uint8_t byte)
 		/* retrieve WI encoded in TC2*/
 		if (ATR_S_WAIT_TC == g_atr.state && 2 == i) {
 			if (0 == byte) {
-				update_wt(10, 0);
+				update_wt(10, 0, "TC2=0");
 			} else {
-				update_wt(byte, 0);
+				update_wt(byte, 0, "TC2");
 			}
 		}
 		if (y & 0x80) {
@@ -675,7 +676,7 @@ static void process_byte_pps(uint8_t byte)
 				TRACE_INFO("PPS negotiation successful: Fn=%u Dn=%u\n\r",
 					   iso7816_3_fi_table[fn], iso7816_3_di_table[dn]);
 				update_fidi(&sniff_usart, pps_cur[2]);
-				update_wt(0, iso7816_3_di_table[dn]);
+				update_wt(0, iso7816_3_di_table[dn], "PPS");
 				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");

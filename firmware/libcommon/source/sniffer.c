@@ -913,7 +913,7 @@ void Sniffer_exit(void)
 {
 	TRACE_INFO("Sniffer exit\n\r");
 	/* Disable USART */
-	USART_DisableIt(sniff_usart.base, US_IER_RXRDY);
+	USART_DisableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
 	/* NOTE: don't forget to set the IRQ according to the USART peripheral used */
 	NVIC_DisableIRQ(IRQ_USART_SIM);
 	USART_SetReceiverEnabled(sniff_usart.base, 0);

@@ -189,7 +189,7 @@ static struct {
 /*! Waiting Time (WT)
  *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
  */
-static uint32_t wt = 9600;
+static uint32_t g_wt = 9600;
 
 /*------------------------------------------------------------------------------
  *         Internal functions
@@ -219,8 +219,8 @@ static void update_wt(uint8_t wi, uint8_t d, const char *cause)
 	if (0 != d) {
 		wt_d = d;
 	}
-	wt = wt_wi * 960UL * wt_d;
-	TRACE_INFO("WT updated (wi=%u, d=%u, cause=%s) to %lu ETU\n\r", wi, d, cause, wt);
+	g_wt = wt_wi * 960UL * wt_d;
+	TRACE_INFO("WT updated (wi=%u, d=%u, cause=%s) to %lu ETU\n\r", wi, d, cause, g_wt);
 }
 
 /*! Allocate USB buffer and push + initialize simtrace_msg_hdr
@@ -833,7 +833,7 @@ void Sniffer_usart_isr(void)
 		/* Read communication data byte between phone and SIM */
 		uint8_t byte = sniff_usart.base->US_RHR;
 		/* Reset WT timer */
-		wt_remaining = wt;
+		wt_remaining = g_wt;
 		/* Store sniffed data into buffer (also clear interrupt */
 		if (rbuf_write(&sniff_buffer, byte) != 0)
 			TRACE_ERROR("USART buffer full\n\r");
@@ -845,7 +845,7 @@ void Sniffer_usart_isr(void)
 			/* Just set the flag and let the main loop handle it */
 			change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
 			/* Reset timeout value */
-			wt_remaining = wt;
+			wt_remaining = g_wt;
 		} else {
 			wt_remaining -= (sniff_usart.base->US_RTOR & 0xffff); /* be sure to subtract the actual timeout since the new might not have been set and reloaded yet */
 		}
@@ -947,7 +947,7 @@ void Sniffer_init(void)
 	/* Only receive data when sniffing */
 	USART_SetReceiverEnabled(sniff_usart.base, 1);
 	/* Enable Receiver time-out to detect waiting time (WT) time-out (e.g. unresponsive cards) */
-	sniff_usart.base->US_RTOR = wt;
+	sniff_usart.base->US_RTOR = g_wt;
 	/* Enable interrupt to indicate when data has been received or timeout occurred */
 	USART_EnableIt(sniff_usart.base, US_IER_RXRDY | US_IER_TIMEOUT);
 	/* Set USB priority lower than USART to not miss sniffing data (both at 0 per default) */

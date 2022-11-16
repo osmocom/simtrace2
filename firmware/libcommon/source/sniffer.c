@@ -141,47 +141,47 @@ static struct Usart_info sniff_usart = {
 static struct ringbuf sniff_buffer;
 
 /* Flags  to know is the card status changed (see SIMTRACE_MSGT_DT_SNIFF_CHANGE flags) */
-volatile uint32_t change_flags = 0;
+static volatile uint32_t change_flags = 0;
 
 /* ISO 7816 variables */
 /*! ISO 7816-3 state */
-enum iso7816_3_sniff_state iso_state = ISO7816_S_RESET;
+static enum iso7816_3_sniff_state iso_state = ISO7816_S_RESET;
 /*! ATR state */
-enum atr_sniff_state atr_state;
+static enum atr_sniff_state atr_state;
 /*! ATR data
  *  @remark can be used to check later protocol changes
  */
-uint8_t atr[MAX_ATR_SIZE];
+static uint8_t atr[MAX_ATR_SIZE];
 /*! Current index in the ATR data */
-uint8_t atr_i = 0;
+static uint8_t atr_i = 0;
 /*! If convention conversion is needed */
-bool convention_convert = false;
+static bool convention_convert = false;
 /*! The supported T protocols */
-uint16_t t_protocol_support = 0;
+static uint16_t t_protocol_support = 0;
 /*! PPS state 
  *  @remark it is shared between request and response since they aren't simultaneous but follow the same procedure
  */
-enum pps_sniff_state pps_state;
+static enum pps_sniff_state pps_state;
 /*! PPS request data
  *  @remark can be used to check PPS response
  */
-uint8_t pps_req[MAX_PPS_SIZE];
+static uint8_t pps_req[MAX_PPS_SIZE];
 /*! PPS response data */
-uint8_t pps_rsp[MAX_PPS_SIZE];
+static uint8_t pps_rsp[MAX_PPS_SIZE];
 /*! TPDU state */
-enum tpdu_sniff_state tpdu_state;
+static enum tpdu_sniff_state tpdu_state;
 /*! Final TPDU packet
  *  @note this is the complete command+response TPDU, including header, data, and status words
  *  @remark this does not include the procedure bytes
  */
-uint8_t tpdu_packet[5+256+2];
+static uint8_t tpdu_packet[5+256+2];
 /*! Current index in TPDU packet */
-uint16_t tpdu_packet_i = 0;
+static uint16_t tpdu_packet_i = 0;
 
 /*! Waiting Time (WT)
  *  @note defined in ISO/IEC 7816-3:2006(E) section 8.1 and 10.2
  */
-uint32_t wt = 9600;
+static uint32_t wt = 9600;
 
 /*------------------------------------------------------------------------------
  *         Internal functions

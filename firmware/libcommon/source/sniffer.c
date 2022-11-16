@@ -918,7 +918,7 @@ void Sniffer_usart0_irq(void)
  *          Initialization routine
  *-----------------------------------------------------------------------------*/
 
-#define SNIFFER_IER (US_IER_RXRDY | US_IER_TIMEOUT)
+#define SNIFFER_IER (US_IER_RXRDY | US_IER_TIMEOUT | US_IER_OVRE | US_IER_FRAME | US_IER_PARE)
 
 /* Called during USB enumeration after device is enumerated by host */
 void Sniffer_configure(void)

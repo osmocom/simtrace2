@@ -302,9 +302,10 @@ static void change_state(enum iso7816_3_sniff_state iso_state_new)
 		break;
 	}
 
+	TRACE_INFO("ISO 7816-3 state %u->%u\n\r", iso_state, iso_state_new);
+
 	/* save new state */
 	iso_state = iso_state_new;
-	TRACE_INFO("Changed to ISO 7816-3 state %u\n\r", iso_state);
 }
 
 const struct value_string data_flags[] = {

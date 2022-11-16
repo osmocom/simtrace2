@@ -1,6 +1,6 @@
 /* SIMtrace 2 sniffer mode
  *
- * (C) 2016-2017 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2016-2022 by Harald Welte <hwelte@hmw-consulting.de>
  * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -115,6 +115,8 @@ enum tpdu_sniff_state {
 #define RBUF16_F_OVERRUN	0x0100
 #define RBUF16_F_FRAMING	0x0200
 #define RBUF16_F_PARITY		0x0400
+#define RBUF16_F_TIMEOUT_WT	0x0800
+#define RBUF16_F_DATA_BYTE	0x8000
 
 /*------------------------------------------------------------------------------
  *         Internal variables
@@ -825,13 +827,11 @@ void Sniffer_usart_isr(void)
 	uint32_t csr = sniff_usart.base->US_CSR;
 
 	uint16_t byte = 0;
-	bool byte_received = false;
 
 	/* Verify if character has been received */
 	if (csr & US_CSR_RXRDY) {
-		byte_received = true;
 		/* Read communication data byte between phone and SIM */
-		byte = sniff_usart.base->US_RHR;
+		byte = RBUF16_F_DATA_BYTE | (sniff_usart.base->US_RHR & 0xff);
 		/* Reset WT timer */
 		wt_remaining = g_wt;
 	}
@@ -847,15 +847,11 @@ void Sniffer_usart_isr(void)
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
 
-	/* Store sniffed data (or error flags, or both) into buffer */
-	if (byte_received || byte) {
-		if (rbuf16_write(&sniff_buffer, byte) != 0)
-			TRACE_ERROR("USART buffer full\n\r");
-	}
-
 	/* Verify it WT timeout occurred, to detect unresponsive card */
 	if (csr & US_CSR_TIMEOUT) {
 		if (wt_remaining <= (sniff_usart.base->US_RTOR & 0xffff)) {
+			/* ensure the timeout is enqueued in the ring-buffer */
+			byte |= RBUF16_F_TIMEOUT_WT;
 			/* Just set the flag and let the main loop handle it */
 			change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
 			/* Reset timeout value */
@@ -874,6 +870,12 @@ void Sniffer_usart_isr(void)
 			/* Immediately restart the counter it the WT timeout did not occur (needs the timeout flag to be cleared) */
 			sniff_usart.base->US_CR |= US_CR_RETTO;
 		}
+	}
+
+	/* Store sniffed data (or error flags, or both) into buffer */
+	if (byte) {
+		if (rbuf16_write(&sniff_buffer, byte) != 0)
+			TRACE_ERROR("USART buffer full\n\r");
 	}
 }
 
@@ -1023,43 +1025,72 @@ void Sniffer_run(void)
 	/* Handle sniffed data */
 	if (!rbuf16_is_empty(&sniff_buffer)) { /* use if instead of while to let the main loop restart the watchdog */
 		uint16_t entry = rbuf16_read(&sniff_buffer);
-		uint8_t byte = entry & 0xff;
-		/* Convert convention if required */
-		if (convention_convert) {
-			byte = convention_convert_lut[byte];
-		}
-		//TRACE_ERROR_WP(">%02x", byte);
-		switch (iso_state) { /* Handle byte depending on state */
-		case ISO7816_S_RESET: /* During reset we shouldn't receive any data */
-			break;
-		case ISO7816_S_WAIT_ATR: /* After a reset we expect the ATR */
-			change_state(ISO7816_S_IN_ATR); /* go to next state */
-		case ISO7816_S_IN_ATR: /* More ATR data incoming */
-			process_byte_atr(byte);
-			break;
-		case ISO7816_S_WAIT_TPDU: /* After the ATR we expect TPDU or PPS data */
-		case ISO7816_S_WAIT_PPS_RSP:
-			if (0xff == byte) {
-				if (ISO7816_S_WAIT_PPS_RSP == iso_state) {
-					change_state(ISO7816_S_IN_PPS_RSP); /* Go to PPS state */
-				} else {
-					change_state(ISO7816_S_IN_PPS_REQ); /* Go to PPS state */
+
+		if (entry & RBUF16_F_DATA_BYTE) {
+			uint8_t byte = entry & 0xff;
+			/* Convert convention if required */
+			if (convention_convert) {
+				byte = convention_convert_lut[byte];
+			}
+
+			//TRACE_ERROR_WP(">%02x", byte);
+			switch (iso_state) { /* Handle byte depending on state */
+			case ISO7816_S_RESET: /* During reset we shouldn't receive any data */
+				break;
+			case ISO7816_S_WAIT_ATR: /* After a reset we expect the ATR */
+				change_state(ISO7816_S_IN_ATR); /* go to next state */
+			case ISO7816_S_IN_ATR: /* More ATR data incoming */
+				process_byte_atr(byte);
+				break;
+			case ISO7816_S_WAIT_TPDU: /* After the ATR we expect TPDU or PPS data */
+			case ISO7816_S_WAIT_PPS_RSP:
+				if (0xff == byte) {
+					if (ISO7816_S_WAIT_PPS_RSP == iso_state) {
+						change_state(ISO7816_S_IN_PPS_RSP); /* Go to PPS state */
+					} else {
+						change_state(ISO7816_S_IN_PPS_REQ); /* Go to PPS state */
+					}
+					process_byte_pps(byte);
+					break;
 				}
+			case ISO7816_S_IN_TPDU: /* More TPDU data incoming */
+				if (ISO7816_S_WAIT_TPDU == iso_state) {
+					change_state(ISO7816_S_IN_TPDU);
+				}
+				process_byte_tpdu(byte);
+				break;
+			case ISO7816_S_IN_PPS_REQ:
+			case ISO7816_S_IN_PPS_RSP:
 				process_byte_pps(byte);
 				break;
+			default:
+				TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
 			}
-		case ISO7816_S_IN_TPDU: /* More TPDU data incoming */
-			if (ISO7816_S_WAIT_TPDU == iso_state) {
-				change_state(ISO7816_S_IN_TPDU);
+		}
+
+		/* Use timeout to detect interrupted data transmission */
+		if (entry & RBUF16_F_TIMEOUT_WT) {
+			TRACE_ERROR("USART TIMEOUT Error\n\r");
+			switch (iso_state) {
+			case ISO7816_S_IN_ATR:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_atr(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete ATR to host software using USB */
+				change_state(ISO7816_S_WAIT_ATR);
+				break;
+			case ISO7816_S_IN_TPDU:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete PPS to host software using USB */
+				change_state(ISO7816_S_WAIT_TPDU);
+				break;
+			case ISO7816_S_IN_PPS_REQ:
+			case ISO7816_S_IN_PPS_RSP:
+				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+				usb_send_pps(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete TPDU to host software using USB */
+				change_state(ISO7816_S_WAIT_TPDU);
+				break;
+			default:
+				break;
 			}
-			process_byte_tpdu(byte);
-			break;
-		case ISO7816_S_IN_PPS_REQ:
-		case ISO7816_S_IN_PPS_RSP:
-			process_byte_pps(byte);
-			break;
-		default:
-			TRACE_ERROR("Data received in unknown state %u\n\r", iso_state);
 		}
 
 		if (entry & RBUF16_F_PARITY)
@@ -1099,30 +1130,6 @@ void Sniffer_run(void)
 			if (ISO7816_S_WAIT_ATR != iso_state) {
 				change_state(ISO7816_S_WAIT_ATR);
 				printf("reset de-asserted\n\r");
-			}
-		}
-		if (change_flags & SNIFF_CHANGE_FLAG_TIMEOUT_WT) {
-			/* Use timeout to detect interrupted data transmission */
-			switch (iso_state) {
-			case ISO7816_S_IN_ATR:
-				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
-				usb_send_atr(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete ATR to host software using USB */
-				change_state(ISO7816_S_WAIT_ATR);
-				break;
-			case ISO7816_S_IN_TPDU:
-				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
-				usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete PPS to host software using USB */
-				change_state(ISO7816_S_WAIT_TPDU);
-				break;
-			case ISO7816_S_IN_PPS_REQ:
-			case ISO7816_S_IN_PPS_RSP:
-				led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
-				usb_send_pps(SNIFF_DATA_FLAG_ERROR_INCOMPLETE); /* send incomplete TPDU to host software using USB */
-				change_state(ISO7816_S_WAIT_TPDU);
-				break;
-			default:
-				change_flags &= ~SNIFF_CHANGE_FLAG_TIMEOUT_WT; /* We don't care about the timeout is all other cases */
-				break;
 			}
 		}
 		if (change_flags) {

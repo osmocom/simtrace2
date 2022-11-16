@@ -1,6 +1,6 @@
 /* SIMtrace2 USB protocol
  *
- * (C) 2015-2017 by Harald Welte <hwelte@hmw-consulting.de>
+ * (C) 2015-2022 by Harald Welte <hwelte@hmw-consulting.de>
  * (C) 2018 by sysmocom -s.f.m.c. GmbH, Author: Kevin Redon <kredon@sysmocom.de>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -84,6 +84,8 @@ enum simtrace_msg_type_sniff {
 	SIMTRACE_MSGT_SNIFF_PPS,
 	/* TPDU data */
 	SIMTRACE_MSGT_SNIFF_TPDU,
+	/* Statistics */
+	SIMTRACE_MSGT_DO_SNIFF_STATS,
 };
 
 /* common message header */
@@ -337,4 +339,25 @@ struct sniff_data {
 	uint16_t length;
 	/* data */
 	uint8_t data[0];
+} __attribute__ ((packed));
+
+/* SIMTRACE_MSGT_DO_SNIFF_STATS */
+struct st_sniff_stats {
+	uint32_t flags;				/* RFU */
+	uint32_t num_bytes;			/* total lnumber of bytes received */
+	uint32_t num_tpdu;			/* total number of TPDUs received */
+	uint32_t num_atr;			/* total number of ATRs received */
+	uint32_t num_pps;			/* total number of PPS (req, resp) received */
+	uint32_t num_reset;			/* total number of resets */
+	struct {
+		uint32_t overruns;
+		uint32_t framing_errs;
+		uint32_t parity_errs;
+		uint32_t breaks;
+	} num_usart;
+	uint32_t num_waiting_time_exp;
+	uint32_t num_tpdu_overflows;		/* TPDU buffer overflows */
+	uint32_t num_csum_errors;		/* ATR + PPS checksum */
+	uint32_t num_ringbuf_overflows;		/* ISR->main ringbuffer overflows */
+	uint32_t num_tpdu_malformed;
 } __attribute__ ((packed));

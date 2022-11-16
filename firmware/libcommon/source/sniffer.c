@@ -150,6 +150,9 @@ static struct ringbuf16 sniff_buffer;
 /* Flags  to know is the card status changed (see SIMTRACE_MSGT_DT_SNIFF_CHANGE flags) */
 static volatile uint32_t change_flags = 0;
 
+/* statistics for SIMTRACE_MSGT_DO_SNIFF_STATS */
+static struct st_sniff_stats g_stats;
+
 /* ISO 7816 variables */
 /*! ISO 7816-3 state */
 static enum iso7816_3_sniff_state iso_state = ISO7816_S_RESET;
@@ -453,6 +456,7 @@ static void process_byte_atr(uint8_t byte)
 		default:
 			TRACE_WARNING("Invalid TS received\n\r");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			g_stats.num_tpdu_malformed++;
 			usb_send_atr(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_ATR); /* reset state */
 			break;
@@ -523,9 +527,11 @@ static void process_byte_atr(uint8_t byte)
 				/* We still consider the data as valid (e.g. for WT) even is the checksum is wrong.
 				 * It is up to the reader to handle this error (e.g. by resetting)
 				 */
+				g_stats.num_csum_errors++;
 			}
 		}
 		usb_send_atr(flags); /* send ATR to host software using USB */
+		g_stats.num_atr++;
 		change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		break;
 	default:
@@ -617,6 +623,7 @@ static void process_byte_pps(uint8_t byte)
 		} else {
 			TRACE_INFO("Invalid PPSS received\n\r");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			g_stats.num_tpdu_malformed++;
 			usb_send_pps(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 		}
@@ -668,6 +675,7 @@ static void process_byte_pps(uint8_t byte)
 			if (0 == check) { /* checksum is valid */
 				change_state(ISO7816_S_WAIT_PPS_RSP); /* go to next state */
 			} else { /* checksum is invalid */
+				g_stats.num_csum_errors++;
 				change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 			}
 		} else if (ISO7816_S_IN_PPS_RSP == iso_state) {
@@ -687,7 +695,9 @@ static void process_byte_pps(uint8_t byte)
 				usb_send_fidi(pps_cur[2]); /* send Fi/Di change notification to host software over USB */
 			} else { /* checksum is invalid */
 				TRACE_INFO("PPS negotiation failed\n\r");
+				g_stats.num_csum_errors++;
 			}
+			g_stats.num_pps++;
 			change_state(ISO7816_S_WAIT_TPDU); /* go to next state */
 		}
 		break;
@@ -724,6 +734,7 @@ static void process_byte_tpdu(uint8_t byte)
 		return;
 	}
 	if (g_tpdu.packet_i >= ARRAY_SIZE(g_tpdu.packet)) {
+		g_stats.num_tpdu_overflows++;
 		TRACE_ERROR("TPDU data overflow\n\r");
 		return;
 	}
@@ -734,6 +745,7 @@ static void process_byte_tpdu(uint8_t byte)
 		if (0xff == byte) {
 			TRACE_WARNING("0xff is not a valid class byte\n\r");
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			g_stats.num_tpdu_malformed++;
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
@@ -746,6 +758,7 @@ static void process_byte_tpdu(uint8_t byte)
 		if ((0x60 == (byte & 0xf0)) || (0x90 == (byte & 0xf0))) {
 			TRACE_WARNING("invalid INS 0x%02x\n\r", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			g_stats.num_tpdu_malformed++;
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
@@ -786,6 +799,7 @@ static void process_byte_tpdu(uint8_t byte)
 		} else {
 			TRACE_WARNING("invalid SW1 0x%02x\n\r", byte);
 			led_blink(LED_RED, BLINK_2F_O); /* indicate error to user */
+			g_stats.num_tpdu_malformed++;
 			usb_send_tpdu(SNIFF_DATA_FLAG_ERROR_MALFORMED); /* send ATR to host software using USB */
 			change_state(ISO7816_S_WAIT_TPDU); /* go back to TPDU state */
 			return;
@@ -794,6 +808,7 @@ static void process_byte_tpdu(uint8_t byte)
 	case TPDU_S_SW2:
 		g_tpdu.packet[g_tpdu.packet_i++] = byte;
 		usb_send_tpdu(0); /* send TPDU to host software using USB */
+		g_stats.num_tpdu++;
 		change_state(ISO7816_S_WAIT_TPDU); /* this is the end of the TPDU */
 		break;
 	case TPDU_S_DATA_SINGLE:
@@ -832,17 +847,24 @@ void Sniffer_usart_isr(void)
 	if (csr & US_CSR_RXRDY) {
 		/* Read communication data byte between phone and SIM */
 		byte = RBUF16_F_DATA_BYTE | (sniff_usart.base->US_RHR & 0xff);
+		g_stats.num_bytes++;
 		/* Reset WT timer */
 		wt_remaining = g_wt;
 	}
 
 	/* Verify if there was an error */
-	if (csr & US_CSR_OVRE)
+	if (csr & US_CSR_OVRE) {
+		g_stats.num_usart.overruns++;
 		byte |= RBUF16_F_OVERRUN;
-	if (csr & US_CSR_FRAME)
+	}
+	if (csr & US_CSR_FRAME) {
+		g_stats.num_usart.framing_errs++;
 		byte |= RBUF16_F_FRAMING;
-	if (csr & US_CSR_PARE)
+	}
+	if (csr & US_CSR_PARE) {
+		g_stats.num_usart.parity_errs++;
 		byte |= RBUF16_F_PARITY;
+	}
 
 	if (csr & (US_CSR_OVRE|US_CSR_FRAME|US_CSR_PARE))
 		sniff_usart.base->US_CR |= US_CR_RSTSTA;
@@ -856,6 +878,7 @@ void Sniffer_usart_isr(void)
 			change_flags |= SNIFF_CHANGE_FLAG_TIMEOUT_WT;
 			/* Reset timeout value */
 			wt_remaining = g_wt;
+			g_stats.num_waiting_time_exp++;
 		} else {
 			wt_remaining -= (sniff_usart.base->US_RTOR & 0xffff); /* be sure to subtract the actual timeout since the new might not have been set and reloaded yet */
 		}
@@ -874,8 +897,10 @@ void Sniffer_usart_isr(void)
 
 	/* Store sniffed data (or error flags, or both) into buffer */
 	if (byte) {
-		if (rbuf16_write(&sniff_buffer, byte) != 0)
+		if (rbuf16_write(&sniff_buffer, byte) != 0) {
+			g_stats.num_ringbuf_overflows++;
 			TRACE_ERROR("USART buffer full\n\r");
+		}
 	}
 }
 
@@ -891,6 +916,7 @@ static void Sniffer_reset_isr(const Pin* pPin)
 	/* Update the ISO state according to the reset change (reset is active low) */
 	if (PIO_Get(&pin_rst)) {
 		change_flags |= SNIFF_CHANGE_FLAG_RESET_DEASSERT; /* set flag and let main loop send it */
+		g_stats.num_reset++;
 	} else {
 		change_flags |= SNIFF_CHANGE_FLAG_RESET_ASSERT; /* set flag and let main loop send it */
 	}
@@ -944,6 +970,8 @@ void Sniffer_exit(void)
 void Sniffer_init(void)
 {
 	TRACE_INFO("Sniffer Init\n\r");
+
+	memset(&g_stats, 0, sizeof(g_stats));
 
 	/* Configure pins to sniff communication between phone and card */
 	PIO_Configure(pins_sniff, PIO_LISTSIZE(pins_sniff));

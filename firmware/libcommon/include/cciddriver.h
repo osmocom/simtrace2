@@ -175,11 +175,11 @@ typedef struct
 {
 	/// Number of seconds. If 00h then CCID default value is used.
 	unsigned char bTimeOut;
-	/// Several parameters for the PIN format options (defined in § 6.1.11.4)
+	/// Several parameters for the PIN format options (defined in Â§ 6.1.11.4)
 	unsigned char bmFormatString4;
 	/// Define the length of the PIN to present in the APDU command
 	unsigned char bmPINBlockString;
-	/// Allows the length PIN insertion in the APDU command (defined in § 6.1.11.6)
+	/// Allows the length PIN insertion in the APDU command (defined in Â§ 6.1.11.6)
 	unsigned char bmPinLengthFormat;
 	/// Insertion position offset in byte for the current PIN
 	unsigned char bInsertionOffsetOld;
@@ -218,13 +218,13 @@ typedef struct
 /// Protocol Data Structure for Protocol T=0 (bProtocolNum=0, dwLength=00000005h)
 typedef struct
 {
-	/// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
+	/// B7-4 - FI - Index into the table 7 in ISO/IEC 7816-3:1997 selecting a
 	/// clock rate conversion factor
-	/// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
+	/// B3-0 - DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a
 	/// baud rate conversion factor
 	unsigned char bmFindexDindex;
-	/// For T=0 ,B0 – 0b, B7-2 – 000000b
-	/// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
+	/// For T=0 ,B0 - 0b, B7-2 - 000000b
+	/// B1 - Convention used (b1=0 for direct, b1=1 for inverse)
 	unsigned char bmTCCKST0;         // 0 to 2
 	/// Extra Guardtime between two characters. Add 0 to 254 etu to the normal 
 	/// guardtime of 12etu. FFh is the same as 00h.
@@ -243,14 +243,14 @@ typedef struct
 /// Protocol Data Structure for Protocol T=1 (bProtocolNum=1, dwLength=00000007h)
 typedef struct
 {
-	/// B7-4 – FI – Index into the table 7 in ISO/IEC 7816-3:1997 selecting a 
+	/// B7-4 - FI - Index into the table 7 in ISO/IEC 7816-3:1997 selecting a
 	/// clock rate conversion factor
-	/// B3-0 – DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a 
+	/// B3-0 - DI - Index into the table 8 in ISO/IEC 7816-3:1997 selecting a
 	/// baud rate conversion factor
 	unsigned char bmFindexDindex;
-	/// For T=1, B7-2 – 000100b
-	/// B0 – Checksum type (b0=0 for LRC, b0=1 for CRC
-	/// B1 – Convention used (b1=0 for direct, b1=1 for inverse)
+	/// For T=1, B7-2 - 000100b
+	/// B0 - Checksum type (b0=0 for LRC, b0=1 for CRC
+	/// B1 - Convention used (b1=0 for direct, b1=1 for inverse)
 	unsigned char bmTCCKST1;           // 10h, 11h, 12h, 13h
 	/// Extra Guardtime (0 to 254 etu between two characters). 
 	/// If value is FFh, then guardtime is reduced by 1.
@@ -292,8 +292,8 @@ typedef struct
    /// - 04h 1.8V
    /// Other bits are RFU.
    unsigned char  bVoltageSupport;
-   /// RRRR –Upper Word- is RFU = 0000h
-   /// PPPP –Lower Word- Encodes the supported protocol types. A ‘1’ in a given
+   /// RRRR -Upper Word- is RFU = 0000h
+   /// PPPP -Lower Word- Encodes the supported protocol types. A "1" in a given
    /// bit position indicates support for the associated ISO protocol.
    /// 0001h = Protocol T=0
    /// 0002h = Protocol T=1
@@ -318,7 +318,7 @@ typedef struct
    /// Indicates the maximum IFSD supported by CCID for protocol T=1.
    unsigned long  dwMaxIFSD;
    /// - RRRR-Upper Word- is RFU = 0000h
-   /// - PPPP-Lower Word- encodes the supported protocol types. A ‘1’ in a given
+   /// - PPPP-Lower Word- encodes the supported protocol types. A "1" in a given
    ///   bit position indicates support for the associated protocol.
    ///   0001h indicates support for the 2-wire protocol 1
    ///   0002h indicates support for the 3-wire protocol 1

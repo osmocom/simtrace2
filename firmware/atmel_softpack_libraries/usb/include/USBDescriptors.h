@@ -296,7 +296,7 @@ typedef uint32_t (*USBDescriptorParseFunction)(void *descriptor, void *parseArg)
  */
 #pragma pack(1)
 
-#if defined   ( __CC_ARM   ) /* Keil µVision 4 */
+#if defined   ( __CC_ARM   ) /* Keil ÂµVision 4 */
 #elif defined ( __ICCARM__ ) /* IAR Ewarm 5.41+ */
 #define __attribute__(...)
 #elif defined (  __GNUC__  ) /* GCC CS3 2009q3-68 */

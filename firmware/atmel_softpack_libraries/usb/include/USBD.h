@@ -63,7 +63,7 @@
  *------------------------------------------------------------------------------*/
 
 /* Define attribute */
-#if defined   ( __CC_ARM   ) /* Keil µVision 4 */
+#if defined   ( __CC_ARM   ) /* Keil ÂµVision 4 */
     #define WEAK __attribute__ ((weak))
 #elif defined ( __ICCARM__ ) /* IAR Ewarm 5.41+ */
     #define WEAK __weak

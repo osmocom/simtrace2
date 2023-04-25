@@ -1,8 +1,8 @@
 Source: simtrace2
-Maintainer: Harald Welte <laforge@gnumonks.org>
+Maintainer: Osmocom team <openbsc@lists.osmocom.org>
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper (>= 10),
                autotools-dev,
                autoconf,
                automake,

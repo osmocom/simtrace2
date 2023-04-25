@@ -13,4 +13,4 @@ export DEB_LDFLAGS_MAINT_STRIP = -Wl,-Bsymbolic-functions
 
 
 %:
-	dh $@
+	dh $@ --no-parallel

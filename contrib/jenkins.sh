@@ -38,7 +38,6 @@ cd $TOPDIR/firmware
 for build in $BUILDS; do
 	board=`echo $build | cut -d "/" -f 1`
 	app=`echo $build | cut -d "/" -f 2`
-	[ "$app" == "dfu" ] && use_clang_for_bl=1 || use_clang_for_bl=0
 	case "$build" in
 		"owhw/cardem")
 			comb="combined"
@@ -57,9 +56,16 @@ for build in $BUILDS; do
 			;;
 	esac
 	echo
-	echo "=============== $board / $app START  =============="
-	PATH="/opt/llvm-arm/bin:$PATH" make USE_CLANG="$use_clang_for_bl" BOARD="$board" APP="$app" $comb
-	echo "=============== $board / $app RES:$? =============="
+	# Build the bootloader with clang, the rest with gcc (OS#5260, OS#6026)
+	if [ "$app" = "dfu" ]; then
+		echo "=============== $board / $app START (CLANG) =============="
+		PATH="/opt/llvm-arm/bin:$PATH" make USE_CLANG=1 BOARD="$board" APP="$app" $comb
+		echo "=============== $board / $app RES:$? =============="
+	else
+		echo "=============== $board / $app START (GCC) =============="
+		make USE_CLANG=0 BOARD="$board" APP="$app" $comb
+		echo "=============== $board / $app RES:$? =============="
+	fi
 done
 
 echo

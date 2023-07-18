@@ -78,7 +78,7 @@ static struct log_info log_info = {};
 int main(int argc, char **argv)
 {
 	osmo_init_logging2(NULL, &log_info);
-	osmo_libusb_init(NULL);
+	OSMO_ASSERT(osmo_libusb_init(NULL) == 0);
 	find_devices();
 	return 0;
 }

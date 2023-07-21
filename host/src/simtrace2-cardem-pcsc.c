@@ -106,6 +106,9 @@ static void update_status_flags(struct osmo_st2_cardem_inst *ci, uint32_t flags)
 		LOGCI(ci, LOGL_NOTICE, "%s Resetting card in reader...\n",
 			reset == COLD_RESET ? "Cold" : "Warm");
 		osim_card_reset(card, reset == COLD_RESET ? true : false);
+
+		/* Mark reset event in GSMTAP wireshark trace */
+		osmo_st2_gsmtap_send_apdu(GSMTAP_SIM_ATR, card->atr, card->atr_len);
 	}
 
 	last_status_flags = flags;

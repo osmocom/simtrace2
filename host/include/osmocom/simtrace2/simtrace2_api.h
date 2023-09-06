@@ -44,6 +44,7 @@ struct osmo_st2_cardem_inst {
 int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
                          uint8_t msg_class, uint8_t msg_type);
 
+int osmo_st2_generic_request_board_info(struct osmo_st2_slot *slot);
 
 int osmo_st2_cardem_request_card_insert(struct osmo_st2_cardem_inst *ci, bool inserted);
 int osmo_st2_cardem_request_pb_and_rx(struct osmo_st2_cardem_inst *ci, uint8_t pb, uint8_t le);

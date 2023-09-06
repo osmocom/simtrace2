@@ -63,6 +63,7 @@ static void print_help(void)
 		"\n"
 		);
 	printf( "Commands:\n"
+		"\tgeneric board-info\n"
 		"\tmodem reset (enable|disable|cycle)\n"
 		"\tmodem sim-switch (local|remote)\n"
 		"\tmodem sim-card (insert|remove)\n"
@@ -216,6 +217,33 @@ static int do_subsys_modem(int argc, char **argv)
 	return rc;
 }
 
+
+static int do_generic_board_info(int argc, char **argv)
+{
+	return osmo_st2_generic_request_board_info(ci->slot);
+}
+
+static int do_subsys_generic(int argc, char **argv)
+{
+	char *command;
+	int rc;
+
+	if (argc < 1)
+		return -EINVAL;
+	command = argv[0];
+	argc--;
+	argv++;
+
+	if (!strcmp(command, "board-info")) {
+		rc = do_generic_board_info(argc, argv);
+	} else {
+		fprintf(stderr, "Unsupported command for subsystem generic: '%s'\n", command);
+		return -EINVAL;
+	}
+
+	return rc;
+}
+
 static int do_command(int argc, char **argv)
 {
 	char *subsys;
@@ -227,7 +255,9 @@ static int do_command(int argc, char **argv)
 	argc--;
 	argv++;
 
-	if (!strcmp(subsys, "modem"))
+	if (!strcmp(subsys, "generic")) {
+		rc= do_subsys_generic(argc, argv);
+	} else if (!strcmp(subsys, "modem"))
 		rc = do_subsys_modem(argc, argv);
 	else {
 		fprintf(stderr, "Unsupported subsystem '%s'\n", subsys);

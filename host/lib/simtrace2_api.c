@@ -155,6 +155,19 @@ int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
 }
 
 /***********************************************************************
+ * Generic protocol
+ ***********************************************************************/
+
+/*! \brief Requeset the SIMtrace2 board information structure from the device */
+int osmo_st2_generic_request_board_info(struct osmo_st2_slot *slot)
+{
+	struct msgb *msg = st_msgb_alloc();
+
+	return osmo_st2_slot_tx_msg(0, msg, SIMTRACE_MSGC_GENERIC, SIMTRACE_CMD_BD_BOARD_INFO);
+}
+
+
+/***********************************************************************
  * Card Emulation protocol
  ***********************************************************************/
 

@@ -1,3 +1,9 @@
+simtrace2 (0.8.2) unstable; urgency=medium
+
+  * firmware/Makefile: don't use distribution's CFLAGS
+
+ -- Oliver Smith <osmith@sysmocom.de>  Fri, 15 Sep 2023 11:17:37 +0200
+
 simtrace2 (0.8.1) unstable; urgency=medium
 
   * host/contrib/simtrace2.spec.in: fix soname

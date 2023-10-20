@@ -99,9 +99,15 @@ static void run_mainloop(struct osmo_st2_cardem_inst *ci)
 			fprintf(stderr, "BULK IN transfer error; rc=%d\n", rc);
 			return;
 		}
+		if (rc >= 0) {
+			printf("Rx(%u): %s\n", xfer_len, osmo_hexdump(buf, xfer_len));
+			osmo_st2_generic_request_board_info(ci->slot);
+		}
+#if 0
 		/* break the loop if no new messages arrive within 100ms */
 		if (rc == LIBUSB_ERROR_TIMEOUT)
 			return;
+#endif
 	}
 }
 
@@ -220,6 +226,9 @@ static int do_subsys_modem(int argc, char **argv)
 
 static int do_generic_board_info(int argc, char **argv)
 {
+	printf("ci: %p\n", ci);
+	printf("ci->slot: %p\n", ci->slot);
+	printf("ci->slot->transp: %p\n", ci->slot->transp);
 	return osmo_st2_generic_request_board_info(ci->slot);
 }
 

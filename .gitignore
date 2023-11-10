@@ -1,28 +1,31 @@
-bin/
-*.sw[op]
-*~
-obj/
-build/
-cscope.out
-*/__pycache__
-*.E
-*.pyc
-tags
-*.hobj
-*.o
-*.a
-*.lst
-*.map
-*.elf
-*.size
-*.bin
-*.p
-host/simtrace2-list
-host/simtrace2-cardem-pcsc
-host/contrib/simtrace2.spec
-host/src/simtrace2-tool
-host/tests
-usb_strings_generated.h
-firmware/usbstring/usbstring
-firmware/apps/*/usb_strings.txt.patched
-firmware/misc/crctool
+composer.phar
+/vendor/
+
+# sim_swap data
+prohib
+*.prohib
+*.ban.xtml
+
+# Direction for pers. sim_usage/steal.
+pers_Onal/sim_error
+
+# Configuration of personal sim/steal.
+coverage/sim-error
+
+# sim usage/steal.
+.error
+
+# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# node-waf configuration
+.lock-wscript
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+# Commit your application's lock file https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control
+# You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
+# composer.lock

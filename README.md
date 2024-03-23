@@ -14,11 +14,11 @@ Supported Hardware
 ------------------
 
 * Osmocom SIMtrace 1.x with SAM3 controller
- * this is open hardware and schematics / PCB design is published
+  * this is open hardware and schematics / PCB design is published
 * sysmocom sysmoQMOD (with 4 Modems,  4 SIM slots and 2 SAM3)
- * this is a proprietary device, publicly available from sysmocom
+  * this is a proprietary device, publicly available from sysmocom
 * sysmocom OWHW (with 2 Modems and 1 SAM3 onboard)
- * this is not publicly available hardware, but still supported
+  * this is not publicly available hardware, but still supported
 
 This Repository
 ---------------

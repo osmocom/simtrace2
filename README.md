@@ -15,8 +15,10 @@ Supported Hardware
 
 * Osmocom [SIMtrace2](https://osmocom.org/projects/simtrace2/wiki) with SAM3 controller
   * this is open hardware and schematics / PCB design is published
+  * pre-built hardware available from [sysmocom webshop](https://shop.sysmocom.de/SIMtrace2-Hardware-Kit/simtrace2-kit)
 * sysmocom [sysmoQMOD](https://sysmocom.de/products/lab/sysmoqmod/index.html) (with 4 Modems,  4 SIM slots and 2 SAM3)
   * this is a proprietary device, publicly available from sysmocom
+  * hardware evaluation kit available from [sysmocom webshop](https://shop.sysmocom.de/sysmoQMOD-evaluation-kit/sysmoQMOD-evk)
 * sysmocom OWHW (with 2 Modems and 1 SAM3 onboard)
   * this is not publicly available hardware, but still supported
 

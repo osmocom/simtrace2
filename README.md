@@ -16,6 +16,9 @@ Supported Hardware
 * Osmocom [SIMtrace2](https://osmocom.org/projects/simtrace2/wiki) with SAM3 controller
   * this is open hardware and schematics / PCB design is published
   * pre-built hardware available from [sysmocom webshop](https://shop.sysmocom.de/SIMtrace2-Hardware-Kit/simtrace2-kit)
+* Osmocom [ngff-cardem](https://osmocom.org/projects/ngff-cardem/wiki) M.2/NGFF modem carrier with SAM3 controller
+  * this is open hardware and schematics / PCB design is published
+  * pre-built hardware available from [sysmocom webshoo](https://shop.sysmocom.de/M.2-modem-carrier-with-remote-SIM-tracing/ngff-cardem-kit-external)
 * sysmocom [sysmoQMOD](https://sysmocom.de/products/lab/sysmoqmod/index.html) (with 4 Modems,  4 SIM slots and 2 SAM3)
   * this is a proprietary device, publicly available from sysmocom
   * hardware evaluation kit available from [sysmocom webshop](https://shop.sysmocom.de/sysmoQMOD-evaluation-kit/sysmoQMOD-evk)

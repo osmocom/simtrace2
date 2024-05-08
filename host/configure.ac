@@ -100,5 +100,4 @@ AC_OUTPUT(
 	src/Makefile
 	lib/Makefile
 	contrib/Makefile
-	contrib/simtrace2.spec
 	Makefile)

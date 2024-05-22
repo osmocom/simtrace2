@@ -146,8 +146,8 @@ int board_override_enter_dfu(void)
 	return 0;
 }
 
- static const Pin deton = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
- static const Pin detoff = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+static const Pin deton = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
+static const Pin detoff = {PIO_PA13, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 
 void board_set_card_insert(struct cardem_inst *ci, bool card_insert)
 {

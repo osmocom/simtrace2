@@ -272,6 +272,21 @@ int osmo_st2_cardem_request_config(struct osmo_st2_cardem_inst *ci, uint32_t fea
 	return osmo_st2_slot_tx_msg(ci->slot, msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_BD_CEMU_CONFIG);
 }
 
+/* user_cfg is in host byte order. */
+int osmo_st2_cardem_request_config2(struct osmo_st2_cardem_inst *ci, const struct cardemu_usb_msg_config *user_cfg)
+{
+	struct msgb *msg = st_msgb_alloc();
+	struct cardemu_usb_msg_config *tx_cfg;
+
+	tx_cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*tx_cfg));
+
+	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(features=%08x)\n", __func__, tx_cfg->features);
+	memcpy(tx_cfg, user_cfg, sizeof(*tx_cfg));
+	osmo_store32le(user_cfg->features, &tx_cfg->features);
+
+	return osmo_st2_slot_tx_msg(ci->slot, msg, SIMTRACE_MSGC_CARDEM, SIMTRACE_MSGT_BD_CEMU_CONFIG);
+}
+
 /***********************************************************************
  * Modem Control protocol
  ***********************************************************************/

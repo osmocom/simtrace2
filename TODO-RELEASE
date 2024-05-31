@@ -9,3 +9,4 @@
 #library	what			description / commit summary line
 simtrace2	API/ABI change		osmo_st2_transport new member
 simtrace2	API/ABI change		cardemu_usb_msg_config new member
+simtrace2	API/ABI change		add function osmo_st2_cardem_request_config2()

@@ -41,6 +41,8 @@ struct osmo_st2_cardem_inst {
 	void *priv;
 };
 
+struct cardemu_usb_msg_config;
+
 int osmo_st2_slot_tx_msg(struct osmo_st2_slot *slot, struct msgb *msg,
                          uint8_t msg_class, uint8_t msg_type);
 
@@ -53,7 +55,7 @@ int osmo_st2_cardem_request_sw_tx(struct osmo_st2_cardem_inst *ci, const uint8_t
 int osmo_st2_cardem_request_set_atr(struct osmo_st2_cardem_inst *ci, const uint8_t *atr,
 				    unsigned int atr_len);
 int osmo_st2_cardem_request_config(struct osmo_st2_cardem_inst *ci, uint32_t features);
-
+int osmo_st2_cardem_request_config2(struct osmo_st2_cardem_inst *ci, const struct cardemu_usb_msg_config *config);
 
 int osmo_st2_modem_reset_pulse(struct osmo_st2_slot *slot, uint16_t duration_ms);
 int osmo_st2_modem_reset_active(struct osmo_st2_slot *slot);

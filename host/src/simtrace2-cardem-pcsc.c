@@ -413,6 +413,7 @@ static void print_help(void)
 		"\t-S\t--usb-altsetting ALTSETTING_ID\n"
 		"\t-A\t--usb-address\tADDRESS\n"
 		"\t-H\t--usb-path\tPATH\n"
+		"\t-Z\t--set-sim-presence\t<0/1>\n"
 		"\n"
 		);
 }
@@ -431,6 +432,7 @@ static const struct option opts[] = {
 	{ "usb-altsetting", 1, 0, 'S' },
 	{ "usb-address", 1, 0, 'A' },
 	{ "usb-path", 1, 0, 'H' },
+	{ "set-sim-presence", 1, 0, 'Z' },
 	{ NULL, 0, 0, 0 }
 };
 
@@ -487,6 +489,7 @@ int main(int argc, char **argv)
 	char *path = NULL;
 	struct osim_reader_hdl *reader;
 	struct osim_card_hdl *card;
+	struct cardemu_usb_msg_config cardem_config = { .features = CEMU_FEAT_F_STATUS_IRQ };
 
 	print_welcome();
 
@@ -509,7 +512,7 @@ int main(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "hi:V:P:C:I:S:A:H:akn:t:", opts, &option_index);
+		c = getopt_long(argc, argv, "hi:V:P:C:I:S:A:H:akn:t:Z:", opts, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -552,6 +555,10 @@ int main(int argc, char **argv)
 			break;
 		case 'H':
 			path = optarg;
+			break;
+		case 'Z':
+			cardem_config.pres_pol = atoi(optarg) ? CEMU_CONFIG_PRES_POL_PRES_H : 0;
+			cardem_config.pres_pol |= CEMU_CONFIG_PRES_POL_VALID;
 			break;
 		}
 	}
@@ -636,7 +643,7 @@ int main(int argc, char **argv)
 			allocate_and_submit_in(ci);
 
 		/* request firmware to generate STATUS on IRQ endpoint */
-		osmo_st2_cardem_request_config(ci, CEMU_FEAT_F_STATUS_IRQ);
+		osmo_st2_cardem_request_config2(ci, &cardem_config);
 
 		/* simulate card-insert to modem (owhw, not qmod) */
 		osmo_st2_cardem_request_card_insert(ci, true);

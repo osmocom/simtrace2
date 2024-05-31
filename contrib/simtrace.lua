@@ -58,6 +58,7 @@ local hf_pts_resp = ProtoField.bytes("usb_simtrace.pts_resp", "PTS response")
 
 local hf_cemu_cfg_features = ProtoField.uint32("usb_simtrace.cemu_cfg.features.status_irq", "CardEm Features", base.HEX)
 local hf_cemu_cfg_slot_mux_nr = ProtoField.uint32("usb_simtrace.cemu_cfg.features.slot_mux_nr", "CardEm Slot Mux Nr", base.DEC)
+local hf_cemu_cfg_presence_polarity = ProtoField.uint8("usb_simtrace.cemu_cfg.features.presence_polarity", "Sim presence polarity", base.DEC)
 
 local card_insert_types = {
     [0x00] = "not inserted",
@@ -70,6 +71,9 @@ local CEMU_STATUS_F_CLK_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_
 local CEMU_STATUS_F_RCEMU_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_RCEMU_ACTIVE", "CEMU_ACTIVE", base.HEX_DEC, NULL, 0x00000004)
 local CEMU_STATUS_F_CARD_INSERT  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_CARD_INSERT", "CARD_INSERT", base.HEX_DEC, NULL, 0x00000008)
 local CEMU_STATUS_F_RESET_ACTIVE  = ProtoField.uint32("usb_simtrace.CEMU_STATUS.F_RESET_ACTIVE", "RESET_ACTIVE", base.HEX_DEC, NULL, 0x00000010)
+
+local CEMU_CONFIG_PRES_POL_PRES_H  = ProtoField.uint32("usb_simtrace.CEMU_CONFIG.PRES_POL_PRES_H", "PRESENCE_HIGH", base.HEX_DEC, NULL, 0x00000001)
+local CEMU_CONFIG_PRES_POL_VALID  = ProtoField.uint32("usb_simtrace.CEMU_CONFIG.PRES_POL_VALID", "PRESENCE_VALID", base.HEX_DEC, NULL, 0x00000002)
 
 local modem_reset_types = {
     [0x00] = "de-assert",
@@ -89,9 +93,10 @@ usb_simtrace_protocol.fields = {
   msgtype, seqnr, slotnr, reserved, payloadlen, payload,
   pb_and_rx, pb_and_tx, final, tpdu_hdr, rxtxdatalen, rxtxdata,
   CEMU_STATUS_F_VCC_PRESENT, CEMU_STATUS_F_CLK_ACTIVE, CEMU_STATUS_F_RCEMU_ACTIVE, CEMU_STATUS_F_CARD_INSERT, CEMU_STATUS_F_RESET_ACTIVE,
+  CEMU_CONFIG_PRES_POL_PRES_H, CEMU_CONFIG_PRES_POL_VALID,
   modem_reset_status, modem_reset_len,
   hf_pts_len, hf_pts_req, hf_pts_resp,
-  hf_cemu_cfg_features, hf_cemu_cfg_slot_mux_nr,
+  hf_cemu_cfg_features, hf_cemu_cfg_slot_mux_nr, hf_cemu_cfg_presence_polarity,
   hf_cemu_cardinsert, hf_modem_sim_select,
 }
 
@@ -214,7 +219,15 @@ function dissect_cemu_config(payload_data, pinfo, tree)
   local subtree = tree:add(usb_simtrace_protocol, payload_data, "Card Emu Config")
 
   subtree:add(hf_cemu_cfg_features, payload_data(0,4));
-  subtree:add(hf_cemu_cfg_slot_mux_nr, payload_data(4,1));
+  if payload_data:len() >= 4 then
+	subtree:add(hf_cemu_cfg_slot_mux_nr, payload_data(4,1));
+  end
+  if payload_data:len() >= 5 then
+	local pres =  payload_data(5,1):le_uint();
+    subtree:add(hf_cemu_cfg_presence_polarity, payload_data(5,1));
+	headerSubtree:add(CEMU_CONFIG_PRES_POL_PRES_H, pres)
+	headerSubtree:add(CEMU_CONFIG_PRES_POL_VALID, pres)
+  end
 end
 
 function dissect_modem_sim_sel(payload_data, pinfo, tree)

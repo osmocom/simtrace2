@@ -93,7 +93,14 @@ void card_emu_uart_reset_wt(uint8_t uart_chan)
 	printf("%s(uart_chan=%u\n", __func__, uart_chan);
 }
 
+void mode_cardemu_set_presence_pol(uint8_t instance, bool high)
+{
+}
 
+bool mode_cardemu_get_presence_pol(uint8_t instance)
+{
+	return false;
+}
 
 /***********************************************************************
  * test helper functions

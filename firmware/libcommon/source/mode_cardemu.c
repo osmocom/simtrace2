@@ -79,7 +79,10 @@ struct cardem_inst {
 	uint8_t ep_out;
 	uint8_t ep_in;
 	uint8_t ep_int;
+	/*! Pin to set when SIM is present/inserted (SIM presence pin). */
 	const Pin pin_insert;
+	/*! Invert the Pin polarity. When not inverted, the SIM pin_insert will be High, when a SIM is present. */
+	bool pin_insert_inverted;
 #ifdef DETECT_VCC_BY_ADC
 	uint32_t vcc_uv;
 #endif
@@ -113,7 +116,10 @@ struct cardem_inst cardem_inst[] = {
 		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM1_INT,
 #ifdef PIN_SET_USIM1_PRES
 		.pin_insert = PIN_SET_USIM1_PRES,
-#endif
+#endif /* PIN_SET_USIM1_PRES */
+#ifdef PIN_SET_USIM1_PRES_INVERTED
+		.pin_insert_inverted = true,
+#endif /* PIN_SET_USIM1_PRES_INVERTED */
 	},
 #ifdef CARDEMU_SECOND_UART
 	{
@@ -128,7 +134,10 @@ struct cardem_inst cardem_inst[] = {
 		.ep_int = SIMTRACE_CARDEM_USB_EP_USIM2_INT,
 #ifdef PIN_SET_USIM2_PRES
 		.pin_insert = PIN_SET_USIM2_PRES,
-#endif
+#endif /* PIN_SET_USIM2_PRES */
+#ifdef PIN_SET_USIM2_PRES_INVERTED
+		.pin_insert_inverted = true,
+#endif /* PIN_SET_USIM2_PRES_INVERTED */
 	},
 #endif
 };
@@ -700,7 +709,7 @@ static void process_card_insert(struct cardem_inst *ci, bool card_insert)
 	TRACE_INFO("%u: set card_insert to %s\r\n", ci->num, card_insert ? "INSERTED" : "REMOVED");
 
 #ifdef HAVE_BOARD_CARDINSERT
-	board_set_card_insert(ci, card_insert);
+	board_set_card_insert(ci, card_insert ^ ci->pin_insert_inverted);
 #else
 	if (!ci->pin_insert.pio) {
 		TRACE_INFO("%u: skipping unsupported card_insert to %s\r\n",
@@ -708,7 +717,7 @@ static void process_card_insert(struct cardem_inst *ci, bool card_insert)
 		return;
 	}
 
-	if (card_insert)
+	if (card_insert ^ ci->pin_insert_inverted)
 		PIO_Set(&ci->pin_insert);
 	else
 		PIO_Clear(&ci->pin_insert);
@@ -961,4 +970,26 @@ void mode_cardemu_run(void)
 		queue = usb_get_queue(ci->ep_out);
 		process_any_usb_commands(queue, ci);
 	}
+}
+
+void mode_cardemu_set_presence_pol(uint8_t instance, bool high)
+{
+	struct cardem_inst *ci;
+
+	if (instance >= ARRAY_SIZE(cardem_inst))
+		return;
+
+	ci = &cardem_inst[instance];
+	ci->pin_insert_inverted = !high;
+}
+
+bool mode_cardemu_get_presence_pol(uint8_t instance)
+{
+	struct cardem_inst *ci;
+
+	if (instance >= ARRAY_SIZE(cardem_inst))
+		return false;
+
+	ci = &cardem_inst[instance];
+	return !ci->pin_insert_inverted;
 }

@@ -261,12 +261,21 @@ struct cardemu_usb_msg_error {
 /* enable/disable the generation of DO_STATUS on IRQ endpoint */
 #define CEMU_FEAT_F_STATUS_IRQ	0x00000001
 
+#define CEMU_CONFIG_PRES_POL_PRES_L 0x00
+#define CEMU_CONFIG_PRES_POL_PRES_H 0x01
+#define CEMU_CONFIG_PRES_POL_VALID 0x02
+
 /* SIMTRACE_MSGT_BD_CEMU_CONFIG */
 struct cardemu_usb_msg_config {
 	/* bit-mask of CEMU_FEAT_F flags */
 	uint32_t features;
 	/* the selected slot number (if an external mux is present) */
 	uint8_t slot_mux_nr;
+	/* Sim presence pin polarity. Bit 1 is a validity bit. Bit 0 gpio value when sim present.
+	 * When sim is present, set sim_present gpio to high -> 0x03
+	 * When sim is present, set sim_present gpio to low -> 0x02
+	 */
+	uint8_t pres_pol;
 } __attribute__ ((packed));
 
 /***********************************************************************

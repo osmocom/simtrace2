@@ -8,3 +8,4 @@
 # If any interfaces have been removed or changed since the last public release: c:r:0.
 #library	what			description / commit summary line
 simtrace2	API/ABI change		osmo_st2_transport new member
+simtrace2	API/ABI change		cardemu_usb_msg_config new member

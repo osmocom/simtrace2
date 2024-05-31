@@ -124,4 +124,8 @@ extern void mode_cardemu_usart1_irq(void);
 void Timer_Init( void );
 void TC0_Counter_Reset( void );
 
+/* Sim presence pins */
+bool mode_cardemu_get_presence_pol(uint8_t instance);
+void mode_cardemu_set_presence_pol(uint8_t instance, bool high);
+
 #endif  /*  SIMTRACE_H  */

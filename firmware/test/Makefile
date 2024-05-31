@@ -7,6 +7,7 @@ CFLAGS=-g -Wall $(LIBOSMOCORE_CFLAGS) \
 	-I../atmel_softpack_libraries/libchip_sam3s/cmsis \
 	-I../atmel_softpack_libraries/libchip_sam3s/include \
 	-I../atmel_softpack_libraries/usb/include \
+	-I../atmel_softpack_libraries/ \
 	-I../libcommon/include \
 	-I../libboard/common/include \
 	-I../libboard/simtrace/include \

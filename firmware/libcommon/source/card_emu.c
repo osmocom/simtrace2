@@ -24,6 +24,7 @@
 #include "trace.h"
 #include "iso7816_fidi.h"
 #include "card_emu.h"
+#include "simtrace.h"
 #include "simtrace_prot.h"
 #include "usb_buf.h"
 #include <osmocom/core/linuxlist.h>
@@ -1096,7 +1097,7 @@ static void card_emu_report_config(struct card_handle *ch)
 #else
 	cfg->slot_mux_nr = 0;
 #endif
-
+	cfg->pres_pol = mode_cardemu_get_prensence_pol(ch->num) | CEMU_CONFIG_PRES_POL_VALID;
 
 	usb_buf_upd_len_and_submit(msg);
 }
@@ -1269,6 +1270,11 @@ int card_emu_set_config(struct card_handle *ch, const struct cardemu_usb_msg_con
 		mux_set_slot(scfg->slot_mux_nr);
 	}
 #endif
+
+	if (scfg_len >= sizeof(uint32_t)+sizeof(uint8_t)+sizeof(uint8_t)) {
+		if (scfg->pres_pol & CEMU_CONFIG_PRES_POL_VALID)
+			mode_cardemu_set_prensence_pol(ch->num, scfg->pres_pol & CEMU_CONFIG_PRES_POL_PRES_H);
+	}
 
 	/* send back a report of our current configuration */
 	card_emu_report_config(ch);

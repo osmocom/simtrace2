@@ -41,3 +41,14 @@ The host software includes
 * simtrace2-list - list any USB-attached devices running simtrace2 firmware
 * simtrace2-sniff - interface the 'trace' firmware to obtain card protocol traces
 * simtrace2-cardem-pcsc - interface the 'cardem' fimrware to use a SIM in a PC/SC reader
+
+
+Do not expect SIMtrace2 to work in VMs
+--------------------------------------
+
+We only support running SIMtrace2 together with a Linux system running
+"bare iron" on actual hardware (x86, x86_64, arm, ...).  **using VMs
+with USB pass-through for things with critical timing like SIMtrace2 is
+calling for trouble** and we will not accept related bug reports or
+support you if you do.  If you still want to use VMs: Feel free to do
+so, but understand that it's unsupported and you are on your own.

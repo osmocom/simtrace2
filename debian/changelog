@@ -1,3 +1,99 @@
+simtrace2 (0.9.0) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * host/contrib/simtrace2.spec.in: update
+  * treewide: remove FSF address
+  * contrib/jenkins.sh: set USE_CLANG=1
+  * Cosmetic: fix CI errors
+  * debian/rules: remove override_dh_autoreconf
+  * debian: set compat level to 10
+  * contrib/jenkins: tweak shell logic
+  * firmware/Makefile: don't use distribution's CFLAGS
+  * contrib: remove rpm spec file
+
+  [ Eric Wild ]
+  * firmware: add crc stub to all dfu apps to ensure reliable loading
+  * wireshark lua dissector: dissect more
+  * lua dissector: adjust usage instructions
+  * conrtrib/upload : upload elf files
+  * contrib/jenkins.sh : build and publish combined targets
+  * fw: only build the bl with clang
+
+  [ James Tavares ]
+  * simtrace2-tool: add "modem sim-card (insert|remove)" command
+  * firmware: add definition for main osc bypass when using external osc
+  * gitignore: add missing entries binaries
+  * firmware: bugfix: disable cardemu comms in local SIM mode
+  * main: rotor: erase immediately after send
+  * Fix missing generation of waiting-time-extension in some situations
+
+  [ Harald Welte ]
+  * host: Print strerror(errno) in case of problems opening the USB device
+  * cosmetic: Fix indent of printf() statement
+  * host: properly zero-initialize interface match structures
+  * contrib/simtrace.lua: Add VID/PID of all currentl simtrace2 devices
+  * cosmetic: contrib/simtrace.lua: more consistent formatting
+  * contrib/simtrace.lua: Add header with author/description/usage
+  * contrib/simtrace.lua: print length + slot-number in decimal only
+  * contrib/simtrace.lua: Don't print SIMTRACE_MSGT_ in every COL_INFO
+  * contrib/simtrace.lua: Dissect some more cardem related message types
+  * contrib/simtrace.lua: Register for "decode as..."
+  * cardem: Report the VCC voltage (if supported)
+  * card_emu_uart_interrupt: ASSERT if we get called with wrong uart_chan
+  * cardem: set more reasonable interrupt priorities
+  * host: Always initialize libosmocore logging before using it
+  * simtrace2-cardem-pcsc: rename 'flags' to 'status_flags'
+  * simtrace2-cardem-pcsc: Move all logging into libosmocore
+  * simtrace2-cardem-pcsc: Detect card power-up without RESET
+  * host: Don't pass -1 (converted to 255) as address
+  * simtrace2-cardem-pcsc: Fix copy+paste error in log message
+  * simtrace2-cardem-pcsc: continue in case of LIBUSB_TRANSFER_ERROR
+  * contrib/simtrace.lua: Add Flag bits + Data to COL_INFO
+  * Reduce bInterval of interrupt endpoints to avoid interrupt misses
+  * simtrace2-cardem-pcsc.c: Send APDUs via GSMTAP
+  * update git URLs (git -> https; gitea)
+  * cardem: reset the uC in case of USB disconnect
+  * cosmetic: Fix compile-time #error message string typo
+  * firmware/sniffer: Fix copy+paste when logging invalid INS bytes
+  * firmware/sniffer: Log parity errors, just like overruns and framing errors
+  * firmware/sniffer: refactor setting TPDU state
+  * firmware/sniffer: Log old and new state in ISO7816-3 state changes
+  * firmware/sniffer: Avoid extra call for rbuf_is_full
+  * firmware/sniffer: Fix programming error in PPS
+  * firmware/sniffer: Make all global variables 'static'
+  * firmware/sniffer: Group global variables in structs
+  * firmware/sniffer: Log cause of WT change
+  * firmware/sniffer: Rename global variable 'wt' to 'g_wt'
+  * firmware/sniffer: Disable TIMEOUT interrupts in USART IER on exit
+  * firmware/sniffer: Add + use 16bit ringbuffer
+  * firmware/sniffer: Pass PARITY/OVERRUN/FRAMING error via ringbuffer
+  * firmware/sniffer: Handle WT timeouts via ring-buffer
+  * firmware/sniffer: introduce #define for interrupt enable flags
+  * firmware/sniffer: Enable interrupts for overrun/parity/frame errors
+  * Fix unchecked return value of osmo_libusb_init()
+  * Add funding link to github mirror
+  * README.md: Fix mark-down nested bullet syntax
+  * README.md: Fix mark-down nested bullet syntax
+  * README.md: add links to SIMtrace2 and QMOD
+  * README.md: Add links to where hardware can be bought
+  * README.md: Add section on ngff_carem
+  * README.md: Add note to avoid using a VM
+
+  [ Alexander Couzens ]
+  * firmware: usb: call USBD_HAL_DISCONNECT while usb init to recover from resets
+  * ngff_cardem: cosmetic: fix superflous space
+  * dissector: add support for sim polarity
+  * firmware: allow to change the sim presence pin polarity
+  * simtrace2-cardem-pcsc: allow to set sim presence polarity
+
+  [ Vadim Yanitskiy ]
+  * host/cardem: fix integer overflow in process_do_rx_da()
+
+  [ Philipp Maier ]
+  * simtrace2-cardem-pcsc: mark reset events in GSMTAP trace
+
+ -- Oliver Smith <osmith@sysmocom.de>  Wed, 12 Feb 2025 16:07:53 +0100
+
 simtrace2 (0.8.1) unstable; urgency=medium
 
   * host/contrib/simtrace2.spec.in: fix soname

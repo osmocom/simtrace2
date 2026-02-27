@@ -66,7 +66,7 @@ int osmo_st2_gsmtap_send_apdu(uint8_t sub_type, const uint8_t *apdu, unsigned in
 
 	memcpy(buf + sizeof(*gh), apdu, len);
 
-	rc = write(gsmtap_inst_fd(g_gti), buf, gross_len);
+	rc = write(gsmtap_inst_fd2(g_gti), buf, gross_len);
 	if (rc < 0) {
 		perror("write gsmtap");
 		free(buf);

@@ -171,6 +171,7 @@ INCLUDES += -Ilibcommon/include
 INCLUDES += -Ilibosmocore/include
 INCLUDES += -Isrc_simtrace -Iinclude
 INCLUDES += -Iapps/$(APP)
+INCLUDES += -I/usr/lib/picolibc/arm-none-eabi/include
 
 ifneq ("$(USE_CLANG)","0")
 CFLAGS += -Wno-unknown-warning-option -Wno-empty-body -fno-exceptions -fno-unwind-tables --config armv7em_soft_nofp_nosys

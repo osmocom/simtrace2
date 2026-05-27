@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 10),
                dh-autoreconf,
                libosmocore-dev (>= 1.11.0),
                libpcsclite-dev,
-               libnewlib-arm-none-eabi,
+               picolibc-arm-none-eabi,
                libusb-1.0-0-dev,
                gcc-arm-none-eabi
 Standards-Version: 3.9.8

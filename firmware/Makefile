@@ -186,7 +186,7 @@ CFLAGS += -Wshadow -Wpointer-arith -Wbad-function-cast -Wwrite-strings
 CFLAGS += -Waggregate-return #-Wsign-compare
 CFLAGS += -Wmissing-format-attribute -Wno-deprecated-declarations
 CFLAGS += #-Wpacked
-CFLAGS += -Wredundant-decls -Wnested-externs #-Winline -Wlong-long
+CFLAGS += -Wnested-externs #-Winline -Wlong-long -Wredundant-decls
 CFLAGS += -Wunreachable-code
 #CFLAGS += -Wcast-align
 #CFLAGS += -std=c11

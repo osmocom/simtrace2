@@ -1,3 +1,15 @@
+simtrace2 (0.9.1) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * Generate a version.h file
+  * firmware: replace libnewlib with picolibc
+  * firmware/Makefile: remove -Wredundant-decls
+
+  [ Harald Welte ]
+  * Use gsmtap_inst_fd2() to remove compiler warning
+
+ -- Oliver Smith <osmith@sysmocom.de>  Wed, 08 Jul 2026 08:47:19 +0200
+
 simtrace2 (0.9.0) unstable; urgency=medium
 
   [ Oliver Smith ]

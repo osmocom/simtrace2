@@ -52,3 +52,11 @@ with USB pass-through for things with critical timing like SIMtrace2 is
 calling for trouble** and we will not accept related bug reports or
 support you if you do.  If you still want to use VMs: Feel free to do
 so, but understand that it's unsupported and you are on your own.
+
+Debug UART
+----------
+
+The debug UART configuration is 921600 8N1, TTL 3.3V.
+
+On the simtrace 2 use either a 2.5 mm stereo headphone connector (tip = TX, ring = RX, sleeve = GND)
+or the nearby DEBUG port (pin 1 = GND, pin 4 = TX, pin 5 = RX).

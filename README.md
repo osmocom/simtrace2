@@ -40,7 +40,7 @@ The host software includes
 * libosmo-simtrace2 - a shared library to talk to devices running the simtrace2 firmware
 * simtrace2-list - list any USB-attached devices running simtrace2 firmware
 * simtrace2-sniff - interface the 'trace' firmware to obtain card protocol traces
-* simtrace2-cardem-pcsc - interface the 'cardem' fimrware to use a SIM in a PC/SC reader
+* simtrace2-cardem-pcsc - interface the 'cardem' firmware to use a SIM in a PC/SC reader
 
 
 Do not expect SIMtrace2 to work in VMs

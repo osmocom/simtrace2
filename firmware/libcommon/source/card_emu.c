@@ -215,6 +215,19 @@ struct card_handle {
 	} stats;
 };
 
+/* if the card emu is ready to handle TPDUs */
+bool card_emu_ch_ready(const struct card_handle *ch)
+{
+	switch (ch->state) {
+	case ISO_S_IN_PTS:
+	case ISO_S_WAIT_TPDU:
+	case ISO_S_IN_TPDU:
+		return true;
+	default:
+		return false;
+	}
+}
+
 /* reset all the 'dynamic' state of the card handle to the initial/default values */
 static void card_handle_reset(struct card_handle *ch)
 {

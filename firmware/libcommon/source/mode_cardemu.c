@@ -736,6 +736,12 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	hdr = (struct simtrace_msg_hdr *) msg->l1h;
 	switch (hdr->msg_type) {
 	case SIMTRACE_MSGT_DT_CEMU_TX_DATA:
+		/* drop message when the card emu channel is in-active */
+		if (!card_emu_ch_ready(ci->ch)) {
+			/* FIXME: enqueue an error message for IN */
+			usb_buf_free(msg);
+			return;
+		}
 		queue = card_emu_get_uart_tx_queue(ci->ch);
 		/* drained from the USART IRQ handler at highest NVIC prio */
 		llist_add_tail_irqsafe(&msg->list, queue);

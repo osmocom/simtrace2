@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <stdint.h>
+
 /* minimalistic emulation of core talloc API functions used by msgb.c */
 
 #define __TALLOC_STRING_LINE1__(s)    #s
@@ -37,3 +39,4 @@ void talloc_set_name_const(const void *ptr, const char *name);
 char *talloc_strdup(const void *t, const char *p);
 void *talloc_pool(const void *context, size_t size);
 void talloc_report(const void *ptr, FILE *f);
+unsigned int talloc_report_buf(uint8_t *buf, unsigned int buf_len);

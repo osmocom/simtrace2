@@ -77,6 +77,30 @@ int _talloc_free(void *ptr, const char *location)
 	return -1;
 }
 
+/* Report the talloc usages and return of used bytes */
+unsigned int talloc_report_buf(uint8_t *buf, unsigned int buf_len)
+{
+	unsigned int i, bitoff = 0, bitpos;
+
+	osmo_static_assert(ARRAY_SIZE(msgb_inuse) < 256, msgb_inuse_too_ig);
+
+	memset(buf, 0, buf_len);
+	buf[bitoff] = ARRAY_SIZE(msgb_inuse);
+	bitoff++;
+
+	for (i = 0, bitpos = 7; i < ARRAY_SIZE(msgb_inuse) && bitoff < buf_len; i++, bitpos--) {
+		if (msgb_inuse[i])
+			buf[bitoff] |= (1 << bitpos);
+
+		if (bitpos == 0) {
+			bitpos = 7;
+			bitoff++;
+		}
+	}
+
+	return bitoff + 1;
+}
+
 void talloc_report(const void *ptr, FILE *f)
 {
 	unsigned int i;

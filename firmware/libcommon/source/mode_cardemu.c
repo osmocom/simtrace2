@@ -736,6 +736,12 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	hdr = (struct simtrace_msg_hdr *) msg->l1h;
 	switch (hdr->msg_type) {
 	case SIMTRACE_MSGT_DT_CEMU_TX_DATA:
+		/* drop message when sim is in-active */
+		if (!card_ready(ci->ch)) {
+			/* FIXME: enqueue an error message for IN */
+			usb_buf_free(msg);
+			return;
+		}
 		queue = card_emu_get_uart_tx_queue(ci->ch);
 		llist_add_tail(&msg->list, queue);
 		card_emu_have_new_uart_tx(ci->ch);

@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 struct card_handle;
+struct msgb;
 
 enum card_io {
 	CARD_IO_VCC,
@@ -75,3 +76,5 @@ int card_emu_get_vcc(uint8_t uart_chan);
 struct cardemu_usb_msg_config;
 int card_emu_set_config(struct card_handle *ch, const struct cardemu_usb_msg_config *scfg,
 			unsigned int scfg_len);
+
+void usb_buf_upd_len_and_submit(struct msgb *msg);

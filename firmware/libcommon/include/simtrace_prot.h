@@ -86,6 +86,12 @@ enum simtrace_msg_type_sniff {
 	SIMTRACE_MSGT_SNIFF_TPDU,
 };
 
+/* Simtrace ctrl vendor requests */
+enum simtrace_vendor_req {
+	/* get debug infos */
+	SIMTRACER_VENDOR_REQ_GET_DEBUG_INFO = 0,
+};
+
 /* common message header */
 struct simtrace_msg_hdr {
 	uint8_t msg_class;	/* simtrace_msg_class */

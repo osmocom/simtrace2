@@ -19,6 +19,7 @@
 
 #include "board.h"
 #include "simtrace.h"
+#include "talloc.h"
 #include "utils.h"
 #include "main_common.h"
 #include <osmocom/core/timer.h>
@@ -39,6 +40,8 @@ typedef struct {
 	void (*usart0_irq) (void);
 	/* Interrupt handler for USART1 */
 	void (*usart1_irq) (void);
+	/* ctrl vendor request handler */
+	void (*ctrl_vendor_req) (const USBGenericRequest *request);
 } conf_func;
 
 static const conf_func config_func_ptrs[] = {
@@ -74,6 +77,7 @@ static const conf_func config_func_ptrs[] = {
 		.usart0_irq = mode_cardemu_usart0_irq,
 		.usart1_irq = mode_cardemu_usart1_irq,
 #endif
+		.ctrl_vendor_req = mode_cardemu_ctrl_vendor_req,
 	},
 #endif
 #ifdef HAVE_MITM
@@ -135,6 +139,26 @@ static void check_exec_dbg_cmd(void)
 	/* We must echo the character to make python fdexpect happy, which we use in factory testing */
 	fputc(ch, stdout);
 	board_exec_dbg_cmd(ch);
+}
+
+void USBDCallbacks_RequestReceived(const USBGenericRequest *request)
+{
+	if (USBGenericRequest_GetType(request) != USBGenericRequest_VENDOR)
+		return USBDDriver_RequestHandler(USBD_GetDriver(), request);
+
+
+	if (config_func_ptrs[simtrace_config].ctrl_vendor_req)
+		config_func_ptrs[simtrace_config].ctrl_vendor_req(request);
+	else {
+		/* only ctrl in is supported */
+		if (USBGenericRequest_GetDirection(request) == USBGenericRequest_IN)
+			/* Return ZLP */
+			USBD_Write(0, NULL, 0, NULL, NULL);
+		else /* stall Ctrl out vendor requests */
+			USBD_Stall(0);
+
+		return;
+	}
 }
 
 /*------------------------------------------------------------------------------

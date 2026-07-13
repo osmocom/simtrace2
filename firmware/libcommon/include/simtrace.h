@@ -120,6 +120,9 @@ extern void Sniffer_usart1_irq(void);
 extern void mode_cardemu_usart0_irq(void);
 extern void mode_cardemu_usart1_irq(void);
 
+/* Vendor request functions */
+void mode_cardemu_ctrl_vendor_req(const USBGenericRequest *request);
+
 /*  Timer helper function */
 void Timer_Init( void );
 void TC0_Counter_Reset( void );

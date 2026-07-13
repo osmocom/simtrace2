@@ -689,6 +689,42 @@ void mode_cardemu_exit(void)
 #endif
 }
 
+void mode_cardemu_ctrl_vendor_req(const USBGenericRequest *request)
+{
+	if (USBGenericRequest_GetRecipient(request) != USBGenericRequest_DEVICE) {
+		USBD_Stall(0);
+		return;
+	}
+
+	if (USBGenericRequest_GetDirection(request) != USBGenericRequest_IN) {
+		USBD_Stall(0);
+		return;
+	}
+
+	uint16_t req = USBGenericRequest_GetRequest(request);
+	uint8_t buf[32] = {};
+	uint8_t len = 0;
+	unsigned int used, i;
+	switch (req) {
+	case SIMTRACER_VENDOR_REQ_GET_DEBUG_INFO:
+		/* don't use msgb here to prevent an additional allocation */
+		used = talloc_report_buf(&buf[0], 16);
+		/* add queues */
+		for (i = 0; i < ARRAY_SIZE(cardem_inst); i++) {
+			struct cardem_inst *ci = &cardem_inst[i];
+			buf[used++] = i + 1;
+			buf[used++] = usb_get_buf_ep(ci->ep_in)->queue_len;
+			buf[used++] = usb_get_buf_ep(ci->ep_out)->queue_len;
+			buf[used++] = usb_get_buf_ep(ci->ep_int)->queue_len;
+		}
+		USBD_Write(0, &buf, used, 0, 0);
+		break;
+	default:
+		USBD_Stall(0);
+		break;
+	}
+}
+
 /* handle a single USB command as received from the USB host */
 static void dispatch_usb_command_generic(struct msgb *msg, struct cardem_inst *ci)
 {

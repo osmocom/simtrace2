@@ -386,6 +386,26 @@ static void emu_update_fidi(struct card_handle *ch)
 			   ch->num, rc);
 }
 
+/*! Calculate the WT from current WI and D.
+ *
+ * ISO 7816-3 10.2 defines WT = WI x 960 x Fi / f [seconds].
+ * Our waiting time is stored in units of etu = Fi / (D x f) seconds
+ * -> the Fi cancels out, but D does not.
+ *
+ *	WT [etu] = WI x 960 x D
+ *
+ * D is the value from ISO 7816-3 Table 8. Only 1..9 are defined,
+ * 0 and RFU range 10..15 have no D -> use D = 1 */
+static void emu_update_wt(struct card_handle *ch)
+{
+	uint8_t d = 1;
+
+	if (ch->D_index >= 1 && ch->D_index <= 9)
+		d = iso7816_3_di_table[ch->D_index];
+
+	ch->waiting_time = ch->wi * 960 * d;
+}
+
 /* Update the ISO 7816-3 TPDU receiver state */
 static void card_set_state(struct card_handle *ch,
 			   enum iso7816_3_card_state new_state)
@@ -505,11 +525,8 @@ static int tx_byte_atr(struct card_handle *ch)
 				}
 			}
 		}
-		/* update waiting time (see ISO 7816-3 10.2). We can drop the Fi
-		 * multiplier as we store the waiting time in units of 'etu', and
-		 * don't really care what the number of clock cycles or the absolute
-		 * wall clock time is */
-		ch->waiting_time = ch->wi * 960;
+		/* update the waiting time now that WI is known (see emu_update_wt) */
+		emu_update_wt(ch);
 		/* go to next state */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		return 0;
@@ -675,6 +692,9 @@ static int tx_byte_pts(struct card_handle *ch)
 		card_emu_uart_wait_tx_idle(ch->uart_chan);
 		/* update baud rate generator with F/D */
 		emu_update_fidi(ch);
+		/* the waiting time is expressed in etu and scales with D, so it has
+		 * to be recomputed whenever D changes */
+		emu_update_wt(ch);
 		/* Wait for the next TPDU */
 		card_set_state(ch, ISO_S_WAIT_TPDU);
 		set_pts_state(ch, PTS_S_WAIT_REQ_PTSS);

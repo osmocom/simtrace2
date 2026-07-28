@@ -396,12 +396,73 @@ const uint8_t pps[] = {
 	0xFF ^ 0b00010000// PCK
 };
 
-static void
-test_ppss(struct card_handle *ch)
+/* Fi/Di that is actually valid: Fi idx 9 (Fi=512) and Di idx 4 (Di=8)
+ * This tests calculating F/D ratio (512/8 = 64) and the calculation of the
+ * waiting time which scales with Di. */
+const uint8_t pps_fidi[] = {
+	0xFF,			// PPSS
+	0b00010000,		// PPS0: PPS1 present
+	0x94,			// PPS1: Fi index 9, Di index 4
+	0xFF ^ 0b00010000 ^ 0x94// PCK
+};
+
+/* Di 8 idx Di=12 (ISO 7816-3:2006 Table 8),:
+ * the ratio be 372/12 = 31, not 372*12. */
+const uint8_t pps_di12[] = {
+	0xFF,			// PPSS
+	0b00010000,		// PPS0: PPS1 present
+	0x18,			// PPS1: Fi index 1, Di index 8
+	0xFF ^ 0b00010000 ^ 0x18// PCK
+};
+
+/* Fi idx 5 Fi=1488 andDi=1 -> ratio 1488, needs all 11 bits of
+ * the US_FIDI.FI_DI_RATIO field. */
+const uint8_t pps_hi_ratio[] = {
+	0xFF,			// PPSS
+	0b00010000,		// PPS0: PPS1 present
+	0x51,			// PPS1: Fi index 5, Di index 1
+	0xFF ^ 0b00010000 ^ 0x51// PCK
+};
+
+/* Get a cemu status report to check the negotiated parameters
+ * This is the only way to get the waiting time from struct card_handle. */
+static void verify_status(struct card_handle *ch, uint8_t exp_f_index, uint8_t exp_d_index,
+			  uint32_t exp_waiting_time)
 {
-	reader_send_bytes(ch, pps, sizeof(pps));
-	get_and_verify_rctx_pps(pps, sizeof(pps));
-	card_tx_verify_chars(ch, pps, sizeof(pps));
+	struct usb_buffered_ep *bep = usb_get_buf_ep(PHONE_DATAIN);
+	struct cardemu_usb_msg_status *sts;
+	struct simtrace_msg_hdr *mh;
+	struct msgb *msg;
+
+	card_emu_report_status(ch, false);
+
+	assert(bep);
+	msg = msgb_dequeue_count(&bep->queue, &bep->queue_len);
+	assert(msg);
+	mh = (struct simtrace_msg_hdr *) msg->l1h;
+	assert(mh->msg_type == SIMTRACE_MSGT_BD_CEMU_STATUS);
+	sts = (struct cardemu_usb_msg_status *) msg->l2h;
+
+	printf("status: F_index=%u D_index=%u wi=%u waiting_time=%u\n",
+		sts->F_index, sts->D_index, sts->wi, sts->waiting_time);
+
+	assert(sts->F_index == exp_f_index);
+	assert(sts->D_index == exp_d_index);
+	/* WT = WI x 960 x D in etu, see ISO 7816-3 Section 10.2 */
+	assert(sts->waiting_time == exp_waiting_time);
+
+	usb_buf_free(msg);
+}
+
+static void
+test_ppss(struct card_handle *ch, const uint8_t *req, unsigned int req_len,
+	  uint8_t exp_f_index, uint8_t exp_d_index, uint32_t exp_waiting_time)
+{
+	printf("\n==> PPS exchange\n");
+	reader_send_bytes(ch, req, req_len);
+	get_and_verify_rctx_pps(req, req_len);
+	card_tx_verify_chars(ch, req, req_len);
+	verify_status(ch, exp_f_index, exp_d_index, exp_waiting_time);
 }
 
 /* READ RECORD (offset 0, 10 bytes) */
@@ -426,7 +487,12 @@ int main(int argc, char **argv)
 	io_start_card(ch);
 	card_tx_verify_chars(ch, NULL, 0);
 
-	test_ppss(ch);
+	/* WI is 10 so WT = 10 x 960 x D */
+	/* Fi/Di index 0/0 is invalid: the F/D ratio is rejected, D falls back to 1 */
+	test_ppss(ch, pps, sizeof(pps), 0, 0, 10 * 960 * 1);
+	test_ppss(ch, pps_fidi, sizeof(pps_fidi), 9, 4, 10 * 960 * 8);
+	test_ppss(ch, pps_di12, sizeof(pps_di12), 1, 8, 10 * 960 * 12);
+	test_ppss(ch, pps_hi_ratio, sizeof(pps_hi_ratio), 5, 1, 10 * 960 * 1);
 
 	for (i = 0; i < 2; i++) {
 		test_tpdu_reader2card(ch, tpdu_hdr_write_rec, tpdu_body_write_rec, sizeof(tpdu_body_write_rec));

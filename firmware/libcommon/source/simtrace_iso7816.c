@@ -127,14 +127,14 @@ void update_fidi(Usart_info *usart, uint8_t fidi)
 	uint8_t di = fidi & 0xf;
 	int ratio = iso7816_3_compute_fd_ratio(fi, di);
 
-	if (ratio > 0 && ratio < 0x8000) {
+	if (ratio > 0 && ratio <= (US_FIDI_FI_DI_RATIO_Msk >> US_FIDI_FI_DI_RATIO_Pos)) {
 		/* make sure USART uses new F/D ratio */
 		usart->base->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
 		/* disable write protection */
 		if (usart->base->US_WPMR) {
 			usart->base->US_WPMR = US_WPMR_WPKEY(0x555341);
 		}
-		usart->base->US_FIDI = (ratio & 0x7ff);
+		usart->base->US_FIDI = US_FIDI_FI_DI_RATIO(ratio);
 		usart->base->US_CR |= US_CR_RXEN | US_CR_STTTO;
 		//TRACE_INFO("updated USART(%u) Fi(%u)/Di(%u) ratio(%d): %u\n\r", usart->id, fi, di, ratio, usart->base->US_FIDI);
 	} else {

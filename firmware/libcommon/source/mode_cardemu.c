@@ -387,7 +387,7 @@ int card_emu_uart_update_fidi(uint8_t uart_chan, unsigned int fidi)
 	Usart *usart = get_usart_by_chan(uart_chan);
 
 	usart->US_CR |= US_CR_RXDIS | US_CR_RSTRX;
-	usart->US_FIDI = fidi & 0x3ff;
+	usart->US_FIDI = US_FIDI_FI_DI_RATIO(fidi);
 	usart->US_CR |= US_CR_RXEN | US_CR_STTTO;
 	return 0;
 }

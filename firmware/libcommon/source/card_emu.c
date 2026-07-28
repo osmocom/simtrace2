@@ -376,7 +376,7 @@ static void emu_update_fidi(struct card_handle *ch)
 	int rc;
 
 	rc = iso7816_3_compute_fd_ratio(ch->F_index, ch->D_index);
-	if (rc > 0 && rc < 0x400) {
+	if (rc > 0 && rc <= (US_FIDI_FI_DI_RATIO_Msk >> US_FIDI_FI_DI_RATIO_Pos)) {
 		TRACE_INFO("%u: computed F(%u)/D(%u) ratio: %d\r\n", ch->num,
 			   ch->F_index, ch->D_index, rc);
 		/* make sure UART uses new F/D ratio */

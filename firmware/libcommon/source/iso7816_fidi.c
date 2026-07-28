@@ -48,9 +48,13 @@ int iso7816_3_compute_fd_ratio(uint8_t f_index, uint8_t d_index)
 	if (d == 0)
 		return -EINVAL;
 
-	/* See table 7 of ISO 7816-3: From 1000 on we divide by 1/d,
-	 * which equals a multiplication by d */
-	if (d_index < 8)
+	/* DI defined in Table 8 of ISO/IEC 7816-3:2006
+	 * has values 0001..1001 as div 1, 2, 4, 8, 16, 32, 64, 12, 20
+	 * so indices 1..9 are all divisors and the ratio is F/D.
+	 * But Indices 1010..1111 are RFU in the 2006 edition!
+	 * 1997 used those for 1/2 .. 1/64, where dividing by 1/d equals multiplying by d.
+	 * Keep that legacy interpretation for the RFU range only. */
+	if (d_index < 10)
 		ret = f / d;
 	else
 		ret = f * d;

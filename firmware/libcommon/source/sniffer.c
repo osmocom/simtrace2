@@ -239,14 +239,14 @@ static void update_wt(uint8_t wi, uint8_t d, const char *cause)
 static struct msgb *usb_msg_alloc_hdr(uint8_t ep, uint8_t msg_class, uint8_t msg_type)
 {
 	/* Only allocate message if not too many are already in the queue */
-	struct llist_head *head = usb_get_queue(SIMTRACE_USB_EP_CARD_DATAIN);
+	struct llist_head *head = usb_get_queue(ep);
 	if (!head) {
 		return NULL;
 	}
 	if (llist_count(head) > 5) {
 		return NULL;
 	}
-	struct msgb *usb_msg = usb_buf_alloc(SIMTRACE_USB_EP_CARD_DATAIN);
+	struct msgb *usb_msg = usb_buf_alloc(ep);
 	if (!usb_msg) {
 		return NULL;
 	}

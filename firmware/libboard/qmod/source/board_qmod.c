@@ -287,7 +287,7 @@ void board_exec_dbg_cmd(int ch)
 		sim_switch_use_physical(0, 0);
 		break;
 	case '@':
-		sim_switch_use_physical(0, 0);
+		sim_switch_use_physical(1, 0);
 		break;
 	case 't':
 		talloc_report(NULL, stdout);

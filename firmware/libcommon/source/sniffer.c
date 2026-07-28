@@ -406,7 +406,7 @@ static void usb_send_atr(uint32_t flags)
 		TRACE_WARNING("Can't print ATR in ISO 7816-3 state %u\n\r", iso_state);
 		return;
 	}
-	if (g_atr.atr_i >= ARRAY_SIZE(g_atr.atr)) {
+	if (g_atr.atr_i > ARRAY_SIZE(g_atr.atr)) {
 		TRACE_ERROR("ATR buffer overflow\n\r");
 		return;
 	}

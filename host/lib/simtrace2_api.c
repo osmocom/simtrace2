@@ -280,7 +280,7 @@ int osmo_st2_cardem_request_config2(struct osmo_st2_cardem_inst *ci, const struc
 
 	tx_cfg = (struct cardemu_usb_msg_config *) msgb_put(msg, sizeof(*tx_cfg));
 
-	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(features=%08x)\n", __func__, tx_cfg->features);
+	LOGSLOT(ci->slot, LOGL_NOTICE, "<= %s(features=%08x)\n", __func__, user_cfg->features);
 	memcpy(tx_cfg, user_cfg, sizeof(*tx_cfg));
 	osmo_store32le(user_cfg->features, &tx_cfg->features);
 

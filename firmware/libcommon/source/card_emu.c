@@ -745,7 +745,8 @@ static void add_tpdu_byte(struct card_handle *ch, uint8_t byte)
 {
 	struct msgb *msg;
 	struct cardemu_usb_msg_rx_data *rd;
-	unsigned int num_data_bytes = t0_num_data_bytes(ch->tpdu.hdr[_P3], 0);
+	/* these are bytes the reader sends to us, so P3 is a literal count */
+	unsigned int num_data_bytes = t0_num_data_bytes(ch->tpdu.hdr[_P3], 1);
 
 	/* ensure we have a buffer */
 	if (!ch->uart_rx_msg) {

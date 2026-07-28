@@ -34,7 +34,7 @@ static inline void llist_add_tail_irqsafe(struct llist_head *_new,
 
 	local_irq_save(x);
 	llist_add_tail(_new, head);
-	__enable_irq();
+	local_irq_restore(x);
 }
 
 static inline struct llist_head *llist_head_dequeue_irqsafe(struct llist_head *head)

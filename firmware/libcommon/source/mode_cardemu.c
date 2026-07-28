@@ -737,7 +737,8 @@ static void dispatch_usb_command_cardem(struct msgb *msg, struct cardem_inst *ci
 	switch (hdr->msg_type) {
 	case SIMTRACE_MSGT_DT_CEMU_TX_DATA:
 		queue = card_emu_get_uart_tx_queue(ci->ch);
-		llist_add_tail(&msg->list, queue);
+		/* drained from the USART IRQ handler at highest NVIC prio */
+		llist_add_tail_irqsafe(&msg->list, queue);
 		card_emu_have_new_uart_tx(ci->ch);
 		break;
 	case SIMTRACE_MSGT_DT_CEMU_SET_ATR:

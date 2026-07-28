@@ -219,19 +219,31 @@ struct card_handle {
 static void card_handle_reset(struct card_handle *ch)
 {
 	struct msgb *msg;
+	unsigned long x;
 
 	card_emu_uart_update_wt(ch->uart_chan, 0);
 
-	/* release any buffers we may still own */
-	if (ch->uart_tx_msg) {
-		usb_buf_free(ch->uart_tx_msg);
-		ch->uart_tx_msg = NULL;
-	}
+	/* Release any buffers we may still own.
+	 * uart_tx_msg + uart_tx_queue are shared with the UART IRQ handler,
+	 * that preempts us here -> needs atomic detach and free */
+	local_irq_save(x);
+	msg = ch->uart_tx_msg;
+	ch->uart_tx_msg = NULL;
+	local_irq_restore(x);
+	if (msg)
+		usb_buf_free(msg);
+
 	if (ch->uart_rx_msg) {
 		usb_buf_free(ch->uart_rx_msg);
 		ch->uart_rx_msg = NULL;
 	}
-	while ((msg = msgb_dequeue(&ch->uart_tx_queue))) {
+
+	while (1) {
+		local_irq_save(x);
+		msg = msgb_dequeue(&ch->uart_tx_queue);
+		local_irq_restore(x);
+		if (!msg)
+			break;
 		usb_buf_free(msg);
 	}
 }

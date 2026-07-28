@@ -328,7 +328,7 @@ static void signal_handler(int signal)
 
 int main(int argc, char **argv)
 {
-	int i, rc, ret;
+	int i, rc, ret = 1;
 	print_welcome();
 
 	/* Parse arguments */

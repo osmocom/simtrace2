@@ -775,7 +775,7 @@ static void process_byte_tpdu(uint8_t byte)
 		} else if (g_tpdu.packet[1] == byte) { /* get all remaining data bytes */
 			change_tpdu_state(TPDU_S_DATA_REMAINING);
 			break;
-		} else if ((~g_tpdu.packet[1]) == byte) { /* get single data byte */
+		} else if ((uint8_t)(~g_tpdu.packet[1]) == byte) { /* get single data byte */
 			change_tpdu_state(TPDU_S_DATA_SINGLE);
 			break;
 		}

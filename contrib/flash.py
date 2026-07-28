@@ -110,12 +110,12 @@ for usb_device in usb_devices:
 			if serial:
 				version = "< 0.5.1.45-ac7e"
 			else:
-				versoin = "< 0.5.1.45-ac7e"
+				version = "< 0.5.1.45-ac7e"
 		else:
 			if serial:
 				version = "< 0.5.1.37-ede8"
 			else:
-				versoin = "< 0.5.1.34-e026"
+				version = "< 0.5.1.34-e026"
 	print("device firmware version: " + version)
 	# flash latest firmware
 	if to_flash == "list": # we just want to list the devices, not flash them
@@ -156,7 +156,7 @@ for usb_device in usb_devices:
 	dfu_result = subprocess.run(["dfu-util", "--device", hex(definition.usb_vendor_id) + ":" + hex(definition.usb_product_id), "--path", usb_path, "--cfg", "1", "--alt", "1", "--reset", "--download", dl_path])
 	os.remove(dl_path)
 	if 0 != dfu_result.returncode:
-		printf("flashing firmware using dfu-util failed. ensure dfu-util is installed and you have the permissions to access this USB device")
+		print("flashing firmware using dfu-util failed. ensure dfu-util is installed and you have the permissions to access this USB device")
 		continue
 	updated_nb += 1
 

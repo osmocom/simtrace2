@@ -63,7 +63,7 @@ const char *osmo_apdu_dump_context_buf(char *buf, unsigned int buf_len,
 }
 
 /*! \brief input function for APDU segmentation
- *  \param ac APDU context accross successive calls
+ *  \param ac APDU context across successive calls
  *  \param[in] apdu_buf APDU inpud data buffer
  *  \param[in] apdu_len Length of apdu_buf
  *  \param[in] new_apdu Is this the beginning of a new APDU?

@@ -1,0 +1,9 @@
+AT_INIT
+AT_BANNER([Regression tests.])
+
+AT_SETUP([apdu_dispatch])
+AT_KEYWORDS([apdu_dispatch])
+cat $abs_srcdir/apdu_dispatch/apdu_dispatch_test.ok > expout
+AT_CHECK([$abs_top_builddir/tests/apdu_dispatch/apdu_dispatch_test], [], [expout], [ignore])
+AT_CLEANUP
+

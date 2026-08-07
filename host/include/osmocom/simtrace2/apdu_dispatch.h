@@ -45,3 +45,6 @@ const char *osmo_apdu_dump_context_buf(char *buf, unsigned int buf_len,
 
 int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 			 unsigned int apdu_len, bool new_apdu);
+
+int osmo_apdu_segment_in2(struct osmo_apdu_context *ac, struct osmo_apdu_context *prev_ac,
+			 const uint8_t *apdu_buf, unsigned int apdu_len, bool new_apdu);

@@ -1,0 +1,7 @@
+Testing get_data_c2_ca
+Testing get_data_c2_cb
+Testing get_data_c2_ca
+Testing get_data_c2_cb
+Testing GET DATA / 0xCA with SW 6Cxx
+Testing GET DATA / 0xCB with SW 6Cxx
+All tests passed.

@@ -100,4 +100,6 @@ AC_OUTPUT(
 	src/Makefile
 	lib/Makefile
 	contrib/Makefile
+	tests/Makefile
+	tests/apdu_dispatch/Makefile
 	Makefile)

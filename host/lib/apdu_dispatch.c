@@ -78,14 +78,52 @@ const char *osmo_apdu_dump_context_buf(char *buf, unsigned int buf_len,
 int osmo_apdu_segment_in(struct osmo_apdu_context *ac, const uint8_t *apdu_buf,
 			 unsigned int apdu_len, bool new_apdu)
 {
+	return osmo_apdu_segment_in2(ac, NULL, apdu_buf, apdu_len, new_apdu);
+}
+
+/*! \brief input function for APDU segmentation
+ *  \param ac APDU context across successive calls
+ *  \param prev_ac Previous APDU context across successive calls
+ *  \param[in] apdu_buf APDU input data buffer
+ *  \param[in] apdu_len Length of apdu_buf
+ *  \param[in] new_apdu Is this the beginning of a new APDU?
+ *
+ *  The function returns APDU_ACT_TX_CAPDU_TO_CARD once there is
+ *  sufficient data of the APDU received to transmit the command-APDU to
+ *  the actual card.
+ *
+ *  The function returns APDU_ACT_RX_MORE_CAPDU_FROM_READER when there
+ *  is more data to be received from the card reader (GSM Phone).
+ */
+int osmo_apdu_segment_in2(struct osmo_apdu_context *ac, struct osmo_apdu_context *prev_ac,
+			  const uint8_t *apdu_buf, unsigned int apdu_len,
+			  bool new_apdu)
+{
 	int rc = 0;
 
 	if (new_apdu) {
+		if (prev_ac)
+			memcpy(prev_ac, ac, sizeof(*ac));
 		/* initialize the apdu context structure */
 		memset(ac, 0, sizeof(*ac));
 		/* copy APDU header over */
 		memcpy(&ac->hdr, apdu_buf, sizeof(ac->hdr));
 		ac->apdu_case = osim_determine_apdu_case(&osim_uicc_sim_cic_profile, apdu_buf);
+
+		/* Corner case when card returns SW 6CXX (resend previous command with Le = XX).
+		 * Especial GP APDU defines Le to be 0x00, except if card returned SW 6cXX,
+		 * Le must be set to XX. osim_determine_apdu_case() might return the wrong
+		 * APDU case because osim_determine_apdu_case() uses the Le field to determine if the APDU
+		 */
+		if (prev_ac && prev_ac->sw[0] == 0x6c && /* check if Le was invalid and must be set to sw[1] */
+		    (prev_ac->apdu_case >= 1 && prev_ac->apdu_case < 4) && /* handling only valid for apdu case 1..3 */
+		    ac->hdr.cla == prev_ac->hdr.cla && /* check if CLA, INS, P1, P2 are equal */
+		    ac->hdr.ins == prev_ac->hdr.ins &&
+		    ac->hdr.p1 == prev_ac->hdr.p1 &&
+		    ac->hdr.p2 == prev_ac->hdr.p2) {
+			ac->apdu_case = prev_ac->apdu_case;
+		}
+
 		switch (ac->apdu_case) {
 		case 1: /* P3 == 0, No Lc/Le */
 			ac->le.tot = ac->lc.tot = 0;

@@ -7,3 +7,4 @@
 # If any interfaces have been added since the last public release: c:r:a + 1.
 # If any interfaces have been removed or changed since the last public release: c:r:0.
 #library	what			description / commit summary line
+libosmo-simtrace2 added osmo_apdu_segment_in2()

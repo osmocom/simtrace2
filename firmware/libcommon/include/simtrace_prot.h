@@ -54,7 +54,7 @@ enum simtrace_msg_type_cardem {
 	SIMTRACE_MSGT_BD_CEMU_STATUS,
 	/* Request / Confirm emulated card insert */
 	SIMTRACE_MSGT_DT_CEMU_CARDINSERT,
-	/* TPDU Data received from phomne */
+	/* TPDU Data received from phone */
 	SIMTRACE_MSGT_DO_CEMU_RX_DATA,
 	/* Indicate PTS request from phone */
 	SIMTRACE_MSGT_DO_CEMU_PTS,

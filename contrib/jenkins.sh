@@ -1,6 +1,11 @@
 #!/bin/bash
 
 TOPDIR=`pwd`
+# empty env LIBOSMOCORE_COMMIT means master, default for release to 1.14.1
+# Having a known commit for libosmocore allow more reproducible builds of the published firmwares
+if [ "$publish" = "--publish" ] && [ -z "$LIBOSMOCORE_COMMIT" ]; then
+	LIBOSMOCORE_COMMIT="1.14.1"
+fi
 
 if ! [ -x "$(command -v osmo-build-dep.sh)" ]; then
 	echo "Error: We need to have scripts/osmo-deps.sh from http://git.osmocom.org/osmo-ci/ in PATH !"
@@ -19,7 +24,7 @@ osmo-clean-workspace.sh
 
 mkdir "$deps" || true
 
-osmo-build-dep.sh libosmocore "" '--disable-doxygen --enable-gnutls'
+osmo-build-dep.sh libosmocore "$LIBOSMOCORE_COMMIT" '--disable-doxygen --enable-gnutls'
 
 # verify only after building the dependency (to ensure we have most recent source of dependency)
 verify_value_string_arrays_are_terminated.py $(find . -name "*.[hc]")

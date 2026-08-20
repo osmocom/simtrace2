@@ -159,7 +159,7 @@ static int process_do_pts(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len
 /*! \brief Process a RX-DATA indication message from the SIMtrace2 */
 static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int len)
 {
-	static struct osmo_apdu_context ac;
+	static struct osmo_apdu_context ac, prev_ac;
 	struct cardemu_usb_msg_rx_data *data;
 	int rc;
 
@@ -168,8 +168,8 @@ static int process_do_rx_da(struct osmo_st2_cardem_inst *ci, uint8_t *buf, int l
 	LOGCI(ci, LOGL_INFO, "=> DATA: flags=0x%02x (%s), %s\n ", data->flags,
 	      cemu_data_flags2str(data->flags), osmo_hexdump(data->data, data->data_len));
 
-	rc = osmo_apdu_segment_in(&ac, data->data, data->data_len,
-				  data->flags & CEMU_DATA_F_TPDU_HDR);
+	rc = osmo_apdu_segment_in2(&ac, &prev_ac, data->data, data->data_len,
+				   data->flags & CEMU_DATA_F_TPDU_HDR);
 	if (rc < 0) {
 		/* At this point the communication is broken.  We cannot keep running, as we
 		 * don't know if we should continue transmitting or receiving.  Only a successful

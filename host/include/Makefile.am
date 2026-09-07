@@ -16,3 +16,5 @@ nobase_include_HEADERS = \
 		osmocom/simtrace2/gsmtap.h \
 		osmocom/simtrace2/version.h \
 		$(NULL)
+
+EXTRA_DIST = osmocom/simtrace2/version.h.tpl

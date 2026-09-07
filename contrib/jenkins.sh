@@ -87,7 +87,7 @@ cd $TOPDIR/host
 autoreconf --install --force
 ./configure --enable-sanitize --enable-werror
 $MAKE $PARALLEL_MAKE
-#$MAKE distcheck || cat-testlogs.sh
+$MAKE distcheck || cat-testlogs.sh
 make dist
 
 #if [ "$WITH_MANUALS" = "1" ] && [ "$PUBLISH" = "1" ]; then

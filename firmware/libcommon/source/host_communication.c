@@ -34,7 +34,12 @@ static void usb_write_cb(uint8_t *arg, uint8_t status, uint32_t transferred,
 
 	TRACE_DEBUG("%s (EP=0x%02x)\r\n", __func__, bep->ep);
 
-	if (((msgb_length(msg) % ep_size) == 0) && (transferred == ep_size)) {
+	/* A transfer that fills its last packet ends only at a short packet, so a
+	 * message of any whole number of packets needs a ZLP, not just one of a
+	 * single packet: the host reads into a larger buffer and would otherwise
+	 * see this message only once the next one arrives. */
+	if (msgb_length(msg) && ((msgb_length(msg) % ep_size) == 0) &&
+	    (transferred == msgb_length(msg))) {
 		/* terminate with ZLP; pass in 'msg' again as 'arg' so we get
 		 * called the second time and proceed with usb_buf_free below */
 		USBD_Write(bep->ep, 0, 0, (TransferCallback) &usb_write_cb, msg);
